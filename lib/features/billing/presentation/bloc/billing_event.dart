@@ -37,6 +37,17 @@ class UpdateQuantityEvent extends BillingEvent {
 
 class ClearCartEvent extends BillingEvent {}
 
+class ParkCurrentCartEvent extends BillingEvent {}
+
+class ResumeParkedCartEvent extends BillingEvent {}
+
+class SetPaidAmountEvent extends BillingEvent {
+  final double amount;
+  const SetPaidAmountEvent(this.amount);
+  @override
+  List<Object> get props => [amount];
+}
+
 class PrintReceiptEvent extends BillingEvent {
   final String shopName;
   final String address1;

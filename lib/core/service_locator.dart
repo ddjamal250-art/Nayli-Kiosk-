@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'localization/language_cubit.dart';
 import '../../features/product/data/repositories/product_repository_impl.dart';
 import '../../features/product/domain/repositories/product_repository.dart';
 import '../../features/product/domain/usecases/product_usecases.dart';
@@ -14,6 +15,9 @@ import '../../features/settings/presentation/bloc/printer_bloc.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  // Localization
+  sl.registerLazySingleton<LanguageCubit>(() => LanguageCubit());
+
   // Features - Product
   // Bloc
   sl.registerFactory(
@@ -22,6 +26,7 @@ Future<void> init() async {
       addProductUseCase: sl(),
       updateProductUseCase: sl(),
       deleteProductUseCase: sl(),
+      adjustStockUseCase: sl(),
     ),
   );
 
@@ -44,6 +49,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateProductUseCase(sl()));
   sl.registerLazySingleton(() => DeleteProductUseCase(sl()));
   sl.registerLazySingleton(() => GetProductByBarcodeUseCase(sl()));
+  sl.registerLazySingleton(() => AdjustStockUseCase(sl()));
 
   // Repository
   sl.registerLazySingleton<ProductRepository>(

@@ -29,3 +29,23 @@ class DeleteProduct extends ProductEvent {
   @override
   List<Object> get props => [id];
 }
+
+class AdjustProductStock extends ProductEvent {
+  final String productId;
+  final int quantityDelta;
+  final double? newPrice;
+  const AdjustProductStock({
+    required this.productId,
+    required this.quantityDelta,
+    this.newPrice,
+  });
+  @override
+  List<Object> get props => [productId, quantityDelta];
+}
+
+class BatchDeductStock extends ProductEvent {
+  final List<Map<String, dynamic>> items; // [{'id': String, 'quantity': int}]
+  const BatchDeductStock(this.items);
+  @override
+  List<Object> get props => [items];
+}

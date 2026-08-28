@@ -12,17 +12,21 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   final AddProductUseCase addProductUseCase;
   final UpdateProductUseCase updateProductUseCase;
   final DeleteProductUseCase deleteProductUseCase;
+  final AdjustStockUseCase adjustStockUseCase;
 
   ProductBloc({
     required this.getProductsUseCase,
     required this.addProductUseCase,
     required this.updateProductUseCase,
     required this.deleteProductUseCase,
+    required this.adjustStockUseCase,
   }) : super(const ProductState()) {
     on<LoadProducts>(_onLoadProducts);
     on<AddProduct>(_onAddProduct);
     on<UpdateProduct>(_onUpdateProduct);
     on<DeleteProduct>(_onDeleteProduct);
+    on<AdjustProductStock>(_onAdjustProductStock);
+    on<BatchDeductStock>(_onBatchDeductStock);
   }
 
   Future<void> _onLoadProducts(
@@ -83,5 +87,36 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
         add(LoadProducts());
       },
     );
+  }
+
+  Future<void> _onAdjustProductStock(
+      AdjustProductStock event, Emitter<ProductState> emit) async {
+    final result = await adjustStockUseCase(AdjustStockParams(
+      productId: event.productId,
+      quantityDelta: event.quantityDelta,
+    ));
+    result.fold(
+      (failure) => emit(state.copyWith(
+          status: ProductStatus.error, message: failure.message)),
+      (_) {
+        emit(state.copyWith(
+            status: ProductStatus.success,
+            message: 'Stock updated successfully'));
+        add(LoadProducts());
+      },
+    );
+  }
+
+  Future<void> _onBatchDeductStock(
+      BatchDeductStock event, Emitter<ProductState> emit) async {
+    for (final item in event.items) {
+      final id = item['id'] as String;
+      final qty = item['quantity'] as int;
+      await adjustStockUseCase(AdjustStockParams(
+        productId: id,
+        quantityDelta: -qty,
+      ));
+    }
+    add(LoadProducts());
   }
 }

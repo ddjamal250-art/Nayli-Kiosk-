@@ -58,3 +58,20 @@ class GetProductByBarcodeUseCase implements UseCase<Product, String> {
     return repository.getProductByBarcode(params);
   }
 }
+
+class AdjustStockParams {
+  final String productId;
+  final int quantityDelta;
+  const AdjustStockParams({required this.productId, required this.quantityDelta});
+}
+
+class AdjustStockUseCase implements UseCase<void, AdjustStockParams> {
+  final ProductRepository repository;
+
+  AdjustStockUseCase(this.repository);
+
+  @override
+  Future<Either<Failure, void>> call(AdjustStockParams params) {
+    return repository.adjustStock(params.productId, params.quantityDelta);
+  }
+}

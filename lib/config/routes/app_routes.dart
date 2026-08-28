@@ -3,10 +3,12 @@ import '../../features/billing/presentation/pages/home_page.dart';
 import '../../features/product/presentation/pages/product_list_page.dart';
 import '../../features/product/presentation/pages/add_product_page.dart';
 import '../../features/product/presentation/pages/edit_product_page.dart';
+import '../../features/product/presentation/pages/stock_in_page.dart';
 import '../../features/shop/presentation/pages/shop_details_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/billing/presentation/pages/scanner_page.dart';
 import '../../features/billing/presentation/pages/checkout_page.dart';
+import '../../features/billing/presentation/pages/daily_report_page.dart';
 import '../../features/product/domain/entities/product.dart';
 
 final router = GoRouter(
@@ -31,12 +33,20 @@ final router = GoRouter(
       builder: (context, state) => const SettingsPage(),
     ),
     GoRoute(
+      path: '/reports',
+      builder: (context, state) => const DailyReportPage(),
+    ),
+    GoRoute(
       path: '/products',
       builder: (context, state) => const ProductListPage(),
       routes: [
         GoRoute(
           path: 'add',
           builder: (context, state) => const AddProductPage(),
+        ),
+        GoRoute(
+          path: 'stock-in',
+          builder: (context, state) => const StockInPage(),
         ),
         GoRoute(
           path: 'edit/:id',

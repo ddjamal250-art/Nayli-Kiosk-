@@ -5,6 +5,8 @@ import '../bloc/product_bloc.dart';
 import '../../domain/entities/product.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_validators.dart';
+import '../../../../core/utils/app_constants.dart';
+import '../../../../core/localization/app_localizations.dart';
 
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
@@ -60,9 +62,16 @@ class _ProductListPageState extends State<ProductListPage> {
               size: 28, color: Theme.of(context).primaryColor),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Product Management',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(context.tr('products_management'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.archive_outlined, color: AppTheme.primaryColor),
+            tooltip: context.tr('stock_in'),
+            onPressed: () => context.push('/products/stock-in'),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -193,11 +202,43 @@ class _ProductListPageState extends State<ProductListPage> {
                                       fontSize: 16),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  '₹${product.price.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.grey[600]),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${AppConstants.currencySymbol} ${product.price.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.grey[700]),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: product.stock > 5
+                                            ? Colors.green.withValues(alpha: 0.1)
+                                            : (product.stock > 0
+                                                ? Colors.orange.withValues(alpha: 0.1)
+                                                : Colors.red.withValues(alpha: 0.1)),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        product.stock > 5
+                                            ? '${product.stock} ${context.tr('in_stock')}'
+                                            : (product.stock > 0
+                                                ? '${product.stock} ${context.tr('low_stock')}'
+                                                : context.tr('out_of_stock')),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: product.stock > 5
+                                              ? Colors.green[800]
+                                              : (product.stock > 0
+                                                  ? Colors.orange[800]
+                                                  : Colors.red[800]),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

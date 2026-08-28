@@ -8,4 +8,5 @@ abstract class ProductRepository {
   Future<Either<Failure, void>> addProduct(Product product);
   Future<Either<Failure, void>> updateProduct(Product product);
   Future<Either<Failure, void>> deleteProduct(String id);
+  Future<Either<Failure, void>> adjustStock(String id, int quantityDelta);
 }

@@ -19,6 +19,9 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     on<RemoveProductFromCartEvent>(_onRemoveProductFromCart);
     on<UpdateQuantityEvent>(_onUpdateQuantity);
     on<ClearCartEvent>(_onClearCart);
+    on<ParkCurrentCartEvent>(_onParkCurrentCart);
+    on<ResumeParkedCartEvent>(_onResumeParkedCart);
+    on<SetPaidAmountEvent>(_onSetPaidAmount);
     on<PrintReceiptEvent>(_onPrintReceipt);
   }
 
@@ -79,7 +82,32 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
   }
 
   void _onClearCart(ClearCartEvent event, Emitter<BillingState> emit) {
-    emit(const BillingState());
+    emit(state.copyWith(cartItems: [], paidAmount: 0.0, printSuccess: false));
+  }
+
+  void _onParkCurrentCart(
+      ParkCurrentCartEvent event, Emitter<BillingState> emit) {
+    if (state.cartItems.isEmpty) return;
+    emit(state.copyWith(
+      parkedCartItems: List.from(state.cartItems),
+      cartItems: [],
+      paidAmount: 0.0,
+    ));
+  }
+
+  void _onResumeParkedCart(
+      ResumeParkedCartEvent event, Emitter<BillingState> emit) {
+    if (state.parkedCartItems.isEmpty) return;
+    emit(state.copyWith(
+      cartItems: List.from(state.parkedCartItems),
+      parkedCartItems: [],
+      paidAmount: 0.0,
+    ));
+  }
+
+  void _onSetPaidAmount(
+      SetPaidAmountEvent event, Emitter<BillingState> emit) {
+    emit(state.copyWith(paidAmount: event.amount));
   }
 
   Future<void> _onPrintReceipt(
@@ -118,6 +146,37 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
               })
           .toList();
 
+      // 1. Auto-deduct stock from Hive for all sold products
+      final productBox = HiveDatabase.productBox;
+      for (final cartItem in state.cartItems) {
+        final productModel = productBox.get(cartItem.product.id);
+        if (productModel != null) {
+          final newStock = productModel.stock - cartItem.quantity;
+          productBox.put(
+            cartItem.product.id,
+            ProductModel(
+              id: productModel.id,
+              name: productModel.name,
+              barcode: productModel.barcode,
+              price: productModel.price,
+              stock: newStock,
+            ),
+          );
+        }
+      }
+
+      // 2. Record sale invoice in invoicesBox for Daily Reports & History
+      final invoicesBox = HiveDatabase.invoicesBox;
+      final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
+      await invoicesBox.put(invoiceId, {
+        'id': invoiceId,
+        'timestamp': DateTime.now().toIso8601String(),
+        'totalAmount': state.totalAmount,
+        'itemCount': state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity),
+        'items': items,
+      });
+
+      // 3. Print physical receipt
       await printerHelper.printReceipt(
           shopName: event.shopName,
           address1: event.address1,
@@ -131,7 +190,6 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     } catch (e) {
       emit(state.copyWith(
           isPrinting: false, error: 'Print failed: $e', clearError: false));
-      // Reset error instantly avoids sticky error
       emit(state.copyWith(clearError: true));
     }
   }

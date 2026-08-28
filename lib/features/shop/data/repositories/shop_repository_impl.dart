@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/error/failure.dart';
+import '../../../../core/utils/app_constants.dart';
 import '../../domain/entities/shop.dart';
 import '../../domain/repositories/shop_repository.dart';
 import '../models/shop_model.dart';
@@ -18,12 +19,12 @@ class ShopRepositoryImpl implements ShopRepository {
       } else {
         // Return default shop if not found
         return const Right(Shop(
-            name: 'Dinesh Shop',
-            addressLine1: 'Samrajpet, Mecheri',
-            addressLine2: 'Salem - 636453',
-            phoneNumber: '+917010674588',
-            upiId: 'dineshsowndar@oksbi',
-            footerText: 'Thank you, Visit again!!!'));
+            name: AppConstants.defaultShopName,
+            addressLine1: AppConstants.defaultAddressLine1,
+            addressLine2: AppConstants.defaultAddressLine2,
+            phoneNumber: AppConstants.defaultPhoneNumber,
+            upiId: AppConstants.defaultUpiId,
+            footerText: AppConstants.defaultFooterText));
       }
     } catch (e) {
       return Left(CacheFailure(e.toString()));
