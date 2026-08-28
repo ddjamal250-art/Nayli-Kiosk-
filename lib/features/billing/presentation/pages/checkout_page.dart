@@ -1,4 +1,4 @@
-﻿import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -126,6 +126,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
         );
       },
     );
+  }
+
   Future<void> _completeSaleWithoutPrint(BillingState billingState) async {
     if (_paymentMode != PaymentMode.cash && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
