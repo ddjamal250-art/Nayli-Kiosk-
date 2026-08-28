@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -35,6 +35,8 @@ class _StockInPageState extends State<StockInPage> {
   int _currentStock = 0;
   bool _isExistingInShop = false;
   String? _existingProductId;
+  DateTime? _lastScanTime;
+  String? _lastScannedBarcode;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
@@ -54,12 +56,20 @@ class _StockInPageState extends State<StockInPage> {
   void _onDetect(BarcodeCapture capture) async {
     final barcode = capture.barcodes.firstOrNull?.rawValue;
     if (barcode == null || barcode.isEmpty) return;
-    if (barcode == _activeBarcode) return;
+
+    final now = DateTime.now();
+    if (_lastScannedBarcode == barcode && _lastScanTime != null) {
+      if (now.difference(_lastScanTime!).inMilliseconds < 1200) {
+        return;
+      }
+    }
+    _lastScannedBarcode = barcode;
+    _lastScanTime = now;
 
     final hasVib = await Vibration.hasVibrator();
     if (hasVib == true) Vibration.vibrate(duration: 50);
 
-    _processScannedBarcode(barcode);
+    _processScannedBarcode(barcode.trim());
   }
 
   void _processScannedBarcode(String barcode) {
@@ -151,6 +161,7 @@ class _StockInPageState extends State<StockInPage> {
       });
 
       _activeBarcode = '';
+      _lastScannedBarcode = null;
       _productName = '';
       _nameController.clear();
       _priceController.clear();

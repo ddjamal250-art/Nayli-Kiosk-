@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vibration/vibration.dart';
@@ -33,6 +33,7 @@ class _HomePageState extends State<HomePage> {
 
   bool _isCameraOn = true;
   bool _isFlashOn = false;
+  bool _isScanningPaused = false;
   final Map<String, DateTime> _lastScanTimes = {};
 
   final List<Map<String, dynamic>> _quickItems = [
@@ -51,16 +52,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onDetect(BarcodeCapture capture) async {
+    if (_isScanningPaused || !_isCameraOn) return;
+
     final List<Barcode> barcodes = capture.barcodes;
     final now = DateTime.now();
 
     for (final barcode in barcodes) {
-      if (barcode.rawValue != null) {
-        final rawValue = barcode.rawValue!;
+      if (barcode.rawValue != null && barcode.rawValue!.isNotEmpty) {
+        final rawValue = barcode.rawValue!.trim();
 
         if (_lastScanTimes.containsKey(rawValue)) {
           final lastScan = _lastScanTimes[rawValue]!;
-          if (now.difference(lastScan).inMilliseconds < 1500) {
+          if (now.difference(lastScan).inMilliseconds < 1200) {
             continue;
           }
         }
@@ -81,7 +84,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _handleQuickAddProduct(String barcode) async {
-    if (_isCameraOn) _scannerController.stop();
+    setState(() => _isScanningPaused = true);
 
     final masterItem = MasterCatalogSeed.lookup(barcode);
     final formKey = GlobalKey<FormState>();
@@ -93,11 +96,12 @@ class _HomePageState extends State<HomePage> {
     );
     final qtyController = TextEditingController(text: '10');
 
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
+    try {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Padding(
@@ -229,9 +233,13 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-
-    if (_isCameraOn && mounted) {
-      _scannerController.start();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isScanningPaused = false;
+          _lastScanTimes.clear();
+        });
+      }
     }
   }
 
@@ -295,9 +303,14 @@ class _HomePageState extends State<HomePage> {
           onPressed: state.cartItems.isEmpty
               ? null
               : () async {
-                  _scannerController.stop();
+                  setState(() => _isScanningPaused = true);
                   await context.push('/checkout');
-                  if (_isCameraOn && mounted) _scannerController.start();
+                  if (mounted) {
+                    setState(() {
+                      _isScanningPaused = false;
+                      _lastScanTimes.clear();
+                    });
+                  }
                 },
           icon: Icons.payment,
           label: '${context.tr('review_order')} (${state.cartItems.length})',
@@ -327,18 +340,28 @@ class _HomePageState extends State<HomePage> {
                 _buildOverlayButton(
                   icon: Icons.settings,
                   onPressed: () async {
-                    _scannerController.stop();
+                    setState(() => _isScanningPaused = true);
                     await context.push('/settings');
-                    if (_isCameraOn && mounted) _scannerController.start();
+                    if (mounted) {
+                      setState(() {
+                        _isScanningPaused = false;
+                        _lastScanTimes.clear();
+                      });
+                    }
                   },
                 ),
                 const SizedBox(height: 12),
                 _buildOverlayButton(
                   icon: Icons.archive_outlined,
                   onPressed: () async {
-                    _scannerController.stop();
+                    setState(() => _isScanningPaused = true);
                     await context.push('/products/stock-in');
-                    if (_isCameraOn && mounted) _scannerController.start();
+                    if (mounted) {
+                      setState(() {
+                        _isScanningPaused = false;
+                        _lastScanTimes.clear();
+                      });
+                    }
                   },
                 ),
                 const SizedBox(height: 12),
