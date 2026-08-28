@@ -1,8 +1,7 @@
-﻿import 'package:billing_app/core/widgets/primary_button.dart';
+import 'package:billing_app/core/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pretty_qr_code/pretty_qr_code.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -65,17 +64,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             }
           },
           builder: (context, billingState) {
-            return BlocBuilder<ShopBloc, ShopState>(
-              builder: (context, shopState) {
-                String upiId = '';
-                String shopName = 'Shop';
-
-                if (shopState is ShopLoaded) {
-                  upiId = shopState.shop.upiId;
-                  shopName = shopState.shop.name;
-                }
-
-                return Column(
+            return Column(
                   children: [
                     Expanded(
                       child: SingleChildScrollView(
@@ -242,21 +231,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     ),
                                   ]
                                 ],
-                              ),
                             ),
-
-                            if (upiId.isNotEmpty) ...[
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: 140,
-                                height: 140,
-                                child: PrettyQrView.data(
-                                  data:
-                                      'upi://pay?pa=$upiId&pn=$shopName&am=${billingState.totalAmount.toStringAsFixed(2)}&cu=${AppConstants.currencySymbol}',
-                                ),
-                              ),
-                            ],
-
                             const SizedBox(height: 120),
                           ],
                         ),
@@ -353,8 +328,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ),
                   ],
                 );
-              },
-            );
           },
         ),
       ),
