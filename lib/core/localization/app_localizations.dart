@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class AppLocalizations {
   final Locale locale;
@@ -170,7 +170,8 @@ class AppLocalizations {
     },
     'fr': {
       // General & Navigation
-      'app_title': 'Caisse & Stock POS',
+      'app_name': 'Nayli Market',
+      'app_title': 'Nayli Market - Caisse & Stock POS',
       'cart': 'Panier',
       'items_count': 'Articles',
       'total_price': 'Total Général',
@@ -324,7 +325,8 @@ class AppLocalizations {
     },
     'en': {
       // General & Navigation
-      'app_title': 'Billing & Inventory POS',
+      'app_name': 'Nayli Market',
+      'app_title': 'Nayli Market - Billing & Inventory POS',
       'cart': 'Shopping Cart',
       'items_count': 'Items',
       'total_price': 'Grand Total',

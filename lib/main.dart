@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'config/routes/app_routes.dart';
@@ -15,12 +15,22 @@ import 'features/customer/presentation/cubit/customer_cubit.dart';
 import 'features/settings/presentation/bloc/printer_bloc.dart';
 import 'features/settings/presentation/bloc/printer_event.dart';
 
+import 'dart:async';
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await HiveDatabase.init();
-  await di.init();
-  MasterCatalogService.instance.init();
-  runApp(const MyApp());
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+    };
+
+    await HiveDatabase.init();
+    await di.init();
+    MasterCatalogService.instance.init();
+    runApp(const MyApp());
+  }, (error, stack) {
+    debugPrint('Global App Error Handled: $error');
+  });
 }
 
 class MyApp extends StatelessWidget {
