@@ -146,14 +146,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     try {
       // 1. Decrement product stock in database
-      final productRepo = sl<ProductRepository>();
+      final productBox = HiveDatabase.productBox;
       for (final item in billingState.cartItems) {
         if (!item.product.id.startsWith('custom_') && !item.product.id.startsWith('direct_')) {
-          final getResult = await productRepo.getProductById(item.product.id);
-          if (getResult.isRight()) {
-            final p = getResult.getOrElse(() => throw Exception());
+          final p = productBox.get(item.product.id);
+          if (p != null) {
             final newStock = (p.stock - item.quantity).clamp(0, 999999);
-            await productRepo.updateProduct(
+            await productBox.put(
+              item.product.id,
               ProductModel(
                 id: p.id,
                 name: p.name,

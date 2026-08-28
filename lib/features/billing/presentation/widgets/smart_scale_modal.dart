@@ -449,6 +449,10 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 final total = _calculatedTotal;
                 if (total <= 0) return;
 
+                final name = _nameController.text.trim().isEmpty ? 'سلعة ميزان' : _nameController.text.trim();
+                final grams = _calculatedGrams.toStringAsFixed(0);
+                final displayName = '$name ($grams غ)';
+
                 final costPerKg = double.tryParse(_costPerKgController.text.trim()) ?? (double.tryParse(_pricePerKgController.text.trim()) ?? 0.0) * 0.8;
                 final totalCost = (costPerKg * (_calculatedGrams / 1000.0)).roundToDouble();
 
