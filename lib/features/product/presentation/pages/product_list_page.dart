@@ -123,6 +123,11 @@ class _ProductListPageState extends State<ProductListPage> {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
+            tooltip: 'كتالوج السلع الجزائرية (15,500+)',
+            onPressed: () => context.push('/products/catalog'),
+          ),
+          IconButton(
             icon: const Icon(Icons.archive_outlined, color: AppTheme.primaryColor),
             tooltip: context.tr('stock_in'),
             onPressed: () => context.push('/products/stock-in'),
@@ -131,9 +136,46 @@ class _ProductListPageState extends State<ProductListPage> {
       ),
       body: Column(
         children: [
+          // Master Catalog Quick Banner
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: InkWell(
+              onTap: () => context.push('/products/catalog'),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.primaryColor.withOpacity(0.12), AppTheme.primaryColor.withOpacity(0.04)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.menu_book_rounded, color: AppTheme.primaryColor, size: 22),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('مكتبة السلع الجزائرية (15,500+ منتج)',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.primaryColor)),
+                          Text('استورد السلع الجاهزة وأسعارها لمخزونك بدون مسح فردي',
+                              style: TextStyle(fontSize: 10, color: Colors.black87)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.primaryColor),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           // Search Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: BlocBuilder<ProductBloc, ProductState>(
                 builder: (context, state) {
               return Column(

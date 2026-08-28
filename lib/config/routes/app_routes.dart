@@ -4,6 +4,7 @@ import '../../features/product/presentation/pages/product_list_page.dart';
 import '../../features/product/presentation/pages/add_product_page.dart';
 import '../../features/product/presentation/pages/edit_product_page.dart';
 import '../../features/product/presentation/pages/stock_in_page.dart';
+import '../../features/product/presentation/pages/master_catalog_page.dart';
 import '../../features/shop/presentation/pages/shop_details_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/billing/presentation/pages/scanner_page.dart';
@@ -37,6 +38,10 @@ final router = GoRouter(
       builder: (context, state) => const SettingsPage(),
     ),
     GoRoute(
+      path: '/master-catalog',
+      builder: (context, state) => const MasterCatalogPage(),
+    ),
+    GoRoute(
       path: '/reports',
       builder: (context, state) => const DailyReportPage(),
     ),
@@ -51,6 +56,10 @@ final router = GoRouter(
         GoRoute(
           path: 'stock-in',
           builder: (context, state) => const StockInPage(),
+        ),
+        GoRoute(
+          path: 'catalog',
+          builder: (context, state) => const MasterCatalogPage(),
         ),
         GoRoute(
           path: 'edit/:id',

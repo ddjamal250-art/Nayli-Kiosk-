@@ -154,6 +154,13 @@ class SettingsPage extends StatelessWidget {
                 ),
                 _buildDivider(),
                 _buildListItem(
+                  icon: Icons.auto_awesome,
+                  title: 'مكتبة المنتجات الجزائرية (15,500+)',
+                  subtitle: 'تصفح واستيراد سلع السوبرماركت لمخزونك',
+                  onTap: () => context.push('/master-catalog'),
+                ),
+                _buildDivider(),
+                _buildListItem(
                   icon: Icons.storefront,
                   title: context.tr('shop_details'),
                   subtitle: context.tr('shop_details'),

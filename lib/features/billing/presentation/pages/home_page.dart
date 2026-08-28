@@ -14,6 +14,7 @@ import '../../../../core/widgets/input_label.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/app_validators.dart';
 import '../../../../core/data/master_catalog_seed.dart';
+import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/quick_item_model.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -121,7 +122,7 @@ class _HomePageState extends State<HomePage> {
   void _handleQuickAddProduct(String barcode) async {
     setState(() => _isScanningPaused = true);
 
-    final masterItem = MasterCatalogSeed.lookup(barcode);
+    final masterItem = MasterCatalogService.instance.lookup(barcode);
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: masterItem?.name ?? '');
     final priceController = TextEditingController(

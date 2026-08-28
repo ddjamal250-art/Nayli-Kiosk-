@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'config/routes/app_routes.dart';
 import 'core/data/hive_database.dart';
+import 'core/data/master_catalog_service.dart';
 import 'core/service_locator.dart' as di;
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
@@ -18,6 +19,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await HiveDatabase.init();
   await di.init();
+  MasterCatalogService.instance.init();
   runApp(const MyApp());
 }
 
