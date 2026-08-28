@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
@@ -48,12 +48,12 @@ class AppTheme {
         ),
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: surfaceColor,
-      ) ,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
