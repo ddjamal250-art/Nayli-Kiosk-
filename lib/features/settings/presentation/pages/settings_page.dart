@@ -1,24 +1,41 @@
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/backup_helper.dart';
+import '../../../../core/utils/excel_export_helper.dart';
+import '../../../../core/utils/license_service.dart';
+import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/language_cubit.dart';
 
 import '../bloc/printer_bloc.dart';
 import '../bloc/printer_event.dart';
 import '../bloc/printer_state.dart';
+import '../widgets/activation_modal.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
+import '../../../customer/presentation/cubit/customer_cubit.dart';
+import '../../../customer/presentation/cubit/customer_state.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
   @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  @override
   Widget build(BuildContext context) {
+    final isPinEnabled = SecurityPinHelper.isPinEnabled();
+    final isActivated = LicenseService.isActivated();
+    final trialDays = LicenseService.getRemainingTrialDays();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(context.tr('settings'),
@@ -50,30 +67,77 @@ class SettingsPage extends StatelessWidget {
                     if (initials.isEmpty) initials = 'S';
                   }
 
+                  final logoPath = HiveDatabase.settingsBox.get('shop_logo_path') as String?;
+                  final hasValidLogo = logoPath != null && File(logoPath).existsSync();
+
                   return Column(
                     children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.2),
-                              blurRadius: 12,
-                              spreadRadius: 4,
-                            )
+                      GestureDetector(
+                        onTap: () async {
+                          final auth = await SecurityPinHelper.authenticate(context, title: 'إعدادات المتجر والشعار');
+                          if (auth && context.mounted) {
+                            await context.push('/shop');
+                            setState(() {});
+                          }
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 84,
+                              height: 84,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryColor.withOpacity(0.25),
+                                    blurRadius: 12,
+                                    spreadRadius: 4,
+                                  )
+                                ],
+                              ),
+                              alignment: Alignment.center,
+                              child: ClipOval(
+                                child: hasValidLogo
+                                    ? Image.file(
+                                        File(logoPath),
+                                        fit: BoxFit.cover,
+                                        width: 84,
+                                        height: 84,
+                                      )
+                                    : Text(
+                                        initials,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.15),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  size: 14,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                            ),
                           ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          initials,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -86,6 +150,45 @@ class SettingsPage extends StatelessWidget {
                 },
               ),
             ),
+
+            // License & Activation Section
+            _buildSectionHeader(context, 'ترخيص وتفعيل التطبيق (Activation License)'),
+            _buildListGroup(
+              children: [
+                _buildListItem(
+                  icon: isActivated ? Icons.verified_user_rounded : Icons.vpn_key_rounded,
+                  title: 'ترخيص التطبيق (Offline Hardware Key)',
+                  subtitleWidget: Text(
+                    isActivated
+                        ? '✅ النسخة الأصلية مفعلة مدى الحياة'
+                        : (trialDays > 0
+                            ? '⏳ فترة تجريبية مجانية (متبقي $trialDays أيام)'
+                            : '❌ انتهت الفترة التجريبية - يلزم التفعيل'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isActivated
+                          ? Colors.green[700]
+                          : (trialDays > 0 ? Colors.orange[800] : Colors.red[800]),
+                    ),
+                  ),
+                  trailingWidget: TextButton(
+                    onPressed: () async {
+                      await ActivationModal.show(context);
+                      setState(() {});
+                    },
+                    child: Text(isActivated ? 'عرض المعرّف' : 'تفعيل الآن',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  onTap: () async {
+                    await ActivationModal.show(context);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
 
             // Language Selector Section
             _buildSectionHeader(context, context.tr('language')),
@@ -111,7 +214,7 @@ class SettingsPage extends StatelessWidget {
                     _buildDivider(),
                     _buildLanguageItem(
                       context: context,
-                      title: 'English (English)',
+                      title: 'English',
                       flag: '🇬🇧',
                       code: 'en',
                       isSelected: currentLocale.languageCode == 'en',
@@ -119,6 +222,51 @@ class SettingsPage extends StatelessWidget {
                   ],
                 );
               },
+            ),
+
+            const SizedBox(height: 20),
+
+            // Security PIN Section
+            _buildSectionHeader(context, 'الأمان وقفل الكاسة (Security PIN)'),
+            _buildListGroup(
+              children: [
+                _buildListItem(
+                  icon: Icons.lock_outline,
+                  title: 'قفل التطبيق برمز سري (PIN)',
+                  subtitle: isPinEnabled
+                      ? 'مفعل (يحمي الأرباح والإعدادات وتعديل الأسعار)'
+                      : 'معطل (يمكن لأي شخص الوصول لجميع الشاشات)',
+                  trailingWidget: Switch(
+                    value: isPinEnabled,
+                    activeColor: AppTheme.primaryColor,
+                    onChanged: (val) async {
+                      if (val) {
+                        _showSetPinModal(context);
+                      } else {
+                        final auth = await SecurityPinHelper.authenticate(context, title: 'تأكيد إلغاء القفل');
+                        if (auth) {
+                          await SecurityPinHelper.disablePin();
+                          setState(() {});
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('🔓 تم إلغاء القفل بالرمز السري'), backgroundColor: Colors.orange),
+                            );
+                          }
+                        }
+                      }
+                    },
+                  ),
+                ),
+                if (isPinEnabled) ...[
+                  _buildDivider(),
+                  _buildListItem(
+                    icon: Icons.password_rounded,
+                    title: 'تغيير الرمز السري',
+                    subtitle: 'تعديل رمز الأمان المكون من 4 أرقام',
+                    onTap: () => _showChangePinModal(context),
+                  ),
+                ],
+              ],
             ),
 
             const SizedBox(height: 20),
@@ -145,7 +293,12 @@ class SettingsPage extends StatelessWidget {
                   icon: Icons.bar_chart_rounded,
                   title: context.tr('daily_report'),
                   subtitle: context.tr('print_z_report'),
-                  onTap: () => context.push('/reports'),
+                  onTap: () async {
+                    final auth = await SecurityPinHelper.authenticate(context, title: 'تقرير الأرباح والمبيعات');
+                    if (auth && context.mounted) {
+                      context.push('/reports');
+                    }
+                  },
                 ),
                 _buildDivider(),
                 _buildListItem(
@@ -166,13 +319,19 @@ class SettingsPage extends StatelessWidget {
                   icon: Icons.storefront,
                   title: context.tr('shop_details'),
                   subtitle: context.tr('shop_details'),
-                  onTap: () => context.push('/shop'),
+                  onTap: () async {
+                    final auth = await SecurityPinHelper.authenticate(context, title: 'إعدادات المتجر');
+                    if (auth && context.mounted) {
+                      await context.push('/shop');
+                      setState(() {});
+                    }
+                  },
                 ),
                 _buildDivider(),
                 _buildListItem(
-                  icon: Icons.backup_outlined,
-                  title: 'النسخ الاحتياطي واسترجاع البيانات',
-                  subtitle: 'حفظ قاعدة بيانات المحل واسترجاعها بأمان بدون إنترنت',
+                  icon: Icons.table_chart_outlined,
+                  title: 'تصدير البيانات والنسخ الاحتياطي (Excel)',
+                  subtitle: 'تصدير المخزون والديون كـ Excel وإنشاء نسخة أمان',
                   onTap: () => _showBackupRestoreSheet(context),
                 ),
               ],
@@ -267,6 +426,129 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  void _showSetPinModal(BuildContext context) {
+    final pinController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+            SizedBox(width: 8),
+            Text('تعيين رمز سري PIN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('اختر رمزاً من 4 أرقام لحماية حسابات المتجر والأرباح:'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'الرمز السري (4 أرقام)',
+                hintText: 'مثال: 1234',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+            onPressed: () async {
+              final pin = pinController.text.trim();
+              if (pin.length == 4) {
+                await SecurityPinHelper.setPin(pin);
+                if (ctx.mounted) Navigator.pop(ctx);
+                setState(() {});
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('🔒 تم تفعيل الرمز السري بنجاح!'), backgroundColor: Colors.green),
+                  );
+                }
+              }
+            },
+            child: const Text('حفظ وتفعيل', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePinModal(BuildContext context) {
+    final oldPinController = TextEditingController();
+    final newPinController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('تغيير الرمز السري', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: oldPinController,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'الرمز السري القديم',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: newPinController,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'الرمز السري الجديد (4 أرقام)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+            onPressed: () async {
+              if (SecurityPinHelper.verifyPin(oldPinController.text.trim())) {
+                final newPin = newPinController.text.trim();
+                if (newPin.length == 4) {
+                  await SecurityPinHelper.setPin(newPin);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  setState(() {});
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('✅ تم تغيير الرمز السري بنجاح!'), backgroundColor: Colors.green),
+                    );
+                  }
+                }
+              } else {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('❌ الرمز السري القديم غير صحيح!'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('تأكيد التغيير', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLanguageItem({
     required BuildContext context,
     required String title,
@@ -288,15 +570,14 @@ class SettingsPage extends StatelessWidget {
               child: Text(
                 title,
                 style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   color: isSelected ? AppTheme.primaryColor : Colors.black87,
                 ),
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 20)
-            else
-              Icon(Icons.radio_button_unchecked, color: Colors.grey[400], size: 20),
+              const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 20),
           ],
         ),
       ),
@@ -304,18 +585,16 @@ class SettingsPage extends StatelessWidget {
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Text(
-          title.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey,
-            letterSpacing: 1.1,
-          ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[600],
+          letterSpacing: 0.8,
         ),
       ),
     );
@@ -403,19 +682,55 @@ class SettingsPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('النسخ الاحتياطي والأمان (بدون إنترنت)',
+                const Text('تصدير البيانات والنسخ الاحتياطي',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
             const SizedBox(height: 12),
+
+            // 1. Export Products to Excel (CSV)
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.table_view_rounded, color: Colors.teal),
+              ),
+              title: const Text('📊 تصدير السلع والمخزون كـ Excel (CSV)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: const Text('استخراج كامل أسعار التكلفة والبيع والكميات في ملف Excel', style: TextStyle(fontSize: 11)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showCsvExportDialog(context, title: 'ملف سلع ومخزون المحل (Excel)', csvData: ExcelExportHelper.exportProductsToCsv());
+              },
+            ),
+            const Divider(),
+
+            // 2. Export Debts to Excel (CSV)
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.indigo.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.menu_book_rounded, color: Colors.indigo),
+              ),
+              title: const Text('📖 تصدير دفتر ديون الزبائن كـ Excel (CSV)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: const Text('استخراج أسماء المدينين وأرقام هواتفهم وإجمالي ديونهم', style: TextStyle(fontSize: 11)),
+              onTap: () {
+                Navigator.pop(ctx);
+                final customerState = context.read<CustomerCubit>().state;
+                final customers = customerState is CustomerLoaded ? customerState.customers : [];
+                _showCsvExportDialog(context, title: 'دفتر ديون الزبائن (Excel)', csvData: ExcelExportHelper.exportDebtsToCsv(customers.cast()));
+              },
+            ),
+            const Divider(),
+
+            // 3. Full Database Backup
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                 child: const Icon(Icons.download, color: Colors.green),
               ),
-              title: const Text('إنشاء نسخة احتياطية محلية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              title: const Text('💾 إنشاء نسخة احتياطية شاملة (JSON Backup)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               subtitle: const Text('تصدير كافة المنتجات والمبيعات والديون والإعدادات كملف أمان', style: TextStyle(fontSize: 11)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -423,13 +738,15 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             const Divider(),
+
+            // 4. Restore Database
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                 child: const Icon(Icons.upload, color: Colors.blue),
               ),
-              title: const Text('استرجاع نسخة احتياطية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              title: const Text('📥 استرجاع نسخة احتياطية سابقة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               subtitle: const Text('استيراد البيانات واسترجاع قاعدة البيانات بأمان', style: TextStyle(fontSize: 11)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -438,6 +755,55 @@ class SettingsPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showCsvExportDialog(BuildContext context, {required String title, required String csvData}) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.table_chart_rounded, color: Colors.teal),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('تم تجهيز وتنسيق البيانات بصيغة CSV المتوافقة مع Microsoft Excel و Google Sheets:'),
+            const SizedBox(height: 10),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 140),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
+              child: SingleChildScrollView(
+                child: Text(csvData, style: const TextStyle(fontFamily: 'monospace', fontSize: 10)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: csvData));
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('📋 تم نسخ بيانات Excel إلى الحافظة لمشاركتها!'), backgroundColor: Colors.teal),
+              );
+            },
+            child: const Text('نسخ كـ Excel (Copy)'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('تم', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
@@ -541,5 +907,3 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
-
-

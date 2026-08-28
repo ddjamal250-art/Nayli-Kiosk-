@@ -23,7 +23,9 @@ class MasterCatalogPage extends StatefulWidget {
 class _MasterCatalogPageState extends State<MasterCatalogPage> {
   String _selectedCategory = 'الكل';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
+  int _displayLimit = 50;
 
   @override
   void initState() {
@@ -31,13 +33,22 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.trim();
+        _displayLimit = 50;
       });
+    });
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 400) {
+        setState(() {
+          _displayLimit += 50;
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -299,15 +310,17 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
         final existingProductsMap = {for (var p in state.products) p.barcode.trim(): p};
-        final filteredItems = MasterCatalogService.instance.search(_searchQuery, category: _selectedCategory, limit: 300);
+        final filteredItems = MasterCatalogService.instance.search(_searchQuery, category: _selectedCategory, limit: 0);
+        final displayedItems = filteredItems.take(_displayLimit).toList();
         final notInShopItems = filteredItems.where((item) => !existingProductsMap.containsKey(item.barcode)).toList();
         final categoriesList = MasterCatalogService.instance.categories;
+        final totalDatasetCount = MasterCatalogService.instance.allItems.length;
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'مكتبة السلع الجزائرية (15,500+ منتج)',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            title: Text(
+              'مكتبة السلع الجزائرية ($totalDatasetCount منتج)',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             centerTitle: true,
             leading: IconButton(
@@ -370,7 +383,10 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                       backgroundColor: Colors.grey[100],
                       onSelected: (selected) {
                         if (selected) {
-                          setState(() => _selectedCategory = cat);
+                          setState(() {
+                            _selectedCategory = cat;
+                            _displayLimit = 50;
+                          });
                         }
                       },
                     );
@@ -385,7 +401,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${filteredItems.length} سلعة متوفرة',
+                      '${filteredItems.length} سلعة مطابقة (عرض ${displayedItems.length})',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[700]),
                     ),
                     if (notInShopItems.isNotEmpty)
@@ -414,11 +430,12 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                         ),
                       )
                     : ListView.separated(
+                        controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                        itemCount: filteredItems.length,
+                        itemCount: displayedItems.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
-                          final item = filteredItems[index];
+                          final item = displayedItems[index];
                           final existing = existingProductsMap[item.barcode.trim()];
                           final isInShop = existing != null;
 

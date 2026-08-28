@@ -2,7 +2,7 @@ part of 'billing_bloc.dart';
 
 class BillingState extends Equatable {
   final List<CartItem> cartItems;
-  final List<CartItem> parkedCartItems;
+  final List<HeldCart> heldCarts;
   final String? error;
   final bool isPrinting;
   final bool printSuccess;
@@ -10,7 +10,7 @@ class BillingState extends Equatable {
 
   const BillingState({
     this.cartItems = const [],
-    this.parkedCartItems = const [],
+    this.heldCarts = const [],
     this.error,
     this.isPrinting = false,
     this.printSuccess = false,
@@ -19,11 +19,12 @@ class BillingState extends Equatable {
 
   double get totalAmount => cartItems.fold(0, (sum, item) => sum + item.total);
   double get changeAmount => paidAmount > totalAmount ? (paidAmount - totalAmount) : 0.0;
-  bool get hasParkedCart => parkedCartItems.isNotEmpty;
+  bool get hasParkedCart => heldCarts.any((c) => !c.isExpired);
+  List<HeldCart> get activeHeldCarts => heldCarts.where((c) => !c.isExpired).toList();
 
   BillingState copyWith({
     List<CartItem>? cartItems,
-    List<CartItem>? parkedCartItems,
+    List<HeldCart>? heldCarts,
     String? error,
     bool clearError = false,
     bool? isPrinting,
@@ -32,7 +33,7 @@ class BillingState extends Equatable {
   }) {
     return BillingState(
       cartItems: cartItems ?? this.cartItems,
-      parkedCartItems: parkedCartItems ?? this.parkedCartItems,
+      heldCarts: heldCarts ?? this.heldCarts,
       error: clearError ? null : (error ?? this.error),
       isPrinting: isPrinting ?? this.isPrinting,
       printSuccess: printSuccess ?? this.printSuccess,
@@ -43,7 +44,7 @@ class BillingState extends Equatable {
   @override
   List<Object?> get props => [
         cartItems,
-        parkedCartItems,
+        heldCarts,
         error,
         isPrinting,
         printSuccess,

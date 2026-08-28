@@ -1,10 +1,12 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../domain/entities/held_cart.dart';
 import 'package:billing_app/features/product/domain/entities/product.dart';
 import 'package:billing_app/features/product/data/models/product_model.dart';
 import 'package:billing_app/features/product/domain/usecases/product_usecases.dart';
 import '../../../../core/utils/printer_helper.dart';
+import '../../../../core/utils/scale_barcode_parser.dart';
 import '../../../../core/data/hive_database.dart';
 
 part 'billing_event.dart';
@@ -17,10 +19,14 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       : super(const BillingState()) {
     on<ScanBarcodeEvent>(_onScanBarcode);
     on<AddProductToCartEvent>(_onAddProductToCart);
+    on<AddCustomItemEvent>(_onAddCustomItem);
     on<RemoveProductFromCartEvent>(_onRemoveProductFromCart);
     on<UpdateQuantityEvent>(_onUpdateQuantity);
     on<ClearCartEvent>(_onClearCart);
     on<ParkCurrentCartEvent>(_onParkCurrentCart);
+    on<ResumeHeldCartEvent>(_onResumeHeldCart);
+    on<DeleteHeldCartEvent>(_onDeleteHeldCart);
+    on<CleanExpiredHeldCartsEvent>(_onCleanExpiredHeldCarts);
     on<ResumeParkedCartEvent>(_onResumeParkedCart);
     on<SetPaidAmountEvent>(_onSetPaidAmount);
     on<PrintReceiptEvent>(_onPrintReceipt);
@@ -28,6 +34,43 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
   Future<void> _onScanBarcode(
       ScanBarcodeEvent event, Emitter<BillingState> emit) async {
+    // 1. Check if barcode is an in-store weighing scale barcode (Prefix 20, 21, 22...)
+    final scaleResult = ScaleBarcodeParser.parse(event.barcode);
+    if (scaleResult.isScaleBarcode) {
+      if (scaleResult.embeddedPrice != null) {
+        add(AddCustomItemEvent(
+          name: 'سلعة ميزان (${scaleResult.productCode})',
+          price: scaleResult.embeddedPrice!,
+          barcode: event.barcode,
+        ));
+        return;
+      } else if (scaleResult.weightKg != null) {
+        final result = await getProductByBarcodeUseCase(scaleResult.productCode);
+        result.fold(
+          (_) {
+            // Add as generic weight item
+            final weightGrams = (scaleResult.weightKg! * 1000).toInt();
+            add(AddCustomItemEvent(
+              name: 'ميزان $weightGrams غرام (${scaleResult.productCode})',
+              price: (scaleResult.weightKg! * 200).roundToDouble(), // default rate if not found
+              barcode: event.barcode,
+            ));
+          },
+          (prod) {
+            final weightGrams = (scaleResult.weightKg! * 1000).toInt();
+            final totalPrice = (prod.price * scaleResult.weightKg!).roundToDouble();
+            add(AddCustomItemEvent(
+              name: '${prod.name} ($weightGrams غ)',
+              price: totalPrice,
+              costPrice: (prod.costPrice * scaleResult.weightKg!).roundToDouble(),
+              barcode: event.barcode,
+            ));
+          },
+        );
+        return;
+      }
+    }
+
     final result = await getProductByBarcodeUseCase(event.barcode);
     result.fold(
       (failure) =>
@@ -36,6 +79,23 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         add(AddProductToCartEvent(product));
       },
     );
+  }
+
+  void _onAddCustomItem(
+      AddCustomItemEvent event, Emitter<BillingState> emit) {
+    final customProduct = Product(
+      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      name: event.name,
+      barcode: event.barcode ?? 'CUSTOM',
+      price: event.price,
+      costPrice: event.costPrice,
+      stock: 999,
+    );
+    final newItem = CartItem(product: customProduct, quantity: event.quantity);
+    emit(state.copyWith(
+      cartItems: [...state.cartItems, newItem],
+      error: null,
+    ));
   }
 
   void _onAddProductToCart(
@@ -89,21 +149,73 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
   void _onParkCurrentCart(
       ParkCurrentCartEvent event, Emitter<BillingState> emit) {
     if (state.cartItems.isEmpty) return;
+
+    // 1. Purge any expired carts (>20 mins)
+    final freshCarts = state.heldCarts.where((c) => !c.isExpired).toList();
+
+    // 2. Create new held cart
+    final cartIndex = freshCarts.length + 1;
+    final label = (event.label != null && event.label!.trim().isNotEmpty)
+        ? event.label!.trim()
+        : 'سلة مؤقتة #$cartIndex';
+
+    final newHeld = HeldCart(
+      id: 'held_${DateTime.now().millisecondsSinceEpoch}',
+      label: label,
+      parkedAt: DateTime.now(),
+      items: List.from(state.cartItems),
+    );
+
     emit(state.copyWith(
-      parkedCartItems: List.from(state.cartItems),
+      heldCarts: [newHeld, ...freshCarts],
       cartItems: [],
       paidAmount: 0.0,
     ));
   }
 
-  void _onResumeParkedCart(
-      ResumeParkedCartEvent event, Emitter<BillingState> emit) {
-    if (state.parkedCartItems.isEmpty) return;
+  void _onResumeHeldCart(
+      ResumeHeldCartEvent event, Emitter<BillingState> emit) {
+    final freshCarts = state.heldCarts.where((c) => !c.isExpired).toList();
+    final targetIndex = freshCarts.indexWhere((c) => c.id == event.heldCartId);
+    if (targetIndex < 0) return;
+
+    final targetCart = freshCarts[targetIndex];
+    final remainingCarts = List<HeldCart>.from(freshCarts)..removeAt(targetIndex);
+
+    // If current cart has items, park them first or append
+    List<CartItem> combinedItems;
+    if (state.cartItems.isNotEmpty) {
+      combinedItems = [...targetCart.items, ...state.cartItems];
+    } else {
+      combinedItems = List.from(targetCart.items);
+    }
+
     emit(state.copyWith(
-      cartItems: List.from(state.parkedCartItems),
-      parkedCartItems: [],
+      cartItems: combinedItems,
+      heldCarts: remainingCarts,
       paidAmount: 0.0,
     ));
+  }
+
+  void _onDeleteHeldCart(
+      DeleteHeldCartEvent event, Emitter<BillingState> emit) {
+    final updated = state.heldCarts.where((c) => c.id != event.heldCartId).toList();
+    emit(state.copyWith(heldCarts: updated));
+  }
+
+  void _onCleanExpiredHeldCarts(
+      CleanExpiredHeldCartsEvent event, Emitter<BillingState> emit) {
+    final freshCarts = state.heldCarts.where((c) => !c.isExpired).toList();
+    if (freshCarts.length != state.heldCarts.length) {
+      emit(state.copyWith(heldCarts: freshCarts));
+    }
+  }
+
+  void _onResumeParkedCart(
+      ResumeParkedCartEvent event, Emitter<BillingState> emit) {
+    final freshCarts = state.activeHeldCarts;
+    if (freshCarts.isEmpty) return;
+    add(ResumeHeldCartEvent(freshCarts.first.id));
   }
 
   void _onSetPaidAmount(

@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مُولّد أكواد تفعيل تطبيق Nayli Market 🇩🇿</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f172a; 
+            color: white; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 90vh; 
+            margin: 0;
+        }
+        .card { 
+            background: #1e293b; 
+            padding: 30px; 
+            border-radius: 24px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
+            width: 100%; 
+            max-width: 480px; 
+            text-align: center; 
+            border: 1px solid #334155;
+        }
+        h2 { 
+            color: #38bdf8; 
+            margin-top: 0; 
+            font-size: 22px;
+        }
+        p { 
+            color: #94a3b8; 
+            font-size: 13px; 
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            text-align: right;
+            margin-bottom: 16px;
+        }
+        label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #cbd5e1;
+            display: block;
+            margin-bottom: 6px;
+        }
+        input, select { 
+            width: 100%; 
+            padding: 13px 14px; 
+            border-radius: 12px; 
+            border: 1px solid #334155; 
+            background: #0f172a; 
+            color: white; 
+            font-size: 15px; 
+            outline: none; 
+            box-sizing: border-box;
+            transition: 0.2s;
+        }
+        input {
+            font-family: monospace;
+            text-align: center;
+            letter-spacing: 1.2px;
+        }
+        input:focus, select:focus { 
+            border-color: #38bdf8; 
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+        button.btn-gen { 
+            background: #0284c7; 
+            color: white; 
+            border: none; 
+            padding: 14px; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 15px; 
+            width: 100%; 
+            margin-top: 10px;
+            transition: 0.2s; 
+        }
+        button.btn-gen:hover { 
+            background: #0369a1; 
+        }
+        .result-box { 
+            margin-top: 22px; 
+            padding: 18px; 
+            background: #064e3b; 
+            border: 1px solid #059669; 
+            border-radius: 16px; 
+            display: none; 
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .plan-badge {
+            font-size: 12px;
+            font-weight: bold;
+            color: #a7f3d0;
+            margin-bottom: 6px;
+        }
+        .key-text { 
+            font-family: monospace; 
+            font-size: 22px; 
+            font-weight: bold; 
+            color: #34d399; 
+            letter-spacing: 2px; 
+            margin: 10px 0; 
+            user-select: all; 
+            background: #022c22;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px dashed #059669;
+        }
+        .copy-btn { 
+            background: #059669; 
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 8px; 
+            font-size: 13px; 
+            padding: 10px 18px; 
+            cursor: pointer;
+            width: 100%;
+        }
+        .copy-btn:hover {
+            background: #047857;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🛠️ مُولّد تفعيلات تطبيق Nayli Market</h2>
+        <p>اختر نوع التفعيل وألصق معرّف جهاز التاجر للحصول على كود التفعيل المخصص له فوراً:</p>
+        
+        <div class="form-group">
+            <label>1. نوع التفعيل المطلوب:</label>
+            <select id="planType">
+                <option value="P">🌟 تفعيل دائم مدى الحياة (Permanent Pro)</option>
+                <option value="Y">📅 اشتراك سنوي (1 سنة - 365 يوماً)</option>
+                <option value="M">🟡 تجريبي لمدة شهر (30 يوماً)</option>
+                <option value="W">⏳ تجريبي لمدة أسبوعين (14 يوماً)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>2. معرّف هاتف التاجر (Device ID):</label>
+            <input type="text" id="deviceId" placeholder="مثال: AH-8924-4B19-7F02" autocomplete="off">
+        </div>
+
+        <button class="btn-gen" onclick="generateKey()">⚡ توليد كود التفعيل المخصص</button>
+
+        <div id="resultBox" class="result-box">
+            <div id="planDisplay" class="plan-badge"></div>
+            <div id="keyDisplay" class="key-text"></div>
+            <button class="copy-btn" onclick="copyKey()">📋 نسخ الكود لمشاركته عبر واتساب</button>
+        </div>
+    </div>
+
+    <script>
+        const SECRET_SALT = 'AHSEBLI_DZ_POS_SECURE_SALT_2026_@!';
+
+        function generateKey() {
+            const deviceId = document.getElementById('deviceId').value.trim().toUpperCase();
+            const plan = document.getElementById('planType').value;
+            const planSelect = document.getElementById('planType');
+            const planLabel = planSelect.options[planSelect.selectedIndex].text;
+
+            if (!deviceId) {
+                alert('يرجى إدخال معرّف الجهاز أولاً!');
+                return;
+            }
+
+            const combined = deviceId + ':' + plan + ':' + SECRET_SALT;
+            let hash1 = 0x811c9dc5 >>> 0;
+            let hash2 = 0x55555555 >>> 0;
+
+            for (let i = 0; i < combined.length; i++) {
+                const code = combined.charCodeAt(i);
+                hash1 = (Math.imul((hash1 ^ code), 0x01000193) >>> 0);
+                hash2 = (Math.imul((hash2 ^ (code * 31)), 0x045d9f3b) >>> 0);
+            }
+
+            const hex1 = hash1.toString(16).padStart(8, '0').toUpperCase();
+            const hex2 = hash2.toString(16).padStart(8, '0').toUpperCase();
+            const fullHex = hex1 + hex2;
+
+            const key = plan + '-' + fullHex.substring(0,4) + '-' + fullHex.substring(4,8) + '-' + fullHex.substring(8,12);
+
+            document.getElementById('planDisplay').innerText = planLabel;
+            document.getElementById('keyDisplay').innerText = key;
+            document.getElementById('resultBox').style.display = 'block';
+        }
+
+        function copyKey() {
+            const key = document.getElementById('keyDisplay').innerText;
+            navigator.clipboard.writeText(key);
+            alert('📋 تم نسخ كود التفعيل: ' + key);
+        }
+    </script>
+</body>
+</html>

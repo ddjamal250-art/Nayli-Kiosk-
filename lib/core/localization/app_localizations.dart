@@ -15,7 +15,8 @@ class AppLocalizations {
   static final Map<String, Map<String, String>> _localizedValues = {
     'ar': {
       // General & Navigation
-      'app_title': 'تطبيق الفوترة والمخزون',
+      'app_name': 'Nayli Market',
+      'app_title': 'Nayli Market - إدارة الفوترة والمخزون',
       'cart': 'سلة المشتريات',
       'items_count': 'أصناف',
       'total_price': 'المجموع الإجمالي',

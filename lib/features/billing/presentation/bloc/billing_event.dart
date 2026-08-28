@@ -20,6 +20,25 @@ class AddProductToCartEvent extends BillingEvent {
   List<Object> get props => [product];
 }
 
+class AddCustomItemEvent extends BillingEvent {
+  final String name;
+  final double price;
+  final int quantity;
+  final double costPrice;
+  final String? barcode;
+
+  const AddCustomItemEvent({
+    required this.name,
+    required this.price,
+    this.quantity = 1,
+    this.costPrice = 0.0,
+    this.barcode,
+  });
+
+  @override
+  List<Object> get props => [name, price, quantity, costPrice, barcode ?? ''];
+}
+
 class RemoveProductFromCartEvent extends BillingEvent {
   final String productId;
   const RemoveProductFromCartEvent(this.productId);
@@ -37,7 +56,28 @@ class UpdateQuantityEvent extends BillingEvent {
 
 class ClearCartEvent extends BillingEvent {}
 
-class ParkCurrentCartEvent extends BillingEvent {}
+class ParkCurrentCartEvent extends BillingEvent {
+  final String? label;
+  const ParkCurrentCartEvent({this.label});
+  @override
+  List<Object> get props => [label ?? ''];
+}
+
+class ResumeHeldCartEvent extends BillingEvent {
+  final String heldCartId;
+  const ResumeHeldCartEvent(this.heldCartId);
+  @override
+  List<Object> get props => [heldCartId];
+}
+
+class DeleteHeldCartEvent extends BillingEvent {
+  final String heldCartId;
+  const DeleteHeldCartEvent(this.heldCartId);
+  @override
+  List<Object> get props => [heldCartId];
+}
+
+class CleanExpiredHeldCartsEvent extends BillingEvent {}
 
 class ResumeParkedCartEvent extends BillingEvent {}
 

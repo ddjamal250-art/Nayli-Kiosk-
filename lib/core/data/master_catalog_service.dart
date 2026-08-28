@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'master_catalog_seed.dart';
@@ -133,7 +133,7 @@ class MasterCatalogService {
     return MasterCatalogSeed.lookup(clean);
   }
 
-  List<MasterCatalogItem> search(String query, {String category = 'الكل', int limit = 150}) {
+  List<MasterCatalogItem> search(String query, {String category = 'الكل', int limit = 0}) {
     final q = query.trim().toLowerCase();
     final source = allItems;
     final List<MasterCatalogItem> results = [];
@@ -150,7 +150,7 @@ class MasterCatalogService {
         results.add(item);
       }
 
-      if (results.length >= limit) break;
+      if (limit > 0 && results.length >= limit) break;
     }
 
     return results;

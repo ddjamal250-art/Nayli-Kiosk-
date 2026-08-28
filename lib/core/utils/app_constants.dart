@@ -1,4 +1,6 @@
 ﻿class AppConstants {
+  static const String appName = 'Nayli Market';
+
   // Currency Configuration (e.g. DA, $, EUR, etc.)
   static const String currencySymbol = 'DA';
 

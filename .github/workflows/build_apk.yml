@@ -1,4 +1,4 @@
-﻿name: Build Android APK
+name: Build Android APK
 
 on:
   push:
@@ -31,8 +31,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Release APK
-        run: flutter build apk --release
+      - name: Build Release APK with Code Obfuscation
+        run: flutter build apk --release --obfuscate --split-debug-info=symbols/
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

@@ -7,15 +7,33 @@ import '../../features/product/presentation/pages/stock_in_page.dart';
 import '../../features/product/presentation/pages/master_catalog_page.dart';
 import '../../features/shop/presentation/pages/shop_details_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/settings/presentation/pages/activation_page.dart';
 import '../../features/billing/presentation/pages/scanner_page.dart';
 import '../../features/billing/presentation/pages/checkout_page.dart';
 import '../../features/billing/presentation/pages/daily_report_page.dart';
 import '../../features/customer/presentation/pages/customers_page.dart';
 import '../../features/product/domain/entities/product.dart';
+import '../../core/utils/license_service.dart';
 
 final router = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) {
+    final isActivated = LicenseService.isActivated();
+    final isGoingToActivation = state.matchedLocation == '/activation';
+
+    if (!isActivated && !isGoingToActivation) {
+      return '/activation';
+    }
+    if (isActivated && isGoingToActivation) {
+      return '/';
+    }
+    return null;
+  },
   routes: [
+    GoRoute(
+      path: '/activation',
+      builder: (context, state) => const ActivationPage(),
+    ),
     GoRoute(
       path: '/',
       builder: (context, state) => const HomePage(),

@@ -20,6 +20,9 @@ import '../../../../core/data/quick_item_model.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/language_cubit.dart';
 import '../../domain/entities/cart_item.dart';
+import '../widgets/smart_scale_modal.dart';
+import '../widgets/quick_amount_modal.dart';
+import '../widgets/held_carts_modal.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -387,6 +390,96 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _showClearCartConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_sweep_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('إفراغ السلة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: const Text('هل تريد إفراغ السلة بالكامل وإلغاء هذه الفاتورة؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(context.tr('cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              context.read<BillingBloc>().add(ClearCartEvent());
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('🗑️ تم إفراغ السلة بنجاح'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+            child: const Text('تأكيد الإفراغ', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showParkCartDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.pause_circle_outline, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('تعليق في سلة مؤقتة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('سيتم حفظ الفاتورة لخدمة الزبون التالي، وحذفها تلقائياً بعد 20 دقيقة إذا لم يعد.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'اسم السلة / الزبون (اختياري)',
+                hintText: 'مثال: الأب مع الطفل',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () {
+              final label = controller.text.trim();
+              context.read<BillingBloc>().add(ParkCurrentCartEvent(label: label.isNotEmpty ? label : null));
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('⏸️ تم تعليق السلة لخدمة الزبون التالي!'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text('تعليق الآن', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAddQuickItemModal() {
     final nameController = TextEditingController();
     final priceController = TextEditingController();
@@ -718,43 +811,60 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                         const SizedBox(width: 12),
-                        // Park Cart Button
-                        if (state.cartItems.isNotEmpty)
+                        // Clear Cart Button
+                        if (state.cartItems.isNotEmpty) ...[
                           InkWell(
-                            onTap: () {
-                              context.read<BillingBloc>().add(ParkCurrentCartEvent());
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(context.tr('parked_cart_msg')), duration: const Duration(seconds: 1)),
-                              );
-                            },
+                            onTap: _showClearCartConfirmationDialog,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.red.withOpacity(0.3)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.delete_sweep_outlined, size: 14, color: Colors.red),
+                                  SizedBox(width: 3),
+                                  Text('إفراغ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          // Park Cart Button
+                          InkWell(
+                            onTap: _showParkCartDialog,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.orange.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(color: Colors.orange.withOpacity(0.3)),
                               ),
-                              child: Row(
+                              child: const Row(
                                 children: [
-                                  const Icon(Icons.pause_circle_outline, size: 14, color: Colors.orange),
-                                  const SizedBox(width: 4),
-                                  Text(context.tr('park_cart'),
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                  Icon(Icons.pause_circle_outline, size: 14, color: Colors.orange),
+                                  SizedBox(width: 3),
+                                  Text('سلة مؤقتة', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
                                 ],
                               ),
                             ),
                           ),
+                        ],
                         if (state.hasParkedCart) ...[
                           const SizedBox(width: 6),
                           InkWell(
                             onTap: () {
-                              context.read<BillingBloc>().add(ResumeParkedCartEvent());
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(context.tr('resumed_cart_msg')), duration: const Duration(seconds: 1)),
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => const HeldCartsModal(),
                               );
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.green.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
@@ -762,10 +872,10 @@ class _HomePageState extends State<HomePage> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.play_circle_outline, size: 14, color: Colors.green),
-                                  const SizedBox(width: 4),
-                                  Text('${context.tr('resume_cart')} (${state.parkedCartItems.length})',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green)),
+                                  const Icon(Icons.shopping_bag_outlined, size: 14, color: Colors.green),
+                                  const SizedBox(width: 3),
+                                  Text('السلات (${state.activeHeldCarts.length})',
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
                                 ],
                               ),
                             ),
@@ -791,18 +901,76 @@ class _HomePageState extends State<HomePage> {
             },
           ),
 
-          // Quick Items Bar Pro (Interactive with Long-Press & (+) Add)
+          // Quick Actions & Items Bar Pro
           Container(
             height: 42,
             margin: const EdgeInsets.symmetric(vertical: 4),
-            child: ListView.separated(
+            child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _quickItems.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(width: 6),
-              itemBuilder: (context, index) {
-                if (index == _quickItems.length) {
-                  return ActionChip(
+              children: [
+                // 1. Smart Scale / Vrac Modal
+                ActionChip(
+                  avatar: const Icon(Icons.scale_rounded, size: 16, color: Colors.teal),
+                  label: const Text('⚖️ ميزان', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal)),
+                  backgroundColor: Colors.teal.withOpacity(0.08),
+                  side: BorderSide(color: Colors.teal.withOpacity(0.3)),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const SmartScaleModal(),
+                    );
+                  },
+                ),
+                const SizedBox(width: 6),
+
+                // 2. Direct Price / Vente Libre Modal
+                ActionChip(
+                  avatar: const Icon(Icons.calculate_rounded, size: 16, color: Colors.purple),
+                  label: const Text('🧮 سعر حر', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple)),
+                  backgroundColor: Colors.purple.withOpacity(0.08),
+                  side: BorderSide(color: Colors.purple.withOpacity(0.3)),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const QuickAmountModal(),
+                    );
+                  },
+                ),
+                const SizedBox(width: 6),
+
+                // 3. Quick Chips List
+                ..._quickItems.map((q) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: GestureDetector(
+                      onTap: () => _addQuickItem(q),
+                      onLongPress: () => _showEditQuickItemModal(q),
+                      child: Chip(
+                        avatar: Text(q.icon, style: const TextStyle(fontSize: 14)),
+                        label: Text(
+                          '${q.name} (${q.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                        backgroundColor: Colors.white,
+                        side: BorderSide(color: Colors.grey[300]!),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  );
+                }),
+
+                // 4. Add Custom Quick Item Button (+)
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: ActionChip(
                     avatar: const Icon(Icons.add, size: 16, color: AppTheme.primaryColor),
                     label: Text(context.tr('add_quick_item'),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
@@ -810,26 +978,9 @@ class _HomePageState extends State<HomePage> {
                     side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.3)),
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     onPressed: _showAddQuickItemModal,
-                  );
-                }
-
-                final q = _quickItems[index];
-                return GestureDetector(
-                  onTap: () => _addQuickItem(q),
-                  onLongPress: () => _showEditQuickItemModal(q),
-                  child: Chip(
-                    avatar: Text(q.icon, style: const TextStyle(fontSize: 14)),
-                    label: Text(
-                      '${q.name} (${q.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                    backgroundColor: Colors.white,
-                    side: BorderSide(color: Colors.grey[300]!),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ),
 
@@ -878,14 +1029,43 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCartItemCard(BuildContext context, CartItem item) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
+    return Dismissible(
+      key: ValueKey('cart_${item.product.id}_${item.product.price}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Colors.red[400],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('حذف من السلة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+            SizedBox(width: 8),
+            Icon(Icons.delete_outline, color: Colors.white),
+          ],
+        ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      onDismissed: (_) {
+        context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.product.id));
+        Vibration.vibrate(duration: 40);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🗑️ تم حذف ${item.product.name} من السلة'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey[200]!),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -953,8 +1133,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _circularIconButton({required IconData icon, required VoidCallback onPressed}) {
     return InkWell(

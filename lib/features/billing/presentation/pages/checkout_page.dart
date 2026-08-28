@@ -1,5 +1,6 @@
 import 'package:billing_app/core/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_constants.dart';
@@ -124,6 +125,86 @@ class _CheckoutPageState extends State<CheckoutPage> {
           },
         );
       },
+    );
+  Future<void> _completeSaleWithoutPrint(BillingState billingState) async {
+    if (_paymentMode != PaymentMode.cash && _selectedCustomer == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('select_customer_hint')),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (_paymentMode == PaymentMode.fullCredit && _selectedCustomer != null) {
+      await context.read<CustomerCubit>().addCredit(
+            customerId: _selectedCustomer!.id,
+            creditAmount: billingState.totalAmount,
+            note: 'مشتريات بالكريدي',
+          );
+    } else if (_paymentMode == PaymentMode.acompteCredit && _selectedCustomer != null) {
+      final acomptePaid = double.tryParse(_acompteController.text.trim()) ?? 0.0;
+      final creditToAdd = (billingState.totalAmount - acomptePaid).clamp(0.0, double.infinity);
+      await context.read<CustomerCubit>().addCredit(
+            customerId: _selectedCustomer!.id,
+            creditAmount: creditToAdd,
+            note: 'مشتريات (تسبيق $acomptePaid ${AppConstants.currencySymbol})',
+          );
+    }
+
+    if (mounted) {
+      context.read<BillingBloc>().add(ClearCartEvent());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ تم تسجيل البيع وتحديث المخزون بنجاح!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      context.go('/');
+    }
+  }
+
+  void _shareInvoiceViaWhatsApp(BillingState billingState) {
+    final shopState = context.read<ShopBloc>().state;
+    final shopName = shopState is ShopLoaded ? shopState.shop.name : 'متجرنا';
+    final now = DateTime.now();
+    final dateStr = '${now.year}/${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')}';
+
+    final buffer = StringBuffer();
+    buffer.writeln('🧾 *فاتورة مشتريات*');
+    buffer.writeln('🏪 *المتجر:* $shopName');
+    buffer.writeln('📅 *التاريخ:* $dateStr');
+    if (_selectedCustomer != null) {
+      buffer.writeln('👤 *الزبون:* ${_selectedCustomer!.name}');
+    }
+    buffer.writeln('---------------------------');
+    buffer.writeln('🛒 *قائمة السلع:*');
+    for (var item in billingState.cartItems) {
+      buffer.writeln('• ${item.product.name} × ${item.quantity} = ${item.total.toStringAsFixed(2)} ${AppConstants.currencySymbol}');
+    }
+    buffer.writeln('---------------------------');
+    buffer.writeln('💰 *المجموع:* ${billingState.totalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol}');
+
+    if (_paymentMode == PaymentMode.cash && billingState.paidAmount > 0) {
+      buffer.writeln('💵 *المستلم:* ${billingState.paidAmount.toStringAsFixed(0)} ${AppConstants.currencySymbol}');
+      if (billingState.changeAmount > 0) {
+        buffer.writeln('🟢 *الباقي:* ${billingState.changeAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol}');
+      }
+    } else if (_paymentMode != PaymentMode.cash) {
+      buffer.writeln('⚠️ *طريقة الدفع:* كريدي / دين مسجل');
+    }
+
+    buffer.writeln('✨ شكراً لتعاملكم معنا!');
+
+    Clipboard.setData(ClipboardData(text: buffer.toString()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('📋 تم نسخ نص الفاتورة لمشاركتها عبر واتساب!'),
+        backgroundColor: Colors.teal,
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 
@@ -530,97 +611,127 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                if (billingState.printSuccess) ...[
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(vertical: 14),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      icon: const Icon(Icons.receipt_long),
-                                      label: Text(context.tr('new_invoice'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      onPressed: () {
-                                        context.read<BillingBloc>().add(ClearCartEvent());
-                                        context.go('/');
-                                      },
+                                // 1. PRIMARY: Fast Sale Without Printing (Green 1-Tap)
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green[700],
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     ),
+                                    icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                                    label: const Text(
+                                      '⚡ إتمام البيع السريع (بدون طباعة)',
+                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                    onPressed: () => _completeSaleWithoutPrint(billingState),
                                   ),
-                                  const SizedBox(width: 8),
-                                ],
-                                Expanded(
-                                  flex: 2,
-                                  child: PrimaryButton(
-                                    onPressed: () async {
-                                      if (_paymentMode != PaymentMode.cash && _selectedCustomer == null) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(context.tr('select_customer_hint')),
-                                            backgroundColor: Colors.orange,
-                                          ),
-                                        );
-                                        return;
-                                      }
+                                ),
+                                const SizedBox(height: 8),
 
-                                      final shopState = context.read<ShopBloc>().state;
-                                      final shopName = shopState is ShopLoaded ? shopState.shop.name : 'Superette';
-                                      final address1 = shopState is ShopLoaded ? shopState.shop.addressLine1 : '';
-                                      final address2 = shopState is ShopLoaded ? shopState.shop.addressLine2 : '';
-                                      final phone = shopState is ShopLoaded ? shopState.shop.phoneNumber : '';
-                                      final footer = shopState is ShopLoaded ? shopState.shop.footerText : 'Merci!';
-
-                                      double creditToAdd = 0.0;
-                                      double acomptePaid = 0.0;
-                                      double previousDebt = 0.0;
-                                      double newDebtTotal = 0.0;
-
-                                      if (_paymentMode == PaymentMode.fullCredit && _selectedCustomer != null) {
-                                        creditToAdd = billingState.totalAmount;
-                                        previousDebt = _selectedCustomer!.currentDebt;
-                                        newDebtTotal = previousDebt + creditToAdd;
-
-                                        await context.read<CustomerCubit>().addCredit(
-                                              customerId: _selectedCustomer!.id,
-                                              creditAmount: creditToAdd,
-                                              note: 'مشتريات بالكريدي',
-                                            );
-                                      } else if (_paymentMode == PaymentMode.acompteCredit && _selectedCustomer != null) {
-                                        acomptePaid = double.tryParse(_acompteController.text.trim()) ?? 0.0;
-                                        creditToAdd = (billingState.totalAmount - acomptePaid).clamp(0.0, double.infinity);
-                                        previousDebt = _selectedCustomer!.currentDebt;
-                                        newDebtTotal = previousDebt + creditToAdd;
-
-                                        await context.read<CustomerCubit>().addCredit(
-                                              customerId: _selectedCustomer!.id,
-                                              creditAmount: creditToAdd,
-                                              note: 'مشتريات (تسبيق $acomptePaid ${AppConstants.currencySymbol})',
-                                            );
-                                      }
-
-                                      if (mounted) {
-                                        context.read<BillingBloc>().add(
-                                              PrintReceiptEvent(
-                                                shopName: shopName,
-                                                address1: address1,
-                                                address2: address2,
-                                                phone: phone,
-                                                footer: footer,
-                                                isCredit: _paymentMode != PaymentMode.cash,
-                                                customerName: _selectedCustomer?.name,
-                                                paidAmount: _paymentMode == PaymentMode.acompteCredit
-                                                    ? acomptePaid
-                                                    : billingState.paidAmount,
-                                                previousDebt: previousDebt,
-                                                newDebtTotal: newDebtTotal,
+                                // 2. SECONDARY: Thermal Bluetooth Print & WhatsApp Share
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
+                                        ),
+                                        icon: const Icon(Icons.print, size: 18, color: AppTheme.primaryColor),
+                                        label: Text(
+                                          billingState.printSuccess ? context.tr('reprint') : '🖨️ طباعة الوصل',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                                        ),
+                                        onPressed: () async {
+                                          if (_paymentMode != PaymentMode.cash && _selectedCustomer == null) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text(context.tr('select_customer_hint')),
+                                                backgroundColor: Colors.orange,
                                               ),
                                             );
-                                      }
-                                    },
-                                    label: billingState.printSuccess ? context.tr('reprint') : context.tr('confirm_and_print'),
-                                    icon: Icons.print,
-                                    isLoading: billingState.isPrinting,
-                                  ),
+                                            return;
+                                          }
+
+                                          final shopState = context.read<ShopBloc>().state;
+                                          final shopName = shopState is ShopLoaded ? shopState.shop.name : 'Superette';
+                                          final address1 = shopState is ShopLoaded ? shopState.shop.addressLine1 : '';
+                                          final address2 = shopState is ShopLoaded ? shopState.shop.addressLine2 : '';
+                                          final phone = shopState is ShopLoaded ? shopState.shop.phoneNumber : '';
+                                          final footer = shopState is ShopLoaded ? shopState.shop.footerText : 'Merci!';
+
+                                          double creditToAdd = 0.0;
+                                          double acomptePaid = 0.0;
+                                          double previousDebt = 0.0;
+                                          double newDebtTotal = 0.0;
+
+                                          if (_paymentMode == PaymentMode.fullCredit && _selectedCustomer != null) {
+                                            creditToAdd = billingState.totalAmount;
+                                            previousDebt = _selectedCustomer!.currentDebt;
+                                            newDebtTotal = previousDebt + creditToAdd;
+
+                                            await context.read<CustomerCubit>().addCredit(
+                                                  customerId: _selectedCustomer!.id,
+                                                  creditAmount: creditToAdd,
+                                                  note: 'مشتريات بالكريدي',
+                                                );
+                                          } else if (_paymentMode == PaymentMode.acompteCredit && _selectedCustomer != null) {
+                                            acomptePaid = double.tryParse(_acompteController.text.trim()) ?? 0.0;
+                                            creditToAdd = (billingState.totalAmount - acomptePaid).clamp(0.0, double.infinity);
+                                            previousDebt = _selectedCustomer!.currentDebt;
+                                            newDebtTotal = previousDebt + creditToAdd;
+
+                                            await context.read<CustomerCubit>().addCredit(
+                                                  customerId: _selectedCustomer!.id,
+                                                  creditAmount: creditToAdd,
+                                                  note: 'مشتريات (تسبيق $acomptePaid ${AppConstants.currencySymbol})',
+                                                );
+                                          }
+
+                                          if (mounted) {
+                                            context.read<BillingBloc>().add(
+                                                  PrintReceiptEvent(
+                                                    shopName: shopName,
+                                                    address1: address1,
+                                                    address2: address2,
+                                                    phone: phone,
+                                                    footer: footer,
+                                                    isCredit: _paymentMode != PaymentMode.cash,
+                                                    customerName: _selectedCustomer?.name,
+                                                    paidAmount: _paymentMode == PaymentMode.acompteCredit
+                                                        ? acomptePaid
+                                                        : billingState.paidAmount,
+                                                    previousDebt: previousDebt,
+                                                    newDebtTotal: newDebtTotal,
+                                                  ),
+                                                );
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          side: BorderSide(color: Colors.teal.withOpacity(0.5)),
+                                        ),
+                                        icon: const Icon(Icons.share, size: 18, color: Colors.teal),
+                                        label: const Text(
+                                          '💬 مشاركة الفاتورة',
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal),
+                                        ),
+                                        onPressed: () => _shareInvoiceViaWhatsApp(billingState),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
