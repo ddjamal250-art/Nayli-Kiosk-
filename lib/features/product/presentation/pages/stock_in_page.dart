@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -65,12 +65,17 @@ class _StockInPageState extends State<StockInPage> {
 
   final List<Map<String, dynamic>> _sessionStockIns = [];
 
+  bool _isUpdatingFromCarton = false;
+  bool _isUpdatingFromUnit = false;
+
   @override
   void initState() {
     super.initState();
-    _cartonCountController.addListener(_recalcCartonTotals);
-    _unitsPerCartonController.addListener(_recalcCartonTotals);
-    _cartonCostController.addListener(_recalcCartonTotals);
+    _cartonCountController.addListener(_onCartonInputsChanged);
+    _unitsPerCartonController.addListener(_onCartonInputsChanged);
+    _cartonCostController.addListener(_onCartonCostChanged);
+    _costPriceController.addListener(_onUnitCostChanged);
+    _priceController.addListener(() => setState(() {}));
   }
 
   @override
@@ -88,7 +93,7 @@ class _StockInPageState extends State<StockInPage> {
     super.dispose();
   }
 
-  void _recalcCartonTotals() {
+  void _onCartonInputsChanged() {
     if (!_isCartonMode) return;
     final cartons = int.tryParse(_cartonCountController.text.trim()) ?? 0;
     final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
@@ -98,8 +103,37 @@ class _StockInPageState extends State<StockInPage> {
     final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
     if (perCarton > 0 && cartonCost > 0) {
       final unitCost = cartonCost / perCarton;
+      _isUpdatingFromCarton = true;
       _costPriceController.text = unitCost.toStringAsFixed(2);
+      _isUpdatingFromCarton = false;
     }
+    setState(() {});
+  }
+
+  void _onCartonCostChanged() {
+    if (!_isCartonMode || _isUpdatingFromUnit) return;
+    final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+    final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
+    if (perCarton > 0 && cartonCost > 0) {
+      final unitCost = cartonCost / perCarton;
+      _isUpdatingFromCarton = true;
+      _costPriceController.text = unitCost.toStringAsFixed(2);
+      _isUpdatingFromCarton = false;
+    }
+    setState(() {});
+  }
+
+  void _onUnitCostChanged() {
+    if (!_isCartonMode || _isUpdatingFromCarton) return;
+    final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+    final unitCost = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
+    if (perCarton > 0 && unitCost > 0) {
+      final cartonCost = unitCost * perCarton;
+      _isUpdatingFromUnit = true;
+      _cartonCostController.text = cartonCost.toStringAsFixed(2);
+      _isUpdatingFromUnit = false;
+    }
+    setState(() {});
   }
 
   void _onDetect(BarcodeCapture capture) async {
@@ -534,7 +568,7 @@ class _StockInPageState extends State<StockInPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('سعة الكرتونة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              const Text('سعة الكرتونة (حبة/باك)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                               const SizedBox(height: 4),
                               TextFormField(
                                 controller: _unitsPerCartonController,
@@ -550,7 +584,7 @@ class _StockInPageState extends State<StockInPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
                     // Carton Cost
                     Row(
@@ -559,15 +593,15 @@ class _StockInPageState extends State<StockInPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('سعر شراء الكرتونة الإجمالي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              const Text('سعر شراء الكرتونة الواحدة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                               const SizedBox(height: 4),
                               TextFormField(
                                 controller: _cartonCostController,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                decoration: InputDecoration(
-                                  hintText: '0.00',
-                                  prefixText: '\${AppConstants.currencySymbol} ',
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                decoration: const InputDecoration(
+                                  hintText: 'مثال: 1000',
+                                  suffixText: 'دج/كرتونة',
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 ),
                               ),
                             ],
@@ -575,28 +609,7 @@ class _StockInPageState extends State<StockInPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-
-                    // Total Units Calculation Summary Card
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue[200]!),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('إجمالي الحبات التي ستضاف للمخزون:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue)),
-                          Text(
-                            '\${_qtyController.text} حبة',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.blue),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                   ] else ...[
                     // Single Units Quantity
                     const Text('الكمية المستلمة (بالحبة)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -606,6 +619,7 @@ class _StockInPageState extends State<StockInPage> {
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                         hintText: '24',
+                        suffixText: 'حبة',
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       ),
                     ),
@@ -624,10 +638,10 @@ class _StockInPageState extends State<StockInPage> {
                             TextFormField(
                               controller: _priceController,
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 hintText: '0.00',
-                                prefixText: '\${AppConstants.currencySymbol} ',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                suffixText: 'دج',
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                               ),
                             ),
                           ],
@@ -643,16 +657,74 @@ class _StockInPageState extends State<StockInPage> {
                             TextFormField(
                               controller: _costPriceController,
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 hintText: '0.00',
-                                prefixText: '\${AppConstants.currencySymbol} ',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                suffixText: 'دج',
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Smart Calculation & Profit Summary Card
+                  Builder(
+                    builder: (context) {
+                      final cartons = int.tryParse(_cartonCountController.text.trim()) ?? 0;
+                      final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+                      final totalUnits = _isCartonMode ? (cartons * perCarton) : (int.tryParse(_qtyController.text.trim()) ?? 0);
+                      final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
+                      final unitCost = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
+                      final unitSell = double.tryParse(_priceController.text.trim()) ?? 0.0;
+                      final totalInvoiceCost = _isCartonMode ? (cartons * cartonCost) : (totalUnits * unitCost);
+                      final profitPerUnit = unitSell > unitCost ? (unitSell - unitCost) : 0.0;
+
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.withOpacity(0.25)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('📦 إجمالي الحبات للمخزون:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                                Text('$totalUnits حبة', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue)),
+                              ],
+                            ),
+                            if (_isCartonMode && cartonCost > 0) ...[
+                              const Divider(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('💵 إجمالي فاتورة الشراء:', style: TextStyle(fontSize: 12, color: Colors.black87)),
+                                  Text('${totalInvoiceCost.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ],
+                            if (profitPerUnit > 0) ...[
+                              const Divider(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('📈 فائدة الحبة الواحدة:', style: TextStyle(fontSize: 12, color: Colors.green)),
+                                  Text(
+                                    '+${profitPerUnit.toStringAsFixed(1)} دج (${((profitPerUnit / (unitCost > 0 ? unitCost : 1)) * 100).toStringAsFixed(0)}%)',
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.green),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
 
