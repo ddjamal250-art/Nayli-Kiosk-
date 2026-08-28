@@ -129,8 +129,8 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: masterItem != null
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : AppTheme.primaryColor.withValues(alpha: 0.1),
+                      ? Colors.green.withOpacity(0.1)
+                      : AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -477,9 +477,9 @@ class _HomePageState extends State<HomePage> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.1),
+                                color: Colors.orange.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                                border: Border.all(color: Colors.orange.withOpacity(0.3)),
                               ),
                               child: Row(
                                 children: [
@@ -503,9 +503,9 @@ class _HomePageState extends State<HomePage> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
+                                color: Colors.green.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                                border: Border.all(color: Colors.green.withOpacity(0.3)),
                               ),
                               child: Row(
                                 children: [
@@ -638,7 +638,7 @@ class _HomePageState extends State<HomePage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
+                          color: Colors.orange.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(context.tr('stock_zero_warning'),
@@ -696,3 +696,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+

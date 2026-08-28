@@ -91,7 +91,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 border: Border.all(color: borderColor),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
+                                    color: Colors.black.withOpacity(0.05),
                                     blurRadius: 10,
                                     offset: const Offset(0, 3),
                                   )
@@ -204,13 +204,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       decoration: BoxDecoration(
                                         color: billingState.paidAmount >= billingState.totalAmount
-                                            ? Colors.green.withValues(alpha: 0.1)
-                                            : Colors.orange.withValues(alpha: 0.1),
+                                            ? Colors.green.withOpacity(0.1)
+                                            : Colors.orange.withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
                                           color: billingState.paidAmount >= billingState.totalAmount
-                                              ? Colors.green.withValues(alpha: 0.3)
-                                              : Colors.orange.withValues(alpha: 0.3),
+                                              ? Colors.green.withOpacity(0.3)
+                                              : Colors.orange.withOpacity(0.3),
                                         ),
                                       ),
                                       child: Row(
@@ -270,7 +270,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
+                            color: Colors.black.withOpacity(0.08),
                             blurRadius: 10,
                             offset: const Offset(0, -3),
                           ),
@@ -371,7 +371,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: isExact ? AppTheme.primaryColor.withValues(alpha: 0.1) : Colors.grey[100],
+          color: isExact ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: isExact ? AppTheme.primaryColor : Colors.grey[300]!),
         ),
@@ -418,3 +418,4 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 }
+

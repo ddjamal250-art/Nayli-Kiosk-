@@ -58,7 +58,7 @@ class SettingsPage extends StatelessWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                              color: AppTheme.primaryColor.withOpacity(0.2),
                               blurRadius: 12,
                               spreadRadius: 4,
                             )
@@ -331,7 +331,7 @@ class SettingsPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: AppTheme.primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: AppTheme.primaryColor, size: 20),
@@ -366,3 +366,4 @@ class SettingsPage extends StatelessWidget {
     return const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF2F2F7));
   }
 }
+

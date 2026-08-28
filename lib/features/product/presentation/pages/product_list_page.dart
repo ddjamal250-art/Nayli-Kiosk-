@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/product_bloc.dart';
@@ -103,7 +103,7 @@ class _ProductListPageState extends State<ProductListPage> {
                       const SizedBox(width: 12),
                       Container(
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                          color: AppTheme.primaryColor.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: IconButton(
@@ -215,10 +215,10 @@ class _ProductListPageState extends State<ProductListPage> {
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: product.stock > 5
-                                            ? Colors.green.withValues(alpha: 0.1)
+                                            ? Colors.green.withOpacity(0.1)
                                             : (product.stock > 0
-                                                ? Colors.orange.withValues(alpha: 0.1)
-                                                : Colors.red.withValues(alpha: 0.1)),
+                                                ? Colors.orange.withOpacity(0.1)
+                                                : Colors.red.withOpacity(0.1)),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
@@ -249,7 +249,7 @@ class _ProductListPageState extends State<ProductListPage> {
                               Container(
                                 decoration: BoxDecoration(
                                   color: AppTheme.primaryColor
-                                      .withValues(alpha: 0.1),
+                                      .withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: IconButton(
@@ -266,7 +266,7 @@ class _ProductListPageState extends State<ProductListPage> {
                               const SizedBox(width: 8),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.1),
+                                  color: Colors.red.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: IconButton(
@@ -325,3 +325,4 @@ class _ProductListPageState extends State<ProductListPage> {
     );
   }
 }
+

@@ -239,9 +239,9 @@ class _StockInPageState extends State<StockInPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _isExistingInShop ? Colors.blue.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
+                        color: _isExistingInShop ? Colors.blue.withOpacity(0.1) : Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _isExistingInShop ? Colors.blue.withValues(alpha: 0.3) : Colors.green.withValues(alpha: 0.3)),
+                        border: Border.all(color: _isExistingInShop ? Colors.blue.withOpacity(0.3) : Colors.green.withOpacity(0.3)),
                       ),
                       child: Row(
                         children: [
@@ -386,7 +386,7 @@ class _StockInPageState extends State<StockInPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+          color: AppTheme.primaryColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text('+$qty', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 12)),
@@ -394,3 +394,4 @@ class _StockInPageState extends State<StockInPage> {
     );
   }
 }
+
