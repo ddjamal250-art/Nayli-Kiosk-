@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -167,7 +167,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Align(
-              alignment: Directionality.of(context) == TextDirection.rtl ? Alignment.centerRight : Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: Text(
                 '${context.tr('today_invoices')} (${invoices.length})',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey),

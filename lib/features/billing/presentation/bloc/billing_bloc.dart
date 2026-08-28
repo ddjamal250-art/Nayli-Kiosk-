@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/cart_item.dart';
 import 'package:billing_app/features/product/domain/entities/product.dart';
+import 'package:billing_app/features/product/data/models/product_model.dart';
 import 'package:billing_app/features/product/domain/usecases/product_usecases.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/data/hive_database.dart';
