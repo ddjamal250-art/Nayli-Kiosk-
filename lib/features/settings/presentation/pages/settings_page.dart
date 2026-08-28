@@ -462,7 +462,7 @@ class SettingsPage extends StatelessWidget {
             const Text('تم تجميع وحفظ كامل قاعدة بيانات المحل (السلع، الديون، الفواتير). يمكنك نسخ الكود وحفظه:'),
             const SizedBox(height: 10),
             Container(
-              maxHeight: 140,
+              constraints: const BoxConstraints(maxHeight: 140),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
               child: SingleChildScrollView(

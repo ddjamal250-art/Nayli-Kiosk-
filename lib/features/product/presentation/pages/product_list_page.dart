@@ -97,7 +97,7 @@ class _ProductListPageState extends State<ProductListPage> {
                           style: const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Container(
-                        maxHeight: 150,
+                        constraints: const BoxConstraints(maxHeight: 150),
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
