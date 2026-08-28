@@ -61,4 +61,26 @@ class ProductModel extends Product {
       costPrice: costPrice,
     );
   }
+
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
+    return ProductModel(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      barcode: json['barcode'] as String? ?? '',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      stock: (json['stock'] as num?)?.toInt() ?? 0,
+      costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'barcode': barcode,
+      'price': price,
+      'stock': stock,
+      'costPrice': costPrice,
+    };
+  }
 }
