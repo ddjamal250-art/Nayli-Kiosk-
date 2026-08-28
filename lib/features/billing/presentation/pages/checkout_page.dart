@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/data/hive_database.dart';
+import '../../../../core/service_locator.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 
+import '../../../product/domain/repositories/product_repository.dart';
+import '../../../product/data/models/product_model.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
@@ -134,37 +138,107 @@ class _CheckoutPageState extends State<CheckoutPage> {
         SnackBar(
           content: Text(context.tr('select_customer_hint')),
           backgroundColor: Colors.orange,
+          duration: const Duration(milliseconds: 1500),
         ),
       );
       return;
     }
 
-    if (_paymentMode == PaymentMode.fullCredit && _selectedCustomer != null) {
-      await context.read<CustomerCubit>().addCredit(
-            customerId: _selectedCustomer!.id,
-            creditAmount: billingState.totalAmount,
-            note: 'مشتريات بالكريدي',
-          );
-    } else if (_paymentMode == PaymentMode.acompteCredit && _selectedCustomer != null) {
-      final acomptePaid = double.tryParse(_acompteController.text.trim()) ?? 0.0;
-      final creditToAdd = (billingState.totalAmount - acomptePaid).clamp(0.0, double.infinity);
-      await context.read<CustomerCubit>().addCredit(
-            customerId: _selectedCustomer!.id,
-            creditAmount: creditToAdd,
-            note: 'مشتريات (تسبيق $acomptePaid ${AppConstants.currencySymbol})',
-          );
-    }
+    try {
+      // 1. Decrement product stock in database
+      final productRepo = sl<ProductRepository>();
+      for (final item in billingState.cartItems) {
+        if (!item.product.id.startsWith('custom_') && !item.product.id.startsWith('direct_')) {
+          final getResult = await productRepo.getProductById(item.product.id);
+          if (getResult.isRight()) {
+            final p = getResult.getOrElse(() => throw Exception());
+            final newStock = (p.stock - item.quantity).clamp(0, 999999);
+            await productRepo.updateProduct(
+              ProductModel(
+                id: p.id,
+                name: p.name,
+                barcode: p.barcode,
+                price: p.price,
+                costPrice: p.costPrice,
+                stock: newStock,
+              ),
+            );
+          }
+        }
+      }
 
-    if (mounted) {
-      context.read<BillingBloc>().add(ClearCartEvent());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ تم تسجيل البيع وتحديث المخزون بنجاح!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
+      // 2. Calculate costs and save invoice in invoicesBox for Daily Reports & Profit
+      final totalCost = billingState.cartItems.fold<double>(
+        0.0,
+        (sum, i) => sum + (i.product.costPrice * i.quantity),
       );
-      context.go('/');
+      final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
+      final items = billingState.cartItems.map((item) => {
+        'name': item.product.name,
+        'qty': item.quantity,
+        'price': item.product.price,
+        'costPrice': item.product.costPrice,
+        'total': item.total,
+      }).toList();
+
+      final paidAmount = _paymentMode == PaymentMode.cash
+          ? (double.tryParse(_paidController.text.trim()) ?? billingState.totalAmount)
+          : (_paymentMode == PaymentMode.acompteCredit
+              ? (double.tryParse(_acompteController.text.trim()) ?? 0.0)
+              : 0.0);
+
+      await HiveDatabase.invoicesBox.put(invoiceId, {
+        'id': invoiceId,
+        'timestamp': DateTime.now().toIso8601String(),
+        'totalAmount': billingState.totalAmount,
+        'totalCost': totalCost,
+        'netProfit': (billingState.totalAmount - totalCost).clamp(0.0, double.infinity),
+        'itemCount': billingState.cartItems.fold<int>(0, (sum, i) => sum + i.quantity),
+        'items': items,
+        'isCredit': _paymentMode != PaymentMode.cash,
+        'customerName': _selectedCustomer?.name ?? '',
+        'paidAmount': paidAmount,
+        'paymentMode': _paymentMode.name,
+      });
+
+      // 3. Record customer debt if credit
+      if (_paymentMode == PaymentMode.fullCredit && _selectedCustomer != null) {
+        await context.read<CustomerCubit>().addCredit(
+              customerId: _selectedCustomer!.id,
+              creditAmount: billingState.totalAmount,
+              note: 'مشتريات بالكريدي',
+            );
+      } else if (_paymentMode == PaymentMode.acompteCredit && _selectedCustomer != null) {
+        final acomptePaid = double.tryParse(_acompteController.text.trim()) ?? 0.0;
+        final creditToAdd = (billingState.totalAmount - acomptePaid).clamp(0.0, double.infinity);
+        await context.read<CustomerCubit>().addCredit(
+              customerId: _selectedCustomer!.id,
+              creditAmount: creditToAdd,
+              note: 'مشتريات (تسبيق $acomptePaid ${AppConstants.currencySymbol})',
+            );
+      }
+
+      if (mounted) {
+        context.read<BillingBloc>().add(ClearCartEvent());
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ تم تسجيل البيع وتحديث المخزون والأرباح بنجاح!'),
+            backgroundColor: Colors.green,
+            duration: Duration(milliseconds: 1200),
+          ),
+        );
+        context.go('/');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ أثناء تسجيل البيع: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(milliseconds: 1500),
+          ),
+        );
+      }
     }
   }
 
@@ -240,10 +314,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
         body: BlocConsumer<BillingBloc, BillingState>(
           listener: (context, state) {
             if (state.printSuccess) {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(context.tr('printed_success')),
                   backgroundColor: Colors.green,
+                  duration: const Duration(milliseconds: 1200),
                 ),
               );
             }

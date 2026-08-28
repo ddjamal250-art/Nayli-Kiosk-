@@ -1,4 +1,4 @@
-﻿import 'package:bloc/bloc.dart';
+import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/held_cart.dart';
@@ -264,7 +264,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       for (final cartItem in state.cartItems) {
         final productModel = productBox.get(cartItem.product.id);
         if (productModel != null) {
-          final newStock = productModel.stock - cartItem.quantity;
+          final newStock = (productModel.stock - cartItem.quantity).clamp(0, 999999);
           productBox.put(
             cartItem.product.id,
             ProductModel(
@@ -272,6 +272,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
               name: productModel.name,
               barcode: productModel.barcode,
               price: productModel.price,
+              costPrice: productModel.costPrice,
               stock: newStock,
             ),
           );
