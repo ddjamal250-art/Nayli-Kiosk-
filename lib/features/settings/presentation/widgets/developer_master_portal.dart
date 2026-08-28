@@ -39,7 +39,7 @@ class _DeveloperMasterPortalState extends State<DeveloperMasterPortal> with Sing
   }
 
   void _verifyMasterPin() {
-    if (_pinController.text.trim() == LicenseService.masterDeveloperPin) {
+    if (_pinController.text.trim().toUpperCase() == LicenseService.masterDeveloperPin) {
       setState(() {
         _isUnlocked = true;
         _pinError = null;
@@ -109,10 +109,10 @@ class _DeveloperMasterPortalState extends State<DeveloperMasterPortal> with Sing
             TextField(
               controller: _pinController,
               obscureText: true,
-              keyboardType: TextInputType.number,
+              textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
-                labelText: 'رمز المطور السري (Master PIN)',
-                hintText: '2026',
+                labelText: 'رمز المطور السري (Master Secret)',
+                hintText: 'أدخل الرمز السري',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 errorText: _pinError,
                 prefixIcon: const Icon(Icons.shield_outlined),

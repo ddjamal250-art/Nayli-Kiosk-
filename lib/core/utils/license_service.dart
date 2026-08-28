@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +13,7 @@ class LicenseService {
   static const String _licenseTypeKey = 'app_license_type';
 
   // Secret Master Password for Developer Onsite Activation (لك أنت وحدك)
-  static const String masterDeveloperPin = '2026';
+  static const String masterDeveloperPin = 'RAACH';
 
   // Secret salt for cryptographic hardware key verification
   static const String _secretSalt = 'AHSEBLI_DZ_POS_SECURE_SALT_2026_@!';
