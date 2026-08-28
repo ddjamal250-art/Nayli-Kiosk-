@@ -1,5 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'localization/language_cubit.dart';
+import '../../features/customer/data/repositories/customer_repository.dart';
+import '../../features/customer/presentation/cubit/customer_cubit.dart';
 import '../../features/product/data/repositories/product_repository_impl.dart';
 import '../../features/product/domain/repositories/product_repository.dart';
 import '../../features/product/domain/usecases/product_usecases.dart';
@@ -65,6 +67,10 @@ Future<void> init() async {
   sl.registerLazySingleton<ShopRepository>(
     () => ShopRepositoryImpl(),
   );
+
+  // Features - Customer & Debts
+  sl.registerLazySingleton<CustomerRepository>(() => CustomerRepository());
+  sl.registerFactory(() => CustomerCubit(repository: sl()));
 
   // Features - Settings / Printer
   sl.registerLazySingleton<PrinterRepository>(

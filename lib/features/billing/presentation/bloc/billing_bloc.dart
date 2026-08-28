@@ -169,23 +169,39 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       // 2. Record sale invoice in invoicesBox for Daily Reports & History
       final invoicesBox = HiveDatabase.invoicesBox;
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
+      final totalCost = state.cartItems.fold<double>(
+        0.0,
+        (sum, i) => sum + (i.product.costPrice * i.quantity),
+      );
+
       await invoicesBox.put(invoiceId, {
         'id': invoiceId,
         'timestamp': DateTime.now().toIso8601String(),
         'totalAmount': state.totalAmount,
+        'totalCost': totalCost,
+        'netProfit': (state.totalAmount - totalCost).clamp(0.0, double.infinity),
         'itemCount': state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity),
         'items': items,
+        'isCredit': event.isCredit,
+        'customerName': event.customerName,
+        'paidAmount': event.paidAmount,
       });
 
       // 3. Print physical receipt
       await printerHelper.printReceipt(
-          shopName: event.shopName,
-          address1: event.address1,
-          address2: event.address2,
-          phone: event.phone,
-          items: items,
-          total: state.totalAmount,
-          footer: event.footer);
+        shopName: event.shopName,
+        address1: event.address1,
+        address2: event.address2,
+        phone: event.phone,
+        items: items,
+        total: state.totalAmount,
+        footer: event.footer,
+        customerName: event.customerName,
+        isCredit: event.isCredit,
+        paidAmount: event.paidAmount,
+        previousDebt: event.previousDebt,
+        newDebtTotal: event.newDebtTotal,
+      );
 
       emit(state.copyWith(isPrinting: false, printSuccess: true));
     } catch (e) {

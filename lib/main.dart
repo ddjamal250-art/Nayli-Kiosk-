@@ -10,6 +10,7 @@ import 'core/localization/language_cubit.dart';
 import 'features/billing/presentation/bloc/billing_bloc.dart';
 import 'features/product/presentation/bloc/product_bloc.dart';
 import 'features/shop/presentation/bloc/shop_bloc.dart';
+import 'features/customer/presentation/cubit/customer_cubit.dart';
 import 'features/settings/presentation/bloc/printer_bloc.dart';
 import 'features/settings/presentation/bloc/printer_event.dart';
 
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<LanguageCubit>(create: (context) => di.sl<LanguageCubit>()),
+        BlocProvider<CustomerCubit>(create: (context) => di.sl<CustomerCubit>()..loadCustomers()),
         BlocProvider<ProductBloc>(
             create: (context) => di.sl<ProductBloc>()..add(LoadProducts())),
         BlocProvider<ShopBloc>(

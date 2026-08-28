@@ -7,8 +7,8 @@ import '../../features/product/presentation/pages/stock_in_page.dart';
 import '../../features/shop/presentation/pages/shop_details_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/billing/presentation/pages/scanner_page.dart';
-import '../../features/billing/presentation/pages/checkout_page.dart';
 import '../../features/billing/presentation/pages/daily_report_page.dart';
+import '../../features/customer/presentation/pages/customers_page.dart';
 import '../../features/product/domain/entities/product.dart';
 
 final router = GoRouter(
@@ -27,6 +27,10 @@ final router = GoRouter(
           builder: (context, state) => const CheckoutPage(),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/customers',
+      builder: (context, state) => const CustomersPage(),
     ),
     GoRoute(
       path: '/settings',

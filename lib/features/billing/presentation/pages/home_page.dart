@@ -14,6 +14,8 @@ import '../../../../core/widgets/input_label.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/app_validators.dart';
 import '../../../../core/data/master_catalog_seed.dart';
+import '../../../../core/data/hive_database.dart';
+import '../../../../core/data/quick_item_model.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/language_cubit.dart';
 import '../../domain/entities/cart_item.dart';
@@ -36,14 +38,47 @@ class _HomePageState extends State<HomePage> {
   bool _isScanningPaused = false;
   final Map<String, DateTime> _lastScanTimes = {};
 
-  final List<Map<String, dynamic>> _quickItems = [
-    {'name': 'خبز عادي', 'price': 10.0, 'icon': '🥖'},
-    {'name': 'خبز محسن', 'price': 15.0, 'icon': '🥖'},
-    {'name': 'بيضة طازجة', 'price': 25.0, 'icon': '🥚'},
-    {'name': 'كيس بلاستيكي', 'price': 5.0, 'icon': '🛍️'},
-    {'name': 'ماء 0.5L', 'price': 25.0, 'icon': '💧'},
-    {'name': 'حليب مبستر', 'price': 25.0, 'icon': '🥛'},
-  ];
+  List<QuickItem> _quickItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuickItems();
+  }
+
+  void _loadQuickItems() {
+    final box = HiveDatabase.quickItemsBox;
+    if (box.isEmpty) {
+      final defaults = QuickItem.defaultItems;
+      for (var item in defaults) {
+        box.put(item.id, item.toMap());
+      }
+      setState(() {
+        _quickItems = List.from(defaults);
+      });
+    } else {
+      final List<QuickItem> loaded = [];
+      for (var key in box.keys) {
+        final data = box.get(key);
+        if (data != null && data is Map) {
+          loaded.add(QuickItem.fromMap(data));
+        }
+      }
+      setState(() {
+        _quickItems = loaded;
+      });
+    }
+  }
+
+  Future<void> _saveQuickItem(QuickItem item) async {
+    await HiveDatabase.quickItemsBox.put(item.id, item.toMap());
+    _loadQuickItems();
+  }
+
+  Future<void> _deleteQuickItem(String id) async {
+    await HiveDatabase.quickItemsBox.delete(id);
+    _loadQuickItems();
+  }
 
   @override
   void dispose() {
@@ -243,16 +278,196 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _addQuickItem(Map<String, dynamic> item) {
+  void _addQuickItem(QuickItem item) {
     final quickProduct = Product(
-      id: 'quick_${item['name'].hashCode}',
-      name: item['name'],
+      id: 'quick_${item.id}',
+      name: item.name,
       barcode: '',
-      price: item['price'],
+      price: item.price,
       stock: 999,
     );
     context.read<BillingBloc>().add(AddProductToCartEvent(quickProduct));
     Vibration.vibrate(duration: 30);
+  }
+
+  void _showEditQuickItemModal(QuickItem item) {
+    final priceController = TextEditingController(text: item.price.toStringAsFixed(0));
+    final nameController = TextEditingController(text: item.name);
+    final iconController = TextEditingController(text: item.icon);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Text(item.icon, style: const TextStyle(fontSize: 24)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${context.tr('edit_quick_item')}: ${item.name}',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: priceController,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: context.tr('quick_item_price'),
+                prefixText: '${AppConstants.currencySymbol} ',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: context.tr('quick_item_name'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: iconController,
+              decoration: InputDecoration(
+                labelText: context.tr('quick_item_icon'),
+                hintText: '🥖 🥚 🥛 🧃 🍬',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            tooltip: context.tr('delete'),
+            onPressed: () async {
+              await _deleteQuickItem(item.id);
+              if (mounted) Navigator.pop(ctx);
+            },
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(context.tr('cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+            onPressed: () async {
+              final newPrice = double.tryParse(priceController.text.trim()) ?? item.price;
+              final newName = nameController.text.trim().isNotEmpty ? nameController.text.trim() : item.name;
+              final newIcon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : item.icon;
+
+              final updated = item.copyWith(
+                name: newName,
+                price: newPrice,
+                icon: newIcon,
+              );
+
+              await _saveQuickItem(updated);
+              if (mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(context.tr('price_updated_msg')),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              }
+            },
+            child: Text(context.tr('save'), style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddQuickItemModal() {
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+    final iconController = TextEditingController(text: '🛍️');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(context.tr('add_quick_item'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: context.tr('quick_item_name'),
+                hintText: 'e.g. قهوة سريعة / حليب شكارة',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: priceController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: context.tr('quick_item_price'),
+                prefixText: '${AppConstants.currencySymbol} ',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: iconController,
+              decoration: InputDecoration(
+                labelText: context.tr('quick_item_icon'),
+                hintText: 'e.g. 🥖 🥚 ☕ 🧀 🥤',
+              ),
+            ),
+            const SizedBox(height: 20),
+            PrimaryButton(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                final price = double.tryParse(priceController.text.trim()) ?? 0.0;
+                final icon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : '🛍️';
+
+                if (name.isNotEmpty && price > 0) {
+                  final newItem = QuickItem(
+                    id: 'q_${DateTime.now().millisecondsSinceEpoch}',
+                    name: name,
+                    price: price,
+                    icon: icon,
+                  );
+
+                  await _saveQuickItem(newItem);
+                  if (mounted) Navigator.pop(ctx);
+                }
+              },
+              icon: Icons.add,
+              label: context.tr('save'),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -342,6 +557,20 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () async {
                     setState(() => _isScanningPaused = true);
                     await context.push('/settings');
+                    if (mounted) {
+                      setState(() {
+                        _isScanningPaused = false;
+                        _lastScanTimes.clear();
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildOverlayButton(
+                  icon: Icons.menu_book_rounded,
+                  onPressed: () async {
+                    setState(() => _isScanningPaused = true);
+                    await context.push('/customers');
                     if (mounted) {
                       setState(() {
                         _isScanningPaused = false;
@@ -561,25 +790,43 @@ class _HomePageState extends State<HomePage> {
             },
           ),
 
-          // Quick Items Bar
+          // Quick Items Bar Pro (Interactive with Long-Press & (+) Add)
           Container(
-            height: 38,
+            height: 42,
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _quickItems.length,
+              itemCount: _quickItems.length + 1,
               separatorBuilder: (_, __) => const SizedBox(width: 6),
               itemBuilder: (context, index) {
+                if (index == _quickItems.length) {
+                  return ActionChip(
+                    avatar: const Icon(Icons.add, size: 16, color: AppTheme.primaryColor),
+                    label: Text(context.tr('add_quick_item'),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    backgroundColor: AppTheme.primaryColor.withOpacity(0.08),
+                    side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.3)),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    onPressed: _showAddQuickItemModal,
+                  );
+                }
+
                 final q = _quickItems[index];
-                return ActionChip(
-                  avatar: Text(q['icon'] as String, style: const TextStyle(fontSize: 14)),
-                  label: Text('${q['name']} (${q['price'].toStringAsFixed(0)} ${AppConstants.currencySymbol})',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  backgroundColor: Colors.white,
-                  side: BorderSide(color: Colors.grey[200]!),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  onPressed: () => _addQuickItem(q),
+                return GestureDetector(
+                  onTap: () => _addQuickItem(q),
+                  onLongPress: () => _showEditQuickItemModal(q),
+                  child: Chip(
+                    avatar: Text(q.icon, style: const TextStyle(fontSize: 14)),
+                    label: Text(
+                      '${q.name} (${q.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: Colors.white,
+                    side: BorderSide(color: Colors.grey[300]!),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 );
               },
             ),

@@ -111,10 +111,14 @@ class PrinterHelper {
     required List<Map<String, dynamic>> items, // Name, Qty, Price, Total
     required double total,
     required String footer,
+    String? customerName,
+    bool isCredit = false,
+    double paidAmount = 0.0,
+    double previousDebt = 0.0,
+    double newDebtTotal = 0.0,
   }) async {
     if (!_isConnected) return;
 
-    // Construct ESC/POS bytes manually or using helper
     List<int> bytes = [];
 
     // Init
@@ -178,24 +182,108 @@ class PrinterHelper {
     // Total (Align Right)
     bytes += EscPos.alignRight;
     bytes += EscPos.boldOn;
-    bytes += _textToBytes('TOTAL: $total');
+    bytes += _textToBytes('TOTAL: ${total.toStringAsFixed(2)} DA');
     bytes += EscPos.lineFeed;
     bytes += EscPos.boldOff;
+
+    // Credit Section (If sale was on credit)
+    if (isCredit && customerName != null) {
+      bytes += EscPos.lineFeed;
+      bytes += EscPos.alignLeft;
+      bytes += _textToBytes('*** COMPTE CREDIT CLIENT ***');
+      bytes += EscPos.lineFeed;
+      bytes += _textToBytes('Client: $customerName');
+      bytes += EscPos.lineFeed;
+      if (previousDebt > 0) {
+        bytes += _textToBytes('Dette Precedente: ${previousDebt.toStringAsFixed(2)} DA');
+        bytes += EscPos.lineFeed;
+      }
+      bytes += _textToBytes('Achats du Jour: ${total.toStringAsFixed(2)} DA');
+      bytes += EscPos.lineFeed;
+      if (paidAmount > 0) {
+        bytes += _textToBytes('Acompte Paye: ${paidAmount.toStringAsFixed(2)} DA');
+        bytes += EscPos.lineFeed;
+      }
+      bytes += EscPos.boldOn;
+      bytes += _textToBytes('SOLDE TOTAL RESTE: ${newDebtTotal.toStringAsFixed(2)} DA');
+      bytes += EscPos.boldOff;
+      bytes += EscPos.lineFeed;
+      bytes += _textToBytes('--------------------------------');
+      bytes += EscPos.lineFeed;
+    }
+
     bytes += EscPos.lineFeed;
 
     // Footer (Center)
     bytes += EscPos.alignCenter;
     bytes += _textToBytes(footer);
     bytes += EscPos.lineFeed;
-    bytes += EscPos.lineFeed; // One line space after footer
     bytes += EscPos.lineFeed;
-    bytes += EscPos.lineFeed; // Additional Feed
+    bytes += EscPos.lineFeed;
+
+    await PrintBluetoothThermal.writeBytes(bytes);
+  }
+
+  Future<void> printDebtPaymentReceipt({
+    required String shopName,
+    required String phone,
+    required String customerName,
+    required double paymentAmount,
+    required double remainingDebt,
+    String note = '',
+  }) async {
+    if (!_isConnected) return;
+
+    List<int> bytes = [];
+    bytes += EscPos.init;
+
+    // Header
+    bytes += EscPos.alignCenter;
+    bytes += EscPos.boldOn;
+    bytes += EscPos.textLarge;
+    bytes += _textToBytes(shopName);
+    bytes += EscPos.lineFeed;
+    bytes += EscPos.textNormal;
+    bytes += EscPos.boldOff;
+    bytes += _textToBytes('*** RECU DE VERSEMENT DETTE ***');
+    bytes += EscPos.lineFeed;
+    bytes += _textToBytes(DateFormat('dd-MM-yyyy hh:mm a').format(DateTime.now()));
+    bytes += EscPos.lineFeed;
+    bytes += _textToBytes('--------------------------------');
+    bytes += EscPos.lineFeed;
+
+    // Details
+    bytes += EscPos.alignLeft;
+    bytes += _textToBytes('Client: $customerName');
+    bytes += EscPos.lineFeed;
+    bytes += EscPos.boldOn;
+    bytes += _textToBytes('Montant Verse: ${paymentAmount.toStringAsFixed(2)} DA');
+    bytes += EscPos.boldOff;
+    bytes += EscPos.lineFeed;
+    if (note.isNotEmpty) {
+      bytes += _textToBytes('Note: $note');
+      bytes += EscPos.lineFeed;
+    }
+    bytes += _textToBytes('--------------------------------');
+    bytes += EscPos.lineFeed;
+    bytes += EscPos.boldOn;
+    bytes += _textToBytes('NOUVEAU SOLDE DETTE: ${remainingDebt.toStringAsFixed(2)} DA');
+    bytes += EscPos.boldOff;
+    bytes += EscPos.lineFeed;
+    bytes += _textToBytes('--------------------------------');
+    bytes += EscPos.lineFeed;
+
+    // Footer
+    bytes += EscPos.alignCenter;
+    bytes += _textToBytes('Merci pour votre confiance!');
+    bytes += EscPos.lineFeed;
+    bytes += EscPos.lineFeed;
+    bytes += EscPos.lineFeed;
 
     await PrintBluetoothThermal.writeBytes(bytes);
   }
 
   List<int> _textToBytes(String text) {
-    // Should verify encoding, but Latin-1 usually works for basic printers
     return List.from(text.codeUnits);
   }
 }

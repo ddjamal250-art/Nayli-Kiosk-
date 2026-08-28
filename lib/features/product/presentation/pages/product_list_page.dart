@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/product_bloc.dart';
@@ -66,6 +66,62 @@ class _ProductListPageState extends State<ProductListPage> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
+            tooltip: context.tr('export_excel'),
+            onPressed: () {
+              final productState = context.read<ProductBloc>().state;
+              final products = productState.products;
+              final buffer = StringBuffer();
+              buffer.writeln('Code-Barres,Nom Produit,Prix Vente (DA),Prix Achat (DA),Stock');
+              for (final p in products) {
+                buffer.writeln('"${p.barcode}","${p.name}",${p.price},${p.costPrice},${p.stock}');
+              }
+
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Row(
+                    children: [
+                      const Icon(Icons.table_view, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Text(context.tr('export_excel'), style: const TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${context.tr('exported_success')} (${products.length} articles)',
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Container(
+                        maxHeight: 150,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SingleChildScrollView(
+                          child: Text(
+                            buffer.toString(),
+                            style: const TextStyle(fontFamily: 'monospace', fontSize: 10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(context.tr('close')),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.archive_outlined, color: AppTheme.primaryColor),
             tooltip: context.tr('stock_in'),

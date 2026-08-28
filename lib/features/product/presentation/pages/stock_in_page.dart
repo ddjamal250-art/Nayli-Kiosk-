@@ -40,6 +40,7 @@ class _StockInPageState extends State<StockInPage> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _costPriceController = TextEditingController();
   final TextEditingController _qtyController = TextEditingController(text: '12');
 
   final List<Map<String, dynamic>> _sessionStockIns = [];
@@ -49,6 +50,7 @@ class _StockInPageState extends State<StockInPage> {
     _scannerController.dispose();
     _nameController.dispose();
     _priceController.dispose();
+    _costPriceController.dispose();
     _qtyController.dispose();
     super.dispose();
   }
@@ -92,6 +94,9 @@ class _StockInPageState extends State<StockInPage> {
 
         _nameController.text = _productName;
         _priceController.text = _price.toStringAsFixed(2);
+        _costPriceController.text = existingShopProduct.costPrice > 0
+            ? existingShopProduct.costPrice.toStringAsFixed(2)
+            : '';
       });
     } else {
       final masterItem = MasterCatalogSeed.lookup(barcode);
@@ -104,6 +109,7 @@ class _StockInPageState extends State<StockInPage> {
 
         _nameController.text = _productName;
         _priceController.text = _price > 0 ? _price.toStringAsFixed(2) : '';
+        _costPriceController.clear();
       });
     }
   }
@@ -125,6 +131,7 @@ class _StockInPageState extends State<StockInPage> {
     }
 
     final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+    final costPrice = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
     final qty = int.tryParse(_qtyController.text.trim()) ?? _quantityToAdd;
 
     if (qty <= 0) {
@@ -135,17 +142,28 @@ class _StockInPageState extends State<StockInPage> {
     }
 
     if (_isExistingInShop && _existingProductId != null) {
-      context.read<ProductBloc>().add(AdjustProductStock(
-        productId: _existingProductId!,
-        quantityDelta: qty,
-        newPrice: price > 0 ? price : null,
-      ));
+      final existing = context
+          .read<ProductBloc>()
+          .state
+          .products
+          .firstWhere((p) => p.id == _existingProductId);
+
+      final updated = Product(
+        id: existing.id,
+        name: name,
+        barcode: existing.barcode,
+        price: price > 0 ? price : existing.price,
+        costPrice: costPrice > 0 ? costPrice : existing.costPrice,
+        stock: existing.stock + qty,
+      );
+      context.read<ProductBloc>().add(UpdateProduct(updated));
     } else {
       final newProduct = Product(
         id: const Uuid().v4(),
         name: name,
         barcode: _activeBarcode,
         price: price,
+        costPrice: costPrice,
         stock: qty,
       );
       context.read<ProductBloc>().add(AddProduct(newProduct));
@@ -157,6 +175,7 @@ class _StockInPageState extends State<StockInPage> {
         'barcode': _activeBarcode,
         'qty': qty,
         'price': price,
+        'costPrice': costPrice,
         'time': DateTime.now(),
       });
 
@@ -165,6 +184,7 @@ class _StockInPageState extends State<StockInPage> {
       _productName = '';
       _nameController.clear();
       _priceController.clear();
+      _costPriceController.clear();
       _qtyController.text = '12';
       _quantityToAdd = 12;
       _isExistingInShop = false;
@@ -322,17 +342,49 @@ class _StockInPageState extends State<StockInPage> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Selling Price
-                  Text(context.tr('selling_price'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 4),
-                  TextFormField(
-                    controller: _priceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      hintText: '0.00',
-                      prefixText: '${AppConstants.currencySymbol} ',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    ),
+                  // Selling Price & Cost Price
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(context.tr('selling_price'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            const SizedBox(height: 4),
+                            TextFormField(
+                              controller: _priceController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                hintText: '0.00',
+                                prefixText: '${AppConstants.currencySymbol} ',
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(context.tr('cost_price'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            const SizedBox(height: 4),
+                            TextFormField(
+                              controller: _costPriceController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                hintText: '0.00',
+                                prefixText: '${AppConstants.currencySymbol} ',
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 

@@ -7,6 +7,9 @@ class HiveDatabase {
   static const String shopBoxName = 'shop';
   static const String settingsBoxName = 'settings';
   static const String invoicesBoxName = 'invoices';
+  static const String customersBoxName = 'customers';
+  static const String customerDebtsBoxName = 'customer_debts';
+  static const String quickItemsBoxName = 'quick_items';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -20,6 +23,9 @@ class HiveDatabase {
     await Hive.openBox<ShopModel>(shopBoxName);
     await Hive.openBox(settingsBoxName); // Generic box for simple key-value
     await Hive.openBox(invoicesBoxName); // Box for storing sales transactions
+    await Hive.openBox(customersBoxName); // Box for storing customers & debts
+    await Hive.openBox(customerDebtsBoxName); // Box for debt payment logs
+    await Hive.openBox(quickItemsBoxName); // Box for customizable quick items
   }
 
   static Box<ProductModel> get productBox =>
@@ -27,4 +33,7 @@ class HiveDatabase {
   static Box<ShopModel> get shopBox => Hive.box<ShopModel>(shopBoxName);
   static Box get settingsBox => Hive.box(settingsBoxName);
   static Box get invoicesBox => Hive.box(invoicesBoxName);
+  static Box get customersBox => Hive.box(customersBoxName);
+  static Box get customerDebtsBox => Hive.box(customerDebtsBoxName);
+  static Box get quickItemsBox => Hive.box(quickItemsBoxName);
 }

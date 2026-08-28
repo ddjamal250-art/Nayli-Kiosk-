@@ -1,4 +1,4 @@
-﻿import 'package:billing_app/core/widgets/input_label.dart';
+import 'package:billing_app/core/widgets/input_label.dart';
 import 'package:billing_app/core/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +23,7 @@ class _EditProductPageState extends State<EditProductPage> {
   final _formKey = GlobalKey<FormState>();
   late String _name;
   late double _price;
+  late double _costPrice;
   late int _stock;
 
   @override
@@ -30,6 +31,7 @@ class _EditProductPageState extends State<EditProductPage> {
     super.initState();
     _name = widget.product.name;
     _price = widget.product.price;
+    _costPrice = widget.product.costPrice;
     _stock = widget.product.stock;
   }
 
@@ -42,6 +44,7 @@ class _EditProductPageState extends State<EditProductPage> {
         name: _name,
         barcode: widget.product.barcode,
         price: _price,
+        costPrice: _costPrice,
         stock: _stock,
       );
 
@@ -144,17 +147,29 @@ class _EditProductPageState extends State<EditProductPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          InputLabel(text: context.tr('current_stock')),
+                          InputLabel(text: context.tr('cost_price')),
                           TextFormField(
-                            initialValue: _stock.toString(),
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(hintText: '0'),
-                            onSaved: (value) => _stock = int.tryParse(value ?? '0') ?? _stock,
+                            initialValue: _costPrice > 0 ? _costPrice.toStringAsFixed(2) : '',
+                            keyboardType:
+                                const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              hintText: '0.00',
+                              prefixText: '${AppConstants.currencySymbol} ',
+                            ),
+                            onSaved: (value) => _costPrice = double.tryParse(value ?? '') ?? 0.0,
                           ),
                         ],
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                InputLabel(text: context.tr('current_stock')),
+                TextFormField(
+                  initialValue: _stock.toString(),
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(hintText: '0'),
+                  onSaved: (value) => _stock = int.tryParse(value ?? '0') ?? _stock,
                 ),
               ],
             ),

@@ -7,7 +7,12 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 import '../../../shop/presentation/bloc/shop_bloc.dart';
+import '../../../customer/domain/entities/customer.dart';
+import '../../../customer/presentation/cubit/customer_cubit.dart';
+import '../../../customer/presentation/cubit/customer_state.dart';
 import '../bloc/billing_bloc.dart';
+
+enum PaymentMode { cash, fullCredit, acompteCredit }
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -18,11 +23,108 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   final TextEditingController _paidController = TextEditingController();
+  final TextEditingController _acompteController = TextEditingController();
+  PaymentMode _paymentMode = PaymentMode.cash;
+  Customer? _selectedCustomer;
 
   @override
   void dispose() {
     _paidController.dispose();
+    _acompteController.dispose();
     super.dispose();
+  }
+
+  void _showCustomerPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        String query = '';
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return BlocBuilder<CustomerCubit, CustomerState>(
+              builder: (context, state) {
+                final all = state is CustomerLoaded ? state.customers : <Customer>[];
+                final filtered = query.isEmpty
+                    ? all
+                    : all.where((c) =>
+                        c.name.toLowerCase().contains(query.toLowerCase()) ||
+                        c.phoneNumber.contains(query)).toList();
+
+                return Container(
+                  height: MediaQuery.of(context).size.height * 0.75,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(context.tr('select_customer'),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: context.tr('search_customer_hint'),
+                          prefixIcon: const Icon(Icons.search),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        onChanged: (val) => setModalState(() => query = val),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? Center(
+                                child: Text(context.tr('no_customers_found'),
+                                    style: const TextStyle(color: Colors.grey)),
+                              )
+                            : ListView.separated(
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, __) => const Divider(height: 1),
+                                itemBuilder: (ctx, index) {
+                                  final customer = filtered[index];
+                                  return ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                                      child: Text(
+                                        customer.name.isNotEmpty ? customer.name[0].toUpperCase() : 'C',
+                                        style: const TextStyle(
+                                            color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    title: Text(customer.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    subtitle: Text(
+                                      '${customer.phoneNumber.isNotEmpty ? customer.phoneNumber : ""} • ${context.tr('current_debt')}: ${customer.currentDebt.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: customer.currentDebt > 0 ? Colors.red : Colors.grey[600],
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedCustomer = customer;
+                                      });
+                                      Navigator.pop(ctx);
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -135,7 +237,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Change Calculator Section
+                            // Payment Mode Selector Card
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
@@ -146,92 +248,244 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.calculate_outlined, color: AppTheme.primaryColor, size: 20),
-                                      const SizedBox(width: 6),
-                                      Text(context.tr('change_calc'),
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                    ],
+                                  Text(
+                                    context.tr('payment_mode'),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                   ),
                                   const SizedBox(height: 10),
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: TextFormField(
-                                          controller: _paidController,
-                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                          decoration: InputDecoration(
-                                            labelText: context.tr('paid_amount'),
-                                            hintText: '0.00',
-                                            prefixText: '${AppConstants.currencySymbol} ',
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                          ),
-                                          onChanged: (val) {
-                                            final paid = double.tryParse(val) ?? 0.0;
-                                            context.read<BillingBloc>().add(SetPaidAmountEvent(paid));
-                                          },
+                                        child: _buildPaymentModeChip(
+                                          mode: PaymentMode.cash,
+                                          label: context.tr('pay_cash'),
+                                          icon: Icons.payments_outlined,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      _buildCashChip(billingState.totalAmount, context.tr('exact_amount'), isExact: true),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      _buildCashChip(500, '500'),
-                                      const SizedBox(width: 6),
-                                      _buildCashChip(1000, '1000'),
-                                      const SizedBox(width: 6),
-                                      _buildCashChip(2000, '2000'),
-                                    ],
-                                  ),
-                                  if (billingState.paidAmount > 0) ...[
-                                    const SizedBox(height: 12),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                      decoration: BoxDecoration(
-                                        color: billingState.paidAmount >= billingState.totalAmount
-                                            ? Colors.green.withOpacity(0.1)
-                                            : Colors.orange.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: billingState.paidAmount >= billingState.totalAmount
-                                              ? Colors.green.withOpacity(0.3)
-                                              : Colors.orange.withOpacity(0.3),
+                                      Expanded(
+                                        child: _buildPaymentModeChip(
+                                          mode: PaymentMode.fullCredit,
+                                          label: context.tr('pay_credit'),
+                                          icon: Icons.menu_book_rounded,
                                         ),
                                       ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            billingState.paidAmount >= billingState.totalAmount
-                                                ? context.tr('change_due')
-                                                : context.tr('remaining_due'),
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: billingState.paidAmount >= billingState.totalAmount
-                                                  ? Colors.green[900]
-                                                  : Colors.orange[900],
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _buildPaymentModeChip(
+                                          mode: PaymentMode.acompteCredit,
+                                          label: context.tr('pay_acompte'),
+                                          icon: Icons.price_check,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // 1. CASH Change Calculator Mode
+                            if (_paymentMode == PaymentMode.cash) ...[
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: borderColor),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calculate_outlined, color: AppTheme.primaryColor, size: 20),
+                                        const SizedBox(width: 6),
+                                        Text(context.tr('change_calc'),
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: _paidController,
+                                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                            decoration: InputDecoration(
+                                              labelText: context.tr('paid_amount'),
+                                              hintText: '0.00',
+                                              prefixText: '${AppConstants.currencySymbol} ',
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                             ),
+                                            onChanged: (val) {
+                                              final paid = double.tryParse(val) ?? 0.0;
+                                              context.read<BillingBloc>().add(SetPaidAmountEvent(paid));
+                                            },
                                           ),
-                                          Text(
-                                            '${(billingState.paidAmount >= billingState.totalAmount ? billingState.changeAmount : (billingState.totalAmount - billingState.paidAmount)).toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w900,
-                                              color: billingState.paidAmount >= billingState.totalAmount
-                                                  ? Colors.green[900]
-                                                  : Colors.orange[900],
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _buildCashChip(billingState.totalAmount, context.tr('exact_amount'), isExact: true),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        _buildCashChip(500, '500'),
+                                        const SizedBox(width: 6),
+                                        _buildCashChip(1000, '1000'),
+                                        const SizedBox(width: 6),
+                                        _buildCashChip(2000, '2000'),
+                                      ],
+                                    ),
+                                    if (billingState.paidAmount > 0) ...[
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: billingState.paidAmount >= billingState.totalAmount
+                                              ? Colors.green.withOpacity(0.1)
+                                              : Colors.orange.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: billingState.paidAmount >= billingState.totalAmount
+                                                ? Colors.green.withOpacity(0.3)
+                                                : Colors.orange.withOpacity(0.3),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              billingState.paidAmount >= billingState.totalAmount
+                                                  ? context.tr('change_due')
+                                                  : context.tr('insufficient_amount'),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: billingState.paidAmount >= billingState.totalAmount
+                                                    ? Colors.green[900]
+                                                    : Colors.orange[900],
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                            Text(
+                                              '${(billingState.paidAmount >= billingState.totalAmount ? billingState.changeAmount : (billingState.totalAmount - billingState.paidAmount)).toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w900,
+                                                color: billingState.paidAmount >= billingState.totalAmount
+                                                    ? Colors.green[900]
+                                                    : Colors.orange[900],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ]
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            // 2. CREDIT / ACOMPTE Customer Selector Mode
+                            if (_paymentMode != PaymentMode.cash) ...[
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      context.tr('select_customer'),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    InkWell(
+                                      onTap: _showCustomerPicker,
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[50],
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: borderColor),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(Icons.person,
+                                                    color: _selectedCustomer != null ? AppTheme.primaryColor : Colors.grey),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  _selectedCustomer != null
+                                                      ? _selectedCustomer!.name
+                                                      : context.tr('select_customer_hint'),
+                                                  style: TextStyle(
+                                                    fontWeight: _selectedCustomer != null ? FontWeight.bold : FontWeight.normal,
+                                                    color: _selectedCustomer != null ? Colors.black87 : Colors.grey,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ]
-                                ],
-                            ),
+                                    if (_selectedCustomer != null) ...[
+                                      const SizedBox(height: 10),
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.withOpacity(0.08),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(context.tr('current_debt'),
+                                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                            Text(
+                                              '${_selectedCustomer!.currentDebt.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                                              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                    if (_paymentMode == PaymentMode.acompteCredit) ...[
+                                      const SizedBox(height: 12),
+                                      TextFormField(
+                                        controller: _acompteController,
+                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                        decoration: InputDecoration(
+                                          labelText: context.tr('acompte_amount'),
+                                          hintText: '0.00',
+                                          prefixText: '${AppConstants.currencySymbol} ',
+                                        ),
+                                        onChanged: (v) => setState(() {}),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Builder(builder: (context) {
+                                        final acompte = double.tryParse(_acompteController.text.trim()) ?? 0.0;
+                                        final toCredit = (billingState.totalAmount - acompte).clamp(0.0, double.infinity);
+                                        return Text(
+                                          '${context.tr('remaining_to_credit')} ${toCredit.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+                                        );
+                                      }),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+
                             const SizedBox(height: 120),
                           ],
                         ),
@@ -298,21 +552,69 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 Expanded(
                                   flex: 2,
                                   child: PrimaryButton(
-                                    onPressed: () {
-                                      if (shopState is ShopLoaded) {
-                                        context.read<BillingBloc>().add(
-                                          PrintReceiptEvent(
-                                            shopName: shopState.shop.name,
-                                            address1: shopState.shop.addressLine1,
-                                            address2: shopState.shop.addressLine2,
-                                            phone: shopState.shop.phoneNumber,
-                                            footer: shopState.shop.footerText,
+                                    onPressed: () async {
+                                      if (_paymentMode != PaymentMode.cash && _selectedCustomer == null) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(context.tr('select_customer_hint')),
+                                            backgroundColor: Colors.orange,
                                           ),
                                         );
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Error loading shop'), backgroundColor: Colors.red),
-                                        );
+                                        return;
+                                      }
+
+                                      final shopState = context.read<ShopBloc>().state;
+                                      final shopName = shopState is ShopLoaded ? shopState.shop.name : 'Superette';
+                                      final address1 = shopState is ShopLoaded ? shopState.shop.addressLine1 : '';
+                                      final address2 = shopState is ShopLoaded ? shopState.shop.addressLine2 : '';
+                                      final phone = shopState is ShopLoaded ? shopState.shop.phoneNumber : '';
+                                      final footer = shopState is ShopLoaded ? shopState.shop.footerText : 'Merci!';
+
+                                      double creditToAdd = 0.0;
+                                      double acomptePaid = 0.0;
+                                      double previousDebt = 0.0;
+                                      double newDebtTotal = 0.0;
+
+                                      if (_paymentMode == PaymentMode.fullCredit && _selectedCustomer != null) {
+                                        creditToAdd = billingState.totalAmount;
+                                        previousDebt = _selectedCustomer!.currentDebt;
+                                        newDebtTotal = previousDebt + creditToAdd;
+
+                                        await context.read<CustomerCubit>().addCredit(
+                                              customerId: _selectedCustomer!.id,
+                                              creditAmount: creditToAdd,
+                                              note: 'مشتريات بالكريدي',
+                                            );
+                                      } else if (_paymentMode == PaymentMode.acompteCredit && _selectedCustomer != null) {
+                                        acomptePaid = double.tryParse(_acompteController.text.trim()) ?? 0.0;
+                                        creditToAdd = (billingState.totalAmount - acomptePaid).clamp(0.0, double.infinity);
+                                        previousDebt = _selectedCustomer!.currentDebt;
+                                        newDebtTotal = previousDebt + creditToAdd;
+
+                                        await context.read<CustomerCubit>().addCredit(
+                                              customerId: _selectedCustomer!.id,
+                                              creditAmount: creditToAdd,
+                                              note: 'مشتريات (تسبيق $acomptePaid ${AppConstants.currencySymbol})',
+                                            );
+                                      }
+
+                                      if (mounted) {
+                                        context.read<BillingBloc>().add(
+                                              PrintReceiptEvent(
+                                                shopName: shopName,
+                                                address1: address1,
+                                                address2: address2,
+                                                phone: phone,
+                                                footer: footer,
+                                                isCredit: _paymentMode != PaymentMode.cash,
+                                                customerName: _selectedCustomer?.name,
+                                                paidAmount: _paymentMode == PaymentMode.acompteCredit
+                                                    ? acomptePaid
+                                                    : billingState.paidAmount,
+                                                previousDebt: previousDebt,
+                                                newDebtTotal: newDebtTotal,
+                                              ),
+                                            );
                                       }
                                     },
                                     label: billingState.printSuccess ? context.tr('reprint') : context.tr('confirm_and_print'),
@@ -329,6 +631,44 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ],
                 );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentModeChip({
+    required PaymentMode mode,
+    required String label,
+    required IconData icon,
+  }) {
+    final isSelected = _paymentMode == mode;
+    return InkWell(
+      onTap: () => setState(() => _paymentMode = mode),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryColor : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 18, color: isSelected ? AppTheme.primaryColor : Colors.grey[700]),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? AppTheme.primaryColor : Colors.black87,
+              ),
+            ),
+          ],
         ),
       ),
     );

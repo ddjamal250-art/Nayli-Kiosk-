@@ -1,4 +1,4 @@
-﻿import 'package:billing_app/core/widgets/input_label.dart';
+import 'package:billing_app/core/widgets/input_label.dart';
 import 'package:billing_app/core/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,6 +24,7 @@ class _AddProductPageState extends State<AddProductPage> {
   String _name = '';
   String _barcode = '';
   double _price = 0.0;
+  double _costPrice = 0.0;
   int _stock = 10;
 
   void _scanBarcode() async {
@@ -58,6 +59,7 @@ class _AddProductPageState extends State<AddProductPage> {
         name: _name,
         barcode: _barcode,
         price: _price,
+        costPrice: _costPrice,
         stock: _stock,
       );
 
@@ -153,17 +155,27 @@ class _AddProductPageState extends State<AddProductPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          InputLabel(text: context.tr('initial_stock')),
+                          InputLabel(text: context.tr('cost_price')),
                           TextFormField(
-                            keyboardType: TextInputType.number,
-                            initialValue: '10',
-                            decoration: const InputDecoration(hintText: '10'),
-                            onSaved: (value) => _stock = int.tryParse(value ?? '10') ?? 10,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              hintText: '0.00',
+                              prefixText: '${AppConstants.currencySymbol} ',
+                            ),
+                            onSaved: (value) => _costPrice = double.tryParse(value ?? '') ?? 0.0,
                           ),
                         ],
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                InputLabel(text: context.tr('initial_stock')),
+                TextFormField(
+                  keyboardType: TextInputType.number,
+                  initialValue: '10',
+                  decoration: const InputDecoration(hintText: '10'),
+                  onSaved: (value) => _stock = int.tryParse(value ?? '10') ?? 10,
                 ),
               ],
             ),

@@ -147,6 +147,13 @@ class SettingsPage extends StatelessWidget {
                 ),
                 _buildDivider(),
                 _buildListItem(
+                  icon: Icons.menu_book_rounded,
+                  title: context.tr('credit_ledger_title'),
+                  subtitle: context.tr('total_credit_debts'),
+                  onTap: () => context.push('/customers'),
+                ),
+                _buildDivider(),
+                _buildListItem(
                   icon: Icons.storefront,
                   title: context.tr('shop_details'),
                   subtitle: context.tr('shop_details'),

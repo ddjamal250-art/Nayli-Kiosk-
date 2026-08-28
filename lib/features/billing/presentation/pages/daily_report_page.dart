@@ -40,7 +40,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
     return dailyInvoices;
   }
 
-  Future<void> _printZReport(List<Map<String, dynamic>> invoices, double totalRevenue, int totalItems) async {
+  Future<void> _printZReport(List<Map<String, dynamic>> invoices, double totalRevenue, double totalProfit, int totalItems, double cashTotal, double creditTotal) async {
     final printer = PrinterHelper();
     if (!printer.isConnected) {
       final savedMac = HiveDatabase.settingsBox.get('printer_mac');
@@ -65,17 +65,20 @@ class _DailyReportPageState extends State<DailyReportPage> {
       final dateFormatted = DateFormat('dd/MM/yyyy').format(_selectedDate);
       final reportItems = [
         {'name': context.tr('invoices_count'), 'qty': invoices.length, 'price': '-', 'total': invoices.length},
-        {'name': context.tr('items_sold'), 'qty': totalItems, 'price': '-', 'total': totalItems},
+        {'name': context.tr('sold_items_count'), 'qty': totalItems, 'price': '-', 'total': totalItems},
+        {'name': 'Ventes Cash', 'qty': '-', 'price': '-', 'total': '${cashTotal.toStringAsFixed(2)} DA'},
+        {'name': 'Ventes Credit', 'qty': '-', 'price': '-', 'total': '${creditTotal.toStringAsFixed(2)} DA'},
+        {'name': 'Benefice Net', 'qty': '-', 'price': '-', 'total': '${totalProfit.toStringAsFixed(2)} DA'},
       ];
 
       await printer.printReceipt(
-        shopName: context.tr('z_report_header'),
+        shopName: 'RAPPORT Z - CLOTURE',
         address1: '${context.tr('date')}: $dateFormatted',
         address2: DateFormat('HH:mm').format(DateTime.now()),
         phone: '',
         items: reportItems,
         total: totalRevenue,
-        footer: '---',
+        footer: '--- CLOTURE DE CAISSE ---',
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -94,11 +97,16 @@ class _DailyReportPageState extends State<DailyReportPage> {
   Widget build(BuildContext context) {
     final invoices = _getInvoicesForDate(_selectedDate);
     final totalRevenue = invoices.fold<double>(0.0, (sum, inv) => sum + ((inv['totalAmount'] as num?)?.toDouble() ?? 0.0));
+    final totalCost = invoices.fold<double>(0.0, (sum, inv) => sum + ((inv['totalCost'] as num?)?.toDouble() ?? 0.0));
+    final totalProfit = (totalRevenue - totalCost).clamp(0.0, double.infinity);
+    final profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0.0;
     final totalItems = invoices.fold<int>(0, (sum, inv) => sum + ((inv['itemCount'] as num?)?.toInt() ?? 0));
+    final creditTotal = invoices.where((i) => i['isCredit'] == true).fold<double>(0.0, (sum, inv) => sum + ((inv['totalAmount'] as num?)?.toDouble() ?? 0.0));
+    final cashTotal = (totalRevenue - creditTotal).clamp(0.0, double.infinity);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.tr('report_title'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(context.tr('daily_report_title'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.chevron_left, size: 28),
@@ -115,12 +123,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${context.tr('date')}: ${DateFormat('dd MMMM yyyy').format(_selectedDate)}',
+                  '${DateFormat('dd MMMM yyyy').format(_selectedDate)}',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 TextButton.icon(
                   icon: const Icon(Icons.calendar_today, size: 16),
-                  label: Text(context.tr('change_date')),
+                  label: const Text('تغيير التاريخ'),
                   onPressed: () async {
                     final picked = await showDatePicker(
                       context: context,
@@ -137,26 +145,52 @@ class _DailyReportPageState extends State<DailyReportPage> {
             ),
           ),
 
-          // Summary Cards
+          // Summary Cards Row 1: Revenue & Profit
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
             child: Row(
               children: [
                 Expanded(
                   child: _buildSummaryCard(
-                    title: context.tr('total_revenue'),
+                    title: context.tr('today_revenue'),
                     value: '${totalRevenue.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
                     icon: Icons.monetization_on_outlined,
-                    color: Colors.green,
+                    color: AppTheme.primaryColor,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: _buildSummaryCard(
-                    title: context.tr('invoices_count'),
-                    value: '${invoices.length}',
-                    icon: Icons.receipt_long,
-                    color: AppTheme.primaryColor,
+                    title: '${context.tr('estimated_profit')} (${profitMargin.toStringAsFixed(0)}%)',
+                    value: '${totalProfit.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                    icon: Icons.trending_up,
+                    color: Colors.green[700]!,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Summary Cards Row 2: Cash vs Credit
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard(
+                    title: context.tr('pay_cash'),
+                    value: '${cashTotal.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                    icon: Icons.payments_outlined,
+                    color: Colors.teal,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildSummaryCard(
+                    title: context.tr('pay_credit'),
+                    value: '${creditTotal.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                    icon: Icons.menu_book_rounded,
+                    color: Colors.red[700]!,
                   ),
                 ),
               ],
@@ -233,7 +267,9 @@ class _DailyReportPageState extends State<DailyReportPage> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: PrimaryButton(
-              onPressed: invoices.isEmpty ? null : () => _printZReport(invoices, totalRevenue, totalItems),
+              onPressed: invoices.isEmpty
+                  ? null
+                  : () => _printZReport(invoices, totalRevenue, totalProfit, totalItems, cashTotal, creditTotal),
               icon: Icons.print,
               label: context.tr('print_z_report'),
               isLoading: _isPrinting,
