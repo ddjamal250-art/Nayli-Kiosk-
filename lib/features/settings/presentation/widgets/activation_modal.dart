@@ -68,7 +68,7 @@ class _ActivationModalState extends State<ActivationModal> {
   Widget build(BuildContext context) {
     final deviceId = LicenseService.getDeviceId();
     final isActivated = LicenseService.isActivated();
-    final remainingDays = LicenseService.getRemainingTrialDays();
+    final remainingDays = LicenseService.getRemainingDays();
 
     return Padding(
       padding: EdgeInsets.fromLTRB(

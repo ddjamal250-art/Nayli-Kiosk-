@@ -159,6 +159,9 @@ class LicenseService {
     return false;
   }
 
+  /// Get remaining trial days (backward compatibility)
+  static int getRemainingTrialDays() => getRemainingDays();
+
   /// DEVELOPER ONSITE: Instant Lifetime Activation
   static Future<void> grantPermanentLicense() async {
     final box = HiveDatabase.settingsBox;
@@ -169,11 +172,16 @@ class LicenseService {
   }
 
   /// DEVELOPER ONSITE: Grant Custom Days Trial / Subscription (14, 30, 365 days)
-  static Future<void> grantCustomPlan({required int days, required String planType}) async {
+  static Future<void> grantCustomPlan({
+    required int days,
+    String planType = 'trial',
+    bool? isSubscription,
+  }) async {
     final box = HiveDatabase.settingsBox;
     final expiry = DateTime.now().add(Duration(days: days));
     await box.put(_licenseExpiryKey, expiry.toIso8601String());
-    await box.put(_licenseTypeKey, planType);
+    final type = isSubscription == true ? 'subscription' : planType;
+    await box.put(_licenseTypeKey, type);
     await box.delete(_licenseKey);
   }
 
