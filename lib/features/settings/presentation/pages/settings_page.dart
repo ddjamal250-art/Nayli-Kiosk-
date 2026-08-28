@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app_settings/app_settings.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/utils/backup_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/language_cubit.dart';
 
@@ -165,6 +167,13 @@ class SettingsPage extends StatelessWidget {
                   title: context.tr('shop_details'),
                   subtitle: context.tr('shop_details'),
                   onTap: () => context.push('/shop'),
+                ),
+                _buildDivider(),
+                _buildListItem(
+                  icon: Icons.backup_outlined,
+                  title: 'النسخ الاحتياطي واسترجاع البيانات',
+                  subtitle: 'حفظ قاعدة بيانات المحل واسترجاعها بأمان بدون إنترنت',
+                  onTap: () => _showBackupRestoreSheet(context),
                 ),
               ],
             ),
@@ -379,5 +388,158 @@ class SettingsPage extends StatelessWidget {
   Widget _buildDivider() {
     return const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF2F2F7));
   }
+
+  void _showBackupRestoreSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('النسخ الاحتياطي والأمان (بدون إنترنت)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.download, color: Colors.green),
+              ),
+              title: const Text('إنشاء نسخة احتياطية محلية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: const Text('تصدير كافة المنتجات والمبيعات والديون والإعدادات كملف أمان', style: TextStyle(fontSize: 11)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showExportDialog(context);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.upload, color: Colors.blue),
+              ),
+              title: const Text('استرجاع نسخة احتياطية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: const Text('استيراد البيانات واسترجاع قاعدة البيانات بأمان', style: TextStyle(fontSize: 11)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showImportDialog(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showExportDialog(BuildContext context) {
+    final jsonStr = BackupHelper.exportDatabaseToJson();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('النسخة الاحتياطية جاهزة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('تم تجميع وحفظ كامل قاعدة بيانات المحل (السلع، الديون، الفواتير). يمكنك نسخ الكود وحفظه:'),
+            const SizedBox(height: 10),
+            Container(
+              maxHeight: 140,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
+              child: SingleChildScrollView(
+                child: Text(jsonStr, style: const TextStyle(fontFamily: 'monospace', fontSize: 10)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: jsonStr));
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('📋 تم نسخ النسخة الاحتياطية إلى الحافظة!'), backgroundColor: Colors.green),
+              );
+            },
+            child: const Text('نسخ كود النسخة (Copy)'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('تم', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImportDialog(BuildContext context) {
+    final textController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('استرجاع قاعدة البيانات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('ألصق نص النسخة الاحتياطية (JSON Backup) لاسترجاع البيانات:'),
+            const SizedBox(height: 10),
+            TextField(
+              controller: textController,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                hintText: 'ألصق كود النسخة الاحتياطية هنا...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+            onPressed: () async {
+              final text = textController.text.trim();
+              if (text.isNotEmpty) {
+                final success = await BackupHelper.restoreDatabaseFromJson(context, text);
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(success ? '✅ تم استرجاع قاعدة البيانات بنجاح!' : '❌ حدث خطأ في صيغة النسخة الاحتياطية'),
+                      backgroundColor: success ? Colors.green : Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('استرجاع الآن', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
 
