@@ -93,6 +93,7 @@ class LicenseService {
     final box = HiveDatabase.settingsBox;
     final type = box.get(_licenseTypeKey) as String? ?? 'locked';
     if (type == 'subscription') return '📅 ترخيص سنوي (365 يوماً)';
+    if (type == 'field_60_days') return '⚡ ترخيص ميداني خاص (شهرين - 60 يوماً)';
     if (type == 'trial_month') return '🟡 ترخيص تجريبي (شهر 30 يوماً)';
     if (type == 'trial_week') return '⏳ ترخيص تجريبي (أسبوعين 14 يوماً)';
     return '🔒 غير مفعل - يلزم كود التفعيل';
@@ -115,11 +116,20 @@ class LicenseService {
     }
   }
 
-  /// Activate with user-entered key (supports Permanent, Year, Month, 2-Weeks)
+  /// Activate with user-entered key (supports Permanent, Year, Month, 2-Weeks, Field 60-days)
   static bool activate(String enteredKey) {
-    final cleanKey = enteredKey.trim().toUpperCase();
+    final cleanKey = enteredKey.trim().toUpperCase().replaceAll(' ', '');
     final deviceId = getDeviceId();
     final box = HiveDatabase.settingsBox;
+
+    // 0. Special Developer Field Activation Code: RAACH60 (60 Days / 2 Months)
+    if (cleanKey == 'RAACH60') {
+      final expiry = DateTime.now().add(const Duration(days: 60));
+      box.put(_licenseKey, 'RAACH60');
+      box.put(_licenseExpiryKey, expiry.toIso8601String());
+      box.put(_licenseTypeKey, 'field_60_days');
+      return true;
+    }
 
     // 1. Check Permanent Plan ('P')
     if (cleanKey == generateKeyForDevice(deviceId, plan: 'P')) {
