@@ -113,6 +113,51 @@ class MasterCatalogService {
         debugPrint('⚠️ Master products json load warning: $e');
       }
 
+      // 4. Load the 100k Algerian products dataset in background isolate
+      try {
+        final json100kString = await rootBundle.loadString('assets/data/algerian_products_100k.json');
+        final List<dynamic> json100kList = await compute(_parseJson, json100kString);
+
+        for (final raw in json100kList) {
+          if (raw is Map) {
+            final barcode = (raw['barcode'] ?? '').toString().trim();
+            if (barcode.isEmpty) continue;
+            if (_barcodeMap.containsKey(barcode)) continue;
+
+            final nameAr = (raw['name_ar'] ?? '').toString().trim();
+            final nameFr = (raw['name_fr'] ?? '').toString().trim();
+            final nameDefault = (raw['name'] ?? '').toString().trim();
+            final brand = (raw['brand'] ?? '').toString().trim();
+
+            String finalName = nameAr.isNotEmpty
+                ? nameAr
+                : (nameDefault.isNotEmpty ? nameDefault : nameFr);
+
+            if (brand.isNotEmpty && !finalName.toLowerCase().contains(brand.toLowerCase())) {
+              finalName = '$brand - $finalName';
+            }
+
+            final category = (raw['category'] ?? 'عام').toString().trim();
+            final double price = (raw['indicative_price'] as num?)?.toDouble() ?? 0.0;
+            final double cost = (price * 0.85).roundToDouble();
+
+            final catalogItem = MasterCatalogItem(
+              barcode: barcode,
+              name: finalName.isNotEmpty ? finalName : 'منتج جزائري $barcode',
+              category: category.isNotEmpty ? category : 'عام',
+              defaultPrice: price > 0 ? price : 100.0,
+              defaultCost: cost > 0 ? cost : 80.0,
+            );
+
+            _barcodeMap[barcode] = catalogItem;
+            _allItems.add(catalogItem);
+            if (category.isNotEmpty) _categories.add(category);
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ 100k dataset load info: $e');
+      }
+
       _isLoaded = true;
       debugPrint('🚀 MasterCatalogService: Fully indexed ${_barcodeMap.length} Algerian products from all dataset files!');
     } catch (e) {
