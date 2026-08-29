@@ -127,3 +127,18 @@ class PrintReceiptEvent extends BillingEvent {
         newDebtTotal,
       ];
 }
+
+class ApplyDiscountEvent extends BillingEvent {
+  final double value;
+  final bool isPercentage;
+
+  const ApplyDiscountEvent({required this.value, required this.isPercentage});
+
+  @override
+  List<Object> get props => [value, isPercentage];
+}
+
+class RemoveDiscountEvent extends BillingEvent {}
+
+class ToggleReturnModeEvent extends BillingEvent {}
+

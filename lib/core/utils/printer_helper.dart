@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../data/hive_database.dart';
 
 class EscPos {
   static const List<int> init = [0x1B, 0x40];
@@ -24,10 +25,6 @@ class PrinterHelper {
   bool get isConnected => _isConnected;
 
   Future<bool> checkPermission() async {
-    // Request Bluetooth and Location permissions
-    // Android 12+ needs BLUETOOTH_SCAN, BLUETOOTH_CONNECT
-    // Older Android needs BLUETOOTH, BLUETOOTH_ADMIN, ACCESS_FINE_LOCATION
-
     Map<Permission, PermissionStatus> statuses = await [
       Permission.bluetooth,
       Permission.bluetoothScan,
@@ -63,8 +60,7 @@ class PrinterHelper {
   Future<bool> disconnect() async {
     try {
       final bool result = await PrintBluetoothThermal.disconnect;
-      _isConnected =
-          !result; // If disconnected successfully, isConnected is false
+      _isConnected = !result;
       return result;
     } catch (e) {
       return false;
@@ -73,31 +69,8 @@ class PrinterHelper {
 
   Future<void> printText(String text) async {
     if (!_isConnected) return;
-
-    // Simple text printing
-    // We can use bytes for advanced formatting
-    // But plugin supports basic text or bytes
-
-    // Checking battery or connection status
     final bool connectionStatus = await PrintBluetoothThermal.connectionStatus;
     if (connectionStatus) {
-      // Plugin allows sending bytes. We need ESC/POS commands for text.
-      // However, the plugin might have helper.
-      // Looking at doc, `writeBytes` or `writeString`?
-      // The plugin `print_bluetooth_thermal` mainly exposes `writeBytes`.
-      // We need a generator. `esc_pos_utils` is common but not requested.
-      // But wait, `print_bluetooth_thermal` example often uses `capability_profile` and `generator`.
-      // I don't have `esc_pos_utils` or similar in my pubspec.
-      // The user requested `print_bluetooth_thermal`.
-      // Let's assume we can send raw string bytes or use a simple helper.
-      // Actually without `esc_pos_utils`, formatting is hard.
-      // I will try to use `esc_pos_utils_plus` or similar if I can add it, but user gave specific packages.
-      // Wait, user allowed "use required plugins".
-      // "suggest barcode scanner ... and use required plugins".
-      // So I can add `esc_pos_utils_plus`.
-
-      // For now, I'll assume simple text printing by converting string to bytes.
-      // ASCII bytes.
       List<int> bytes = text.codeUnits;
       await PrintBluetoothThermal.writeBytes(bytes);
     }
@@ -116,8 +89,51 @@ class PrinterHelper {
     double paidAmount = 0.0,
     double previousDebt = 0.0,
     double newDebtTotal = 0.0,
+    double discount = 0.0,
   }) async {
     if (!_isConnected) return;
+
+    // Load custom template if exists
+    final savedTemplate = HiveDatabase.settingsBox.get('receipt_template');
+    String actualShopName = shopName;
+    String actualAddress = address1;
+    String actualSlogan = address2;
+    String actualPhone = phone;
+    String actualFooter = footer;
+    String actualFiscal = '';
+    String actualSocial = '';
+    String actualCashier = '';
+    String actualThankYou = '';
+    String sepLine = '--------------------------------';
+    List<String> extraLines = [];
+
+    if (savedTemplate is Map) {
+      final map = Map<String, dynamic>.from(savedTemplate);
+      if ((map['shopName'] as String?)?.isNotEmpty == true) actualShopName = map['shopName'];
+      if (map['showAddress'] == true && (map['address'] as String?)?.isNotEmpty == true) actualAddress = map['address'];
+      else if (map['showAddress'] == false) actualAddress = '';
+
+      if (map['showSlogan'] == true && (map['slogan'] as String?)?.isNotEmpty == true) actualSlogan = map['slogan'];
+      else if (map['showSlogan'] == false) actualSlogan = '';
+
+      if (map['showPhone'] == true && (map['phone'] as String?)?.isNotEmpty == true) actualPhone = map['phone'];
+      else if (map['showPhone'] == false) actualPhone = '';
+
+      if (map['showFiscalInfo'] == true && (map['fiscalInfo'] as String?)?.isNotEmpty == true) actualFiscal = map['fiscalInfo'];
+      if (map['showSocialMedia'] == true && (map['socialMedia'] as String?)?.isNotEmpty == true) actualSocial = map['socialMedia'];
+      if (map['showCashierName'] == true && (map['cashierName'] as String?)?.isNotEmpty == true) actualCashier = map['cashierName'];
+      if (map['showFooterNote'] == true && (map['footerNote'] as String?)?.isNotEmpty == true) actualFooter = map['footerNote'];
+      else if (map['showFooterNote'] == false) actualFooter = '';
+
+      if (map['showThankYou'] == true && (map['thankYou'] as String?)?.isNotEmpty == true) actualThankYou = map['thankYou'];
+
+      final style = map['separatorStyle'] ?? 'dashed';
+      if (style == 'stars') sepLine = '********************************';
+      else if (style == 'double') sepLine = '================================';
+      else if (style == 'dots') sepLine = '................................';
+
+      extraLines = List<String>.from(map['customExtraLines'] ?? []);
+    }
 
     List<int> bytes = [];
 
@@ -128,37 +144,51 @@ class PrinterHelper {
     bytes += EscPos.alignCenter;
     bytes += EscPos.boldOn;
     bytes += EscPos.textLarge;
-    bytes += _textToBytes(shopName);
+    bytes += _textToBytes(actualShopName);
     bytes += EscPos.lineFeed;
 
-    // Address & Phone (Normal, Center)
+    // Slogan, Address & Phone (Normal, Center)
     bytes += EscPos.textNormal;
     bytes += EscPos.boldOff;
-    if (address1.isNotEmpty) {
-      bytes += _textToBytes(address1);
+    if (actualSlogan.isNotEmpty) {
+      bytes += _textToBytes(actualSlogan);
       bytes += EscPos.lineFeed;
     }
-    if (address2.isNotEmpty) {
-      bytes += _textToBytes(address2);
+    if (actualAddress.isNotEmpty) {
+      bytes += _textToBytes(actualAddress);
       bytes += EscPos.lineFeed;
     }
-    bytes += _textToBytes(phone);
-    bytes += EscPos.lineFeed;
+    if (actualPhone.isNotEmpty) {
+      bytes += _textToBytes(actualPhone);
+      bytes += EscPos.lineFeed;
+    }
+    if (actualFiscal.isNotEmpty) {
+      bytes += _textToBytes(actualFiscal);
+      bytes += EscPos.lineFeed;
+    }
+    if (actualSocial.isNotEmpty) {
+      bytes += _textToBytes(actualSocial);
+      bytes += EscPos.lineFeed;
+    }
 
     // Date and Time
-    String formattedDate =
-        DateFormat('dd-MM-yyyy hh:mm a').format(DateTime.now());
+    String formattedDate = DateFormat('dd-MM-yyyy hh:mm a').format(DateTime.now());
     bytes += _textToBytes(formattedDate);
     bytes += EscPos.lineFeed;
 
-    bytes += _textToBytes('--------------------------------');
+    if (actualCashier.isNotEmpty) {
+      bytes += _textToBytes(actualCashier);
+      bytes += EscPos.lineFeed;
+    }
+
+    bytes += _textToBytes(sepLine);
     bytes += EscPos.lineFeed;
 
     // Header (Align Left)
     bytes += EscPos.alignLeft;
     bytes += _textToBytes('Item            Price   Total');
     bytes += EscPos.lineFeed;
-    bytes += _textToBytes('--------------------------------');
+    bytes += _textToBytes(sepLine);
     bytes += EscPos.lineFeed;
 
     // Items
@@ -176,11 +206,15 @@ class PrinterHelper {
       bytes += EscPos.lineFeed;
     }
 
-    bytes += _textToBytes('--------------------------------');
+    bytes += _textToBytes(sepLine);
     bytes += EscPos.lineFeed;
 
     // Total (Align Right)
     bytes += EscPos.alignRight;
+    if (discount > 0) {
+      bytes += _textToBytes('REMISE: -${discount.toStringAsFixed(2)} DA');
+      bytes += EscPos.lineFeed;
+    }
     bytes += EscPos.boldOn;
     bytes += _textToBytes('TOTAL: ${total.toStringAsFixed(2)} DA');
     bytes += EscPos.lineFeed;
@@ -208,16 +242,32 @@ class PrinterHelper {
       bytes += _textToBytes('SOLDE TOTAL RESTE: ${newDebtTotal.toStringAsFixed(2)} DA');
       bytes += EscPos.boldOff;
       bytes += EscPos.lineFeed;
-      bytes += _textToBytes('--------------------------------');
+      bytes += _textToBytes(sepLine);
       bytes += EscPos.lineFeed;
     }
 
-    bytes += EscPos.lineFeed;
+    // Extra Custom Lines
+    if (extraLines.isNotEmpty) {
+      bytes += EscPos.alignCenter;
+      for (final line in extraLines) {
+        bytes += _textToBytes(line);
+        bytes += EscPos.lineFeed;
+      }
+      bytes += _textToBytes(sepLine);
+      bytes += EscPos.lineFeed;
+    }
 
     // Footer (Center)
-    bytes += EscPos.alignCenter;
-    bytes += _textToBytes(footer);
-    bytes += EscPos.lineFeed;
+    if (actualFooter.isNotEmpty) {
+      bytes += EscPos.alignCenter;
+      bytes += _textToBytes(actualFooter);
+      bytes += EscPos.lineFeed;
+    }
+    if (actualThankYou.isNotEmpty) {
+      bytes += EscPos.alignCenter;
+      bytes += _textToBytes(actualThankYou);
+      bytes += EscPos.lineFeed;
+    }
     bytes += EscPos.lineFeed;
     bytes += EscPos.lineFeed;
 

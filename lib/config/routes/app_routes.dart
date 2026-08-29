@@ -20,6 +20,8 @@ import '../../features/customer/presentation/pages/customers_page.dart';
 import '../../features/product/domain/entities/product.dart';
 import '../../core/utils/license_service.dart';
 
+import '../../features/settings/presentation/pages/receipt_customizer_page.dart';
+
 final router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
@@ -60,6 +62,12 @@ final router = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsPage(),
+      routes: [
+        GoRoute(
+          path: 'receipt-designer',
+          builder: (context, state) => const ReceiptCustomizerPage(),
+        ),
+      ],
     ),
     GoRoute(
       path: '/master-catalog',

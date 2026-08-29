@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -313,6 +313,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: 'مكتبة المنتجات الجزائرية (15,500+)',
                   subtitle: 'تصفح واستيراد سلع السوبرماركت لمخزونك',
                   onTap: () => context.push('/master-catalog'),
+                ),
+                _buildDivider(),
+                _buildListItem(
+                  icon: Icons.receipt_long,
+                  title: 'تخصيص وتصميم وصل الفاتورة (Receipt Designer)',
+                  subtitle: 'تعديل وتخصيص شكل الوصل، الشعار، أرقام الهاتف، والشروط',
+                  onTap: () => context.push('/settings/receipt-designer'),
                 ),
                 _buildDivider(),
                 _buildListItem(

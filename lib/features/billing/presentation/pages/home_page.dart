@@ -501,6 +501,87 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _showDiscountDialog() {
+    final billingBloc = context.read<BillingBloc>();
+    final currentState = billingBloc.state;
+    final ctrl = TextEditingController(
+      text: currentState.discountValue > 0 ? currentState.discountValue.toStringAsFixed(0) : '',
+    );
+    bool isPercentage = currentState.isDiscountPercentage;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.discount_outlined, color: Colors.purple),
+              SizedBox(width: 8),
+              Text('إضافة تخفيض / Remise 🏷️', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ChoiceChip(
+                    label: const Text('دج (مبلغ ثابت)', style: TextStyle(fontSize: 12)),
+                    selected: !isPercentage,
+                    onSelected: (v) => setDialogState(() => isPercentage = false),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('% (نسبة مئوية)', style: TextStyle(fontSize: 12)),
+                    selected: isPercentage,
+                    onSelected: (v) => setDialogState(() => isPercentage = true),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: isPercentage ? 'نسبة الخصم (%)' : 'مبلغ الخصم (دج)',
+                  suffixText: isPercentage ? '%' : 'دج',
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            if (currentState.discountValue > 0)
+              TextButton(
+                onPressed: () {
+                  billingBloc.add(RemoveDiscountEvent());
+                  Navigator.pop(ctx);
+                },
+                child: const Text('حذف التخفيض', style: TextStyle(color: Colors.red)),
+              ),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.purple[700]),
+              onPressed: () {
+                final val = double.tryParse(ctrl.text.trim()) ?? 0.0;
+                if (val > 0) {
+                  billingBloc.add(ApplyDiscountEvent(value: val, isPercentage: isPercentage));
+                } else {
+                  billingBloc.add(RemoveDiscountEvent());
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('تطبيق التخفيض', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showAddQuickItemModal() {
     final nameController = TextEditingController();
     final priceController = TextEditingController();
@@ -979,6 +1060,58 @@ class _HomePageState extends State<HomePage> {
                                   Icon(Icons.pause_circle_outline, size: 14, color: Colors.orange),
                                   SizedBox(width: 3),
                                   Text('سلة مؤقتة', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          // Discount / Remise Button
+                          InkWell(
+                            onTap: _showDiscountDialog,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: state.calculatedDiscount > 0 ? Colors.purple.withOpacity(0.2) : Colors.purple.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.purple.withOpacity(0.4)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.discount_outlined, size: 14, color: Colors.purple),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    state.calculatedDiscount > 0
+                                        ? 'خصم (-${state.calculatedDiscount.toStringAsFixed(0)} دج)'
+                                        : 'تخفيض',
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.purple),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          // Return Mode (Mode Retour) Button
+                          InkWell(
+                            onTap: () => context.read<BillingBloc>().add(ToggleReturnModeEvent()),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: state.isReturnMode ? Colors.red : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: state.isReturnMode ? Colors.red : Colors.grey[400]!),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.replay_circle_filled, size: 14, color: state.isReturnMode ? Colors.white : Colors.black87),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'إرجاع',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: state.isReturnMode ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),

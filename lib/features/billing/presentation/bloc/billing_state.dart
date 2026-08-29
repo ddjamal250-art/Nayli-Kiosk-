@@ -7,6 +7,9 @@ class BillingState extends Equatable {
   final bool isPrinting;
   final bool printSuccess;
   final double paidAmount;
+  final double discountValue;
+  final bool isDiscountPercentage;
+  final bool isReturnMode;
 
   const BillingState({
     this.cartItems = const [],
@@ -15,9 +18,14 @@ class BillingState extends Equatable {
     this.isPrinting = false,
     this.printSuccess = false,
     this.paidAmount = 0.0,
+    this.discountValue = 0.0,
+    this.isDiscountPercentage = false,
+    this.isReturnMode = false,
   });
 
-  double get totalAmount => cartItems.fold(0, (sum, item) => sum + item.total);
+  double get subTotalAmount => cartItems.fold(0, (sum, item) => sum + item.total);
+  double get calculatedDiscount => isDiscountPercentage ? (subTotalAmount * (discountValue / 100.0)) : discountValue;
+  double get totalAmount => (subTotalAmount - calculatedDiscount).clamp(0.0, double.infinity);
   double get changeAmount => paidAmount > totalAmount ? (paidAmount - totalAmount) : 0.0;
   bool get hasParkedCart => heldCarts.any((c) => !c.isExpired);
   List<HeldCart> get activeHeldCarts => heldCarts.where((c) => !c.isExpired).toList();
@@ -30,6 +38,9 @@ class BillingState extends Equatable {
     bool? isPrinting,
     bool? printSuccess,
     double? paidAmount,
+    double? discountValue,
+    bool? isDiscountPercentage,
+    bool? isReturnMode,
   }) {
     return BillingState(
       cartItems: cartItems ?? this.cartItems,
@@ -38,6 +49,9 @@ class BillingState extends Equatable {
       isPrinting: isPrinting ?? this.isPrinting,
       printSuccess: printSuccess ?? this.printSuccess,
       paidAmount: paidAmount ?? this.paidAmount,
+      discountValue: discountValue ?? this.discountValue,
+      isDiscountPercentage: isDiscountPercentage ?? this.isDiscountPercentage,
+      isReturnMode: isReturnMode ?? this.isReturnMode,
     );
   }
 
@@ -49,5 +63,8 @@ class BillingState extends Equatable {
         isPrinting,
         printSuccess,
         paidAmount,
+        discountValue,
+        isDiscountPercentage,
+        isReturnMode,
       ];
 }

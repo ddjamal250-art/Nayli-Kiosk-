@@ -429,6 +429,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         ],
                                       );
                                     }),
+                                    if (billingState.calculatedDiscount > 0) ...[
+                                      TableRow(
+                                        decoration: BoxDecoration(color: Colors.purple.withOpacity(0.04)),
+                                        children: [
+                                          _buildDataCell('المجموع قبل الخصم', TextAlign.start, isSubtitle: true),
+                                          _buildDataCell('', TextAlign.center),
+                                          _buildDataCell('${billingState.subTotalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol}', TextAlign.end, isSubtitle: true),
+                                        ],
+                                      ),
+                                      TableRow(
+                                        decoration: BoxDecoration(color: Colors.purple.withOpacity(0.08)),
+                                        children: [
+                                          _buildDataCell('🏷️ التخفيض / Remise', TextAlign.start, isBold: true),
+                                          _buildDataCell(billingState.isDiscountPercentage ? '(${billingState.discountValue.toStringAsFixed(0)}%)' : '', TextAlign.center),
+                                          _buildDataCell('-${billingState.calculatedDiscount.toStringAsFixed(2)} ${AppConstants.currencySymbol}', TextAlign.end, isBold: true),
+                                        ],
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),

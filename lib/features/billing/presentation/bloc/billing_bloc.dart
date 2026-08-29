@@ -26,10 +26,32 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     on<ParkCurrentCartEvent>(_onParkCurrentCart);
     on<ResumeHeldCartEvent>(_onResumeHeldCart);
     on<DeleteHeldCartEvent>(_onDeleteHeldCart);
-    on<CleanExpiredHeldCartsEvent>(_onCleanExpiredHeldCarts);
     on<ResumeParkedCartEvent>(_onResumeParkedCart);
     on<SetPaidAmountEvent>(_onSetPaidAmount);
     on<PrintReceiptEvent>(_onPrintReceipt);
+    on<ApplyDiscountEvent>(_onApplyDiscount);
+    on<RemoveDiscountEvent>(_onRemoveDiscount);
+    on<ToggleReturnModeEvent>(_onToggleReturnMode);
+  }
+
+  void _onApplyDiscount(ApplyDiscountEvent event, Emitter<BillingState> emit) {
+    emit(state.copyWith(
+      discountValue: event.value,
+      isDiscountPercentage: event.isPercentage,
+    ));
+  }
+
+  void _onRemoveDiscount(RemoveDiscountEvent event, Emitter<BillingState> emit) {
+    emit(state.copyWith(
+      discountValue: 0.0,
+      isDiscountPercentage: false,
+    ));
+  }
+
+  void _onToggleReturnMode(ToggleReturnModeEvent event, Emitter<BillingState> emit) {
+    emit(state.copyWith(
+      isReturnMode: !state.isReturnMode,
+    ));
   }
 
   Future<void> _onScanBarcode(
