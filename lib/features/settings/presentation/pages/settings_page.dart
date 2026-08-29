@@ -360,6 +360,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _buildDivider(),
                 _buildListItem(
+                  icon: Icons.label_important_rounded,
+                  iconColor: Colors.deepOrange,
+                  title: 'مولد وطباعة ملصقات الرفوف والباركود 🏷️',
+                  subtitle: 'توليد وطباعة بطاقات الأسعار لرفوف السوبرماركت مباشرة',
+                  onTap: () => context.push('/products/shelf-labels'),
+                ),
+                _buildDivider(),
+                _buildListItem(
                   icon: Icons.table_chart_outlined,
                   iconColor: Colors.green[700]!,
                   title: 'تصدير البيانات والنسخ الاحتياطي (Excel)',

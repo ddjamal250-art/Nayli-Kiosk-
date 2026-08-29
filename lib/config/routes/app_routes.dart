@@ -20,6 +20,7 @@ import '../../features/customer/presentation/pages/customers_page.dart';
 import '../../features/product/domain/entities/product.dart';
 import '../../core/utils/license_service.dart';
 
+import '../../features/product/presentation/pages/shelf_labels_page.dart';
 import '../../features/settings/presentation/pages/receipt_customizer_page.dart';
 
 final router = GoRouter(
@@ -112,6 +113,10 @@ final router = GoRouter(
         GoRoute(
           path: 'catalog',
           builder: (context, state) => const MasterCatalogPage(),
+        ),
+        GoRoute(
+          path: 'shelf-labels',
+          builder: (context, state) => const ShelfLabelsPage(),
         ),
         GoRoute(
           path: 'edit/:id',
