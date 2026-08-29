@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/security_pin_helper.dart';
 
 class ExpensesPage extends StatefulWidget {
   const ExpensesPage({super.key});
@@ -68,7 +69,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
     });
   }
 
-  void _showAddExpenseDialog() {
+  void _showAddExpenseDialog() async {
+    final auth = await SecurityPinHelper.authenticate(context, title: 'تسجيل مصروف من الكاسة');
+    if (!auth || !mounted) return;
+
     final titleCtrl = TextEditingController(text: 'مصاريف عامة');
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController();

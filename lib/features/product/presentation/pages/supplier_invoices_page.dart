@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/security_pin_helper.dart';
 
 class SupplierInvoicesPage extends StatefulWidget {
   const SupplierInvoicesPage({super.key});
@@ -49,9 +50,12 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
     });
   }
 
-  void _showSettleDebtDialog(Map<String, dynamic> invoice) {
+  void _showSettleDebtDialog(Map<String, dynamic> invoice) async {
     final remaining = (invoice['remainingDebt'] as num?)?.toDouble() ?? 0.0;
     if (remaining <= 0) return;
+
+    final auth = await SecurityPinHelper.authenticate(context, title: 'تسديد دين للمورد');
+    if (!auth || !mounted) return;
 
     final amountCtrl = TextEditingController(text: remaining.toStringAsFixed(0));
 
@@ -125,8 +129,11 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('فاتورة مورد جديدة', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         onPressed: () async {
-          await context.push('/products/supplier-invoice/new');
-          _loadInvoices();
+          final auth = await SecurityPinHelper.authenticate(context, title: 'إنشاء فاتورة مورد جديدة');
+          if (auth && mounted) {
+            await context.push('/products/supplier-invoice/new');
+            _loadInvoices();
+          }
         },
       ),
       body: Column(

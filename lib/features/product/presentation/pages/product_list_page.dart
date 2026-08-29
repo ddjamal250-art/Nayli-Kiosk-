@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_validators.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/utils/security_pin_helper.dart';
 
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
@@ -326,21 +327,31 @@ class _ProductListPageState extends State<ProductListPage> {
                                                 : Colors.red.withOpacity(0.1)),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
-                                      child: Text(
-                                        product.stock > 5
-                                            ? '${product.stock} ${context.tr('in_stock')}'
-                                            : (product.stock > 0
-                                                ? '${product.stock} ${context.tr('low_stock')}'
-                                                : context.tr('out_of_stock')),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: product.stock > 5
-                                              ? Colors.green[800]
-                                              : (product.stock > 0
-                                                  ? Colors.orange[800]
-                                                  : Colors.red[800]),
-                                        ),
+                                      child: Builder(
+                                        builder: (_) {
+                                          final isWeighable = product.isWeighable || product.unit == 'kg';
+                                          final stockText = isWeighable
+                                              ? (product.unitsPerCarton > 1
+                                                  ? '${product.stock} كغ (${(product.stock / product.unitsPerCarton).toStringAsFixed(1)} شكارة)'
+                                                  : '${product.stock} كغ')
+                                              : '${product.stock} ${context.tr('in_stock')}';
+                                          return Text(
+                                            product.stock > 5
+                                                ? stockText
+                                                : (product.stock > 0
+                                                    ? '${product.stock} ${context.tr('low_stock')}'
+                                                    : context.tr('out_of_stock')),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: product.stock > 5
+                                                  ? Colors.green[800]
+                                                  : (product.stock > 0
+                                                      ? Colors.orange[800]
+                                                      : Colors.red[800]),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ],
@@ -362,9 +373,15 @@ class _ProductListPageState extends State<ProductListPage> {
                                       color: AppTheme.primaryColor, size: 20),
                                   constraints: const BoxConstraints(),
                                   padding: const EdgeInsets.all(8),
-                                  onPressed: () {
-                                    context.push('/products/edit/${product.id}',
-                                        extra: product);
+                                  onPressed: () async {
+                                    final auth = await SecurityPinHelper.authenticate(
+                                      context,
+                                      title: 'تعديل السلعة والأسعار',
+                                    );
+                                    if (auth && context.mounted) {
+                                      context.push('/products/edit/${product.id}',
+                                          extra: product);
+                                    }
                                   },
                                 ),
                               ),
@@ -396,7 +413,15 @@ class _ProductListPageState extends State<ProductListPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/products/add'),
+        onPressed: () async {
+          final auth = await SecurityPinHelper.authenticate(
+            context,
+            title: 'إضافة سلعة جديدة',
+          );
+          if (auth && context.mounted) {
+            context.push('/products/add');
+          }
+        },
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
@@ -405,24 +430,30 @@ class _ProductListPageState extends State<ProductListPage> {
     );
   }
 
-  void _confirmDelete(BuildContext context, Product product) {
+  void _confirmDelete(BuildContext context, Product product) async {
+    final auth = await SecurityPinHelper.authenticate(
+      context,
+      title: 'حذف السلعة نهائياً',
+    );
+    if (!auth || !context.mounted) return;
+
     showDialog(
       context: context,
       builder: (innerContext) {
         return AlertDialog(
-          title: const Text('Delete Product'),
-          content: Text('Are you sure you want to delete ${product.name}?'),
+          title: const Text('حذف السلعة'),
+          content: Text('هل أنت متأكد من حذف ${product.name} نهائياً؟'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(innerContext),
-              child: const Text('Cancel'),
+              child: const Text('إلغاء'),
             ),
             TextButton(
               onPressed: () {
                 context.read<ProductBloc>().add(DeleteProduct(product.id));
                 Navigator.pop(innerContext);
               },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              child: const Text('حذف', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
