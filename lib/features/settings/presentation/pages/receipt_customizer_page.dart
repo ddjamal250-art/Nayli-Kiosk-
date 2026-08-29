@@ -60,8 +60,8 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     final saved = box.get('receipt_template');
     final shopBox = HiveDatabase.shopBox;
     final defaultShopName = shopBox.isNotEmpty ? shopBox.values.first.name : 'متجر الأناقة والمواد الغذائية';
-    final defaultPhone = shopBox.isNotEmpty ? shopBox.values.first.phone : '0550 12 34 56';
-    final defaultAddress = shopBox.isNotEmpty ? shopBox.values.first.address : 'حي 500 مسكن، الجلفة';
+    final defaultPhone = shopBox.isNotEmpty ? shopBox.values.first.phoneNumber : '0550 12 34 56';
+    final defaultAddress = shopBox.isNotEmpty ? shopBox.values.first.addressLine1 : 'حي 500 مسكن، الجلفة';
 
     if (saved is Map) {
       final map = Map<String, dynamic>.from(saved);
