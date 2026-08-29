@@ -328,11 +328,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
     const borderColor = Color(0xFFE5E5EA);
 
     return PopScope(
-      canPop: false,
+      canPop: true,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
         if (didPop) return;
-        context.read<BillingBloc>().add(ClearCartEvent());
-        context.go('/');
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/');
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -342,11 +345,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.chevron_left,
-                size: 28, color: Theme.of(context).primaryColor),
+            icon: Icon(Icons.arrow_back_ios_new,
+                size: 20, color: Theme.of(context).primaryColor),
             onPressed: () {
-              context.read<BillingBloc>().add(ClearCartEvent());
-              context.go('/');
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
             },
           ),
         ),

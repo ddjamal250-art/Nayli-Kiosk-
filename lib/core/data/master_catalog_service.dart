@@ -178,12 +178,24 @@ class MasterCatalogService {
     return MasterCatalogSeed.lookup(clean);
   }
 
-  List<MasterCatalogItem> search(String query, {String category = 'الكل', int limit = 0}) {
+  List<MasterCatalogItem> search(String query, {String category = 'الكل', int limit = 50}) {
     final q = query.trim().toLowerCase();
-    final source = allItems;
+    final effectiveLimit = limit > 0 ? limit : 50;
     final List<MasterCatalogItem> results = [];
 
+    // Fast O(1) exact barcode match first
+    if (q.isNotEmpty && _barcodeMap.containsKey(q)) {
+      final exact = _barcodeMap[q]!;
+      if (category == 'الكل' || exact.category == category) {
+        results.add(exact);
+      }
+    }
+
+    final source = allItems;
     for (final item in source) {
+      if (results.length >= effectiveLimit) break;
+      if (results.any((e) => e.barcode == item.barcode)) continue;
+
       final matchesCat = category == 'الكل' || item.category == category;
       if (!matchesCat) continue;
 
@@ -194,8 +206,6 @@ class MasterCatalogService {
           item.category.toLowerCase().contains(q)) {
         results.add(item);
       }
-
-      if (limit > 0 && results.length >= limit) break;
     }
 
     return results;
