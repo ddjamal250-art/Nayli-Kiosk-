@@ -372,6 +372,34 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             horizontal: 16, vertical: 12),
                         child: Column(
                           children: [
+                            if (billingState.isReturnMode)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.replay_circle_filled, color: Colors.red, size: 24),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(context.tr('return_mode_active'),
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.red)),
+                                          Text(context.tr('return_mode_hint'),
+                                              style: const TextStyle(fontSize: 11, color: Colors.brown)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
                             // Items Table
                             Container(
                               decoration: BoxDecoration(
