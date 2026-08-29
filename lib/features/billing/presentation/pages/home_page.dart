@@ -139,6 +139,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _loadQuickItems();
   }
 
+  Future<void> _onReorderQuickItems(int oldIndex, int newIndex) async {
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      final item = _quickItems.removeAt(oldIndex);
+      _quickItems.insert(newIndex, item);
+    });
+    final box = HiveDatabase.quickItemsBox;
+    await box.clear();
+    for (final item in _quickItems) {
+      await box.put(item.id, item.toMap());
+    }
+    SoundService.playScanBeep();
+  }
+
   void _addQuickItem(QuickItem item) {
     context.read<BillingBloc>().add(AddCustomItemEvent(
           name: item.name,
@@ -1317,20 +1333,73 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             },
           ),
 
-          // Quick Items Horizontal Ribbon
+          // Quick Items Horizontal Ribbon with Fluid Drag-and-Drop Reordering
           SizedBox(
             height: 52,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _quickItems.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                if (index == _quickItems.length) {
-                  return InkWell(
+            child: Row(
+              children: [
+                Expanded(
+                  child: ReorderableListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _quickItems.length,
+                    onReorder: _onReorderQuickItems,
+                    proxyDecorator: (child, index, animation) {
+                      return Material(
+                        color: Colors.transparent,
+                        elevation: 6,
+                        shadowColor: Colors.black45,
+                        borderRadius: BorderRadius.circular(12),
+                        child: child,
+                      );
+                    },
+                    itemBuilder: (context, index) {
+                      final item = _quickItems[index];
+                      return Container(
+                        key: ValueKey(item.id),
+                        margin: const EdgeInsets.only(left: 8),
+                        child: InkWell(
+                          onTap: () => _addQuickItem(item),
+                          onLongPress: () => _showEditQuickItemDialog(item),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey[200]!),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2)),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Text(item.icon, style: const TextStyle(fontSize: 18)),
+                                const SizedBox(width: 6),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item.name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    Text(
+                                      '${item.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                      style: TextStyle(fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 16),
+                  child: InkWell(
                     onTap: _showAddQuickItemDialog,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),
@@ -1340,47 +1409,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         children: [
                           Icon(Icons.add, size: 16, color: Colors.grey),
                           SizedBox(width: 4),
-                          Text('إضافة سريعة', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                          Text('إضافة', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
-                  );
-                }
-
-                final item = _quickItems[index];
-                return InkWell(
-                  onTap: () => _addQuickItem(item),
-                  onLongPress: () => _showEditQuickItemDialog(item),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2)),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Text(item.icon, style: const TextStyle(fontSize: 18)),
-                        const SizedBox(width: 6),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(item.name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            Text(
-                              '${item.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                              style: TextStyle(fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 8),
