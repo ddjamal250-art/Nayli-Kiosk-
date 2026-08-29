@@ -279,9 +279,48 @@ class _CheckoutPageState extends State<CheckoutPage> {
       const SnackBar(
         content: Text('📋 تم نسخ نص الفاتورة لمشاركتها عبر واتساب!'),
         backgroundColor: Colors.teal,
-        duration: Duration(seconds: 2),
+        duration: Duration(milliseconds: 1200),
       ),
     );
+  }
+
+  Future<void> _saveAsDevis(BillingState billingState) async {
+    if (billingState.cartItems.isEmpty) return;
+
+    final clientName = _selectedCustomer?.name ?? 'زبون عام';
+    final clientPhone = _selectedCustomer?.phoneNumber ?? '';
+    final devisId = DateTime.now().millisecondsSinceEpoch.toString();
+
+    final items = billingState.cartItems.map((it) => {
+      'name': it.product.name,
+      'price': it.product.price,
+      'costPrice': it.product.costPrice,
+      'quantity': it.quantity,
+      'barcode': it.product.barcode,
+    }).toList();
+
+    await HiveDatabase.devisBox.put(devisId, {
+      'id': devisId,
+      'clientName': clientName,
+      'clientPhone': clientPhone,
+      'date': DateTime.now().toIso8601String(),
+      'items': items,
+      'totalAmount': billingState.totalAmount,
+    });
+
+    if (!mounted) return;
+
+    context.read<BillingBloc>().add(ClearCartEvent());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✅ تم حفظ عرض الأسعار (Devis) للزبون: $clientName'),
+        backgroundColor: Colors.purple[700],
+        duration: const Duration(milliseconds: 1500),
+      ),
+    );
+
+    context.go('/devis');
   }
 
   @override
@@ -803,10 +842,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         ),
                                         icon: const Icon(Icons.share, size: 18, color: Colors.teal),
                                         label: const Text(
-                                          '💬 مشاركة الفاتورة',
-                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal),
+                                          '💬 مشاركة',
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal),
                                         ),
                                         onPressed: () => _shareInvoiceViaWhatsApp(billingState),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          side: BorderSide(color: Colors.purple.withOpacity(0.5)),
+                                        ),
+                                        icon: const Icon(Icons.description, size: 18, color: Colors.purple),
+                                        label: const Text(
+                                          '📄 Devis',
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple),
+                                        ),
+                                        onPressed: () => _saveAsDevis(billingState),
                                       ),
                                     ),
                                   ],

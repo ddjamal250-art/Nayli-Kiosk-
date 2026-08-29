@@ -11,6 +11,11 @@ import '../../features/settings/presentation/pages/activation_page.dart';
 import '../../features/billing/presentation/pages/scanner_page.dart';
 import '../../features/billing/presentation/pages/checkout_page.dart';
 import '../../features/billing/presentation/pages/daily_report_page.dart';
+import '../../features/billing/presentation/pages/expenses_page.dart';
+import '../../features/billing/presentation/pages/devis_page.dart';
+import '../../features/billing/presentation/pages/cashier_shifts_page.dart';
+import '../../features/product/presentation/pages/supplier_invoices_page.dart';
+import '../../features/product/presentation/pages/new_supplier_invoice_page.dart';
 import '../../features/customer/presentation/pages/customers_page.dart';
 import '../../features/product/domain/entities/product.dart';
 import '../../core/utils/license_service.dart';
@@ -65,6 +70,18 @@ final router = GoRouter(
       builder: (context, state) => const DailyReportPage(),
     ),
     GoRoute(
+      path: '/expenses',
+      builder: (context, state) => const ExpensesPage(),
+    ),
+    GoRoute(
+      path: '/devis',
+      builder: (context, state) => const DevisPage(),
+    ),
+    GoRoute(
+      path: '/shifts',
+      builder: (context, state) => const CashierShiftsPage(),
+    ),
+    GoRoute(
       path: '/products',
       builder: (context, state) => const ProductListPage(),
       routes: [
@@ -77,6 +94,14 @@ final router = GoRouter(
           builder: (context, state) => const StockInPage(),
         ),
         GoRoute(
+          path: 'supplier-invoices',
+          builder: (context, state) => const SupplierInvoicesPage(),
+        ),
+        GoRoute(
+          path: 'supplier-invoice/new',
+          builder: (context, state) => const NewSupplierInvoicePage(),
+        ),
+        GoRoute(
           path: 'catalog',
           builder: (context, state) => const MasterCatalogPage(),
         ),
@@ -85,7 +110,6 @@ final router = GoRouter(
           builder: (context, state) {
             final product = state.extra as Product?;
             if (product == null) {
-              // If we land here without extra (e.g. deep link), go back to products for now.
               return const ProductListPage();
             }
             return EditProductPage(product: product);
@@ -99,3 +123,4 @@ final router = GoRouter(
     ),
   ],
 );
+

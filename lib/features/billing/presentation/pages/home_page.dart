@@ -40,6 +40,9 @@ class _HomePageState extends State<HomePage> {
   bool _isCameraOn = true;
   bool _isFlashOn = false;
   bool _isScanningPaused = false;
+  bool _isMultiScanMode = true;
+  String? _lastScannedToast;
+  int _multiScanCount = 0;
   final Map<String, DateTime> _lastScanTimes = {};
 
   List<QuickItem> _quickItems = [];
@@ -114,9 +117,27 @@ class _HomePageState extends State<HomePage> {
           Vibration.vibrate(duration: 40);
         }
 
+        // Live item lookup for toast
+        final master = MasterCatalogService.instance.lookup(rawValue);
+        final prodBox = HiveDatabase.productBox;
+        final localProd = prodBox.values.where((p) => p.barcode.trim() == rawValue).firstOrNull;
+        final itemName = localProd?.name ?? master?.name ?? 'سلعة (${rawValue.length > 8 ? rawValue.substring(rawValue.length - 6) : rawValue})';
+        final itemPrice = localProd?.price ?? master?.defaultPrice ?? 0.0;
+
         if (mounted) {
+          setState(() {
+            _lastScannedToast = '$itemName (${itemPrice.toStringAsFixed(0)} دج)';
+            _multiScanCount++;
+          });
+
           context.read<BillingBloc>().add(ScanBarcodeEvent(rawValue));
         }
+
+        Future.delayed(const Duration(milliseconds: 2500), () {
+          if (mounted && _lastScannedToast == '$itemName (${itemPrice.toStringAsFixed(0)} دج)') {
+            setState(() => _lastScannedToast = null);
+          }
+        });
         break;
       }
     }
@@ -640,10 +661,69 @@ class _HomePageState extends State<HomePage> {
           ),
           if (!_isCameraOn) _buildCameraOffState(),
 
-          // Overlay Actions
+          // Top Action Bar & Multi-Scan Mode Switch
           Positioned(
-            top: MediaQuery.of(context).padding.top + 12,
-            right: 16,
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 14,
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _isMultiScanMode = !_isMultiScanMode;
+                      _multiScanCount = 0;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _isMultiScanMode ? Colors.green[700] : Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white70),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_isMultiScanMode ? Icons.bolt : Icons.qr_code, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text(_isMultiScanMode ? 'مسح متعدد ⚡' : 'مسح عادي', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                _buildOverlayButton(
+                  icon: Icons.payments_outlined,
+                  tooltip: 'مصاريف المحل',
+                  onPressed: () => context.push('/expenses'),
+                ),
+                const SizedBox(width: 6),
+                _buildOverlayButton(
+                  icon: Icons.local_shipping_outlined,
+                  tooltip: 'فواتير الموردين والمشتريات',
+                  onPressed: () => context.push('/products/supplier-invoices'),
+                ),
+                const SizedBox(width: 6),
+                _buildOverlayButton(
+                  icon: Icons.lock_clock_outlined,
+                  tooltip: 'مناوبات الكاسة والصندوق',
+                  onPressed: () => context.push('/shifts'),
+                ),
+                const SizedBox(width: 6),
+                _buildOverlayButton(
+                  icon: Icons.description_outlined,
+                  tooltip: 'عروض الأسعار Devis',
+                  onPressed: () => context.push('/devis'),
+                ),
+              ],
+            ),
+          ),
+
+          // Right Overlay Actions
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            right: 14,
             child: Column(
               children: [
                 _buildOverlayButton(
@@ -659,7 +739,7 @@ class _HomePageState extends State<HomePage> {
                     }
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _buildOverlayButton(
                   icon: Icons.menu_book_rounded,
                   onPressed: () async {
@@ -673,7 +753,7 @@ class _HomePageState extends State<HomePage> {
                     }
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _buildOverlayButton(
                   icon: Icons.archive_outlined,
                   onPressed: () async {
@@ -687,7 +767,7 @@ class _HomePageState extends State<HomePage> {
                     }
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 if (_isCameraOn)
                   _buildOverlayButton(
                     icon: _isFlashOn ? Icons.flashlight_off : Icons.flashlight_on,
@@ -696,7 +776,7 @@ class _HomePageState extends State<HomePage> {
                       _scannerController.toggleTorch();
                     },
                   ),
-                if (_isCameraOn) const SizedBox(height: 12),
+                if (_isCameraOn) const SizedBox(height: 10),
                 _buildOverlayButton(
                   icon: _isCameraOn ? Icons.videocam : Icons.videocam_off,
                   onPressed: () {
@@ -714,6 +794,36 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
+          // Live Scan Toast Confirmation
+          if (_lastScannedToast != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 55,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green[700],
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 3))],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white, size: 18),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        _lastScannedToast!,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Central Frame
           if (_isCameraOn)
             Center(
@@ -723,6 +833,28 @@ class _HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.white38, width: 2),
                   borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+
+          // Multi-Scan Bottom Counter Badge
+          if (_isMultiScanMode && _multiScanCount > 0)
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[900]?.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white70),
+                  ),
+                  child: Text(
+                    '⚡ تم مسح $_multiScanCount سلع في هذه السلة',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
                 ),
               ),
             ),

@@ -39,12 +39,14 @@ class _ProductListPageState extends State<ProductListPage> {
     final barcode = await context.push<String>('/scanner');
     if (barcode != null && barcode.isNotEmpty) {
       final matchedProduct =
-          products.where((p) => p.barcode == barcode).firstOrNull;
+          products.where((p) => p.barcode.trim() == barcode.trim()).firstOrNull;
       if (matchedProduct != null) {
         _searchController.text = matchedProduct.name;
+        if (mounted) {
+          context.push('/products/edit/${matchedProduct.id}', extra: matchedProduct);
+        }
       } else {
-        _searchController.text =
-            barcode; // If not found, just put barcode in search
+        _searchController.text = barcode;
       }
     }
   }
@@ -126,6 +128,11 @@ class _ProductListPageState extends State<ProductListPage> {
             icon: const Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
             tooltip: 'كتالوج السلع الجزائرية (15,500+)',
             onPressed: () => context.push('/products/catalog'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.local_shipping_outlined, color: AppTheme.primaryColor),
+            tooltip: 'فواتير الموردين والمشتريات',
+            onPressed: () => context.push('/products/supplier-invoices'),
           ),
           IconButton(
             icon: const Icon(Icons.archive_outlined, color: AppTheme.primaryColor),
