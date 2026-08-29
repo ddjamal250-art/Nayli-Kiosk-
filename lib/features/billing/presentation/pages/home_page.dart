@@ -74,10 +74,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   double _currentSheetSize = 0.48;
 
   static final List<QuickItem> _defaultQuickItems = [
-    QuickItem(id: 'bread', name: 'خبز عادي', price: 10.0, icon: '🥖'),
+    QuickItem(id: 'bread', name: 'خبز باكيط', price: 10.0, icon: '🥖'),
+    QuickItem(id: 'egg_single', name: 'حبة بيض', price: 20.0, icon: '🥚'),
+    QuickItem(id: 'milk_bag', name: 'حليب شكارة', price: 25.0, icon: '🥛'),
+    QuickItem(id: 'water_500', name: 'ماء 0.5L', price: 25.0, icon: '💧'),
     QuickItem(id: 'bag_5', name: 'كيس بلاستيكي', price: 5.0, icon: '🛍️'),
-    QuickItem(id: 'bag_10', name: 'كيس كبير', price: 10.0, icon: '🛍️'),
-    QuickItem(id: 'water_500', name: 'ماء 0.5ل', price: 25.0, icon: '💧'),
   ];
 
   @override
