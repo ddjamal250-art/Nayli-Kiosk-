@@ -1,3 +1,9 @@
+import 'package:intl/intl.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import '../../../../core/data/hive_database.dart';
+import '../../../../core/utils/snackbar_helper.dart';
+import '../../../../core/utils/sound_service.dart';
+import '../../../shop/data/models/shop_model.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../../../core/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +59,60 @@ class _EditProductPageState extends State<EditProductPage> {
     }
   }
 
+  Future<void> _printShelfLabel() async {
+    final isConnected = await PrintBluetoothThermal.connectionStatus;
+    if (!isConnected) {
+      if (mounted) {
+        context.showAppSnackBar(
+          '⚠️ الطابعة الحرارية غير متصلة! يرجى تشغيل البلوتوث وتوصيلها في الإعدادات.',
+          backgroundColor: Colors.orange[800]!,
+        );
+      }
+      return;
+    }
+
+    String shopName = AppConstants.defaultShopName;
+    final shopBox = HiveDatabase.shopBox;
+    if (shopBox.isNotEmpty) {
+      final ShopModel? shop = shopBox.getAt(0);
+      if (shop != null && shop.name.isNotEmpty) shopName = shop.name;
+    }
+
+    final dateStr = DateFormat('yyyy/MM/dd').format(DateTime.now());
+
+    try {
+      final List<int> bytes = [];
+      bytes.addAll([27, 64]); // Initialize
+      bytes.addAll([27, 97, 1]); // Center align
+      bytes.addAll('$shopName\n'.codeUnits);
+      bytes.addAll([27, 33, 16]); // Double height
+      bytes.addAll('${widget.product.name}\n'.codeUnits);
+      bytes.addAll([27, 33, 48]); // Huge Price
+      bytes.addAll('${widget.product.price.toStringAsFixed(0)} DZD\n'.codeUnits);
+      if (widget.product.barcode.isNotEmpty) {
+        bytes.addAll([27, 33, 0]);
+        bytes.addAll('||||| ${widget.product.barcode} |||||\n'.codeUnits);
+      }
+      bytes.addAll([27, 33, 0]);
+      bytes.addAll('Date: $dateStr\n'.codeUnits);
+      bytes.addAll('--------------------------------\n\n'.codeUnits);
+      bytes.addAll([29, 86, 66, 0]); // Cut paper
+
+      await PrintBluetoothThermal.writeBytes(bytes);
+      SoundService.playCheckoutSuccess();
+      if (mounted) {
+        context.showAppSnackBar(
+          '✅ تم إرسال ملصق الرف لـ (${widget.product.name}) إلى الطابعة بنجاح!',
+          backgroundColor: Colors.green[800]!,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        context.showAppSnackBar('حدث خطأ أثناء الطباعة: $e', backgroundColor: Colors.red[800]!);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,6 +132,13 @@ class _EditProductPageState extends State<EditProductPage> {
         title: Text(context.tr('edit'),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.label_important_rounded, color: Colors.amber),
+            tooltip: 'طباعة بطاقة الرف 🏷️',
+            onPressed: _printShelfLabel,
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
