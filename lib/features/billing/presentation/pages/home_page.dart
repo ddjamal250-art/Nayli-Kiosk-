@@ -333,12 +333,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(context.tr('clear_cart'), style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(context.tr('clear_cart_confirm')),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_sweep_outlined, color: Colors.red),
+            SizedBox(width: 8),
+            Text('إفراغ السلة الحالية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          'هل أنت متأكد من حذف جميع السلع الممسوحة في هذه السلة والبدء من جديد؟',
+          style: TextStyle(fontSize: 14),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(context.tr('cancel')),
+            child: const Text('إلغاء'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -347,13 +356,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('🗑️ تم إفراغ السلة بالكامل'),
+                  content: Text('🗑️ تم إفراغ السلة بالكامل!'),
                   backgroundColor: Colors.red,
-                  duration: Duration(seconds: 1),
+                  duration: Duration(milliseconds: 1200),
                 ),
               );
             },
-            child: const Text('تأكيد الإفراغ', style: TextStyle(color: Colors.white)),
+            child: const Text('تأكيد الإفراغ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

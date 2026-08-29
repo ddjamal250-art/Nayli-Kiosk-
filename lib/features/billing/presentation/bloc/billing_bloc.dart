@@ -165,7 +165,14 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
   }
 
   void _onClearCart(ClearCartEvent event, Emitter<BillingState> emit) {
-    emit(state.copyWith(cartItems: [], paidAmount: 0.0, printSuccess: false));
+    emit(state.copyWith(
+      cartItems: [],
+      paidAmount: 0.0,
+      printSuccess: false,
+      discountValue: 0.0,
+      isDiscountPercentage: false,
+      isReturnMode: false,
+    ));
   }
 
   void _onParkCurrentCart(
