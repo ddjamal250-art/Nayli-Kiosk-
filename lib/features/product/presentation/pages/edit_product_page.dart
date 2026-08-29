@@ -1,4 +1,4 @@
-﻿import '../../../../core/widgets/input_label.dart';
+import '../../../../core/widgets/input_label.dart';
 import '../../../../core/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -59,9 +59,15 @@ class _EditProductPageState extends State<EditProductPage> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.chevron_left,
-              size: 32, color: Theme.of(context).primaryColor),
-          onPressed: () => context.pop(),
+          icon: Icon(Icons.arrow_back_ios_new,
+              size: 20, color: Theme.of(context).primaryColor),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/products');
+            }
+          },
         ),
         title: Text(context.tr('edit'),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
