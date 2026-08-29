@@ -970,7 +970,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildOverlayButton({required IconData icon, required VoidCallback onPressed}) {
+  Widget _buildOverlayButton({required IconData icon, required VoidCallback onPressed, String? tooltip}) {
     return Container(
       width: 40,
       height: 40,
@@ -981,6 +981,7 @@ class _HomePageState extends State<HomePage> {
       ),
       child: IconButton(
         icon: Icon(icon, color: Colors.white, size: 20),
+        tooltip: tooltip,
         onPressed: onPressed,
         padding: EdgeInsets.zero,
       ),

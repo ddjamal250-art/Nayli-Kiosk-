@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../domain/entities/product.dart';
 import '../bloc/billing_bloc.dart';
 
 class DevisPage extends StatefulWidget {
