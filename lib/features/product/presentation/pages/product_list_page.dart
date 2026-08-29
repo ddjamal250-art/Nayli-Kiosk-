@@ -329,11 +329,9 @@ class _ProductListPageState extends State<ProductListPage> {
                                       ),
                                       child: Builder(
                                         builder: (_) {
-                                          final isWeighable = product.isWeighable || product.unit == 'kg';
+                                          final isWeighable = product.barcode.startsWith('SCALE_') || product.name.contains('ميزان') || product.name.contains('كغ');
                                           final stockText = isWeighable
-                                              ? (product.unitsPerCarton > 1
-                                                  ? '${product.stock} كغ (${(product.stock / product.unitsPerCarton).toStringAsFixed(1)} شكارة)'
-                                                  : '${product.stock} كغ')
+                                              ? '${product.stock} كغ'
                                               : '${product.stock} ${context.tr('in_stock')}';
                                           return Text(
                                             product.stock > 5

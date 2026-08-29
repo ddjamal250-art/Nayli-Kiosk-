@@ -15,8 +15,7 @@ import '../../../../core/utils/security_pin_helper.dart';
 
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
-import '../../../product/presentation/bloc/product_event.dart';
-import '../../../product/presentation/bloc/product_state.dart';
+import '../../domain/entities/cart_item.dart';
 
 import '../bloc/billing_bloc.dart';
 import '../widgets/quick_amount_modal.dart';

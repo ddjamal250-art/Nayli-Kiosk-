@@ -70,7 +70,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
 
     // Load from products database
     for (final p in pBox.values) {
-      if (p.isWeighable || p.barcode.startsWith('SCALE_') || p.unit == 'kg') {
+      if (p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')) {
         list.add({
           'id': p.id,
           'name': p.name,
@@ -322,10 +322,6 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   price: price,
                   costPrice: cost,
                   stock: totalStock.toInt(),
-                  isWeighable: true,
-                  unit: 'kg',
-                  unitsPerCarton: isBagsMode ? (int.tryParse(bagsCountCtrl.text.trim()) ?? 1) : 1,
-                  cartonCostPrice: isBagsMode ? (cost * (double.tryParse(bagWeightCtrl.text.trim()) ?? 25.0)) : cost,
                 );
 
                 context.read<ProductBloc>().add(AddProduct(newProd));
@@ -424,10 +420,6 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
         price: matching.price,
         costPrice: matching.costPrice,
         stock: newStock,
-        unit: matching.unit,
-        isWeighable: true,
-        unitsPerCarton: matching.unitsPerCarton,
-        cartonCostPrice: matching.cartonCostPrice,
       );
       context.read<ProductBloc>().add(UpdateProduct(updated));
     }
