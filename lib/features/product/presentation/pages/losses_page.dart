@@ -344,6 +344,16 @@ class _LossesPageState extends State<LossesPage> {
       appBar: AppBar(
         title: const Text('سجل التوالف والكسر والاهتلاك 🗑️📉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/settings');
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.table_chart_outlined, color: Colors.green),

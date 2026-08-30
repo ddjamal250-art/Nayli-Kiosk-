@@ -43,10 +43,15 @@ class _SettingsPageState extends State<SettingsPage> {
     final liveAlerts = NotificationService.getLiveAlerts();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('الإعدادات والإدارة الشاملة',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        title: const Text(
+          'الإعدادات والإدارة الشاملة ⚙️',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () {
@@ -59,594 +64,922 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 40),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile / Store Header
-            Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-              child: BlocBuilder<ShopBloc, ShopState>(
-                builder: (context, state) {
-                  String shopName = AppConstants.defaultShopName;
-                  String initials = 'MS';
-                  if (state is ShopLoaded && state.shop.name.isNotEmpty) {
-                    shopName = state.shop.name;
-                    final parts = shopName.split(' ');
-                    initials = parts
-                        .take(2)
-                        .map((p) => p.isNotEmpty ? p[0].toUpperCase() : '')
-                        .join('');
-                    if (initials.isEmpty) initials = 'S';
-                  }
+            // 1. Store Profile & License Card
+            _buildStoreProfileCard(context, isActivated),
 
-                  final logoPath = HiveDatabase.settingsBox.get('shop_logo_path') as String?;
-                  bool hasValidLogo = false;
-                  if (logoPath != null && logoPath.isNotEmpty) {
-                    try {
-                      hasValidLogo = File(logoPath).existsSync();
-                    } catch (_) {
-                      hasValidLogo = false;
-                    }
-                  }
+            const SizedBox(height: 18),
 
-                  return Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                          final auth = await SecurityPinHelper.authenticate(context, title: 'إعدادات المتجر والشعار');
-                          if (auth && context.mounted) {
-                            await context.push('/shop');
-                            setState(() {});
-                          }
-                        },
-                        child: Stack(
-                          children: [
-                            Container(
-                              width: 78,
-                              height: 78,
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(0.25),
-                                    blurRadius: 12,
-                                    spreadRadius: 3,
-                                  )
-                                ],
-                              ),
-                              alignment: Alignment.center,
-                              child: ClipOval(
-                                child: (hasValidLogo && logoPath != null)
-                                    ? Image.file(
-                                        File(logoPath!),
-                                        width: 78,
-                                        height: 78,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Text(
-                                        initials,
-                                        style: const TextStyle(
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: AppTheme.primaryColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.edit, size: 12, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        shopName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isActivated ? 'نسخة مرخصة ومفعلة ⚡' : 'نسخة تجريبية نشطة',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isActivated ? Colors.green[700] : Colors.orange[800],
-                        ),
-                      ),
-                    ],
-                  );
-                },
+            // 2. Business Operations Hubs (3 Smart Hubs)
+            _buildSectionHeader('مراكز إدارة الأعمال والنشاط التجاري 🗂️'),
+            _buildBusinessHubsGrid(context),
+
+            const SizedBox(height: 20),
+
+            // 3. Hardware & Printing Center
+            _buildSectionHeader('الأجهزة والطباعة الحرارية 🖨️'),
+            _buildHardwareSection(context),
+
+            const SizedBox(height: 20),
+
+            // 4. Sound & Notifications Center
+            _buildSectionHeader('الأصوات والإشعارات والتنبيهات 🔊🔔'),
+            _buildSoundAndNotificationsSection(context, isSoundOn, isNotifOn, liveAlerts),
+
+            const SizedBox(height: 20),
+
+            // 5. Security & Data Backup Center
+            _buildSectionHeader('الأمان والنسخ الاحتياطي 🔒💾'),
+            _buildSecurityAndBackupSection(context, isPinEnabled),
+
+            const SizedBox(height: 20),
+
+            // 6. Language & App Info
+            _buildSectionHeader('اللغة ومعلومات التطبيق 🌐✨'),
+            _buildLanguageAndInfoSection(context, isActivated),
+
+            const SizedBox(height: 35),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // SECTION BUILDERS
+  // ==========================================
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, right: 4, left: 4),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF475569),
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoreProfileCard(BuildContext context, bool isActivated) {
+    return BlocBuilder<ShopBloc, ShopState>(
+      builder: (context, state) {
+        String shopName = AppConstants.defaultShopName;
+        String initials = 'MS';
+        if (state is ShopLoaded && state.shop.name.isNotEmpty) {
+          shopName = state.shop.name;
+          final parts = shopName.split(' ');
+          initials = parts.take(2).map((p) => p.isNotEmpty ? p[0].toUpperCase() : '').join('');
+          if (initials.isEmpty) initials = 'S';
+        }
+
+        final logoPath = HiveDatabase.settingsBox.get('shop_logo_path') as String?;
+        bool hasValidLogo = false;
+        if (logoPath != null && logoPath.isNotEmpty) {
+          try {
+            hasValidLogo = File(logoPath).existsSync();
+          } catch (_) {
+            hasValidLogo = false;
+          }
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
-            ),
-
-            // Section 1: Notifications & Sound FX Center
-            _buildSectionHeader(context, 'مركز التنبيهات والأصوات التفاعلية'),
-            _buildListGroup(
-              children: [
-                // Notifications Hub Tile
-                _buildListItem(
-                  icon: Icons.notifications_active_outlined,
-                  iconColor: Colors.amber[800],
-                  title: 'مركز التنبيهات والإشعارات',
-                  subtitle: liveAlerts.isNotEmpty
-                      ? 'يوجد ${liveAlerts.length} تنبيهات نشطة (المخزون، الديون، الصلاحية)'
-                      : 'لا توجد تنبيهات عاجلة حالياً (المتجر في حالة ممتازة)',
-                  trailingWidget: liveAlerts.isNotEmpty
-                      ? Container(
+            ],
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () async {
+                  final auth = await SecurityPinHelper.authenticate(context, title: 'إعدادات المتجر والشعار');
+                  if (auth && context.mounted) {
+                    await context.push('/shop');
+                    setState(() {});
+                  }
+                },
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withOpacity(0.2),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: ClipOval(
+                        child: (hasValidLogo && logoPath != null)
+                            ? Image.file(File(logoPath), width: 58, height: 58, fit: BoxFit.cover)
+                            : Text(
+                                initials,
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(color: AppTheme.primaryColor, shape: BoxShape.circle),
+                          child: const Icon(Icons.edit, size: 10, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      shopName,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${liveAlerts.length}',
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                        )
-                      : null,
-                  onTap: () => _showNotificationsHub(context),
-                ),
-                _buildDivider(),
-
-                // System Push Notifications Toggle
-                _buildListItem(
-                  icon: Icons.cell_tower_rounded,
-                  iconColor: Colors.blue,
-                  title: 'إشعارات شريط الهاتف',
-                  subtitle: isNotifOn
-                      ? 'مفعلة (تصلك التنبيهات في شريط الإشعارات العلوي للهاتف)'
-                      : 'معطلة (الإشعارات تظهر داخل التطبيق فقط)',
-                  trailingWidget: Switch(
-                    value: isNotifOn,
-                    activeColor: AppTheme.primaryColor,
-                    onChanged: (val) async {
-                      await NotificationService.setNotificationsEnabled(val);
-                      setState(() {});
-                      if (context.mounted) {
-                        context.showAppSnackBar(
-                          val ? '🔔 تم تفعيل إشعارات شريط الهاتف' : '🔕 تم إسكات إشعارات شريط الهاتف',
-                          backgroundColor: val ? Colors.blue[800]! : Colors.grey[800]!,
-                        );
-                      }
-                    },
-                  ),
-                ),
-                _buildDivider(),
-
-                // Interactive Sound FX Toggle
-                _buildListItem(
-                  icon: isSoundOn ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-                  iconColor: isSoundOn ? Colors.teal : Colors.grey,
-                  title: 'المؤثرات الصوتية لنقاط البيع (Sound FX)',
-                  subtitle: isSoundOn
-                      ? 'مفعلة (نغمة مسح الباركود، رنين الصندوق، والحذف)'
-                      : 'مكتومة (الوضع الصامت بدون أصوات)',
-                  trailingWidget: Switch(
-                    value: isSoundOn,
-                    activeColor: Colors.teal,
-                    onChanged: (val) async {
-                      await SoundService.setSoundEnabled(val);
-                      setState(() {});
-                      if (val) SoundService.playCheckoutSuccess();
-                      if (context.mounted) {
-                        context.showAppSnackBar(
-                          val ? '🔊 تم تشغيل المؤثرات الصوتية' : '🔇 تم كتم الأصوات (الوضع الصامت)',
-                          backgroundColor: val ? Colors.teal[800]! : Colors.grey[800]!,
-                        );
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 18),
-
-            // Section 2: Store Management Tools (Owner PIN Protected)
-            _buildSectionHeader(context, 'إدارة المتجر والعمليات (صلاحيات المالك 🔒)'),
-            _buildListGroup(
-              children: [
-                _buildListItem(
-                  icon: Icons.qr_code_scanner,
-                  iconColor: Colors.indigo,
-                  title: 'إدارة المنتجات والمخزون',
-                  subtitle: 'إضافة، تعديل الأسعار، ومراقبة الكميات',
-                  onTap: () async {
-                    final auth = await SecurityPinHelper.authenticate(context, title: 'إدارة المنتجات والمخزون');
-                    if (auth && context.mounted) {
-                      context.push('/products');
-                    }
-                  },
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.archive_outlined,
-                  iconColor: Colors.blue,
-                  title: 'استلام السلع / Arrivage',
-                  subtitle: 'مسح سريع وإدخال دفعات السلع الجديدة للمخزن',
-                  onTap: () => context.push('/products/stock-in'),
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.local_shipping_outlined,
-                  iconColor: Colors.deepPurple,
-                  title: 'فواتير الموردين والمشتريات',
-                  subtitle: 'تسجيل فواتير الشراء، متابعة الديون، ودفعات الموردين',
-                  onTap: () async {
-                    final auth = await SecurityPinHelper.authenticate(context, title: 'فواتير الموردين والمشتريات');
-                    if (auth && context.mounted) {
-                      context.push('/products/supplier-invoices');
-                    }
-                  },
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.bar_chart_rounded,
-                  iconColor: Colors.green[800]!,
-                  title: 'الداشبورد والتقارير اليومية والأرباح',
-                  subtitle: 'صافي الأرباح، الإيرادات، وتقرير الإغلاق Z',
-                  onTap: () async {
-                    final auth = await SecurityPinHelper.authenticate(context, title: 'تقرير الأرباح والمبيعات');
-                    if (auth && context.mounted) {
-                      context.push('/reports');
-                    }
-                  },
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.menu_book_rounded,
-                  iconColor: Colors.orange[800]!,
-                  title: 'دفتر ديون الزبائن (Crédit)',
-                  subtitle: 'متابعة الديون، التسديدات، وسجل المعاملات',
-                  onTap: () async {
-                    final auth = await SecurityPinHelper.authenticate(context, title: 'دفتر ديون الزبائن (Crédit)');
-                    if (auth && context.mounted) {
-                      context.push('/customers');
-                    }
-                  },
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.receipt_long_outlined,
-                  iconColor: Colors.red[700]!,
-                  title: 'مصاريف ونفقات المحل',
-                  subtitle: 'تسجيل فواتير الكهرباء، الكراء، والعمال',
-                  onTap: () async {
-                    final auth = await SecurityPinHelper.authenticate(context, title: 'مصاريف ونفقات المحل');
-                    if (auth && context.mounted) {
-                      context.push('/expenses');
-                    }
-                  },
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.request_quote_outlined,
-                  iconColor: Colors.teal[700]!,
-                  title: 'عروض الأسعار والفواتير المبدئية (Devis)',
-                  subtitle: 'إنشاء Devis رسمي وتحويله لفاتورة بيع بضغطة زر',
-                  onTap: () => context.push('/devis'),
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.point_of_sale_rounded,
-                  iconColor: Colors.brown[700]!,
-                  title: 'مناوبات الكاسة والصندوق (Shifts)',
-                  subtitle: 'رصيد البداية والختام وتسليم عهدة الصندوق',
-                  onTap: () => context.push('/shifts'),
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.auto_awesome,
-                  iconColor: Colors.amber[900]!,
-                  title: 'مكتبة المنتجات الجزائرية (100,000+)',
-                  subtitle: 'تصفح واستيراد سلع السوبرماركت لمخزونك بضغطة زر',
-                  onTap: () => context.push('/master-catalog'),
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.receipt_long,
-                  iconColor: Colors.blueGrey,
-                  title: 'تخصيص وتصميم وصل الفاتورة (Receipt Designer)',
-                  subtitle: 'تعديل الشعار، أرقام الهاتف، والشروط في التذكرة الحرارية',
-                  onTap: () => context.push('/settings/receipt-designer'),
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.label_important_rounded,
-                  iconColor: Colors.deepOrange,
-                  title: 'مولد وطباعة ملصقات الرفوف والباركود 🏷️',
-                  subtitle: 'توليد وطباعة بطاقات الأسعار لرفوف السوبرماركت مباشرة',
-                  onTap: () => context.push('/products/shelf-labels'),
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.inventory_rounded,
-                  iconColor: Colors.teal[700]!,
-                  title: 'وحدة الجرد السنوي والدوري ورأس المال 📋⚖️',
-                  subtitle: 'جرد المخزون بالكاميرا، حساب الفوارق، ورأس مال المحل',
-                  onTap: () async {
-                    final auth = await SecurityPinHelper.authenticate(context, title: 'وحدة الجرد ورأس المال');
-                    if (auth && context.mounted) {
-                      context.push('/products/inventory-audit');
-                    }
-                  },
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.remove_shopping_cart_rounded,
-                  iconColor: Colors.red[800]!,
-                  title: 'سجل التوالف والكسر والاهتلاك 🗑️📉',
-                  subtitle: 'شطب السلع المكسورة والتالفة وخصمها من المخزون وحساب الخسائر',
-                  onTap: () async {
-                    final auth = await SecurityPinHelper.authenticate(context, title: 'سجل التوالف والاهتلاك');
-                    if (auth && context.mounted) {
-                      context.push('/products/losses');
-                    }
-                  },
-                ),
-                _buildDivider(),
-                _buildListItem(
-                  icon: Icons.table_chart_outlined,
-                  iconColor: Colors.green[700]!,
-                  title: 'تصدير البيانات والنسخ الاحتياطي (Excel)',
-                  subtitle: 'تصدير المخزون والديون كـ Excel وإنشاء نسخة أمان',
-                  onTap: () async {
-                    final auth = await SecurityPinHelper.authenticate(context, title: 'النسخ الاحتياطي وتصدير البيانات');
-                    if (auth && context.mounted) {
-                      _showBackupRestoreSheet(context);
-                    }
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 18),
-
-            // Section 3: Security PIN
-            _buildSectionHeader(context, 'الأمان وحماية المالك (Security PIN)'),
-            _buildListGroup(
-              children: [
-                _buildListItem(
-                  icon: Icons.lock_outline,
-                  title: 'قفل التطبيق برمز سري (PIN)',
-                  subtitle: isPinEnabled
-                      ? 'مفعل (يحمي الأرباح والإعدادات وتعديل الأسعار)'
-                      : 'معطل (يمكن لأي شخص الوصول لجميع الشاشات)',
-                  trailingWidget: Switch(
-                    value: isPinEnabled,
-                    activeColor: AppTheme.primaryColor,
-                    onChanged: (val) async {
-                      if (val) {
-                        _showSetPinModal(context);
-                      } else {
-                        final auth = await SecurityPinHelper.authenticate(context, title: 'تأكيد إلغاء القفل');
-                        if (auth) {
-                          await SecurityPinHelper.disablePin();
-                          setState(() {});
-                          if (context.mounted) {
-                            context.showAppSnackBar(
-                              '🔓 تم إلغاء القفل بالرمز السري',
-                              backgroundColor: Colors.orange[800]!,
-                            );
-                          }
-                        }
-                      }
-                    },
-                  ),
-                ),
-                if (isPinEnabled) ...[
-                  _buildDivider(),
-                  _buildListItem(
-                    icon: Icons.password_rounded,
-                    title: 'تغيير الرمز السري',
-                    subtitle: 'تعديل رمز الأمان المكون من 4 أرقام',
-                    onTap: () => _showChangePinModal(context),
-                  ),
-                ],
-              ],
-            ),
-
-            const SizedBox(height: 18),
-
-            // Section 4: Language
-            _buildSectionHeader(context, context.tr('language')),
-            BlocBuilder<LanguageCubit, Locale>(
-              builder: (context, currentLocale) {
-                return _buildListGroup(
-                  children: [
-                    _buildLanguageItem(
-                      context: context,
-                      title: 'العربية (Arabic)',
-                      flag: '🇩🇿',
-                      code: 'ar',
-                      isSelected: currentLocale.languageCode == 'ar',
-                    ),
-                    _buildDivider(),
-                    _buildLanguageItem(
-                      context: context,
-                      title: 'Français (French)',
-                      flag: '🇫🇷',
-                      code: 'fr',
-                      isSelected: currentLocale.languageCode == 'fr',
-                    ),
-                    _buildDivider(),
-                    _buildLanguageItem(
-                      context: context,
-                      title: 'English',
-                      flag: '🇬🇧',
-                      code: 'en',
-                      isSelected: currentLocale.languageCode == 'en',
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 18),
-
-            // Section 5: Hardware & Printer
-            _buildSectionHeader(context, context.tr('hardware')),
-            BlocConsumer<PrinterBloc, PrinterState>(
-              listener: (context, state) {
-                if (state.errorMessage != null) {
-                  context.showAppSnackBar(state.errorMessage!, backgroundColor: Colors.red);
-                } else if (state.status == PrinterStatus.connected) {
-                  context.showAppSnackBar(context.tr('connected'), backgroundColor: Colors.green);
-                }
-              },
-              builder: (context, state) {
-                return _buildListGroup(
-                  children: [
-                    _buildListItem(
-                      icon: Icons.print,
-                      title: context.tr('print_device'),
-                      subtitleWidget: Row(
-                        children: [
-                          Text(
-                            state.connectedMac != null
-                                ? (state.connectedName ?? context.tr('connected'))
-                                : context.tr('disconnected'),
-                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                          ),
-                          if (state.connectedMac != null) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.teal[100],
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.teal[200]!),
-                              ),
-                              child: Text(
-                                context.tr('connected'),
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.teal[700],
-                                ),
-                              ),
-                            ),
-                          ]
-                        ],
-                      ),
-                      trailingWidget: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (state.status == PrinterStatus.scanning ||
-                              state.status == PrinterStatus.connecting)
-                            const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          else
-                            IconButton(
-                              icon: const Icon(Icons.refresh),
-                              onPressed: () => context.read<PrinterBloc>().add(RefreshPrinterEvent()),
-                              color: AppTheme.primaryColor,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 18),
-
-            // Section 6: Sound FX & 10 Interactive Sound Themes
-            _buildSectionHeader(context, 'المؤثرات الصوتية والنغمات (10 نغمات تفاعلية) 🔊🎵'),
-            _buildListGroup(
-              children: [
-                _buildListItem(
-                  icon: Icons.volume_up_rounded,
-                  iconColor: Colors.deepPurple,
-                  title: 'تفعيل المؤثرات الصوتية',
-                  subtitle: SoundService.isSoundEnabled()
-                      ? 'مفعلة (تشغيل صافرة المسح وإتمام البيع)'
-                      : 'معطلة (كتم أصوات التطبيق)',
-                  trailingWidget: Switch(
-                    value: SoundService.isSoundEnabled(),
-                    activeColor: AppTheme.primaryColor,
-                    onChanged: (val) async {
-                      await SoundService.setSoundEnabled(val);
-                      setState(() {});
-                      if (val) SoundService.playScanBeep();
-                    },
-                  ),
-                ),
-                if (SoundService.isSoundEnabled()) ...[
-                  _buildDivider(),
-                  _buildListItem(
-                    icon: Icons.music_note_rounded,
-                    iconColor: Colors.amber[800]!,
-                    title: 'اختيار وتجربة نغمة الكاشير (${SoundService.themes.firstWhere((t) => t.id == SoundService.getSelectedThemeId(), orElse: () => SoundService.themes.first).icon} ${SoundService.themes.firstWhere((t) => t.id == SoundService.getSelectedThemeId(), orElse: () => SoundService.themes.first).name})',
-                    subtitle: 'استمع وجرب 10 نغمات كاشير ومسح مختلفة واختر المفضلة',
-                    onTap: () => _showSoundThemesModal(context),
-                  ),
-                ],
-              ],
-            ),
-
-            const SizedBox(height: 18),
-
-            // Section 6: License & Activation
-            _buildSectionHeader(context, 'الترخيص والتفعيل'),
-            _buildListGroup(
-              children: [
-                _buildListItem(
-                  icon: Icons.verified_user_outlined,
-                  title: isActivated ? 'النسخة مفعلة بالكامل' : 'تفعيل النسخة الرسمية',
-                  subtitle: isActivated
-                      ? 'الترخيص نشط ويعمل على هذا الجهاز'
-                      : 'اضغط لإدخال كود التفعيل أو شراء ترخيص دائم',
-                  trailingWidget: isActivated
-                      ? const Icon(Icons.check_circle, color: Colors.green, size: 22)
-                      : Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.orange[100],
+                            color: isActivated ? Colors.green.withOpacity(0.12) : Colors.orange.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text('تفعيل', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold, fontSize: 11)),
+                          child: Text(
+                            isActivated ? 'نسخة مرخصة ومفعلة ⚡' : 'نسخة تجريبية ⏳',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isActivated ? Colors.green[800] : Colors.orange[900],
+                            ),
+                          ),
                         ),
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const ActivationModal(),
-                    );
-                  },
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
+                ),
+                icon: const Icon(Icons.settings, size: 16, color: AppTheme.primaryColor),
+                label: const Text('تعديل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                onPressed: () async {
+                  final auth = await SecurityPinHelper.authenticate(context, title: 'إعدادات المتجر والشعار');
+                  if (auth && context.mounted) {
+                    await context.push('/shop');
+                    setState(() {});
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 3 Business Management Smart Hubs
+  Widget _buildBusinessHubsGrid(BuildContext context) {
+    return Column(
+      children: [
+        // 1. Finance & Reports Hub
+        _buildHubCard(
+          context: context,
+          icon: Icons.bar_chart_rounded,
+          iconColor: Colors.green[700]!,
+          title: 'مركز المالية والتقارير والأرباح',
+          subtitle: 'صافي الأرباح اليومية، المصاريف، ومناوبات الصندوق (Z-Report)',
+          badgeText: 'مالية 📊',
+          badgeColor: Colors.green,
+          onTap: () => _showFinanceHubSheet(context),
+        ),
+        const SizedBox(height: 10),
+
+        // 2. Inventory & Supply Hub
+        _buildHubCard(
+          context: context,
+          icon: Icons.inventory_2_rounded,
+          iconColor: Colors.blue[700]!,
+          title: 'مركز المخزون والسلع والتوالف',
+          subtitle: 'إدارة السلع، استلام الشحنات، الجرد السنوي، وسجل التوالف',
+          badgeText: 'مخزون 📦',
+          badgeColor: Colors.blue,
+          onTap: () => _showInventoryHubSheet(context),
+        ),
+        const SizedBox(height: 10),
+
+        // 3. Partners & Customer Credit Hub
+        _buildHubCard(
+          context: context,
+          icon: Icons.groups_rounded,
+          iconColor: Colors.orange[800]!,
+          title: 'مركز العلاقات والديون وعروض الأسعار',
+          subtitle: 'دفتر ديون الزبائن (Crédit)، فواتير الموردين، وعروض Devis',
+          badgeText: 'شركاء 👥',
+          badgeColor: Colors.orange,
+          onTap: () => _showPartnersHubSheet(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHubCard({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required MaterialColor badgeColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: badgeColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(badgeText, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor[800])),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Hardware & Printing Card
+  Widget _buildHardwareSection(BuildContext context) {
+    return _buildCardGroup([
+      BlocConsumer<PrinterBloc, PrinterState>(
+        listener: (context, state) {
+          if (state.errorMessage != null) {
+            context.showAppSnackBar(state.errorMessage!, backgroundColor: Colors.red);
+          } else if (state.status == PrinterStatus.connected) {
+            context.showAppSnackBar('✅ تم توصيل الطابعة بنجاح', backgroundColor: Colors.green);
+          }
+        },
+        builder: (context, state) {
+          final isConnected = state.connectedMac != null;
+          return _buildTile(
+            icon: Icons.print_rounded,
+            iconColor: Colors.teal[700]!,
+            title: 'الطابعة الحرارية (Bluetooth)',
+            subtitle: isConnected ? (state.connectedName ?? 'متصلة') : 'اضغط للبحث والاتصال بالطابعة',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isConnected)
+                  Container(
+                    margin: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.teal[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.teal[200]!),
+                    ),
+                    child: Text('متصلة ⚡', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.teal[800])),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 20),
+                  onPressed: () => context.read<PrinterBloc>().add(RefreshPrinterEvent()),
+                  color: AppTheme.primaryColor,
                 ),
               ],
+            ),
+            onTap: () => context.read<PrinterBloc>().add(RefreshPrinterEvent()),
+          );
+        },
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.receipt_long_rounded,
+        iconColor: Colors.blueGrey,
+        title: 'مصمم التذكرة والوصل الحراري',
+        subtitle: 'تخصيص الشعار، أرقام الهاتف، وشروط الفاتورة',
+        onTap: () => context.push('/settings/receipt-designer'),
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.label_important_rounded,
+        iconColor: Colors.deepOrange,
+        title: 'مولد وطباعة ملصقات الرفوف والباركود',
+        subtitle: 'توليد وطباعة بطاقات الأسعار للرفوف مباشرة',
+        onTap: () => context.push('/products/shelf-labels'),
+      ),
+    ]);
+  }
+
+  /// Sound & Notifications Card
+  Widget _buildSoundAndNotificationsSection(
+    BuildContext context,
+    bool isSoundOn,
+    bool isNotifOn,
+    List<AppAlertItem> liveAlerts,
+  ) {
+    return _buildCardGroup([
+      _buildTile(
+        icon: isSoundOn ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+        iconColor: isSoundOn ? Colors.deepPurple : Colors.grey,
+        title: 'المؤثرات الصوتية لنقاط البيع (10 نغمات)',
+        subtitle: isSoundOn
+            ? 'مفعلة (${SoundService.themes.firstWhere((t) => t.id == SoundService.getSelectedThemeId(), orElse: () => SoundService.themes.first).icon} ${SoundService.themes.firstWhere((t) => t.id == SoundService.getSelectedThemeId(), orElse: () => SoundService.themes.first).name})'
+            : 'مكتومة (الوضع الصامت)',
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSoundOn)
+              IconButton(
+                icon: const Icon(Icons.tune_rounded, size: 20, color: AppTheme.primaryColor),
+                tooltip: 'تغيير النغمة ومستوى الصوت',
+                onPressed: () => _showSoundThemesModal(context),
+              ),
+            Switch(
+              value: isSoundOn,
+              activeColor: AppTheme.primaryColor,
+              onChanged: (val) async {
+                await SoundService.setSoundEnabled(val);
+                setState(() {});
+                if (val) SoundService.playCheckoutSuccess();
+              },
+            ),
+          ],
+        ),
+        onTap: isSoundOn ? () => _showSoundThemesModal(context) : null,
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.notifications_active_outlined,
+        iconColor: Colors.amber[800]!,
+        title: 'مركز التنبيهات والإشعارات',
+        subtitle: liveAlerts.isNotEmpty
+            ? 'يوجد ${liveAlerts.length} تنبيهات نشطة (المخزون، الديون)'
+            : 'المتجر في حالة ممتازة ولا توجد نواقص',
+        trailing: liveAlerts.isNotEmpty
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
+                child: Text('${liveAlerts.length}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+              )
+            : const Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
+        onTap: () => _showNotificationsHub(context),
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.cell_tower_rounded,
+        iconColor: Colors.blue,
+        title: 'إشعارات شريط الهاتف العلوي',
+        subtitle: isNotifOn ? 'تصلك التنبيهات خارج التطبيق' : 'التنبيهات تظهر داخل التطبيق فقط',
+        trailing: Switch(
+          value: isNotifOn,
+          activeColor: AppTheme.primaryColor,
+          onChanged: (val) async {
+            await NotificationService.setNotificationsEnabled(val);
+            setState(() {});
+          },
+        ),
+      ),
+    ]);
+  }
+
+  /// Security & Data Backup Card
+  Widget _buildSecurityAndBackupSection(BuildContext context, bool isPinEnabled) {
+    return _buildCardGroup([
+      _buildTile(
+        icon: Icons.lock_outline_rounded,
+        iconColor: Colors.indigo,
+        title: 'قفل التطبيق برمز الأمان (Security PIN)',
+        subtitle: isPinEnabled ? 'مفعل (يحمي الأرباح والإعدادات)' : 'معطل (وصول مباشر)',
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isPinEnabled)
+              IconButton(
+                icon: const Icon(Icons.password_rounded, size: 20, color: AppTheme.primaryColor),
+                tooltip: 'تغيير الرمز السري',
+                onPressed: () => _showChangePinModal(context),
+              ),
+            Switch(
+              value: isPinEnabled,
+              activeColor: AppTheme.primaryColor,
+              onChanged: (val) async {
+                if (val) {
+                  _showSetPinModal(context);
+                } else {
+                  final auth = await SecurityPinHelper.authenticate(context, title: 'تأكيد إلغاء القفل');
+                  if (auth) {
+                    await SecurityPinHelper.disablePin();
+                    setState(() {});
+                  }
+                }
+              },
             ),
           ],
         ),
       ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.table_chart_outlined,
+        iconColor: Colors.green[700]!,
+        title: 'النسخ الاحتياطي وتصدير البيانات (Excel & Backup)',
+        subtitle: 'تصدير المخزون والديون كـ Excel وإنشاء نسخة أمان',
+        onTap: () async {
+          final auth = await SecurityPinHelper.authenticate(context, title: 'النسخ الاحتياطي وتصدير البيانات');
+          if (auth && context.mounted) {
+            _showBackupRestoreSheet(context);
+          }
+        },
+      ),
+    ]);
+  }
+
+  /// Language & App Info Card
+  Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
+    return _buildCardGroup([
+      BlocBuilder<LanguageCubit, Locale>(
+        builder: (context, currentLocale) {
+          String langName = 'العربية 🇩🇿';
+          if (currentLocale.languageCode == 'fr') langName = 'Français 🇫🇷';
+          if (currentLocale.languageCode == 'en') langName = 'English 🇬🇧';
+
+          return _buildTile(
+            icon: Icons.language_rounded,
+            iconColor: Colors.teal,
+            title: 'لغة التطبيق (Language)',
+            subtitle: langName,
+            onTap: () => _showLanguageModal(context, currentLocale),
+          );
+        },
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.verified_user_outlined,
+        iconColor: isActivated ? Colors.green : Colors.orange,
+        title: isActivated ? 'النسخة مفعلة بالكامل' : 'تفعيل النسخة الرسمية',
+        subtitle: isActivated ? 'الترخيص نشط ويعمل على هذا الجهاز' : 'اضغط لإدخال كود التفعيل',
+        trailing: isActivated
+            ? const Icon(Icons.check_circle, color: Colors.green, size: 22)
+            : Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: Colors.orange[100], borderRadius: BorderRadius.circular(8)),
+                child: const Text('تفعيل ⚡', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold, fontSize: 11)),
+              ),
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => const ActivationModal(),
+          );
+        },
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.info_outline_rounded,
+        iconColor: Colors.blueGrey,
+        title: 'عن التطبيق والإصدار',
+        subtitle: 'Lumina POS Pro V1.4.0 • أحدث إصدار',
+        onTap: () => _showAboutModal(context),
+      ),
+    ]);
+  }
+
+  // ==========================================
+  // SMART HUB MODAL SHEETS (Context.push with back preservation)
+  // ==========================================
+
+  /// 1. Finance & Reports Hub Sheet
+  void _showFinanceHubSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.bar_chart_rounded, color: Colors.green, size: 26),
+                    SizedBox(width: 8),
+                    Text('مركز المالية والتقارير والأرباح 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _buildHubActionTile(
+              icon: Icons.analytics_outlined,
+              iconColor: Colors.green[800]!,
+              title: 'الداشبورد والتقارير اليومية والأرباح',
+              subtitle: 'صافي الأرباح، الإيرادات، ومبيعات اليوم (Z-Report)',
+              onTap: () async {
+                Navigator.pop(ctx);
+                final auth = await SecurityPinHelper.authenticate(context, title: 'تقرير الأرباح والمبيعات');
+                if (auth && context.mounted) context.push('/reports');
+              },
+            ),
+            const Divider(height: 8),
+            _buildHubActionTile(
+              icon: Icons.receipt_long_outlined,
+              iconColor: Colors.red[700]!,
+              title: 'مصاريف ونفقات المحل',
+              subtitle: 'تسجيل فواتير الكهرباء، الكراء، ومصاريف العمال',
+              onTap: () async {
+                Navigator.pop(ctx);
+                final auth = await SecurityPinHelper.authenticate(context, title: 'مصاريف ونفقات المحل');
+                if (auth && context.mounted) context.push('/expenses');
+              },
+            ),
+            const Divider(height: 8),
+            _buildHubActionTile(
+              icon: Icons.point_of_sale_rounded,
+              iconColor: Colors.brown[700]!,
+              title: 'مناوبات الكاسة والصندوق (Shifts)',
+              subtitle: 'رصيد البداية والختام وتسليم عهدة الصندوق بين العمال',
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/shifts');
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 2. Inventory & Supply Hub Sheet
+  void _showInventoryHubSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.inventory_2_rounded, color: Colors.blue, size: 26),
+                      SizedBox(width: 8),
+                      Text('مركز المخزون والسلع والتوالف 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
+                  ),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _buildHubActionTile(
+                icon: Icons.qr_code_scanner,
+                iconColor: Colors.indigo,
+                title: 'إدارة المنتجات والأسعار',
+                subtitle: 'إضافة، تعديل الأسعار، ومراقبة الكميات',
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final auth = await SecurityPinHelper.authenticate(context, title: 'إدارة المنتجات والمخزون');
+                  if (auth && context.mounted) context.push('/products');
+                },
+              ),
+              const Divider(height: 8),
+              _buildHubActionTile(
+                icon: Icons.archive_outlined,
+                iconColor: Colors.blue,
+                title: 'استلام السلع والشحنات (Arrivage)',
+                subtitle: 'مسح سريع وإدخال دفعات السلع الجديدة للمخزن',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/products/stock-in');
+                },
+              ),
+              const Divider(height: 8),
+              _buildHubActionTile(
+                icon: Icons.auto_awesome,
+                iconColor: Colors.amber[900]!,
+                title: 'كتالوج السلع الجزائرية (100,000+)',
+                subtitle: 'تصفح واستيراد سلع السوبرماركت لمخزونك بضغطة زر',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/master-catalog');
+                },
+              ),
+              const Divider(height: 8),
+              _buildHubActionTile(
+                icon: Icons.inventory_rounded,
+                iconColor: Colors.teal[700]!,
+                title: 'وحدة الجرد السنوي والدوري ورأس المال 📋⚖️',
+                subtitle: 'جرد المخزون بالكاميرا، حساب الفوارق، ورأس مال المحل',
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final auth = await SecurityPinHelper.authenticate(context, title: 'وحدة الجرد ورأس المال');
+                  if (auth && context.mounted) context.push('/products/inventory-audit');
+                },
+              ),
+              const Divider(height: 8),
+              _buildHubActionTile(
+                icon: Icons.remove_shopping_cart_rounded,
+                iconColor: Colors.red[800]!,
+                title: 'سجل التوالف والكسر والاهتلاك 🗑️📉',
+                subtitle: 'شطب السلع المكسورة والتالفة وخصمها من المخزون وحساب الخسائر',
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final auth = await SecurityPinHelper.authenticate(context, title: 'سجل التوالف والاهتلاك');
+                  if (auth && context.mounted) context.push('/products/losses');
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 3. Partners & Customer Credit Hub Sheet
+  void _showPartnersHubSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.groups_rounded, color: Colors.orange, size: 26),
+                    SizedBox(width: 8),
+                    Text('مركز العلاقات والديون والموردين 👥', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _buildHubActionTile(
+              icon: Icons.menu_book_rounded,
+              iconColor: Colors.orange[800]!,
+              title: 'دفتر ديون الزبائن (Crédit)',
+              subtitle: 'متابعة الديون، التسديدات، وسجل المعاملات والواتساب',
+              onTap: () async {
+                Navigator.pop(ctx);
+                final auth = await SecurityPinHelper.authenticate(context, title: 'دفتر ديون الزبائن (Crédit)');
+                if (auth && context.mounted) context.push('/customers');
+              },
+            ),
+            const Divider(height: 8),
+            _buildHubActionTile(
+              icon: Icons.local_shipping_outlined,
+              iconColor: Colors.deepPurple,
+              title: 'فواتير الموردين ومشتريات الجملة',
+              subtitle: 'تسجيل فواتير الشراء، متابعة الديون، ودفعات الموردين',
+              onTap: () async {
+                Navigator.pop(ctx);
+                final auth = await SecurityPinHelper.authenticate(context, title: 'فواتير الموردين والمشتريات');
+                if (auth && context.mounted) context.push('/products/supplier-invoices');
+              },
+            ),
+            const Divider(height: 8),
+            _buildHubActionTile(
+              icon: Icons.request_quote_outlined,
+              iconColor: Colors.teal[700]!,
+              title: 'عروض الأسعار والفواتير المبدئية (Devis)',
+              subtitle: 'إنشاء Devis رسمي وتحويله لفاتورة بيع بضغطة زر',
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/devis');
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHubActionTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(color: iconColor.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
+
+  // ==========================================
+  // GENERAL HELPER WIDGETS
+  // ==========================================
+
+  Widget _buildCardGroup(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Column(children: children),
+      ),
+    );
+  }
+
+  Widget _buildTile({
+    required IconData icon,
+    Color? iconColor,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: (iconColor ?? AppTheme.primaryColor).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: iconColor ?? AppTheme.primaryColor, size: 18),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+      ),
+      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))) : null,
+      trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 13, color: Color(0xFF94A3B8)),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildDivider() {
+    return const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9));
+  }
+
+  // ==========================================
+  // MODAL DIALOGS
+  // ==========================================
+
+  void _showLanguageModal(BuildContext context, Locale currentLocale) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('اختر لغة التطبيق (Language)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 14),
+            _buildLangChoice(ctx, 'العربية (Arabic)', '🇩🇿', 'ar', currentLocale.languageCode == 'ar'),
+            const Divider(height: 1),
+            _buildLangChoice(ctx, 'Français (French)', '🇫🇷', 'fr', currentLocale.languageCode == 'fr'),
+            const Divider(height: 1),
+            _buildLangChoice(ctx, 'English', '🇬🇧', 'en', currentLocale.languageCode == 'en'),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLangChoice(BuildContext ctx, String name, String flag, String code, bool isSelected) {
+    return ListTile(
+      leading: Text(flag, style: const TextStyle(fontSize: 22)),
+      title: Text(name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? AppTheme.primaryColor : Colors.black87)),
+      trailing: isSelected ? const Icon(Icons.check_circle, color: AppTheme.primaryColor) : null,
+      onTap: () {
+        context.read<LanguageCubit>().setLanguage(code);
+        Navigator.pop(ctx);
+      },
     );
   }
 
@@ -678,7 +1011,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Row(
                     children: [
                       const Icon(Icons.notifications_active, color: Colors.amber, size: 24),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         'مركز التنبيهات والإشعارات (${alerts.length})',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -692,15 +1025,15 @@ class _SettingsPageState extends State<SettingsPage> {
             const Divider(height: 1),
             Expanded(
               child: alerts.isEmpty
-                  ? Center(
+                  ? const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_outline, size: 48, color: Colors.green[400]),
-                          const SizedBox(height: 12),
-                          const Text('لا توجد تنبيهات عاجلة حالياً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          const SizedBox(height: 4),
-                          const Text('جميع مستويات المخزون والديون في حالة طبيعية', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Icon(Icons.check_circle_outline, size: 48, color: Colors.green),
+                          SizedBox(height: 12),
+                          Text('لا توجد تنبيهات عاجلة حالياً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          SizedBox(height: 4),
+                          Text('جميع مستويات المخزون والديون في حالة طبيعية', style: TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                     )
@@ -978,115 +1311,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildLanguageItem({
-    required BuildContext context,
-    required String title,
-    required String flag,
-    required String code,
-    required bool isSelected,
-  }) {
-    return InkWell(
-      onTap: () {
-        context.read<LanguageCubit>().setLanguage(code);
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Text(flag, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? AppTheme.primaryColor : Colors.black87,
-                ),
-              ),
-            ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey[600],
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildListGroup({required List<Widget> children}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E5EA)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          )
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(children: children),
-      ),
-    );
-  }
-
-  Widget _buildListItem({
-    required IconData icon,
-    Color? iconColor,
-    required String title,
-    String? subtitle,
-    Widget? subtitleWidget,
-    Widget? trailingWidget,
-    VoidCallback? onTap,
-  }) {
-    return ListTile(
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: (iconColor ?? AppTheme.primaryColor).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: iconColor ?? AppTheme.primaryColor, size: 20),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
-      ),
-      subtitle: subtitleWidget ??
-          (subtitle != null
-              ? Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey[600]))
-              : null),
-      trailing: trailingWidget ?? const Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildDivider() {
-    return const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9));
-  }
-
   void _showSoundThemesModal(BuildContext context) {
     int currentThemeId = SoundService.getSelectedThemeId();
     double currentVol = SoundService.getVolume();
@@ -1121,7 +1345,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
               const SizedBox(height: 8),
-              // Volume Slider
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
@@ -1247,6 +1470,43 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showAboutModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), shape: BoxShape.circle),
+              child: const Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 36),
+            ),
+            const SizedBox(height: 12),
+            const Text('Lumina POS Pro', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 4),
+            const Text('نظام الكاشير وإدارة السوبرماركت والمخزون الذكي', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            const SizedBox(height: 14),
+            const Text('الإصدار: 1.4.0 (Build 2026)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                minimumSize: const Size(double.infinity, 44),
+              ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إغلاق', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
         ),
       ),
     );
