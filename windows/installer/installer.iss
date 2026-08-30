@@ -1,7 +1,7 @@
 #define MyAppName "Nayli Market Desktop POS"
 #define MyAppVersion "2.0.0"
 #define MyAppPublisher "Nayli Market Solutions"
-#define MyAppExeName "Nayli Market Desktop.exe"
+#define MyAppExeName "billing_app.exe"
 
 [Setup]
 AppId={{D821F244-6C0D-4C92-9F9C-A63E0124B8A1}

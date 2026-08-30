@@ -26,6 +26,7 @@ jobs:
       - name: Enable Windows Desktop Support
         run: |
           flutter config --enable-windows-desktop
+          flutter create --platforms=windows .
           flutter doctor -v
 
       - name: Install dependencies
@@ -47,4 +48,3 @@ jobs:
         with:
           name: nayli-market-desktop-setup
           path: build/installer/
-
