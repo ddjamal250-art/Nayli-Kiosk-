@@ -32,6 +32,7 @@ class _AddProductPageState extends State<AddProductPage> {
   String _selectedCategory = 'عام';
   bool _isWeighted = false;
   DateTime? _expiryDate;
+  bool _isSaving = false;
 
   static const List<String> categories = [
     'عام',
@@ -75,8 +76,10 @@ class _AddProductPageState extends State<AddProductPage> {
     SoundService.playScanBeep();
   }
 
-  void _submit() {
+  void _submit() async {
+    if (_isSaving) return;
     if (_formKey.currentState!.validate()) {
+      setState(() => _isSaving = true);
       final barcode = _barcodeCtrl.text.trim();
       final productState = context.read<ProductBloc>().state;
       final existingProduct =

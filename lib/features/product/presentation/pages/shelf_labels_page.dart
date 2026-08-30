@@ -29,6 +29,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   bool _includeDate = true;
   bool _includeBarcode = true;
   String _labelSize = 'medium'; // 'small', 'medium', 'large'
+  bool _isPrinting = false;
 
   static const List<String> _categoryTabs = [
     'الكل',
@@ -84,10 +85,13 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   void _clearSelection() {
     setState(() {
       _selectedProductIds.clear();
+      _labelQuantities.clear();
     });
+    SoundService.playScanBeep();
   }
 
   Future<void> _printSelectedLabels(List<Product> allProducts) async {
+    if (_isPrinting) return;
     final selectedProds = allProducts.where((p) => _selectedProductIds.contains(p.id)).toList();
     if (selectedProds.isEmpty) {
       context.showAppSnackBar('يرجى اختيار سلعة واحدة على الأقل لطباعة ملصق الرف!', backgroundColor: Colors.orange[800]!);
@@ -99,6 +103,8 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       context.showAppSnackBar('⚠️ الطابعة الحرارية غير متصلة بالبلوتوث! يرجى توصيلها في الإعدادات.', backgroundColor: Colors.red[800]!);
       return;
     }
+
+    setState(() => _isPrinting = true);
 
     // Get Shop Name
     String shopName = AppConstants.defaultShopName;
@@ -158,6 +164,10 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     } catch (e) {
       if (mounted) {
         context.showAppSnackBar('حدث خطأ أثناء الطباعة: $e', backgroundColor: Colors.red[800]!);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPrinting = false);
       }
     }
   }
