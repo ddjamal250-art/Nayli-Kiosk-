@@ -47,3 +47,4 @@ jobs:
         with:
           name: nayli-market-desktop-setup
           path: build/installer/
+
