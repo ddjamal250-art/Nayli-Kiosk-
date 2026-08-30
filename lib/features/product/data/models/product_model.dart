@@ -23,6 +23,18 @@ class ProductModel extends Product {
   @override
   @HiveField(5)
   final double costPrice;
+  @override
+  @HiveField(6)
+  final String category;
+  @override
+  @HiveField(7)
+  final bool isWeighted;
+  @override
+  @HiveField(8)
+  final double wholesalePrice;
+  @override
+  @HiveField(9)
+  final String? expiryDate;
 
   const ProductModel({
     required this.id,
@@ -31,6 +43,10 @@ class ProductModel extends Product {
     required this.price,
     required this.stock,
     this.costPrice = 0.0,
+    this.category = 'عام',
+    this.isWeighted = false,
+    this.wholesalePrice = 0.0,
+    this.expiryDate,
   }) : super(
           id: id,
           name: name,
@@ -38,6 +54,10 @@ class ProductModel extends Product {
           price: price,
           stock: stock,
           costPrice: costPrice,
+          category: category,
+          isWeighted: isWeighted,
+          wholesalePrice: wholesalePrice,
+          expiryDate: expiryDate,
         );
 
   factory ProductModel.fromEntity(Product product) {
@@ -48,6 +68,10 @@ class ProductModel extends Product {
       price: product.price,
       stock: product.stock,
       costPrice: product.costPrice,
+      category: product.category,
+      isWeighted: product.isWeighted,
+      wholesalePrice: product.wholesalePrice,
+      expiryDate: product.expiryDate,
     );
   }
 
@@ -59,6 +83,10 @@ class ProductModel extends Product {
       price: price,
       stock: stock,
       costPrice: costPrice,
+      category: category,
+      isWeighted: isWeighted,
+      wholesalePrice: wholesalePrice,
+      expiryDate: expiryDate,
     );
   }
 
@@ -70,6 +98,10 @@ class ProductModel extends Product {
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       stock: (json['stock'] as num?)?.toInt() ?? 0,
       costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0.0,
+      category: json['category'] as String? ?? 'عام',
+      isWeighted: json['isWeighted'] as bool? ?? false,
+      wholesalePrice: (json['wholesalePrice'] as num?)?.toDouble() ?? 0.0,
+      expiryDate: json['expiryDate'] as String?,
     );
   }
 
@@ -81,6 +113,10 @@ class ProductModel extends Product {
       'price': price,
       'stock': stock,
       'costPrice': costPrice,
+      'category': category,
+      'isWeighted': isWeighted,
+      'wholesalePrice': wholesalePrice,
+      'expiryDate': expiryDate,
     };
   }
 }

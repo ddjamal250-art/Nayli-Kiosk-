@@ -17,19 +17,23 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ProductModel(
-      id: fields[0] as String,
-      name: fields[1] as String,
-      barcode: fields[2] as String,
-      price: fields[3] as double,
-      stock: fields[4] as int,
-      costPrice: (fields[5] as double?) ?? 0.0,
+      id: fields[0] as String? ?? '',
+      name: fields[1] as String? ?? '',
+      barcode: fields[2] as String? ?? '',
+      price: (fields[3] as num?)?.toDouble() ?? 0.0,
+      stock: (fields[4] as num?)?.toInt() ?? 0,
+      costPrice: (fields[5] as num?)?.toDouble() ?? 0.0,
+      category: fields[6] as String? ?? 'عام',
+      isWeighted: fields[7] as bool? ?? false,
+      wholesalePrice: (fields[8] as num?)?.toDouble() ?? 0.0,
+      expiryDate: fields[9] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductModel obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -41,7 +45,15 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       ..writeByte(4)
       ..write(obj.stock)
       ..writeByte(5)
-      ..write(obj.costPrice);
+      ..write(obj.costPrice)
+      ..writeByte(6)
+      ..write(obj.category)
+      ..writeByte(7)
+      ..write(obj.isWeighted)
+      ..writeByte(8)
+      ..write(obj.wholesalePrice)
+      ..writeByte(9)
+      ..write(obj.expiryDate);
   }
 
   @override

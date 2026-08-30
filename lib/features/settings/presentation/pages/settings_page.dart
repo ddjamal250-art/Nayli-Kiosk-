@@ -395,6 +395,19 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _buildDivider(),
                 _buildListItem(
+                  icon: Icons.remove_shopping_cart_rounded,
+                  iconColor: Colors.red[800]!,
+                  title: 'سجل التوالف والكسر والاهتلاك 🗑️📉',
+                  subtitle: 'شطب السلع المكسورة والتالفة وخصمها من المخزون وحساب الخسائر',
+                  onTap: () async {
+                    final auth = await SecurityPinHelper.authenticate(context, title: 'سجل التوالف والاهتلاك');
+                    if (auth && context.mounted) {
+                      context.push('/products/losses');
+                    }
+                  },
+                ),
+                _buildDivider(),
+                _buildListItem(
                   icon: Icons.table_chart_outlined,
                   iconColor: Colors.green[700]!,
                   title: 'تصدير البيانات والنسخ الاحتياطي (Excel)',

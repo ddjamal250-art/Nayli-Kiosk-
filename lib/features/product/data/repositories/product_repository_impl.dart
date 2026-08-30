@@ -5,6 +5,8 @@ import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../models/product_model.dart';
 
+import '../../../../core/utils/barcode_normalizer.dart';
+
 class ProductRepositoryImpl implements ProductRepository {
   @override
   Future<Either<Failure, List<Product>>> getProducts() async {
@@ -21,12 +23,12 @@ class ProductRepositoryImpl implements ProductRepository {
   Future<Either<Failure, Product>> getProductByBarcode(String barcode) async {
     try {
       final box = HiveDatabase.productBox;
-      // Fast barcode search
-      final product = box.values.firstWhere(
-        (element) => element.barcode.trim() == barcode.trim(),
-        orElse: () => throw Exception('Product not found'),
-      );
-      return Right(product);
+      final products = box.values.toList();
+      final matched = BarcodeNormalizer.findProduct(products, barcode);
+      if (matched != null) {
+        return Right(matched);
+      }
+      return Left(CacheFailure('Product not found: $barcode'));
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }

@@ -14,6 +14,7 @@ class HiveDatabase {
   static const String expensesBoxName = 'expenses';
   static const String devisBoxName = 'devis_invoices';
   static const String shiftsBoxName = 'cashier_shifts';
+  static const String lossesBoxName = 'product_losses';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -34,6 +35,7 @@ class HiveDatabase {
     await Hive.openBox(expensesBoxName); // Box for store daily expenses
     await Hive.openBox(devisBoxName); // Box for proforma / devis quotations
     await Hive.openBox(shiftsBoxName); // Box for cashier shifts / fond de caisse
+    await Hive.openBox(lossesBoxName); // Box for spoiled, expired & broken product losses
   }
 
   static Box<ProductModel> get productBox =>
@@ -48,4 +50,5 @@ class HiveDatabase {
   static Box get expensesBox => Hive.box(expensesBoxName);
   static Box get devisBox => Hive.box(devisBoxName);
   static Box get shiftsBox => Hive.box(shiftsBoxName);
+  static Box get lossesBox => Hive.box(lossesBoxName);
 }

@@ -172,8 +172,22 @@ class MasterCatalogService {
 
   MasterCatalogItem? lookup(String barcode) {
     final clean = barcode.trim();
+    if (clean.isEmpty) return null;
     if (_barcodeMap.containsKey(clean)) {
       return _barcodeMap[clean];
+    }
+    // Try without leading zeros
+    final stripped = clean.replaceFirst(RegExp(r'^0+'), '');
+    if (stripped.isNotEmpty && _barcodeMap.containsKey(stripped)) {
+      return _barcodeMap[stripped];
+    }
+    // Try UPC-A to EAN-13 padding (12 digits -> 13 digits)
+    if (clean.length == 12 && _barcodeMap.containsKey('0$clean')) {
+      return _barcodeMap['0$clean'];
+    }
+    // Try EAN-13 to UPC-A (13 digits starting with 0 -> 12 digits)
+    if (clean.length == 13 && clean.startsWith('0') && _barcodeMap.containsKey(clean.substring(1))) {
+      return _barcodeMap[clean.substring(1)];
     }
     return MasterCatalogSeed.lookup(clean);
   }

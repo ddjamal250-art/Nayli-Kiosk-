@@ -24,10 +24,24 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   final TextEditingController _searchCtrl = TextEditingController();
   final Set<String> _selectedProductIds = {};
   final Map<String, int> _labelQuantities = {};
+  String _selectedCategoryFilter = 'الكل';
   bool _includeShopName = true;
   bool _includeDate = true;
   bool _includeBarcode = true;
   String _labelSize = 'medium'; // 'small', 'medium', 'large'
+
+  static const List<String> _categoryTabs = [
+    'الكل',
+    '⚖️ مواد الميزان',
+    'مواد غذائية ومعلبات',
+    'حليب ومشتقاته',
+    'مخبوزات وعجائن',
+    'مشروبات ومياه',
+    'نظافة وتجميل',
+    'حلويات وسكاكر',
+    'خضر وفواكه',
+    'أخرى',
+  ];
 
   @override
   void dispose() {
@@ -51,10 +65,20 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     setState(() {
       for (final p in products) {
         _selectedProductIds.add(p.id);
-        _labelQuantities[p.id] = 1;
+        _labelQuantities[p.id] = _labelQuantities[p.id] ?? 1;
       }
     });
     SoundService.playScanBeep();
+  }
+
+  void _setBatchQuantity(int qty) {
+    setState(() {
+      for (final id in _selectedProductIds) {
+        _labelQuantities[id] = qty;
+      }
+    });
+    SoundService.playScanBeep();
+    context.showAppSnackBar('🏷️ تم تعيين $qty ملصقات لكل السلع المحددة!');
   }
 
   void _clearSelection() {
@@ -160,15 +184,21 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
         builder: (context, state) {
           final query = _searchCtrl.text.trim().toLowerCase();
           final filtered = state.products.where((p) {
-            if (query.isEmpty) return true;
-            return p.name.toLowerCase().contains(query) || p.barcode.contains(query);
+            final matchesQuery = query.isEmpty || p.name.toLowerCase().contains(query) || p.barcode.contains(query);
+            if (!matchesQuery) return false;
+
+            if (_selectedCategoryFilter == 'الكل') return true;
+            if (_selectedCategoryFilter == '⚖️ مواد الميزان') {
+              return p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ');
+            }
+            return p.category == _selectedCategoryFilter;
           }).toList();
 
           return Column(
             children: [
               // Top Action Header (Options & Selection count)
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
@@ -214,7 +244,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     // Options Switches Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -253,7 +283,62 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                         ),
                       ],
                     ),
+                    if (_selectedProductIds.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text('تعيين عدد النسخ للكل:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const SizedBox(width: 6),
+                          Wrap(
+                            spacing: 6,
+                            children: [1, 2, 5, 10, 20].map((qty) {
+                              return ActionChip(
+                                label: Text('$qty', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                                backgroundColor: Colors.amber.withOpacity(0.15),
+                                side: BorderSide(color: Colors.amber.withOpacity(0.3)),
+                                onPressed: () => _setBatchQuantity(qty),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
+                ),
+              ),
+
+              // Categories & Weighted Filter Ribbon
+              Container(
+                height: 40,
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _categoryTabs.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (ctx, idx) {
+                    final cat = _categoryTabs[idx];
+                    final isSelected = _selectedCategoryFilter == cat;
+                    return FilterChip(
+                      label: Text(
+                        cat,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                          color: isSelected ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: cat == '⚖️ مواد الميزان' ? Colors.teal : AppTheme.primaryColor,
+                      backgroundColor: isSelected ? AppTheme.primaryColor : Colors.grey[100],
+                      checkmarkColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      onSelected: (_) {
+                        setState(() => _selectedCategoryFilter = cat);
+                        SoundService.playScanBeep();
+                      },
+                    );
+                  },
                 ),
               ),
 

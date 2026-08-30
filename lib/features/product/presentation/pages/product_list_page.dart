@@ -25,6 +25,20 @@ class ProductListPage extends StatefulWidget {
 class _ProductListPageState extends State<ProductListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedCategoryFilter = 'الكل';
+
+  static const List<String> _categoryTabs = [
+    'الكل',
+    '⚖️ مواد الميزان',
+    'مواد غذائية ومعلبات',
+    'حليب ومشتقاته',
+    'مخبوزات وعجائن',
+    'مشروبات ومياه',
+    'نظافة وتجميل',
+    'حلويات وسكاكر',
+    'خضر وفواكه',
+    'أخرى',
+  ];
 
   @override
   void initState() {
@@ -56,6 +70,115 @@ class _ProductListPageState extends State<ProductListPage> {
         _searchController.text = barcode;
       }
     }
+  }
+
+  void _showQuickRestockModal(Product product) {
+    int addQty = 10;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 24),
+                      const SizedBox(width: 8),
+                      Text('استلام شحنة جديدة 📦', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
+                  ),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('المخزون الحالي: ${product.stock} ${product.isWeighted ? "كغ" : "قطعة"}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 16),
+              const Text('اختر الكمية المضافة للشحنة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton.filledTonal(
+                    icon: const Icon(Icons.remove),
+                    onPressed: addQty > 1 ? () => setModalState(() => addQty--) : null,
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: Text('+$addQty', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                  ),
+                  IconButton.filledTonal(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => setModalState(() => addQty++),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                children: [5, 10, 24, 50, 100].map((amt) {
+                  return ActionChip(
+                    label: Text('+$amt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    backgroundColor: addQty == amt ? Colors.green.withOpacity(0.2) : Colors.grey[100],
+                    onPressed: () => setModalState(() => addQty = amt),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.check_circle_outline),
+                label: Text('تأكيد إضافة +$addQty إلى المخزن (المجموع: ${product.stock + addQty})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  final updated = Product(
+                    id: product.id,
+                    name: product.name,
+                    barcode: product.barcode,
+                    price: product.price,
+                    costPrice: product.costPrice,
+                    wholesalePrice: product.wholesalePrice,
+                    stock: product.stock + addQty,
+                    category: product.category,
+                    isWeighted: product.isWeighted,
+                    expiryDate: product.expiryDate,
+                  );
+                  context.read<ProductBloc>().add(UpdateProduct(updated));
+                  SoundService.playCheckoutSuccess();
+                  context.showAppSnackBar('✅ تم استلام الشحنة وتحديث المخزون بنجاح!');
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _pinToQuickSale(BuildContext context, Product product) async {
@@ -287,7 +410,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
           // Search Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: BlocBuilder<ProductBloc, ProductState>(
                 builder: (context, state) {
               return Column(
@@ -300,37 +423,84 @@ class _ProductListPageState extends State<ProductListPage> {
                           controller: _searchController,
                           textCapitalization: TextCapitalization.words,
                           decoration: InputDecoration(
-                            hintText: 'Scan or enter barcode',
+                            hintText: 'ابحث بالاسم أو الباركود...',
                             prefixIcon: Icon(
                               Icons.search,
                               color: Colors.grey[400],
                             ),
                           ),
-                          validator:
-                              AppValidators.required('Please enter a barcode'),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Container(
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.05),
+                          color: AppTheme.primaryColor.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.qr_code_scanner,
                               color: AppTheme.primaryColor),
                           onPressed: () => _scanQR(state.products),
-                          padding: const EdgeInsets.all(15),
+                          padding: const EdgeInsets.all(12),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  const Text('Tap the icon to open camera scanner',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF4C669A))),
                 ],
               );
             }),
+          ),
+
+          // Categories & Scale Items Horizontal Filter Ribbon
+          BlocBuilder<ProductBloc, ProductState>(
+            builder: (context, state) {
+              return Container(
+                height: 42,
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _categoryTabs.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (ctx, idx) {
+                    final cat = _categoryTabs[idx];
+                    final isSelected = _selectedCategoryFilter == cat;
+
+                    // Calculate count for this tab
+                    int count = 0;
+                    if (cat == 'الكل') {
+                      count = state.products.length;
+                    } else if (cat == '⚖️ مواد الميزان') {
+                      count = state.products.where((p) => p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')).length;
+                    } else {
+                      count = state.products.where((p) => p.category == cat).length;
+                    }
+
+                    return FilterChip(
+                      label: Text(
+                        '$cat ($count)',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                          color: isSelected ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: cat == '⚖️ مواد الميزان' ? Colors.teal : AppTheme.primaryColor,
+                      backgroundColor: isSelected ? AppTheme.primaryColor : Colors.grey[100],
+                      checkmarkColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedCategoryFilter = cat;
+                        });
+                        SoundService.playScanBeep();
+                      },
+                    );
+                  },
+                ),
+              );
+            },
           ),
 
           Expanded(
@@ -366,29 +536,48 @@ class _ProductListPageState extends State<ProductListPage> {
                       child: Text('No products found. Add some!'));
                 }
 
-                final filteredProducts = state.products
-                    .where((product) =>
-                        product.name.toLowerCase().contains(_searchQuery) ||
-                        product.barcode.toLowerCase().contains(_searchQuery))
-                    .toList();
+                final filteredProducts = state.products.where((product) {
+                  final matchesSearch = product.name.toLowerCase().contains(_searchQuery) ||
+                      product.barcode.toLowerCase().contains(_searchQuery);
+                  if (!matchesSearch) return false;
+
+                  if (_selectedCategoryFilter == 'الكل') return true;
+                  if (_selectedCategoryFilter == '⚖️ مواد الميزان') {
+                    return product.isWeighted ||
+                        product.barcode.startsWith('SCALE_') ||
+                        product.name.contains('ميزان') ||
+                        product.name.contains('كغ');
+                  }
+                  return product.category == _selectedCategoryFilter;
+                }).toList();
 
                 if (filteredProducts.isEmpty) {
-                  return const Center(
-                      child: Text('No products match your search.'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
+                        const SizedBox(height: 8),
+                        Text('لا توجد سلع في قسم "$_selectedCategoryFilter"', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                      ],
+                    ),
+                  );
                 }
 
                 return ListView.separated(
                   padding: const EdgeInsets.only(
-                      left: 16, right: 16, top: 8, bottom: 100),
+                      left: 16, right: 16, top: 4, bottom: 100),
                   itemCount: filteredProducts.length,
                   separatorBuilder: (context, index) =>
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final product = filteredProducts[index];
+                    final isWeighable = product.isWeighted || product.barcode.startsWith('SCALE_') || product.name.contains('ميزان') || product.name.contains('كغ');
+
                     return Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: borderColor),
                         boxShadow: const [
                           BoxShadow(
@@ -397,7 +586,7 @@ class _ProductListPageState extends State<ProductListPage> {
                               offset: Offset(0, 2))
                         ],
                       ),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -405,20 +594,39 @@ class _ProductListPageState extends State<ProductListPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  product.name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        product.name,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14.5),
+                                      ),
+                                    ),
+                                    if (isWeighable) ...[
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.teal.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                                        ),
+                                        child: const Text('⚖️ ميزان', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.teal)),
+                                      ),
+                                      const SizedBox(width: 4),
+                                    ],
+                                  ],
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
                                     Text(
-                                      '${AppConstants.currencySymbol} ${product.price.toStringAsFixed(2)}',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.grey[700]),
+                                      '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13.5,
+                                          color: AppTheme.primaryColor),
                                     ),
                                     const SizedBox(width: 8),
                                     Container(
@@ -431,31 +639,32 @@ class _ProductListPageState extends State<ProductListPage> {
                                                 : Colors.red.withOpacity(0.1)),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
-                                      child: Builder(
-                                        builder: (_) {
-                                          final isWeighable = product.barcode.startsWith('SCALE_') || product.name.contains('ميزان') || product.name.contains('كغ');
-                                          final stockText = isWeighable
-                                              ? '${product.stock} كغ'
-                                              : '${product.stock} ${context.tr('in_stock')}';
-                                          return Text(
-                                            product.stock > 5
-                                                ? stockText
-                                                : (product.stock > 0
-                                                    ? '${product.stock} ${context.tr('low_stock')}'
-                                                    : context.tr('out_of_stock')),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: product.stock > 5
-                                                  ? Colors.green[800]
-                                                  : (product.stock > 0
-                                                      ? Colors.orange[800]
-                                                      : Colors.red[800]),
-                                            ),
-                                          );
-                                        },
+                                      child: Text(
+                                        isWeighable
+                                            ? '${product.stock} كغ'
+                                            : '${product.stock} ${context.tr('in_stock')}',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: product.stock > 5
+                                              ? Colors.green[800]
+                                              : (product.stock > 0
+                                                  ? Colors.orange[800]
+                                                  : Colors.red[800]),
+                                        ),
                                       ),
                                     ),
+                                    if (product.category.isNotEmpty && product.category != 'عام') ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(product.category, style: const TextStyle(fontSize: 9.5, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ],
@@ -464,21 +673,22 @@ class _ProductListPageState extends State<ProductListPage> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              // Quick Arrivage Restock Button
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.withOpacity(0.12),
+                                  color: Colors.green.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.bolt_rounded,
-                                      color: Colors.orange, size: 20),
+                                  icon: const Icon(Icons.add_shopping_cart_rounded,
+                                      color: Colors.green, size: 19),
                                   constraints: const BoxConstraints(),
-                                  tooltip: 'تثبيت في شريط البيع السريع ⚡',
-                                  padding: const EdgeInsets.all(8),
-                                  onPressed: () => _pinToQuickSale(context, product),
+                                  tooltip: 'استلام شحنة سريعة 📦',
+                                  padding: const EdgeInsets.all(7),
+                                  onPressed: () => _showQuickRestockModal(product),
                                 ),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.amber.withOpacity(0.12),
@@ -486,14 +696,14 @@ class _ProductListPageState extends State<ProductListPage> {
                                 ),
                                 child: IconButton(
                                   icon: const Icon(Icons.label_important_outline,
-                                      color: Colors.amber, size: 20),
+                                      color: Colors.amber, size: 19),
                                   constraints: const BoxConstraints(),
                                   tooltip: 'طباعة بطاقة الرف 🏷️',
-                                  padding: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.all(7),
                                   onPressed: () => _printSingleShelfLabel(context, product),
                                 ),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               Container(
                                 decoration: BoxDecoration(
                                   color: AppTheme.primaryColor
@@ -502,9 +712,10 @@ class _ProductListPageState extends State<ProductListPage> {
                                 ),
                                 child: IconButton(
                                   icon: const Icon(Icons.edit_rounded,
-                                      color: AppTheme.primaryColor, size: 20),
+                                      color: AppTheme.primaryColor, size: 19),
                                   constraints: const BoxConstraints(),
-                                  padding: const EdgeInsets.all(8),
+                                  tooltip: 'تعديل السلعة والاستلام الكامل',
+                                  padding: const EdgeInsets.all(7),
                                   onPressed: () async {
                                     final auth = await SecurityPinHelper.authenticate(
                                       context,
@@ -517,7 +728,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.red.withOpacity(0.1),
@@ -525,9 +736,9 @@ class _ProductListPageState extends State<ProductListPage> {
                                 ),
                                 child: IconButton(
                                   icon: const Icon(Icons.delete_outline_rounded,
-                                      color: Colors.red, size: 20),
+                                      color: Colors.red, size: 19),
                                   constraints: const BoxConstraints(),
-                                  padding: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.all(7),
                                   onPressed: () =>
                                       _confirmDelete(context, product),
                                 ),

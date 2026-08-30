@@ -12,6 +12,7 @@ import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
+import '../../../../core/utils/barcode_normalizer.dart';
 
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -49,11 +50,11 @@ class QuickItem {
       };
 
   factory QuickItem.fromMap(Map<dynamic, dynamic> map) => QuickItem(
-        id: map['id'] ?? '',
-        name: map['name'] ?? '',
+        id: map['id'] as String? ?? 'item_${DateTime.now().millisecondsSinceEpoch}',
+        name: map['name'] as String? ?? '',
         price: (map['price'] as num?)?.toDouble() ?? 0.0,
         costPrice: (map['costPrice'] as num?)?.toDouble() ?? 0.0,
-        icon: map['icon'] ?? '🛍️',
+        icon: map['icon'] as String? ?? '🏷️',
         linkedProductId: map['linkedProductId'] as String?,
       );
 }
@@ -65,10 +66,14 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late MobileScannerController _scannerController;
+  late AnimationController _laserAnimationController;
+  bool _isScanFlash = false;
+  Offset? _dynamicTargetOffset;
+  bool _isLockedOnBarcode = false;
   final Map<String, int> _lastScanTimes = {};
-  static const int _scanCooldownMs = 1200;
+  static const int _scanCooldownMs = 850;
   bool _isScanningPaused = false;
   bool _isFlashOn = false;
   bool _isCameraOn = true;
@@ -95,16 +100,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _scannerController = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
+      detectionSpeed: DetectionSpeed.unrestricted,
       facing: CameraFacing.back,
       torchEnabled: false,
+      returnImage: false,
     );
+    _laserAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
     _loadQuickItems();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _laserAnimationController.dispose();
     _scannerController.dispose();
     _sheetController.dispose();
     super.dispose();
@@ -222,6 +233,28 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
         if (now - lastScan > _scanCooldownMs) {
           _lastScanTimes[cleanCode] = now;
+
+          // Track barcode dynamic location on screen if corners provided
+          if (barcode.corners.isNotEmpty) {
+            double minX = double.infinity, maxX = -double.infinity;
+            double minY = double.infinity, maxY = -double.infinity;
+            for (final pt in barcode.corners) {
+              if (pt.dx < minX) minX = pt.dx;
+              if (pt.dx > maxX) maxX = pt.dx;
+              if (pt.dy < minY) minY = pt.dy;
+              if (pt.dy > maxY) maxY = pt.dy;
+            }
+            final screenW = MediaQuery.of(context).size.width;
+            final screenH = MediaQuery.of(context).size.height;
+            setState(() {
+              _dynamicTargetOffset = Offset(
+                ((minX + maxX) / 2).clamp(60.0, screenW - 60.0),
+                ((minY + maxY) / 2).clamp(120.0, screenH * 0.48),
+              );
+              _isLockedOnBarcode = true;
+            });
+          }
+
           _handleScannedBarcode(cleanCode);
           break;
         }
@@ -231,11 +264,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void _handleScannedBarcode(String code) {
     SoundService.playScanBeep();
+    HapticFeedback.lightImpact();
+
+    // Trigger futuristic laser green flash and dynamic lock effect
+    setState(() {
+      _isScanFlash = true;
+      _isLockedOnBarcode = true;
+    });
+    Future.delayed(const Duration(milliseconds: 380), () {
+      if (mounted) {
+        setState(() {
+          _isScanFlash = false;
+          _isLockedOnBarcode = false;
+          _dynamicTargetOffset = null;
+        });
+      }
+    });
 
     final productState = context.read<ProductBloc>().state;
-    final matchedProduct = productState.products
-        .where((p) => p.barcode.trim() == code)
-        .firstOrNull;
+    final matchedProduct = BarcodeNormalizer.findProduct(productState.products, code);
 
     if (_isMultiScanMode) {
       setState(() {
@@ -260,7 +307,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
     }
 
-    context.read<BillingBloc>().add(ScanBarcodeEvent(code));
+    if (matchedProduct != null) {
+      context.read<BillingBloc>().add(AddProductToCartEvent(matchedProduct));
+    } else {
+      context.read<BillingBloc>().add(ScanBarcodeEvent(code));
+    }
   }
 
   void _handleQuickAddProduct(String barcode) {
@@ -1043,6 +1094,39 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 // Multi-Scan Stacked Barcode Toggle Button
                 _buildMultiScanButton(),
 
+                // Low Stock Alert Badge
+                BlocBuilder<ProductBloc, ProductState>(
+                  builder: (context, prodState) {
+                    final lowStockProducts = prodState.products.where((p) => p.stock <= 5).toList();
+                    if (lowStockProducts.isEmpty) return const SizedBox.shrink();
+
+                    return InkWell(
+                      onTap: () => _handleLowStockBadgeTap(lowStockProducts),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[900]?.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.amberAccent.withOpacity(0.8), width: 1.2),
+                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${lowStockProducts.length} مخزون منخفض',
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
                 // Full-Screen Settings & Management Hamburger Button
                 InkWell(
                   onTap: _navigateToSettings,
@@ -1127,30 +1211,140 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               ),
             ),
 
-          // Central Scan Target Frame (Positioned comfortably in the camera area)
+          // Dynamic Auto-Tracking Scan Target Frame (Follows barcode dynamically or stays centered)
           if (_isCameraOn)
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.20,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  width: 250,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white.withOpacity(0.85), width: 2.2),
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 10),
-                    ],
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              top: _dynamicTargetOffset != null
+                  ? (_dynamicTargetOffset!.dy - 75)
+                  : (MediaQuery.of(context).size.height * 0.18),
+              left: _dynamicTargetOffset != null
+                  ? (_dynamicTargetOffset!.dx - 125)
+                  : (MediaQuery.of(context).size.width / 2 - 125),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 250,
+                height: 150,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _isScanFlash
+                        ? Colors.greenAccent
+                        : (_isLockedOnBarcode ? Colors.cyanAccent : Colors.white.withOpacity(0.85)),
+                    width: _isScanFlash ? 3.2 : 2.2,
                   ),
-                  child: Center(
-                    child: Container(
-                      height: 1.5,
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      color: Colors.redAccent.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _isScanFlash
+                          ? Colors.greenAccent.withOpacity(0.6)
+                          : (_isLockedOnBarcode ? Colors.cyanAccent.withOpacity(0.4) : Colors.black.withOpacity(0.25)),
+                      blurRadius: _isScanFlash ? 18 : 10,
                     ),
-                  ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    // Dynamic Laser Scan Sweep
+                    AnimatedBuilder(
+                      animation: _laserAnimationController,
+                      builder: (context, child) {
+                        return Positioned(
+                          top: 10 + (_laserAnimationController.value * 125),
+                          left: 12,
+                          right: 12,
+                          child: Container(
+                            height: 2.5,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(2),
+                              gradient: LinearGradient(
+                                colors: _isScanFlash
+                                    ? [
+                                        Colors.transparent,
+                                        Colors.greenAccent,
+                                        Colors.greenAccent,
+                                        Colors.transparent,
+                                      ]
+                                    : [
+                                        Colors.transparent,
+                                        Colors.redAccent.withOpacity(0.9),
+                                        Colors.red,
+                                        Colors.redAccent.withOpacity(0.9),
+                                        Colors.transparent,
+                                      ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _isScanFlash
+                                      ? Colors.greenAccent.withOpacity(0.9)
+                                      : Colors.redAccent.withOpacity(0.8),
+                                  blurRadius: 8,
+                                  spreadRadius: 1.5,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Corner brackets for futuristic look
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                            left: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                            right: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 6,
+                      left: 6,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                            left: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 6,
+                      right: 6,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                            right: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1178,6 +1372,103 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  void _handleLowStockBadgeTap(List<Product> lowStockProducts) {
+    SoundService.playScanBeep();
+    HapticFeedback.selectionClick();
+
+    if (lowStockProducts.length == 1) {
+      context.push('/products/edit/${lowStockProducts.first.id}', extra: lowStockProducts.first);
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+                    const SizedBox(width: 8),
+                    Text('سلع قريبة من النفاد (${lowStockProducts.length}) ⚠️', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 280),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: lowStockProducts.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (ctx, i) {
+                  final p = lowStockProducts[i];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                    subtitle: Text('الباركود: ${p.barcode} • البيع: ${p.price.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 11)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.redAccent),
+                          ),
+                          child: Text(
+                            'المخزون: ${p.stock}',
+                            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        IconButton(
+                          icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor, size: 24),
+                          tooltip: 'تعديل السلعة وتزويد المخزون',
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.push('/products/edit/${p.id}', extra: p);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.inventory_2_outlined, size: 18),
+              label: const Text('الانتقال إلى كامل المخزن', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.push('/products');
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

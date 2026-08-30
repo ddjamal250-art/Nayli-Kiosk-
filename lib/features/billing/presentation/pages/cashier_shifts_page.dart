@@ -242,6 +242,45 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yyyy/MM/dd HH:mm');
 
+    double shiftCashSales = 0.0;
+    double shiftExpenses = 0.0;
+    if (_activeShift != null) {
+      final openedAtStr = _activeShift!['openedAt'] as String? ?? '';
+      final openedAt = DateTime.tryParse(openedAtStr) ?? DateTime.now();
+
+      final invoicesBox = HiveDatabase.invoicesBox;
+      for (final key in invoicesBox.keys) {
+        final val = invoicesBox.get(key);
+        if (val is Map) {
+          final ts = val['timestamp'] as String?;
+          final isCredit = val['isCredit'] == true;
+          if (ts != null) {
+            final invDate = DateTime.tryParse(ts);
+            if (invDate != null && invDate.isAfter(openedAt) && !isCredit) {
+              final paid = (val['paidAmount'] as num?)?.toDouble() ?? (val['totalAmount'] as num?)?.toDouble() ?? 0.0;
+              shiftCashSales += paid;
+            }
+          }
+        }
+      }
+
+      final expBox = HiveDatabase.expensesBox;
+      for (final key in expBox.keys) {
+        final val = expBox.get(key);
+        if (val is Map) {
+          final d = val['date'] as String?;
+          if (d != null) {
+            final expDate = DateTime.tryParse(d);
+            if (expDate != null && expDate.isAfter(openedAt)) {
+              shiftExpenses += (val['amount'] as num?)?.toDouble() ?? 0.0;
+            }
+          }
+        }
+      }
+    }
+    final initialCash = ((_activeShift?['initialCash'] as num?)?.toDouble() ?? 0.0);
+    final totalExpectedInDrawer = initialCash + shiftCashSales - shiftExpenses;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('مناوبات الكاسة والصندوق 💼', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
@@ -258,13 +297,15 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Active Shift Card
+            // Active Shift Card & Live Caisse Balance
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: _activeShift != null ? Colors.green.withOpacity(0.08) : Colors.grey[100],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _activeShift != null ? Colors.green.withOpacity(0.3) : Colors.grey[300]!),
+                color: _activeShift != null ? const Color(0xFF0F172A) : Colors.grey[100],
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,34 +315,103 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
                     children: [
                       Row(
                         children: [
-                          Icon(_activeShift != null ? Icons.lock_open : Icons.lock, color: _activeShift != null ? Colors.green : Colors.grey, size: 22),
+                          Icon(_activeShift != null ? Icons.lock_open : Icons.lock, color: _activeShift != null ? Colors.greenAccent : Colors.grey, size: 22),
                           const SizedBox(width: 8),
                           Text(
-                            _activeShift != null ? 'المناوبة الحالية: مفتوحة 🟢' : 'لا توجد مناوبة مفتوحة حالياً 🔒',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            _activeShift != null ? 'المناوبة الحالية (مفتوحة 🟢)' : 'لا توجد مناوبة مفتوحة حالياً 🔒',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _activeShift != null ? Colors.white : Colors.black87),
                           ),
                         ],
                       ),
+                      if (_activeShift != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.greenAccent),
+                          ),
+                          child: Text(_activeShift!['cashierName'] ?? 'كاشير', style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                        ),
                     ],
                   ),
                   if (_activeShift != null) ...[
-                    const SizedBox(height: 10),
-                    Text('الكاشير: ${_activeShift!['cashierName'] ?? 'كاشير'}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text('رصيد البداية (Fond de Caisse): ${((_activeShift!['initialCash'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(0)} دج'),
-                    Text('وقت الفتح: ${dateFormat.format(DateTime.tryParse(_activeShift!['openedAt'] as String? ?? '') ?? DateTime.now())}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    const SizedBox(height: 14),
+                    // Live PreonCom Inspired 3-Card Caisse View
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(colors: [Color(0xFF166534), Color(0xFF15803D)]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('📥 مقبوضات (Entrées)', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                const SizedBox(height: 3),
+                                Text('+${shiftCashSales.toStringAsFixed(0)} دج', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(colors: [Color(0xFF991B1B), Color(0xFFB91C1C)]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('📤 مصاريف (Sorties)', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                const SizedBox(height: 3),
+                                Text('-${shiftExpenses.toStringAsFixed(0)} دج', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF1E40AF), Color(0xFF2563EB)]),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('💰 رصيد الدرج الإجمالي (Fond + Ventes):', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                              const SizedBox(height: 2),
+                              Text('${totalExpectedInDrawer.toStringAsFixed(0)} دج', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          Text('بداية: ${initialCash.toStringAsFixed(0)} دج', style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 14),
                     ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700], padding: const EdgeInsets.symmetric(vertical: 12)),
-                      icon: const Icon(Icons.lock, color: Colors.white, size: 18),
-                      label: const Text('إغلاق المناوبة وجرد الصندوق (Clôture)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700], foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
+                      icon: const Icon(Icons.lock, size: 18),
+                      label: const Text('إغلاق المناوبة وجرد الصندوق (Clôture)', style: TextStyle(fontWeight: FontWeight.bold)),
                       onPressed: _closeShiftDialog,
                     ),
                   ] else ...[
                     const SizedBox(height: 14),
                     ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], padding: const EdgeInsets.symmetric(vertical: 12)),
-                      icon: const Icon(Icons.lock_open, color: Colors.white, size: 18),
-                      label: const Text('بدء مناوبة جديدة (فتح الصندوق)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
+                      icon: const Icon(Icons.lock_open, size: 18),
+                      label: const Text('بدء مناوبة جديدة (فتح الصندوق)', style: TextStyle(fontWeight: FontWeight.bold)),
                       onPressed: _openShiftDialog,
                     ),
                   ],

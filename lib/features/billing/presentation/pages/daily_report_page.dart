@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +24,80 @@ class _DailyReportPageState extends State<DailyReportPage> {
   int _selectedPeriod = 0;
   DateTime _customDate = DateTime.now();
   bool _isPrinting = false;
+  Timer? _refreshTimer;
+  int _secondsRemaining = 20;
+
+  @override
+  void initState() {
+    super.initState();
+    _startLiveRefreshTimer();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startLiveRefreshTimer() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          if (_secondsRemaining <= 1) {
+            _secondsRemaining = 20;
+          } else {
+            _secondsRemaining--;
+          }
+        });
+      }
+    });
+  }
+
+  double _calculateCustomerDebts() {
+    double total = 0.0;
+    try {
+      final box = HiveDatabase.customersBox;
+      for (var key in box.keys) {
+        final c = box.get(key);
+        if (c != null) {
+          total += (c.totalDebt as num?)?.toDouble() ?? 0.0;
+        }
+      }
+    } catch (_) {}
+    return total;
+  }
+
+  double _calculateSupplierDebts() {
+    double total = 0.0;
+    try {
+      final box = HiveDatabase.supplierInvoicesBox;
+      for (var key in box.keys) {
+        final val = box.get(key);
+        if (val is Map) {
+          final totalAmount = (val['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          final paidAmount = (val['paidAmount'] as num?)?.toDouble() ?? 0.0;
+          final remaining = totalAmount - paidAmount;
+          if (remaining > 0) total += remaining;
+        }
+      }
+    } catch (_) {}
+    return total;
+  }
+
+  double _calculateTotalLosses() {
+    double total = 0.0;
+    try {
+      final box = HiveDatabase.lossesBox;
+      for (var key in box.keys) {
+        final val = box.get(key);
+        if (val is Map) {
+          final loss = (val['totalLossCost'] as num?)?.toDouble() ?? 0.0;
+          total += loss;
+        }
+      }
+    } catch (_) {}
+    return total;
+  }
 
   List<Map<String, dynamic>> _getFilteredInvoices() {
     final box = HiveDatabase.invoicesBox;
@@ -204,10 +279,35 @@ class _DailyReportPageState extends State<DailyReportPage> {
     final netCashFlow = cashIn - cashOut;
 
     final stockCapital = _calculateStockCapital();
+    final customerDebts = _calculateCustomerDebts();
+    final supplierDebts = _calculateSupplierDebts();
+    final totalLosses = _calculateTotalLosses();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الداشبورد المالي والتقارير 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('الداشبورد المالي 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                  const SizedBox(width: 4),
+                  Text('${_secondsRemaining}ث', style: const TextStyle(color: Colors.green, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ],
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -216,6 +316,16 @@ class _DailyReportPageState extends State<DailyReportPage> {
           onPressed: () => context.pop(),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryColor),
+            tooltip: 'تحديث الحسابات والبيانات اللحظية',
+            onPressed: () {
+              setState(() => _secondsRemaining = 20);
+              SoundService.playScanBeep();
+              HapticFeedback.lightImpact();
+              context.showAppSnackBar('🔄 تم تحديث كافة الحسابات والبيانات اللحظية!');
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.table_chart_outlined, color: Colors.green),
             tooltip: 'تصدير جدول المبيعات كـ Excel',
@@ -234,14 +344,6 @@ class _DailyReportPageState extends State<DailyReportPage> {
             tooltip: 'طباعة تقرير Z',
             onPressed: () => _printZReport(invoices, totalRevenue, grossProfit, expenses, netProfit, totalItemsCount, cashSales, creditSales),
           ),
-          IconButton(
-            icon: const Icon(Icons.payments_outlined, color: Colors.orange),
-            tooltip: 'مصاريف المحل',
-            onPressed: () async {
-              await context.push('/expenses');
-              setState(() {});
-            },
-          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -249,6 +351,100 @@ class _DailyReportPageState extends State<DailyReportPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Cross-Department Financial Health Overview Grid
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.hub_outlined, size: 16, color: AppTheme.primaryColor),
+                          SizedBox(width: 6),
+                          Text('مؤشرات وحسابات أقسام المتجر (محدثة لحظياً):',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
+                        ],
+                      ),
+                      InkWell(
+                        onTap: () {
+                          setState(() => _secondsRemaining = 20);
+                          SoundService.playScanBeep();
+                          HapticFeedback.lightImpact();
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(Icons.sync, size: 13, color: Colors.grey),
+                            const SizedBox(width: 2),
+                            Text('تحديث ($_secondsRemaining ث)', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildMiniStatTile(
+                          icon: Icons.menu_book_rounded,
+                          color: Colors.orange[800]!,
+                          title: 'ديون الزبائن بالسوق',
+                          value: '${customerDebts.toStringAsFixed(0)} دج',
+                          onTap: () => context.push('/customers'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildMiniStatTile(
+                          icon: Icons.local_shipping_outlined,
+                          color: Colors.deepPurple,
+                          title: 'ديون الموردين',
+                          value: '${supplierDebts.toStringAsFixed(0)} دج',
+                          onTap: () => context.push('/products/supplier-invoices'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildMiniStatTile(
+                          icon: Icons.inventory_2_outlined,
+                          color: Colors.teal[700]!,
+                          title: 'رأس مال المخزون',
+                          value: '${stockCapital.toStringAsFixed(0)} دج',
+                          onTap: () => context.push('/products/inventory-audit'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildMiniStatTile(
+                          icon: Icons.remove_shopping_cart_rounded,
+                          color: Colors.red[700]!,
+                          title: 'خسائر التوالف والكسر',
+                          value: '${totalLosses.toStringAsFixed(0)} دج',
+                          onTap: () => context.push('/products/losses'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
             // Period Filter Chips
             SizedBox(
               height: 38,
@@ -780,6 +976,42 @@ class _DailyReportPageState extends State<DailyReportPage> {
           const SizedBox(height: 6),
           Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStatTile({required IconData icon, required Color color, required String title, required String value, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+              child: Icon(icon, size: 16, color: color),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 10, color: Colors.grey[700], fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 2),
+                  Text(value, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 14, color: Colors.grey[400]),
+          ],
+        ),
       ),
     );
   }

@@ -15,37 +15,43 @@ class SoundService {
 
   /// Play POS barcode scan beep and light haptic feedback
   static Future<void> playScanBeep() async {
-    if (!isSoundEnabled()) {
-      Vibration.vibrate(duration: 30);
-      return;
-    }
     try {
-      SystemSound.play(SystemSoundType.click);
-      Vibration.vibrate(duration: 40);
+      HapticFeedback.selectionClick();
+      if (isSoundEnabled()) {
+        SystemSound.play(SystemSoundType.click);
+      }
+      final hasVib = await Vibration.hasVibrator();
+      if (hasVib == true) {
+        Vibration.vibrate(duration: 45);
+      }
     } catch (_) {}
   }
 
   /// Play cash register checkout ding / success sound
   static Future<void> playCheckoutSuccess() async {
-    if (!isSoundEnabled()) {
-      Vibration.vibrate(duration: 80);
-      return;
-    }
     try {
-      SystemSound.play(SystemSoundType.click);
-      Vibration.vibrate(pattern: [0, 60, 40, 90]);
+      HapticFeedback.heavyImpact();
+      if (isSoundEnabled()) {
+        SystemSound.play(SystemSoundType.click);
+      }
+      final hasVib = await Vibration.hasVibrator();
+      if (hasVib == true) {
+        Vibration.vibrate(pattern: [0, 50, 40, 90]);
+      }
     } catch (_) {}
   }
 
   /// Play trash / cart empty sound
   static Future<void> playDeleteSound() async {
-    if (!isSoundEnabled()) {
-      Vibration.vibrate(duration: 50);
-      return;
-    }
     try {
-      SystemSound.play(SystemSoundType.click);
-      Vibration.vibrate(duration: 60);
+      HapticFeedback.mediumImpact();
+      if (isSoundEnabled()) {
+        SystemSound.play(SystemSoundType.click);
+      }
+      final hasVib = await Vibration.hasVibrator();
+      if (hasVib == true) {
+        Vibration.vibrate(duration: 70);
+      }
     } catch (_) {}
   }
 
@@ -54,13 +60,15 @@ class SoundService {
 
   /// Play error / warning alert tone
   static Future<void> playWarningSound() async {
-    if (!isSoundEnabled()) {
-      Vibration.vibrate(duration: 100);
-      return;
-    }
     try {
-      SystemSound.play(SystemSoundType.alert);
-      Vibration.vibrate(pattern: [0, 80, 50, 80]);
+      HapticFeedback.vibrate();
+      if (isSoundEnabled()) {
+        SystemSound.play(SystemSoundType.alert);
+      }
+      final hasVib = await Vibration.hasVibrator();
+      if (hasVib == true) {
+        Vibration.vibrate(pattern: [0, 90, 60, 90]);
+      }
     } catch (_) {}
   }
 }

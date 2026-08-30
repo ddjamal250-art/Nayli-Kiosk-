@@ -290,6 +290,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
           // Calculate Total Store Capital & Valuation
           double totalCostCapital = 0.0;
           double totalRetailValue = 0.0;
+          double totalVarianceCost = 0.0;
           int totalItemsCount = 0;
           int discrepancyItemsCount = 0;
 
@@ -298,10 +299,23 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
             totalCostCapital += (counted * p.costPrice);
             totalRetailValue += (counted * p.price);
             totalItemsCount += counted;
+            final diff = counted - p.stock;
+            totalVarianceCost += (diff * p.costPrice);
             if (counted != p.stock) discrepancyItemsCount++;
           }
 
           final projectedProfit = totalRetailValue - totalCostCapital;
+
+          // Fetch Total Customer Outstanding Debts from Database
+          double totalCustomerDebts = 0.0;
+          try {
+            final customers = HiveDatabase.customersBox.values;
+            for (final c in customers) {
+              totalCustomerDebts += c.totalDebt;
+            }
+          } catch (_) {}
+
+          final adjustedNetCapital = totalCostCapital + totalCustomerDebts;
 
           // Filter Products
           final query = _searchCtrl.text.trim().toLowerCase();
@@ -319,7 +333,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
 
           return Column(
             children: [
-              // Top Valuation Summary Card (Store Capital & Projected Profits)
+              // Top Valuation & Credit Reconciliation Card
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -338,10 +352,10 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('رأس مال المحل بالتكلفة (Cost):', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                            const Text('رأس مال السلع بالتكلفة:', style: TextStyle(color: Colors.white70, fontSize: 11)),
                             Text(
                               '${totalCostCapital.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                              style: const TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: Colors.amber, fontSize: 17, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -349,29 +363,79 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Text('قيمة البضاعة بالبيع (Retail):', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                            const Text('قيمة البضاعة بالبيع:', style: TextStyle(color: Colors.white70, fontSize: 11)),
                             Text(
                               '${totalRetailValue.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                              style: const TextStyle(color: Colors.greenAccent, fontSize: 18, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: Colors.greenAccent, fontSize: 17, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    const Divider(color: Colors.white12, height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('📈 الربح الكامن: +${projectedProfit.toStringAsFixed(0)} دج',
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                        Text('📊 السلع ذات الفارق: $discrepancyItemsCount سلعة',
-                            style: TextStyle(
-                              color: discrepancyItemsCount > 0 ? Colors.orangeAccent : Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            )),
-                      ],
+                    const Divider(color: Colors.white12, height: 14),
+                    // Customer Debts & Real Adjusted Position Row
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.account_balance_wallet_outlined, color: Colors.orangeAccent, size: 16),
+                              const SizedBox(width: 6),
+                              Text('ديون الزبائن بالسوق: ${totalCustomerDebts.toStringAsFixed(0)} دج',
+                                  style: const TextStyle(color: Colors.orangeAccent, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          Text('الرصيد الحقيقي: ${adjustedNetCapital.toStringAsFixed(0)} دج',
+                              style: const TextStyle(color: Colors.cyanAccent, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 8),
+                    // Deficit Analysis Bar
+                    if (totalVarianceCost < 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red[900]?.withOpacity(0.35),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 15),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                totalCustomerDebts >= -totalVarianceCost
+                                    ? '💡 عجز المخزون (${totalVarianceCost.abs().toStringAsFixed(0)} دج) مغطى بالكامل بديون الزبائن بالسوق.'
+                                    : '⚠️ يوجد عجز حقيقي بعد خصم ديون الزبائن قدره: ${(-totalVarianceCost - totalCustomerDebts).toStringAsFixed(0)} دج.',
+                                style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('📈 الربح الكامن: +${projectedProfit.toStringAsFixed(0)} دج',
+                              style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                          Text('📊 السلع المعدلة: $discrepancyItemsCount سلعة',
+                              style: TextStyle(
+                                color: discrepancyItemsCount > 0 ? Colors.orangeAccent : Colors.white70,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              )),
+                        ],
+                      ),
                   ],
                 ),
               ),
