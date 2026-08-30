@@ -1148,12 +1148,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             ),
           ),
 
-          // RIGHT SIDE FLOATING ESSENTIAL BUTTONS (Flash & Camera Only)
+          // RIGHT SIDE FLOATING ESSENTIAL BUTTONS (Flash, Zoom & Camera)
           Positioned(
             top: MediaQuery.of(context).padding.top + 68,
             right: 14,
             child: Column(
               children: [
+                // 1. Flash Toggle Button
                 if (_isCameraOn)
                   _buildOverlayButton(
                     icon: _isFlashOn ? Icons.flashlight_off : Icons.flashlight_on,
@@ -1164,6 +1165,51 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     },
                   ),
                 if (_isCameraOn) const SizedBox(height: 10),
+
+                // 2. Single 2x Zoom Toggle Button
+                if (_isCameraOn)
+                  Tooltip(
+                    message: _cameraZoomScale > 0.1 ? 'تكبير 2x مفعل (انقر للعودة لـ 1x)' : 'تكبير 1x (انقر للتكبير 2x ⚡)',
+                    child: InkWell(
+                      onTap: () {
+                        final isZoomed = _cameraZoomScale > 0.1;
+                        final newZoom = isZoomed ? 0.0 : 0.5; // 0.0 = 1x, 0.5 = 2x
+                        setState(() {
+                          _cameraZoomScale = newZoom;
+                        });
+                        _scannerController.setZoomScale(newZoom);
+                        SoundService.playTabSwitch();
+                      },
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: (_cameraZoomScale > 0.1)
+                              ? AppTheme.primaryColor.withOpacity(0.9)
+                              : Colors.black54,
+                          border: Border.all(
+                            color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white30,
+                            width: (_cameraZoomScale > 0.1) ? 1.8 : 1.0,
+                          ),
+                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          (_cameraZoomScale > 0.1) ? '2x' : '1x',
+                          style: TextStyle(
+                            color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white70,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_isCameraOn) const SizedBox(height: 10),
+
+                // 3. Camera Enable / Disable Button
                 _buildOverlayButton(
                   icon: _isCameraOn ? Icons.videocam : Icons.videocam_off,
                   tooltip: 'تشغيل/إيقاف الكاميرا',
@@ -1345,56 +1391,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               ),
             ),
 
-          // Single 2x Zoom Toggle Button
-          if (_isCameraOn)
-            Positioned(
-              right: 14,
-              top: MediaQuery.of(context).size.height * 0.17,
-              child: InkWell(
-                onTap: () {
-                  final isZoomed = _cameraZoomScale > 0.1;
-                  final newZoom = isZoomed ? 0.0 : 0.5; // 0.0 = 1x, 0.5 = 2x
-                  setState(() {
-                    _cameraZoomScale = newZoom;
-                  });
-                  _scannerController.setZoomScale(newZoom);
-                  SoundService.playTabSwitch();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: (_cameraZoomScale > 0.1)
-                        ? AppTheme.primaryColor.withOpacity(0.9)
-                        : Colors.black.withOpacity(0.65),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white24,
-                      width: 1.5,
-                    ),
-                    boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.zoom_in_rounded,
-                        size: 16,
-                        color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white70,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        (_cameraZoomScale > 0.1) ? '2x ⚡' : '1x',
-                        style: TextStyle(
-                          color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white70,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
 
           // Floating Multi-Scan Counter
           if (_isMultiScanMode && _multiScanCount > 0)

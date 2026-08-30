@@ -625,7 +625,7 @@ class _SettingsPageState extends State<SettingsPage> {
         icon: Icons.info_outline_rounded,
         iconColor: Colors.blueGrey,
         title: 'عن التطبيق والإصدار',
-        subtitle: 'Lumina POS Pro V1.4.0 • أحدث إصدار',
+        subtitle: 'Nayli Market Pro V1.4.0 • أحدث إصدار',
         onTap: () => _showAboutModal(context),
       ),
     ]);
@@ -1490,7 +1490,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: const Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 36),
             ),
             const SizedBox(height: 12),
-            const Text('Lumina POS Pro', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text('نايلـي ماركت (Nayli Market)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 4),
             const Text('نظام الكاشير وإدارة السوبرماركت والمخزون الذكي', style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 14),

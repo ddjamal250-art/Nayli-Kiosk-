@@ -364,7 +364,7 @@ class _ProductListPageState extends State<ProductListPage> {
       }
 
       final dateStr = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
-      final fileName = 'Stock_Lumina_$dateStr.csv';
+      final fileName = 'Stock_Nayli_Market_$dateStr.csv';
 
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/$fileName');
@@ -380,7 +380,7 @@ class _ProductListPageState extends State<ProductListPage> {
       // Trigger Android native share/save to storage dialog
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'text/csv', name: fileName)],
-        text: '📊 تقرير مخزون Lumina POS - $dateStr (${products.length} سلعة)',
+        text: '📊 تقرير مخزون نايلـي ماركت - $dateStr (${products.length} سلعة)',
       );
 
       if (context.mounted) {
