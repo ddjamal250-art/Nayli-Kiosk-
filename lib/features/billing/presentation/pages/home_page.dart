@@ -1221,7 +1221,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           HapticFeedback.mediumImpact();
           context.showAppSnackBar(
             _isMultiScanMode ? '⚡ تم تفعيل وضع المسح المتعدد السريع' : '📱 تم التبديل إلى وضع المسح الفردي العادي',
-            durationMs: 1500,
+            duration: const Duration(milliseconds: 1500),
           );
         },
         borderRadius: BorderRadius.circular(24),
@@ -1848,7 +1848,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   newQty,
                 ),
               );
-          SoundService.playItemRemoved();
+          SoundService.playDeleteSound();
           HapticFeedback.mediumImpact();
           return newQty <= 0;
         }

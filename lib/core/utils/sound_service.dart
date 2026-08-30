@@ -49,6 +49,9 @@ class SoundService {
     } catch (_) {}
   }
 
+  /// Alias for item removed from cart
+  static Future<void> playItemRemoved() => playDeleteSound();
+
   /// Play error / warning alert tone
   static Future<void> playWarningSound() async {
     if (!isSoundEnabled()) {

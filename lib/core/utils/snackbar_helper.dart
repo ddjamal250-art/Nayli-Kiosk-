@@ -5,6 +5,7 @@ extension AppSnackBarExtension on BuildContext {
     String message, {
     Color backgroundColor = const Color(0xFF1E293B),
     Duration duration = const Duration(milliseconds: 1200),
+    int? durationMs,
     IconData? icon,
     String? actionLabel,
     VoidCallback? onAction,
@@ -41,7 +42,7 @@ extension AppSnackBarExtension on BuildContext {
               )
             : null,
         backgroundColor: backgroundColor,
-        duration: duration,
+        duration: durationMs != null ? Duration(milliseconds: durationMs) : duration,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
