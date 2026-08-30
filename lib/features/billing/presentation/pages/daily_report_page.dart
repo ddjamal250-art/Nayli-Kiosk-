@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/excel_export_helper.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
@@ -215,6 +216,19 @@ class _DailyReportPageState extends State<DailyReportPage> {
           onPressed: () => context.pop(),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.table_chart_outlined, color: Colors.green),
+            tooltip: 'تصدير جدول المبيعات كـ Excel',
+            onPressed: () {
+              final csvData = ExcelExportHelper.exportSalesLogToCsv(invoices);
+              Clipboard.setData(ClipboardData(text: csvData));
+              SoundService.playCheckoutSuccess();
+              context.showAppSnackBar(
+                '📊 تم نسخ بيانات المبيعات والأرباح الرسمية بتنسيق Excel بنجاح!',
+                backgroundColor: Colors.green[800]!,
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.receipt_long, color: AppTheme.primaryColor),
             tooltip: 'طباعة تقرير Z',

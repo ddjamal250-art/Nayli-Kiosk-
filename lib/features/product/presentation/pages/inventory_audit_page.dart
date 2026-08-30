@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/utils/excel_export_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../domain/entities/product.dart';
@@ -242,6 +244,19 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
           },
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.table_chart_outlined, color: Colors.green),
+            tooltip: 'تصدير تقرير الجرد كـ Excel',
+            onPressed: () {
+              final csvData = ExcelExportHelper.exportInventoryAuditToCsv(_countedStock);
+              Clipboard.setData(ClipboardData(text: csvData));
+              SoundService.playCheckoutSuccess();
+              context.showAppSnackBar(
+                '📊 تم نسخ بيانات شيت الجرد الرسمي بتنسيق Excel بنجاح!',
+                backgroundColor: Colors.green[800]!,
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
             tooltip: 'مسح باركود للجرد السريع',
