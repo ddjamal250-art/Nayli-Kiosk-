@@ -25,6 +25,8 @@ import '../../features/product/presentation/pages/inventory_audit_page.dart';
 import '../../features/product/presentation/pages/losses_page.dart';
 import '../../features/settings/presentation/pages/receipt_customizer_page.dart';
 
+import '../../features/billing/presentation/pages/desktop_pos_page.dart';
+
 final router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
@@ -46,8 +48,12 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomePage(),
+      builder: (context, state) => const DesktopPosPage(),
       routes: [
+        GoRoute(
+          path: 'classic-mobile-pos',
+          builder: (context, state) => const HomePage(),
+        ),
         GoRoute(
           path: 'scanner',
           builder: (context, state) => const ScannerPage(),

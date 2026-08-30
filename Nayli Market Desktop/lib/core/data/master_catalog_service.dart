@@ -1,0 +1,227 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'master_catalog_seed.dart';
+
+class MasterCatalogService {
+  static final MasterCatalogService instance = MasterCatalogService._();
+  MasterCatalogService._();
+
+  final Map<String, MasterCatalogItem> _barcodeMap = {};
+  final List<MasterCatalogItem> _allItems = [];
+  final Set<String> _categories = {'الكل'};
+  bool _isLoaded = false;
+
+  bool get isLoaded => _isLoaded;
+  List<MasterCatalogItem> get allItems => _allItems.isNotEmpty ? _allItems : MasterCatalogSeed.items;
+  List<String> get categories => _categories.toList();
+
+  Future<void> init() async {
+    if (_isLoaded) return;
+    try {
+      // 1. Populate with seed items first as fast fallback
+      for (final item in MasterCatalogSeed.items) {
+        _barcodeMap[item.barcode.trim()] = item;
+        _allItems.add(item);
+        _categories.add(item.category);
+      }
+
+      // 2. Load and index algerian_supermarket_products.json (high quality local supermarket items)
+      try {
+        final supermarketJsonString = await rootBundle.loadString('assets/data/algerian_supermarket_products.json');
+        final List<dynamic> supermarketList = jsonDecode(supermarketJsonString) as List<dynamic>;
+        for (final raw in supermarketList) {
+          if (raw is Map) {
+            final barcode = (raw['barcode'] ?? '').toString().trim();
+            if (barcode.isEmpty) continue;
+
+            final nameAr = (raw['name_ar'] ?? '').toString().trim();
+            final nameFr = (raw['name_fr'] ?? '').toString().trim();
+            final brand = (raw['brand'] ?? '').toString().trim();
+
+            String finalName = nameAr.isNotEmpty ? nameAr : nameFr;
+            if (brand.isNotEmpty && !finalName.toLowerCase().contains(brand.toLowerCase())) {
+              finalName = '$brand - $finalName';
+            }
+
+            final category = (raw['category'] ?? 'عام').toString().trim();
+            final double price = (raw['indicative_price'] as num?)?.toDouble() ?? 0.0;
+            final double cost = (price * 0.85).roundToDouble();
+
+            final catalogItem = MasterCatalogItem(
+              barcode: barcode,
+              name: finalName.isNotEmpty ? finalName : 'منتج $barcode',
+              category: category.isNotEmpty ? category : 'عام',
+              defaultPrice: price > 0 ? price : 100.0,
+              defaultCost: cost > 0 ? cost : 80.0,
+            );
+
+            _barcodeMap[barcode] = catalogItem;
+            _allItems.removeWhere((i) => i.barcode == barcode);
+            _allItems.add(catalogItem);
+            if (category.isNotEmpty) _categories.add(category);
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Supermarket json load warning: $e');
+      }
+
+      // 3. Load the 15,544 products master database in background
+      try {
+        final jsonString = await rootBundle.loadString('assets/data/algerian_products_master.json');
+        final List<dynamic> jsonList = await compute(_parseJson, jsonString);
+
+        for (final raw in jsonList) {
+          if (raw is Map) {
+            final barcode = (raw['barcode'] ?? '').toString().trim();
+            if (barcode.isEmpty) continue;
+
+            // Don't overwrite higher quality supermarket entries if already present
+            if (_barcodeMap.containsKey(barcode)) continue;
+
+            final nameAr = (raw['name_ar'] ?? '').toString().trim();
+            final nameFr = (raw['name_fr'] ?? '').toString().trim();
+            final nameDefault = (raw['name'] ?? '').toString().trim();
+            final brand = (raw['brand'] ?? '').toString().trim();
+
+            String finalName = nameAr.isNotEmpty
+                ? nameAr
+                : (nameDefault.isNotEmpty ? nameDefault : nameFr);
+
+            if (brand.isNotEmpty && !finalName.toLowerCase().contains(brand.toLowerCase())) {
+              finalName = '$brand - $finalName';
+            }
+
+            final category = (raw['category'] ?? 'عام').toString().trim();
+            final double price = (raw['indicative_price'] as num?)?.toDouble() ?? 0.0;
+            final double cost = (price * 0.85).roundToDouble();
+
+            final catalogItem = MasterCatalogItem(
+              barcode: barcode,
+              name: finalName.isNotEmpty ? finalName : 'منتج جزائري $barcode',
+              category: category.isNotEmpty ? category : 'عام',
+              defaultPrice: price > 0 ? price : 100.0,
+              defaultCost: cost > 0 ? cost : 80.0,
+            );
+
+            _barcodeMap[barcode] = catalogItem;
+            _allItems.add(catalogItem);
+            if (category.isNotEmpty) _categories.add(category);
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Master products json load warning: $e');
+      }
+
+      // 4. Load the 100k Algerian products dataset in background isolate
+      try {
+        final json100kString = await rootBundle.loadString('assets/data/algerian_products_100k.json');
+        final List<dynamic> json100kList = await compute(_parseJson, json100kString);
+
+        for (final raw in json100kList) {
+          if (raw is Map) {
+            final barcode = (raw['barcode'] ?? '').toString().trim();
+            if (barcode.isEmpty) continue;
+            if (_barcodeMap.containsKey(barcode)) continue;
+
+            final nameAr = (raw['name_ar'] ?? '').toString().trim();
+            final nameFr = (raw['name_fr'] ?? '').toString().trim();
+            final nameDefault = (raw['name'] ?? '').toString().trim();
+            final brand = (raw['brand'] ?? '').toString().trim();
+
+            String finalName = nameAr.isNotEmpty
+                ? nameAr
+                : (nameDefault.isNotEmpty ? nameDefault : nameFr);
+
+            if (brand.isNotEmpty && !finalName.toLowerCase().contains(brand.toLowerCase())) {
+              finalName = '$brand - $finalName';
+            }
+
+            final category = (raw['category'] ?? 'عام').toString().trim();
+            final double price = (raw['indicative_price'] as num?)?.toDouble() ?? 0.0;
+            final double cost = (price * 0.85).roundToDouble();
+
+            final catalogItem = MasterCatalogItem(
+              barcode: barcode,
+              name: finalName.isNotEmpty ? finalName : 'منتج جزائري $barcode',
+              category: category.isNotEmpty ? category : 'عام',
+              defaultPrice: price > 0 ? price : 100.0,
+              defaultCost: cost > 0 ? cost : 80.0,
+            );
+
+            _barcodeMap[barcode] = catalogItem;
+            _allItems.add(catalogItem);
+            if (category.isNotEmpty) _categories.add(category);
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ 100k dataset load info: $e');
+      }
+
+      _isLoaded = true;
+      debugPrint('🚀 MasterCatalogService: Fully indexed ${_barcodeMap.length} Algerian products from all dataset files!');
+    } catch (e) {
+      debugPrint('⚠️ MasterCatalogService overall load error: $e');
+      _isLoaded = true;
+    }
+  }
+
+  static List<dynamic> _parseJson(String jsonStr) {
+    return jsonDecode(jsonStr) as List<dynamic>;
+  }
+
+  MasterCatalogItem? lookup(String barcode) {
+    final clean = barcode.trim();
+    if (clean.isEmpty) return null;
+    if (_barcodeMap.containsKey(clean)) {
+      return _barcodeMap[clean];
+    }
+    // Try without leading zeros
+    final stripped = clean.replaceFirst(RegExp(r'^0+'), '');
+    if (stripped.isNotEmpty && _barcodeMap.containsKey(stripped)) {
+      return _barcodeMap[stripped];
+    }
+    // Try UPC-A to EAN-13 padding (12 digits -> 13 digits)
+    if (clean.length == 12 && _barcodeMap.containsKey('0$clean')) {
+      return _barcodeMap['0$clean'];
+    }
+    // Try EAN-13 to UPC-A (13 digits starting with 0 -> 12 digits)
+    if (clean.length == 13 && clean.startsWith('0') && _barcodeMap.containsKey(clean.substring(1))) {
+      return _barcodeMap[clean.substring(1)];
+    }
+    return MasterCatalogSeed.lookup(clean);
+  }
+
+  List<MasterCatalogItem> search(String query, {String category = 'الكل', int limit = 50}) {
+    final q = query.trim().toLowerCase();
+    final effectiveLimit = limit > 0 ? limit : 50;
+    final List<MasterCatalogItem> results = [];
+
+    // Fast O(1) exact barcode match first
+    if (q.isNotEmpty && _barcodeMap.containsKey(q)) {
+      final exact = _barcodeMap[q]!;
+      if (category == 'الكل' || exact.category == category) {
+        results.add(exact);
+      }
+    }
+
+    final source = allItems;
+    for (final item in source) {
+      if (results.length >= effectiveLimit) break;
+      if (results.any((e) => e.barcode == item.barcode)) continue;
+
+      final matchesCat = category == 'الكل' || item.category == category;
+      if (!matchesCat) continue;
+
+      if (q.isEmpty) {
+        results.add(item);
+      } else if (item.barcode.contains(q) ||
+          item.name.toLowerCase().contains(q) ||
+          item.category.toLowerCase().contains(q)) {
+        results.add(item);
+      }
+    }
+
+    return results;
+  }
+}

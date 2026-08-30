@@ -27,6 +27,7 @@ class SoundService {
   static final AudioPlayer _player = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
 
   static const List<SoundThemeItem> themes = [
+    SoundThemeItem(id: 11, name: 'نظام كوسكو السريع (Costco Wholesale)', icon: '🛒', description: 'الصوت الأيقوني لمتاجر كوسكو الأمريكية الفائقة السرعة'),
     SoundThemeItem(id: 1, name: 'الكلاسيكي (Beep POS Classic)', icon: '🔔', description: 'صافرة كاشير السوبرماركت العالمية السريعة'),
     SoundThemeItem(id: 2, name: 'الكريستال الرقمي (Digital Crystal)', icon: '💎', description: 'نغمة رنانة كريستالية ناعمة وفخمة'),
     SoundThemeItem(id: 3, name: 'الليزر الحديث (Modern Laser Scan)', icon: '⚡', description: 'صوت مسح ليزري حاد وسريع جداً'),
@@ -40,7 +41,11 @@ class SoundService {
   ];
 
   static bool isSoundEnabled() {
-    return HiveDatabase.settingsBox.get(_soundKey, defaultValue: true) as bool;
+    try {
+      return HiveDatabase.settingsBox.get(_soundKey, defaultValue: true) as bool;
+    } catch (_) {
+      return true;
+    }
   }
 
   static Future<void> setSoundEnabled(bool enabled) async {
@@ -48,7 +53,11 @@ class SoundService {
   }
 
   static int getSelectedThemeId() {
-    return HiveDatabase.settingsBox.get(_soundThemeKey, defaultValue: 1) as int;
+    try {
+      return HiveDatabase.settingsBox.get(_soundThemeKey, defaultValue: 11) as int;
+    } catch (_) {
+      return 11;
+    }
   }
 
   static Future<void> setSelectedThemeId(int themeId) async {
@@ -56,7 +65,11 @@ class SoundService {
   }
 
   static double getVolume() {
-    return (HiveDatabase.settingsBox.get(_volumeKey, defaultValue: 1.0) as num).toDouble();
+    try {
+      return (HiveDatabase.settingsBox.get(_volumeKey, defaultValue: 1.0) as num).toDouble();
+    } catch (_) {
+      return 1.0;
+    }
   }
 
   static Future<void> setVolume(double vol) async {
@@ -71,104 +84,151 @@ class SoundService {
     double freq1 = 2000.0;
     double freq2 = 2000.0;
     bool isDoubleTone = false;
+    bool isTripleTone = false;
+    double freq3 = 2000.0;
 
-    // Configure frequencies based on Theme ID (1..10)
-    switch (themeId) {
-      case 1: // Classic Beep POS
-        freq1 = 2200;
-        durationMs = 60;
-        break;
-      case 2: // Digital Crystal
-        freq1 = 2600;
-        freq2 = 3400;
-        durationMs = 85;
-        isDoubleTone = true;
-        break;
-      case 3: // Modern Laser
-        freq1 = 3600;
-        freq2 = 1400;
-        durationMs = 50;
-        break;
-      case 4: // Cha-Ching Cash
-        freq1 = 1200;
-        freq2 = 2400;
-        durationMs = 120;
-        isDoubleTone = true;
-        break;
-      case 5: // Melodic Chime
-        freq1 = 1046; // C6
-        freq2 = 1318; // E6
-        durationMs = 110;
-        isDoubleTone = true;
-        break;
-      case 6: // Retro 8-Bit
-        freq1 = 1500;
-        durationMs = 70;
-        break;
-      case 7: // Pro Retail Blip
-        freq1 = 2400;
-        durationMs = 45;
-        break;
-      case 8: // Pulse Tech
-        freq1 = 1800;
-        freq2 = 2200;
-        durationMs = 75;
-        isDoubleTone = true;
-        break;
-      case 9: // Subtle Soft Click
-        freq1 = 1600;
-        durationMs = 35;
-        break;
-      case 10: // Double Victory
-        freq1 = 1760;
-        freq2 = 2640;
-        durationMs = 130;
-        isDoubleTone = true;
-        break;
-      default:
-        freq1 = 2200;
-        durationMs = 60;
-    }
+    // Specific Sound Types:
+    // 0 = Scan, 1 = Checkout Success, 2 = Delete/Void, 3 = Warning, 4 = Restock, 5 = Print, 6 = Save, 7 = Tick, 8 = MemberScan, 9 = ScaleSettled, 10 = SupervisorOverride, 11 = TpeApproved, 12 = DrawerKick, 13 = BobAlert
 
-    // Adjust for Action Type: 
-    // 0 = Scan, 1 = Checkout Success, 2 = Delete, 3 = Warning, 4 = Restock Arrivage, 5 = Print, 6 = Save Success, 7 = Tick
-    if (soundType == 1) {
-      // Checkout Success (Celebratory Cashier Chime)
-      freq1 = freq1 * 0.8;
-      freq2 = freq1 * 1.5;
-      durationMs = max(durationMs, 140);
-      isDoubleTone = true;
-    } else if (soundType == 2) {
-      // Delete (Low tone drop)
-      freq1 = 700;
-      freq2 = 400;
+    if (soundType == 8) {
+      // Member Card Scan (Ascending VIP Chime)
+      freq1 = 880; // A5
+      freq2 = 1320; // E6
       durationMs = 90;
-    } else if (soundType == 3) {
-      // Warning
-      freq1 = 450;
-      freq2 = 350;
-      durationMs = 160;
       isDoubleTone = true;
-    } else if (soundType == 4) {
-      // Restock / Arrivage (Upbeat ascending tone)
-      freq1 = 1200;
-      freq2 = 1800;
-      durationMs = 100;
+    } else if (soundType == 9) {
+      // Scale Settled (Harmonic C5 -> E5)
+      freq1 = 523.25; // C5
+      freq2 = 659.25; // E5
+      durationMs = 80;
       isDoubleTone = true;
-    } else if (soundType == 5) {
-      // Thermal Print Start (Mechanical acoustic cue)
-      freq1 = 2800;
-      freq2 = 3200;
+    } else if (soundType == 10) {
+      // Supervisor Override (3-Tone Executive Chime)
+      freq1 = 880.0;   // A5
+      freq2 = 1108.73; // C#6
+      freq3 = 1318.51; // E6
+      durationMs = 140;
+      isTripleTone = true;
+    } else if (soundType == 11) {
+      // TPE / CIB Payment Approved (Celebration Double Bell)
+      freq1 = 1046.50; // C6
+      freq2 = 1567.98; // G6
+      durationMs = 150;
+      isDoubleTone = true;
+    } else if (soundType == 12) {
+      // Mechanical Drawer Kick Solenoid
+      freq1 = 180;
+      freq2 = 80;
       durationMs = 70;
+    } else if (soundType == 13) {
+      // Bottom of Basket (BOB) Alert
+      freq1 = 750;
+      freq2 = 1000;
+      durationMs = 90;
       isDoubleTone = true;
-    } else if (soundType == 6) {
-      // Save Success (Crisp high pip)
-      freq1 = 2400;
-      durationMs = 50;
-    } else if (soundType == 7) {
-      // Light Tab / Button Tick
-      freq1 = 1800;
-      durationMs = 25;
+    } else {
+      // Standard Themes (1..11)
+      switch (themeId) {
+        case 11: // Costco Wholesale Fast Acoustic System
+          freq1 = 1000; // Iconic 1kHz Costco square/pure pip
+          freq2 = 1000;
+          durationMs = 35;
+          break;
+        case 1: // Classic Beep POS
+          freq1 = 2200;
+          durationMs = 60;
+          break;
+        case 2: // Digital Crystal
+          freq1 = 2600;
+          freq2 = 3400;
+          durationMs = 85;
+          isDoubleTone = true;
+          break;
+        case 3: // Modern Laser
+          freq1 = 3600;
+          freq2 = 1400;
+          durationMs = 50;
+          break;
+        case 4: // Cha-Ching Cash
+          freq1 = 1200;
+          freq2 = 2400;
+          durationMs = 120;
+          isDoubleTone = true;
+          break;
+        case 5: // Melodic Chime
+          freq1 = 1046; // C6
+          freq2 = 1318; // E6
+          durationMs = 110;
+          isDoubleTone = true;
+          break;
+        case 6: // Retro 8-Bit
+          freq1 = 1500;
+          durationMs = 70;
+          break;
+        case 7: // Pro Retail Blip
+          freq1 = 2400;
+          durationMs = 45;
+          break;
+        case 8: // Pulse Tech
+          freq1 = 1800;
+          freq2 = 2200;
+          durationMs = 75;
+          isDoubleTone = true;
+          break;
+        case 9: // Subtle Soft Click
+          freq1 = 1600;
+          durationMs = 35;
+          break;
+        case 10: // Double Victory
+          freq1 = 1760;
+          freq2 = 2640;
+          durationMs = 130;
+          isDoubleTone = true;
+          break;
+        default:
+          freq1 = 1000;
+          durationMs = 35;
+      }
+
+      // Adjust for Action Types
+      if (soundType == 1) {
+        // Checkout Success
+        freq1 = freq1 * 0.8;
+        freq2 = freq1 * 1.5;
+        durationMs = max(durationMs, 140);
+        isDoubleTone = true;
+      } else if (soundType == 2) {
+        // Delete / Void Item (Loss prevention harsh drop)
+        freq1 = 400;
+        freq2 = 200;
+        durationMs = 100;
+      } else if (soundType == 3) {
+        // Warning
+        freq1 = 450;
+        freq2 = 350;
+        durationMs = 160;
+        isDoubleTone = true;
+      } else if (soundType == 4) {
+        // Restock / Arrivage
+        freq1 = 1200;
+        freq2 = 1800;
+        durationMs = 100;
+        isDoubleTone = true;
+      } else if (soundType == 5) {
+        // Thermal Print Start
+        freq1 = 2800;
+        freq2 = 3200;
+        durationMs = 70;
+        isDoubleTone = true;
+      } else if (soundType == 6) {
+        // Save Success
+        freq1 = 2400;
+        durationMs = 50;
+      } else if (soundType == 7) {
+        // Light Tab / Button Tick
+        freq1 = 1800;
+        durationMs = 25;
+      }
     }
 
     final int numSamples = (sampleRate * (durationMs / 1000.0)).toInt();
@@ -211,14 +271,26 @@ class SoundService {
     for (int i = 0; i < numSamples; i++) {
       final double t = i / sampleRate;
       final double progress = i / numSamples;
-      final double currentFreq = isDoubleTone
-          ? (progress < 0.5 ? freq1 : freq2)
-          : (freq1 + (freq2 - freq1) * progress);
+      
+      double currentFreq;
+      if (isTripleTone) {
+        if (progress < 0.33) {
+          currentFreq = freq1;
+        } else if (progress < 0.66) {
+          currentFreq = freq2;
+        } else {
+          currentFreq = freq3;
+        }
+      } else if (isDoubleTone) {
+        currentFreq = (progress < 0.5 ? freq1 : freq2);
+      } else {
+        currentFreq = (freq1 + (freq2 - freq1) * progress);
+      }
 
       // Smooth attack & exponential decay envelope
-      final double envelope = progress < 0.1
-          ? (progress / 0.1)
-          : exp(-4.0 * (progress - 0.1));
+      final double envelope = progress < 0.08
+          ? (progress / 0.08)
+          : exp(-4.5 * (progress - 0.08));
 
       final double sampleVal = sin(2 * pi * currentFreq * t) * envelope;
       final int intSample = (sampleVal * 28000).clamp(-32768, 32767).toInt();
@@ -238,20 +310,73 @@ class SoundService {
       await _player.setVolume(vol);
       await _player.play(BytesSource(wavBytes));
     } catch (_) {
-      // Graceful fallback to SystemSound
-      SystemSound.play(SystemSoundType.click);
+      try {
+        SystemSound.play(SystemSoundType.click);
+      } catch (_) {}
     }
   }
 
-  /// Play POS barcode scan beep and light haptic feedback
+  /// Play POS barcode scan beep (Default: Costco fast 1kHz pip)
   static Future<void> playScanBeep({int? themeId}) async {
     try {
       HapticFeedback.selectionClick();
       _playSound(0, specificThemeId: themeId);
       final hasVib = await Vibration.hasVibrator();
       if (hasVib == true) {
-        Vibration.vibrate(duration: 40);
+        Vibration.vibrate(duration: 35);
       }
+    } catch (_) {}
+  }
+
+  /// Play Costco Member / VIP card recognized chime
+  static Future<void> playMemberCardScan() async {
+    try {
+      HapticFeedback.mediumImpact();
+      _playSound(8);
+    } catch (_) {}
+  }
+
+  /// Play electronic scale weight stabilization sound
+  static Future<void> playScaleSettled() async {
+    try {
+      HapticFeedback.selectionClick();
+      _playSound(9);
+    } catch (_) {}
+  }
+
+  /// Play supervisor override approval chime
+  static Future<void> playSupervisorOverride() async {
+    try {
+      HapticFeedback.heavyImpact();
+      _playSound(10);
+    } catch (_) {}
+  }
+
+  /// Play electronic payment (TPE / CIB / BaridiPay) approved sound
+  static Future<void> playTpeApproved() async {
+    try {
+      HapticFeedback.heavyImpact();
+      _playSound(11);
+      final hasVib = await Vibration.hasVibrator();
+      if (hasVib == true) {
+        Vibration.vibrate(pattern: [0, 50, 40, 80]);
+      }
+    } catch (_) {}
+  }
+
+  /// Play cash drawer open mechanical sound
+  static Future<void> playDrawerKick() async {
+    try {
+      HapticFeedback.mediumImpact();
+      _playSound(12);
+    } catch (_) {}
+  }
+
+  /// Play Bottom-of-Basket (BOB) bulk scan reminder
+  static Future<void> playBobAlert() async {
+    try {
+      HapticFeedback.selectionClick();
+      _playSound(13);
     } catch (_) {}
   }
 
@@ -267,7 +392,7 @@ class SoundService {
     } catch (_) {}
   }
 
-  /// Play item removed or trash sound
+  /// Play item removed or void alert (Costco Loss Prevention Warning)
   static Future<void> playDeleteSound({int? themeId}) async {
     try {
       HapticFeedback.mediumImpact();
@@ -280,6 +405,7 @@ class SoundService {
   }
 
   static Future<void> playItemRemoved() => playDeleteSound();
+  static Future<void> playVoidWarning() => playDeleteSound();
 
   /// Play error / warning alert tone
   static Future<void> playWarningSound({int? themeId}) async {
@@ -333,3 +459,4 @@ class SoundService {
     } catch (_) {}
   }
 }
+

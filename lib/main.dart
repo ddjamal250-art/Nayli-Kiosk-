@@ -17,6 +17,8 @@ import 'features/settings/presentation/bloc/printer_event.dart';
 
 import 'dart:async';
 
+import 'core/data/local_sync_server.dart';
+
 void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +29,7 @@ void main() async {
     await HiveDatabase.init();
     await di.init();
     MasterCatalogService.instance.init();
+    await LocalSyncServer.startServer();
     runApp(const MyApp());
   }, (error, stack) {
     debugPrint('Global App Error Handled: $error');

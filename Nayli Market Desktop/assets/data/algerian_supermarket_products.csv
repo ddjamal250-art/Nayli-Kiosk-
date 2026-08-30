@@ -1,0 +1,560 @@
+﻿barcode,brand,name_ar,name_fr,category,category_fr,unit,indicative_price,vat_rate,is_pack
+6130695111270,Hamoud Boualem,سيلكتو قارورة زجاجية 33 مل,Selecto Bouteille Verre 33cl,مشروبات غازية,Boissons Gazeuses,33cl,50.0,19.0,False
+6130695111393,Hamoud Boualem,سيلكتو قارورة بلاستيك 2 لتر,Selecto Bouteille PET 2L,مشروبات غازية,Boissons Gazeuses,2L,140.0,19.0,False
+6130695111126,Hamoud Boualem,حمود بوعلام بيضاء 1 لتر,Hamoud Blanche 1L,مشروبات غازية,Boissons Gazeuses,1L,95.0,19.0,False
+6130695111409,Hamoud Boualem,حمود بوعلام بيضاء 2 لتر,Hamoud Blanche 2L,مشروبات غازية,Boissons Gazeuses,2L,140.0,19.0,False
+6130695113571,Hamoud Boualem,سليم تفاح 1 لتر,Slim Pomme 1L,مشروبات غازية,Boissons Gazeuses,1L,95.0,19.0,False
+6130695112550,Hamoud Boualem,سليم أناناس 2 لتر,Slim Ananas 2L,مشروبات غازية,Boissons Gazeuses,2L,140.0,19.0,False
+6130234001147,Cevital,ماء معدني لالة خديجة 1.5 لتر,Eau Minérale Lalla Khedidja 1.5L,مياه معدنية,Eaux Minérales,1.5L,40.0,9.0,False
+6130758000022,Guedila,ماء معدني قديلا 1.5 لتر,Eau Minérale Guedila 1.5L,مياه معدنية,Eaux Minérales,1.5L,40.0,9.0,False
+6130230000014,Ifri,ماء معدني إفري 1.5 لتر,Eau Minérale Ifri 1.5L,مياه معدنية,Eaux Minérales,1.5L,40.0,9.0,False
+6130230000205,Ifri,إفري غازوز تفاح 1.25 لتر,Ifri Gazouz Pomme 1.25L,مشروبات غازية,Boissons Gazeuses,1.25L,100.0,19.0,False
+6130140001019,Ramy,عصير رامي برتقال 1 لتر,Jus Ramy Orange 1L,عصائر ومشروبات,Jus & Boissons,1L,130.0,19.0,False
+6130140001033,Ramy,عصير رامي مشمش ومانجو 1 لتر,Jus Ramy Mangue-Abricot 1L,عصائر ومشروبات,Jus & Boissons,1L,130.0,19.0,False
+6130155000014,Rouiba (NCA),عصير رويبة برتقال وجزر 1 لتر,Jus Rouiba Orange Carotte 1L,عصائر ومشروبات,Jus & Boissons,1L,140.0,19.0,False
+6130120000117,Ngaous,عصير نقاوس مشمش 1 لتر,Jus N'gaous Abricot 1L,عصائر ومشروبات,Jus & Boissons,1L,135.0,19.0,False
+6130433000019,Candia (Tchin-Lait),حليب كانديا فيفا معقم كامل الدسم 1 لتر,Lait Candia Viva UHT 1L,حليب ومشتقاته,Produits Laitiers,1L,135.0,0.0,False
+6130433000033,Candia (Tchin-Lait),حليب كانديا سيلويت منزوع الدسم 1 لتر,Lait Candia Silhouette 1L,حليب ومشتقاته,Produits Laitiers,1L,140.0,0.0,False
+6130433000217,Candia (Tchin-Lait),حليب كانديا شوكو للأطفال 200 مل,Lait Chocolaté Candia Choco 200ml,حليب ومشتقاته,Produits Laitiers,200ml,45.0,9.0,False
+6130760000018,Soummam,ياغورت صومام ممزوج بالفواكه 100 غ,Yaourt Soummam Brassé Fruits 100g,ياغورت وأجبان,Yaourts & Desserts,100g,25.0,9.0,False
+6130760000124,Soummam,ياغورت صومام فورتي خوخ ومشمش 100 غ,Yaourt Soummam Forti Pêche-Abricot 100g,ياغورت وأجبان,Yaourts & Desserts,100g,30.0,9.0,False
+6130760000308,Soummam,لبن صومام مبستر 1 لتر,Lben Soummam Pasteurisé 1L,حليب ومشتقاته,Produits Laitiers,1L,90.0,0.0,False
+6130760000452,Soummam,جبن طازج صومام بتي سويس 6 قطع,Fromage Frais Soummam Petit Suisse x6,ياغورت وأجبان,Fromages & Yaourts,6x50g,120.0,9.0,False
+6130760000889,Soummam,جبن تارتينو صومام قابل للدهن 240 غ,Fromage à Tartiner Tartino Soummam 240g,أجبان,Fromages,240g,180.0,9.0,False
+6130311000155,Berbère,جبن مثلثات بربير 16 قطعة,Fromage Fondu Berbère 16 Portions,أجبان,Fromages,16 portions,220.0,9.0,False
+6130542000119,Tartino,جبن شيدار مبشور تارتينو 200 غ,Fromage Râpé Cheddar Tartino 200g,أجبان,Fromages,200g,260.0,9.0,False
+6130820000059,Danone Djurdjura,ياغورت ديدو دانون بنكهة الفراولة 80 غ,Danone Dydo Fraise 80g,ياغورت وأجبان,Yaourts,80g,30.0,9.0,False
+6130234000010,Cevital,زيت المائدة إيليو 5 لتر,Huile de Table Elio 5L,زيوت ودهون,Huiles & Margarines,5L,650.0,0.0,False
+6130234000027,Cevital,زيت المائدة إيليو 1 لتر,Huile de Table Elio 1L,زيوت ودهون,Huiles & Margarines,1L,130.0,0.0,False
+6130234000157,Cevital,مارغرين فلوريال 250 غ,Margarine Fleurial 250g,زيوت ودهون,Huiles & Margarines,250g,100.0,9.0,False
+6130234000164,Cevital,مارغرين فلوريال 500 غ,Margarine Fleurial 500g,زيوت ودهون,Huiles & Margarines,500g,190.0,9.0,False
+6130234000218,Cevital,سمن مدينة سيفيتال 900 غ,Smen Medina Cevital 900g,زيوت ودهون,Huiles & Margarines,900g,320.0,9.0,False
+6130180000058,La Belle,مارغرين لابال 500 غ,Margarine La Belle 500g,زيوت ودهون,Huiles & Margarines,500g,180.0,9.0,False
+6130180000102,La Belle,زيت المائدة صافيه 5 لتر,Huile de Table Safia 5L,زيوت ودهون,Huiles & Margarines,5L,650.0,0.0,False
+6130099000019,Amor Benamor,مقرونة سباغيتي عمر بن عمر 500 غ,Spaghetti Amor Benamor N°5 500g,عجائن ومواد جافة,Pâtes & Céréales,500g,75.0,9.0,False
+6130099000040,Amor Benamor,مقرونة ريشة بلوم عمر بن عمر 500 غ,Plumes Amor Benamor 500g,عجائن ومواد جافة,Pâtes & Céréales,500g,75.0,9.0,False
+6130099000125,Amor Benamor,كسكسي متوسط عمر بن عمر 1 كغ,Couscous Moyen Amor Benamor 1kg,عجائن ومواد جافة,Pâtes & Céréales,1kg,140.0,9.0,False
+6130099000200,Amor Benamor,سميد ممتاز متوسط عمر بن عمر 5 كغ,Semoule Moyenne Amor Benamor 5kg,عجائن ومواد جافة,Semoules & Farines,5kg,250.0,0.0,False
+6130234000300,Sim,فرينة سيم فاخرة 1 كغ,Farine Supérieure Sim 1kg,عجائن ومواد جافة,Semoules & Farines,1kg,55.0,0.0,False
+6130355000012,Safina,فرينة سفينة ممتازة 1 كغ,Farine Safina 1kg,عجائن ومواد جافة,Semoules & Farines,1kg,55.0,0.0,False
+6130355000104,Safina,سميد متوسط سفينة 10 كغ,Semoule Moyenne Safina 10kg,عجائن ومواد جافة,Semoules & Farines,10kg,500.0,0.0,False
+6130450000018,Mama,مقرونة ماما كود 500 غ,Pâtes Mama Coquillettes 500g,عجائن ومواد جافة,Pâtes & Céréales,500g,65.0,9.0,False
+6130099000309,Amor Benamor,طماطم مصبرة عمر بن عمر 800 غ,Double Concentré de Tomate Amor Benamor 800g,معلبات وتوابل,Conserves & Sauces,800g,260.0,9.0,False
+6130099000316,Amor Benamor,طماطم مصبرة عمر بن عمر 400 غ,Double Concentré de Tomate Amor Benamor 400g,معلبات وتوابل,Conserves & Sauces,400g,140.0,9.0,False
+6130190000017,CAB,طماطم مصبرة كاب 800 غ,Tomate Concentrée CAB 800g,معلبات وتوابل,Conserves & Sauces,800g,250.0,9.0,False
+6130880000105,El Mordjene (Cebon),هريسة حارة المرجان 135 غ,Harissa Berbère El Mordjene 135g,معلبات وتوابل,Sauces & Condiments,135g,85.0,9.0,False
+6130880000211,El Mordjene (Cebon),كريمة البندق القابلة للدهن المرجان 700 غ,Pâte à Tartiner Noisettes El Mordjene 700g,بسكويت وحلويات,Pâtes à Tartiner,700g,750.0,19.0,False
+6130650000014,Maratun,تونة بالزيت النباتي ماراتون 160 غ,Thon Entier à l'Huile Maratun 160g,معلبات وتوابل,Conserves de Poisson,160g,240.0,9.0,False
+6130650000052,Maratun,تونة بالطماطم ماراتون 160 غ,Thon à la Sauce Tomate Maratun 160g,معلبات وتوابل,Conserves de Poisson,160g,230.0,9.0,False
+6130234000454,Lesieur / Cevital,مايونيز ليسيور الجزائر 470 غ,Mayonnaise Lesieur Algérie 470g,معلبات وتوابل,Sauces & Condiments,470g,290.0,19.0,False
+6130050000010,Bimo,بيمو بسكويت الشاي كلاسيك بيكي 150 غ,Biscuit P'tit Bimo au Beurre 150g,بسكويت وحلويات,Biscuits & Gâteaux,150g,60.0,19.0,False
+6130050000102,Bimo,بيمو شوكولاطة محشوة 100 غ,Bimo Gaufrette Enrobée Chocolat 100g,بسكويت وحلويات,Biscuits & Gâteaux,100g,80.0,19.0,False
+6130920000015,Palmary,بسكويت كول بالشوكولاطة بالماري 100 غ,Biscuit Kool Palmary Chocolat 100g,بسكويت وحلويات,Biscuits & Gâteaux,100g,50.0,19.0,False
+6130920000152,Palmary,قوفريط ماكسون بالبندق بالماري 120 غ,Gaufrette Maxon Noisette Palmary 120g,بسكويت وحلويات,Biscuits & Gâteaux,120g,70.0,19.0,False
+6130920000305,Palmary,شوكولاطة ماكسون قابلة للدهن 350 غ,Pâte à Tartiner Maxon Palmary 350g,بسكويت وحلويات,Pâtes à Tartiner,350g,320.0,19.0,False
+6130920000459,Palmary,مايسترو شوكولاطة سوداء 100 غ,Tablette Chocolat Noir Maestro 100g,بسكويت وحلويات,Chocolats,100g,110.0,19.0,False
+6130920000503,Palmary,مايسترو شوكولاطة بالحليب 100 غ,Tablette Chocolat au Lait Maestro 100g,بسكويت وحلويات,Chocolats,100g,110.0,19.0,False
+6130110000017,Facto,قهوة فاكتو مطحونة 250 غ,Café Moulu Facto 250g,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,250g,280.0,9.0,False
+6130110000109,Familia,قهوة فاميليا مطحونة 250 غ,Café Moulu Familia 250g,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,250g,270.0,9.0,False
+6130110000253,Bonal,قهوة بونال مطحونة 250 غ,Café Moulu Bonal 250g,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,250g,290.0,9.0,False
+6130234000508,Cevital,سكر أبيض ناعم سكور سيفيتال 1 كغ,Sucre Blanc Cristallisé Skor Cevital 1kg,عجائن ومواد جافة,Sucres & Farines,1kg,95.0,0.0,False
+6130320000016,El Bellar,شاي أخضر أصيل البلار 200 غ,Thé Vert El Bellar 200g,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,200g,180.0,9.0,False
+6130280000019,Isis (Henkel DZ),مسحوق غسيل إيزيس أوتوماتيك لافندر 3 كغ,Lessive Poudre Isis Matic Lavande 3kg,مواد التنظيف والغسيل,Entretien & Lessive,3kg,750.0,19.0,False
+6130280000101,Isis (Henkel DZ),سائل غسيل الأواني إيزيس ليمون 750 مل,Liquide Vaisselle Isis Citron 750ml,مواد التنظيف والغسيل,Entretien & Lessive,750ml,170.0,19.0,False
+6130560000016,Force Express (Faderco),منظف متعدد الاستعمالات فورس إكسبريس بخاخ 750 مل,Nettoyant Multi-Usages Force Express Spray 750ml,مواد التنظيف والغسيل,Entretien & Lessive,750ml,280.0,19.0,False
+6130560000153,Force Express (Faderco),سائل جافيل معقم فورس إكسبريس 1 لتر,Eau de Javel Désinfectant Force Express 1L,مواد التنظيف والغسيل,Entretien & Lessive,1L,130.0,19.0,False
+6130560000283,Force Express (Faderco),منظف الأرضيات فورس إكسبريس نسيم البحر 3 لتر,Nettoyant Sol Force Express Brise Marine 3L,مواد التنظيف والغسيل,Entretien & Lessive,3L,380.0,19.0,False
+6130280000354,Le Chat (Henkel DZ),مسحوق لو شات للغسيل الحساس 2.5 كغ,Lessive Poudre Le Chat Peaux Sensibles 2.5kg,مواد التنظيف والغسيل,Entretien & Lessive,2.5kg,850.0,19.0,False
+6130770000015,Berik,ماء جافيل بريك المركز 1 لتر,Eau de Javel Concentrée Berik 1L,مواد التنظيف والغسيل,Entretien & Lessive,1L,90.0,19.0,False
+6130770000107,Flash,منظف الدهون ديسيل فلاش 500 مل,Dégraissant Surpuissant Flash 500ml,مواد التنظيف والغسيل,Entretien & Lessive,500ml,190.0,19.0,False
+6130100000012,Laboratoires Vénus (SAPECO),شامبو فينوس بالبيض وزيت الأرغان 400 مل,Shampooing Venus aux Œufs & Argan 400ml,نظافة وعناية شخصية,Hygiène & Beauté,400ml,220.0,19.0,False
+6130100000159,Laboratoires Vénus (SAPECO),جل استحمام فينوس برائحة الفانيلا 500 مل,Gel Douche Venus Vanille Gourmande 500ml,نظافة وعناية شخصية,Hygiène & Beauté,500ml,260.0,19.0,False
+6130100000289,Laboratoires Vénus (SAPECO),صابون سائل للأيدي فينوس زيت الزيتون 500 مل,Savon Liquide Mains Venus Olive 500ml,نظافة وعناية شخصية,Hygiène & Beauté,500ml,210.0,19.0,False
+6130100000357,Laboratoires Vénus (SAPECO),مزيل العرق رول أون فينوس حماية 48 ساعة,Déodorant Roll-on Venus Fraîcheur 48h 50ml,نظافة وعناية شخصية,Hygiène & Beauté,50ml,180.0,19.0,False
+6130560000504,Awane (Faderco),فوط صحية أوان ألترا بالأجنحة 10 قطع,Serviettes Hygiéniques Awane Ultra Normal x10,نظافة وعناية شخصية,Hygiène & Beauté,Pack 10,160.0,19.0,False
+6130560000627,Cotex (Faderco),ورق صحي كوتكس دبل رول 4 بكرات,Papier Toilette Cotex Maxi Compact x4 Rouleaux,نظافة وعناية شخصية,Hygiène Papier,Pack 4,240.0,19.0,False
+6130560000757,Cotex (Faderco),مناديل ورقية للمطبخ كوتكس رول جامبو,Essuie-Tout Cotex Rouleau Jumbo,نظافة وعناية شخصية,Hygiène Papier,1 Rouleau,220.0,19.0,False
+6130560000801,Bébé Câlin (Faderco),حفاضات بيبي كالان مقاس 4 جونيور (7-18 كغ) 48 حفاضة,Couches Bébé Câlin Taille 4 Maxi (7-18kg) x48,منتجات الأطفال,Bébé & Puériculture,Pack 48,1150.0,19.0,False
+6130560000856,Dalaa (Faderco),حفاضات دلع مقاس 3 ميدي (4-9 كغ) 52 حفاضة,Couches Dalaa Taille 3 Midi (4-9kg) x52,منتجات الأطفال,Bébé & Puériculture,Pack 52,1250.0,19.0,False
+6130560000917,Bébé Câlin (Faderco),مناديل مبللة للأطفال بيبي كالان بالألوفيرا 72 منديل,Lingettes Bébé Câlin Aloe Vera x72,منتجات الأطفال,Bébé & Puériculture,Pack 72,210.0,19.0,False
+6130490000015,Bellat,كاشير لحم بقر بلاط 400 غ,Cachir Bœuf Bellat 400g,لحوم مصنعة ومبردات,Charcuterie,400g,260.0,9.0,False
+6130490000107,Bellat,باتي دجاج بالجبن والزيتون بلاط 400 غ,Pâté Poulet Fromage & Olive Bellat 400g,لحوم مصنعة ومبردات,Charcuterie,400g,280.0,9.0,False
+6130490000251,Bellat,هوت دوق نقانق دجاج بلاط 300 غ,Saucisses Hot Dog Poulet Bellat 300g,لحوم مصنعة ومبردات,Charcuterie,300g,240.0,9.0,False
+6130093010069,"Ifri, ifri",ماء معدني طبيعي,Ifri,مشروبات ومياه,Boissons & Eaux,1.5 l,100.0,19.0,False
+6130760003349,Soummam,جبن طازج,Plain fresh cheese,مواد غذائية عامة,Épicerie Générale,90 grams,100.0,19.0,False
+6130760003769,"Soummam, لبن",لبن,L'ben,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,1L,100.0,9.0,False
+6130760000102,Soummam,Soummam Nature,Nature,مواد غذائية عامة,Épicerie Générale,100 g,100.0,19.0,False
+6130093010045,Ifri,ماء معدني,L'Eau d'Ifri,مشروبات ومياه,Boissons & Eaux,"0,5 L",100.0,19.0,False
+6134082000017,Sarl diar ezarga,Sarl diar ezarga Besbassa,Besbassa,مشروبات ومياه,Boissons & Eaux,1.5 l,100.0,19.0,False
+6130794000116,Nestlé,Nestlé Pure Life,Pure Life,مشروبات ومياه,Boissons & Eaux,"1,5 l",100.0,19.0,False
+6132004000022,LA BELLE 220da,LA BELLE 220da La Belle Margarine 500g,La Belle Margarine 500g,زيوت ودهون,Huiles & Margarines,500grs,100.0,9.0,False
+6130760003189,"Soummam, soummam",حليب,Lait soummam,زيوت ودهون,Huiles & Margarines,1L,100.0,9.0,False
+6133275000018,Saida,Saida Saida eau minérale,Saida eau minérale,مشروبات ومياه,Boissons & Eaux,1.5 l,100.0,19.0,False
+6130758000015,giba,giba Guedila,Guedila,مشروبات ومياه,Boissons & Eaux,0.5l,100.0,19.0,False
+6130014350120,Bimo,Bimo Ambassadeur noir précieux 70% cacao,Ambassadeur noir précieux 70% cacao,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6130576000020,Essalsabil,بو قلاز,Voda,مشروبات ومياه,Boissons & Eaux,1.5 l,100.0,19.0,False
+6130234001161,Cevital,Cevital Lalla Khedidja,Lalla Khedidja,مشروبات ومياه,Boissons & Eaux,50 cl,100.0,19.0,False
+6130788000023,Mateg,Mateg صول  مرغرين,Margarine SOL,زيوت ودهون,Huiles & Margarines,500 g,100.0,9.0,False
+6130433000354,Candia,Candy Choco,Candy Choco,مشروبات ومياه,Boissons & Eaux,20 cl,100.0,19.0,False
+6130760001482,Soummam,بنينة,Soumame bnina,مواد غذائية عامة,Épicerie Générale,90g,100.0,19.0,False
+6130234002366,cevital. da100,cevital. da100 skor,skor,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,1kg,100.0,19.0,False
+6130142000201,Ovitale,Ovitale Eau de source non gazeux,Eau de source non gazeux,مشروبات ومياه,Boissons & Eaux,1،5 L,100.0,19.0,False
+6132500711040,Cebon,Cebon El Mordjene Crème De Noisettes Grillées,El Mordjene Crème De Noisettes Grillées,مواد غذائية عامة,Épicerie Générale,700 g,100.0,19.0,False
+6132004000015,la belle 120da,la belle 120da Margarine supérieure végétale 100%,Margarine supérieure végétale 100%,زيوت ودهون,Huiles & Margarines,250g,100.0,9.0,False
+6130003000029,Coca-Cola,Coca-Cola كوكا كولا 1 لتر,كوكا كولا 1 لتر,مشروبات ومياه,Boissons & Eaux,1l,100.0,19.0,False
+6130760002809,Soummam 20da,Soummam 20da Soummam ص,Soummam ص,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,30 g,100.0,9.0,False
+6130015060035,Bimo,Bimo Galette senior,Galette senior,بسكويت وحلويات,Biscuits & Confiserie,330 g,100.0,19.0,False
+6130014080119,bimo,bimo Ambassadeur,Ambassadeur,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6130234001024,cevital,زيت ايليو,Huile elio,زيوت ودهون,Huiles & Margarines,2L,100.0,9.0,False
+6130093010335,ifri,ifri Ifri pétillante,Ifri pétillante,مشروبات ومياه,Boissons & Eaux,330,100.0,19.0,False
+6130818000023,tammy,تيب توب,tip top,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,16,100.0,9.0,False
+6130413002286,, طرتينو,طرتينو,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130433000385,Candia,Candia Lait candia viva,Lait candia viva,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,1 L,100.0,9.0,False
+6130364000058,mansourah,mansourah Eau mansoura,Eau mansoura,مشروبات ومياه,Boissons & Eaux,1 litre,100.0,19.0,False
+6133566000079,"MANY, Many","MANY, Many Margarine",Margarine,زيوت ودهون,Huiles & Margarines,500g,100.0,9.0,False
+6130433000262,candia,candia Candy Choco 1L,Candy Choco 1L,مشروبات ومياه,Boissons & Eaux,1 L,100.0,19.0,False
+6130695111331,حمود بوعلام,سيليكتو,Selecto 1 ل,بسكويت وحلويات,Biscuits & Confiserie,1 L,100.0,19.0,False
+6133337001250,amiral,اوبتيلا,amiral اوبتيلا,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",350g,100.0,9.0,False
+3017620425035,Nutella,Nutella Nutella,Nutella,مشروبات ومياه,Boissons & Eaux,1 kg,100.0,19.0,False
+6132501540311,"Bifa, fzf 30da",rad,Brino,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6130234001666,Medina,Medina Cevital Smen 500g,Cevital Smen 500g,زيوت ودهون,Huiles & Margarines,500g,100.0,9.0,False
+6130534000031,eau,eau ayris,ayris,مشروبات ومياه,Boissons & Eaux,25,100.0,19.0,False
+6135345000027,lesieur,lesieur مايوناز ليسيور كبيرة,مايوناز ليسيور كبيرة,معلبات وصلصات,Conserves & Sauces,475g,100.0,19.0,False
+6130758000091,Guedila,Guedila Eau,Guedila Eau,مشروبات ومياه,Boissons & Eaux,2L,100.0,19.0,False
+6130002001690,rouiba,rouiba Rouiba cocktail petit,Rouiba cocktail petit,مشروبات ومياه,Boissons & Eaux,20cl,100.0,19.0,False
+6130534000116,ayris sghira,25,ayris sghira 25,مشروبات ومياه,Boissons & Eaux,25,100.0,19.0,False
+6130763000130,7.5 DA,7.5 DA Levure Chimique Nouara,Levure Chimique Nouara,مواد غذائية عامة,Épicerie Générale,10 g,100.0,19.0,False
+6130760000171,SOUMMAM,فلان,Flan caramel soummam,مواد غذائية عامة,Épicerie Générale,100g,100.0,19.0,False
+6130760005848,Soummam 250da,Soummam 250da Crème Légère,Crème Légère,مواد غذائية عامة,Épicerie Générale,500ml,100.0,19.0,False
+6135129000014,qaada,qaada Qaâda Biscuit Lait Chocolat,Qaâda Biscuit Lait Chocolat,مشروبات ومياه,Boissons & Eaux,"5 portions, chacun contient 4 biscuits",100.0,19.0,False
+6132501549512,Bifa..,د,دايلي صغيرة,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,20 cl,100.0,9.0,False
+6130234001031,Cevital,إيليو,elio,زيوت ودهون,Huiles & Margarines,5 L,100.0,9.0,False
+6135129000304,B'S,B'S Qaada,Qaada,بسكويت وحلويات,Biscuits & Confiserie,150 g,100.0,19.0,False
+6130127000035,messerghine,Eau minérale,messerghine Eau minérale,مشروبات ومياه,Boissons & Eaux,1.5 l,100.0,19.0,False
+6130131000014,EL KANTARA,EL KANTARA Eau,EL KANTARA Eau,مشروبات ومياه,Boissons & Eaux,"1,5 l",100.0,19.0,False
+6135829000017,Ariaf,Ariaf SARL VITA WATER,SARL VITA WATER,مشروبات ومياه,Boissons & Eaux,0.50L,100.0,19.0,False
+6130807000140,,6130807000140, 6130807000140,زيوت ودهون,Huiles & Margarines,Unité,100.0,9.0,False
+6130015061933,Groupe Bimo,Groupe Bimo بيمو كاسكروط,بيمو كاسكروط,بسكويت وحلويات,Biscuits & Confiserie,325g,100.0,19.0,False
+6132500710425,, El Mordjene miel,El Mordjene miel,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,Unité,100.0,19.0,False
+6130433000026,Candia. 9000,Candia. 9000 Candia le lait  500ml,Candia le lait  500ml,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,50cl,100.0,9.0,False
+6130760001130,Soummam,Soummam Fort en calcium,Fort en calcium,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,100 g,100.0,19.0,False
+6130646002428,Danone,Danone Activia meille,Activia meille,مواد غذائية عامة,Épicerie Générale,100 g,100.0,19.0,False
+6135240000030,MANBAA OUWIS,MANBAA OUWIS Ouwis 0.5l,Ouwis 0.5l,مشروبات ومياه,Boissons & Eaux,1,100.0,19.0,False
+6130234000676,Fleurial,Fleurial Beurre doux,Beurre doux,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,250 g,100.0,9.0,False
+6133489001504,arwa,arwa Eau de source,Eau de source,مشروبات ومياه,Boissons & Eaux,1.5 litre,100.0,19.0,False
+6130433000972,Candia,Candia LeLait sans lactose,LeLait sans lactose,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,1l,100.0,9.0,False
+6130206200042,, Nova chocolat,Nova chocolat,مشروبات ومياه,Boissons & Eaux,Good,100.0,19.0,False
+6133414003115,maxon,maxon xl,Maxon biscuit fourré à la crème de cacao,بسكويت وحلويات,Biscuits & Confiserie,400grs,100.0,19.0,False
+6130206200059,nova,nova Nova,Nova,مشروبات ومياه,Boissons & Eaux,300 g,100.0,19.0,False
+6132500710388,CEBON,CEBON Pate à tartiner aux noisettes et cacao,Pate à tartiner aux noisettes et cacao,مواد غذائية عامة,Épicerie Générale,350g,100.0,19.0,False
+6130760000805,Soummam 25da,Soummam 25da Fort en calcium,Soummam 25da Fort en calcium,مواد غذائية عامة,Épicerie Générale,100 g,100.0,19.0,False
+6130234000607,cevital,cevital Beurre,Beurre,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,500g,100.0,9.0,False
+6130433000958,Maître Cuisiner. 15000,Maître Cuisiner. 15000 Préparation culinaire maître cuisinier,Préparation culinaire maître cuisinier,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,20 cl,100.0,9.0,False
+6130433000583,Candia 40da,Candia 40da Boisson au lait srérilisé U.H.T Goût Chocolat,Candia 40da Boisson au lait srérilisé U.H.T Goût Chocolat,مشروبات ومياه,Boissons & Eaux,125ml,100.0,19.0,False
+6135345000041,Lesieur,لزيور,Lesieur مايوناز لزيور,معلبات وصلصات,Conserves & Sauces,Unité,100.0,19.0,False
+6132011101491,LU,LU ,LU ,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6130433000200,Candia,Candia Lait Écrémé Silhouette,Lait Écrémé Silhouette,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,1L,100.0,9.0,False
+6132508340051,Kabir 170da,زنجبيل,زنجبيل الكبير,بسكويت وحلويات,Biscuits & Confiserie,72 g (12 x 6 g),100.0,19.0,False
+6130759000410,Camembert,Camembert Président,Président,مواد غذائية عامة,Épicerie Générale,250g,100.0,19.0,False
+6130015060837,bimo,bimo Biscuits Tango au chocolat,Biscuits Tango au chocolat,مشروبات ومياه,Boissons & Eaux,255g,100.0,19.0,False
+6133337000970,Amiral,Thon,Optilla,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",Unité,100.0,9.0,False
+6130758000077,Guedila,Guedila Eau,Eau,مشروبات ومياه,Boissons & Eaux,1,100.0,19.0,False
+6133211000041,Manbaa,Manbaa ,Manbaa ,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6132338000187,Rayane,Rayane Pain de mie,Rayane Pain de mie,مواد غذائية عامة,Épicerie Générale,200g,100.0,19.0,False
+6132011101187,LU,LU Prince,Prince,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6130759000892,président,président Fromage portions,président Fromage portions,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130364000072,mnssora sghira,mnssora sghira 25,25,مشروبات ومياه,Boissons & Eaux,1,100.0,19.0,False
+6130413003474,, شيزي 16 ح,شيزي 16 ح,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130413002293,, Tartino exellence 24,Tartino exellence 24,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130217010036,toudja,toudja Eau minerale naturelle,Eau minerale naturelle,مشروبات ومياه,Boissons & Eaux,1.5 l,100.0,19.0,False
+6130760001864,Soummam,ياقو,yago,مواد غذائية عامة,Épicerie Générale,Bouteille 1L,100.0,19.0,False
+6130234003790,Cevital,Cevital Fleurial,Fleurial,زيوت ودهون,Huiles & Margarines,250 g,100.0,9.0,False
+6130760000836,Soummam 25da,Soummam 25da Soummam Fort,Soummam Fort,مواد غذائية عامة,Épicerie Générale,100 g,100.0,19.0,False
+6130816010048,Ricamar,Ricamar RICAMAR Premium Thon entier à l'huile végétale,RICAMAR Premium Thon entier à l'huile végétale,زيوت ودهون,Huiles & Margarines,65 g (x3),100.0,9.0,False
+6130003002023,"Coca Cola, Coca-Cola","Coca Cola, Coca-Cola Coca cola",Coca cola,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130763000017,Nouara,Nouara Flan,Flan,بسكويت وحلويات,Biscuits & Confiserie,56 g,100.0,19.0,False
+6132296000021,, Eau de source,Eau de source,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6133414008677,Palmary,Palmary Kool 9 Winners,Kool 9 Winners,مشروبات ومياه,Boissons & Eaux,130g,100.0,19.0,False
+6134082000024,, Gâteau,Gâteau,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6134427000122,Bifa,Bifa Daily joy,Daily joy,بسكويت وحلويات,Biscuits & Confiserie,125 ml,100.0,19.0,False
+6130093060644,ifri,فيشي طبيعي,Ifri Eau minerale gazeuse,مشروبات ومياه,Boissons & Eaux,1 l,100.0,19.0,False
+6130517000430,Mont-Djurdjura 100da,Mont-Djurdjura 100da Eau de source Djurdjura,Eau de source Djurdjura,مشروبات ومياه,Boissons & Eaux,"5,5 L",100.0,19.0,False
+6135129000120,B'S,B'S Qaada Biscuit sésames,Qaada Biscuit sésames,بسكويت وحلويات,Biscuits & Confiserie,210 g,100.0,19.0,False
+6130646002930,"Activia, Danone","Activia, Danone Activia",Activia,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130760001871,Soummam 150da,Soummam 150da Yaourt liquide peche,Yaourt liquide peche,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,1 kg,100.0,9.0,False
+6130003000036,CocaCola,CocaCola ,CocaCola ,مشروبات ومياه,Boissons & Eaux,2 L,100.0,19.0,False
+6135129000045,QAADA,QAADA Qaada,Qaada,بسكويت وحلويات,Biscuits & Confiserie,170 g,100.0,19.0,False
+6133414001999,, Kool,Kool,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6130760001383,Soummam 25da,Soummam 25da Fort,Soummam 25da Fort,مواد غذائية عامة,Épicerie Générale,100 g,100.0,19.0,False
+6132500711101,cebon,cebon Pâte a tartiner El Mordjane,Pâte a tartiner El Mordjane,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",200 g,100.0,9.0,False
+6130015061131,Bimo,Bimo Petit BIMO,Petit BIMO,بسكويت وحلويات,Biscuits & Confiserie,230 g,100.0,19.0,False
+6130646005870,Danone,Danone Oikos Grecque (Fraise),Oikos Grecque (Fraise),مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132485500011,El asfour,El asfour فاميكو,فاميكو,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,1 kg,100.0,19.0,False
+6130234004667,cevital,cevital cevital beurre matina,cevital beurre matina,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,250 g,100.0,9.0,False
+6130093056968,Ifri,Ifri افروي 1 لتر,افروي 1 لتر,مشروبات ومياه,Boissons & Eaux,1 L,100.0,19.0,False
+6130760006746,ort 170da,شعير,Céréalo,مواد غذائية عامة,Épicerie Générale,1L,100.0,19.0,False
+6135129000403,qaadaa,qaadaa choco bars,choco bars,مشروبات ومياه,Boissons & Eaux,135 g,100.0,19.0,False
+6130760000256,soummam 30da,soummam 30da Soumame cereilo,Soumame cereilo,مواد غذائية عامة,Épicerie Générale,100g,100.0,19.0,False
+6130002000136,Rouiba 110da,Rouiba 110da Rouiba cocktail,Rouiba cocktail,مواد غذائية عامة,Épicerie Générale,1L,100.0,19.0,False
+6130093056975,Ifri,Ifri Ifruit raisin 1 ل,Ifruit raisin 1 ل,بسكويت وحلويات,Biscuits & Confiserie,1 L,100.0,19.0,False
+6132500710371,"CEBON, El Mordjene","CEBON, El Mordjene El Mordjene pâte à tartiner",El Mordjene pâte à tartiner,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",700g,100.0,9.0,False
+6133414004051,palmary,palmary Moment noisettes entiéres,Moment noisettes entiéres,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6130382000160,Izdihar,Izdihar Double concentré de tomates,Double concentré de tomates,معلبات وصلصات,Conserves & Sauces,400 g,100.0,19.0,False
+6130760000829,soumam,soumam Soumame fort,Soumame fort,مواد غذائية عامة,Épicerie Générale,100g,100.0,19.0,False
+6130234002168,Cevital,Cevital Smen,Medina,زيوت ودهون,Huiles & Margarines,900 g,100.0,9.0,False
+6130695111348,Hamoud Boualem,حمود,Hamoud Boualem La gazouz blanche,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130834000038,Sidi Saada,Sidi Saada Camanbert,Camanbert,مواد غذائية عامة,Épicerie Générale,250g,100.0,19.0,False
+6130093057057,Ifri,Ifri Ifruit,Ifruit,بسكويت وحلويات,Biscuits & Confiserie,2 litre,100.0,19.0,False
+6130003014620,"Coca Cola, Coke","Coca Cola, Coke ","Coca Cola, Coke ",مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130760000263,Soummam 25da,Soummam 25da Yaourt mamzoudj noix de coco,Yaourt mamzoudj noix de coco,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,90 g,100.0,9.0,False
+6133337000987,Optilla 1kg,Optilla 1kg Pate a tartiner,Pate a tartiner,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130433001184,Maître Cuisiner,Maître Cuisiner Préparation culinaire liquide,Préparation culinaire liquide,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,50 cl,100.0,9.0,False
+6130234004919,فلوريال,Moutarde,فلوريال Moutarde,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6135812000260,Penny,Penny Maxon galette,Maxon galette,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6133977000071,GRANDOS,GRANDOS Chicorée Mix solubles,Chicorée Mix solubles,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,200g,100.0,19.0,False
+6130646005986,Danone,Danone Oikos,Danone Oikos,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6135129000441,Qaada,Qaada brut chocolat au lait,brut chocolat au lait,مشروبات ومياه,Boissons & Eaux,130 g,100.0,19.0,False
+6133414009070,palmary,palmary moments,palmary moments,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6135345000058,Lesieur,Lesieur Mayonnaise,Mayonnaise,معلبات وصلصات,Conserves & Sauces,425 g,100.0,19.0,False
+6133414007137,Palmary 70 Da,Palmary 70 Da Kool Winners,Kool Winners,بسكويت وحلويات,Biscuits & Confiserie,58g,100.0,19.0,False
+6132516860060,,شكولة ماريجا, شكولة ماريجا,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6133414009568,palmary,maxon wafer,Maxo wafer,مواد غذائية عامة,Épicerie Générale,190g,100.0,19.0,False
+6130646006297,Danone,Danone danone,danone,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6133414001593,Palmary,Palmary Pâte à tartiner aux noisettes,Pâte à tartiner aux noisettes,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",200 g,100.0,9.0,False
+6133212000088,telloise,Cofiture d'abricot,Confiture d'abricot,مواد غذائية عامة,Épicerie Générale,400 g,100.0,19.0,False
+6132501543893,bifa,bifa Special digestive blé complet,Special digestive blé complet,بسكويت وحلويات,Biscuits & Confiserie,250 g,100.0,19.0,False
+6130763000024,Nouara,Nouara Nouara,Nouara,مواد غذائية عامة,Épicerie Générale,50 g,100.0,19.0,False
+6130760001505,Soummam,Soummam Soumame faise,Soumame faise,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132338000217,Rayane,Rayane Pain de mie,Pain De Mie,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130093063720,Ifri,Ifri Izem Energy,Izem Energy,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130433001825,Ramdy,Ramdy 6130433001825,6130433001825,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,220g,100.0,9.0,False
+6130093065878,IFruit,IFruit Jus d'orange,Jus d'orange,مشروبات ومياه,Boissons & Eaux,1L,100.0,19.0,False
+6130433001832,, 6130433001832,6130433001832,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6133211000065,Manbaa al ghezlane,Manbaa al ghezlane Manbaa,Manbaa al ghezlane Manbaa,مشروبات ومياه,Boissons & Eaux,0.5 L,100.0,19.0,False
+6130351001891,Sim 100da,Sim 100da Farine de blé tendre,Farine de blé tendre,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",1 kg,100.0,9.0,False
+6132011100395,Lu,Croustille,Croustille,مواد غذائية عامة,Épicerie Générale,152 g,100.0,19.0,False
+6130142000218,Ovitale 25da,Ovitale 25da Ovitale,Ovitale 25da Ovitale,مشروبات ومياه,Boissons & Eaux,0.5 litre,100.0,19.0,False
+6132500710272,Cebon,Cebon Miel el mordjen,Miel el mordjen,مواد غذائية عامة,Épicerie Générale,1kg,100.0,19.0,False
+6130760000652,Soummam,Soummam yaourt,yaourt,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,1oog,100.0,9.0,False
+6130131000021,, CEDFCت,CEDFCت,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130093057088,ifri,ifri ifruit Jus d'orange carotte citron,ifruit Jus d'orange carotte citron,مشروبات ومياه,Boissons & Eaux,2 l,100.0,19.0,False
+6130576000044,Ain Bouglez,Ain Bouglez Bouglez,Bouglez,مشروبات ومياه,Boissons & Eaux,5 L,100.0,19.0,False
+6130413003481,,شيزي, Cheezy 330g,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,330,100.0,9.0,False
+6130234001017,سوفيتالcevital,سوفيتالcevital ايليوElio,ايليوElio,زيوت ودهون,Huiles & Margarines,1 l,100.0,9.0,False
+6130646002954,Activia,Activia Activia fraise,Activia fraise,مواد غذائية عامة,Épicerie Générale,100g,100.0,19.0,False
+6130760002410,Soummam,ديالنا (شوكولاتة),Dialna (Chocolat),مشروبات ومياه,Boissons & Eaux,70 g,100.0,19.0,False
+6130760001116,Soummam,Soummam Soummam,Soummam,مواد غذائية عامة,Épicerie Générale,1 boite,100.0,19.0,False
+6130551002988,Trefle,Trefle Yaourt aromatise,Yaourt aromatise,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,95 g,100.0,9.0,False
+6130214300642,, سيدنا, سيدنا,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6133683000013,sidi rached,sidi rached Eau de source Sidi Rached,Eau de source Sidi Rached,مشروبات ومياه,Boissons & Eaux,"1,5l",100.0,19.0,False
+6132500711125,El Mordjene,El Mordjene El mordjene,El mordjene,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130015061834,Bimo,Bimo Macao,Macao,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130093056609,Ifri,Ifri IFRI JUNIOR,IFRI JUNIOR,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6135847000211,Tartinella,Tartinella Beurre de cacahuète,Tartinella Beurre de cacahuète,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,350 gr,100.0,9.0,False
+6133414002002,kool,Kool,kool Kool,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132011100531,LU,LU LU Start petit déjeuner,LU Start petit déjeuner,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6130003014767,"Coca Cola, Coca-Cola","Coca Cola, Coca-Cola Schweppes رمان",Schweppes رمان,مشروبات ومياه,Boissons & Eaux,1L,100.0,19.0,False
+6135129000038,Qaada,Qaada Qaada Biscuit figue & miel,Qaada Biscuit figue & miel,بسكويت وحلويات,Biscuits & Confiserie,170 g,100.0,19.0,False
+6130619003049,25da,25da Cherchell,25da Cherchell,مشروبات ومياه,Boissons & Eaux,85g,100.0,19.0,False
+6132501547112,Bifa,Bifa Celebrity - Nougat barre aux arachides et au chocolat,Celebrity - Nougat barre aux arachides et au chocolat,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6132501540533,Bifa,Biscuit Avantage Bifa,Bifa Biscuits Fourrés à la Crème de Cacao,مشروبات ومياه,Boissons & Eaux,330 g,100.0,19.0,False
+6133337002813,, Pâte à tartiner,Pâte à tartiner,مشروبات ومياه,Boissons & Eaux,200g,100.0,19.0,False
+6130646005887,Danone,Danone yaourt grec,yaourt grec,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,100g,100.0,9.0,False
+6130504000108,, Tuna  sauce tomate,Tuna  sauce tomate,معلبات وصلصات,Conserves & Sauces,Unité,100.0,19.0,False
+6135345000157,Lesieur,Lesieur ,Lesieur ,معلبات وصلصات,Conserves & Sauces,Unité,100.0,19.0,False
+8718836397110,Ocean's Essentials,Ocean's Essentials Premium Omega-3,Premium Omega-3,زيوت ودهون,Huiles & Margarines,300 capsules,100.0,9.0,False
+6130759000885,président,président fromage,fromage,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,8 portions,100.0,9.0,False
+6135345000034,, Mayonnaise aux œufs frais 710g,Mayonnaise aux œufs frais 710g,معلبات وصلصات,Conserves & Sauces,Unité,100.0,19.0,False
+6130093067353,,IZENM, IZENM,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130273001122,Tip Top,Tip Top ,Tip Top ,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6008155003673,"Promasidor, Twisco","Promasidor, Twisco Twisco Chocolat En Poudre",Twisco Chocolat En Poudre,مشروبات ومياه,Boissons & Eaux,300 g,100.0,19.0,False
+6130014300422,Groupe Bimo,Groupe Bimo double mix vanille chocolat,double mix vanille chocolat,مشروبات ومياه,Boissons & Eaux,250 g,100.0,19.0,False
+6132108100086,coeur de céréale,coeur de céréale Flacon d'avoine - coeur de céréale,Flacon d'avoine - coeur de céréale,مواد غذائية عامة,Épicerie Générale,500g,100.0,19.0,False
+6133414001173,Palmary,Palmary Chocolate spread,Maxon,مشروبات ومياه,Boissons & Eaux,350 g,100.0,19.0,False
+6130760004247,Soumam,Raib au bifidus actif,Soumam Raib au bifidus actif,مواد غذائية عامة,Épicerie Générale,1l,100.0,19.0,False
+6130014080010,bimo,bimo Chocolat au lait Ambassadeur,Chocolat au lait Ambassadeur,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6130234004964,"Cevital, Fleurial","Cevital, Fleurial مايوناز فلوريال  زجاج 220غ",مايوناز فلوريال  زجاج 220غ,معلبات وصلصات,Conserves & Sauces,220 g,100.0,19.0,False
+3045140118502,"Milka, Mondelez","Milka, Mondelez Milka Tablette Noisette",Milka Tablette Noisette,مشروبات ومياه,Boissons & Eaux,100g,100.0,19.0,False
+6130760000966,Soummam,فور,Soummam fort,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,95 g,100.0,9.0,False
+6130760001635,Soummam 30da,Soummam 30da J'nina fruits & grains,J'nina fruits & grains,مواد غذائية عامة,Épicerie Générale,100g,100.0,19.0,False
+6135129000168,, Biscuit noix de coco,Biscuit noix de coco,بسكويت وحلويات,Biscuits & Confiserie,170 g,100.0,19.0,False
+6135534000036,ICHEMOUL,ICHEMOUL ICHEMOUL,ICHEMOUL,مشروبات ومياه,Boissons & Eaux,1.5 L,100.0,19.0,False
+6133848000056,Qniaa,قنيعة,Qniaa قنيعة,مشروبات ومياه,Boissons & Eaux,"5,5 l",100.0,19.0,False
+6130214300307,Sidna 80da,Sidna 80da Vinaigre d'Alcool,Vinaigre d'Alcool,مواد غذائية عامة,Épicerie Générale,700ml,100.0,19.0,False
+6130384000182,160da,160da Tomato Conserve Cab,Tomato Conserve Cab,معلبات وصلصات,Conserves & Sauces,400 g,100.0,19.0,False
+6130711000076,"BONAL, بونال",Coffee,Café BONAL,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,250g,100.0,19.0,False
+6130433000279,Candia,Candia Le Lait en poudre,Le Lait en poudre,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,500 g,100.0,9.0,False
+6130093057002,Ifri,Ifri Boisson au jus d'orange citron carotte  iFruit,Boisson au jus d'orange citron carotte  iFruit,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130760000355,Soummam,Soummam Yago ص,Yago ص,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130759001738,President,President President 24,President President 24,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130003014583,, Cola,Cola,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130816010031,, Thon a la tomate,Thon a la tomate,معلبات وصلصات,Conserves & Sauces,Unité,100.0,19.0,False
+6130391000359,Essalem سلام,شوكولاطة منى,Végécao Mina,مشروبات ومياه,Boissons & Eaux,100 gغ,100.0,19.0,False
+6133414007045,palmary,palmary Chocolat moment,Chocolat moment,مشروبات ومياه,Boissons & Eaux,90,100.0,19.0,False
+6133414006932,, Happy choco kids,Happy choco kids,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130807000157,sarl margal,sarl margal dima,dima,زيوت ودهون,Huiles & Margarines,250g,100.0,9.0,False
+6132480500375,, Proma,Proma,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+8445290906847,, Nescafé,Nescafé,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,Unité,100.0,19.0,False
+6135129000380,BS,BS Qaada,Qaada,بسكويت وحلويات,Biscuits & Confiserie,135 g,100.0,19.0,False
+6221048700705,Lipton,Lipton Yellow Label Tea,Yellow Label Tea,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,25×2.0g,100.0,19.0,False
+6130760004353,SOUMMAM,SOUMMAM ياڨو,ياڨو,مواد غذائية عامة,Épicerie Générale,1kg,100.0,19.0,False
+6130504000023,Maratun,Maratun Atun,Atun,مواد غذائية عامة,Épicerie Générale,65 g (x3),100.0,19.0,False
+6130760000515,Soummam 30da,Soummam 30da Soumame faise tarte,Soumame faise tarte,مواد غذائية عامة,Épicerie Générale,90 g,100.0,19.0,False
+6130194000037,240da,اروما,240da اروما,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,250 غ,100.0,19.0,False
+6130234003523,, SKOR,SKOR,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130760000140,"Soummam 30 da, Yaourt","Soummam 30 da, Yaourt Creme chocolat",Creme chocolat,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6130504000894,Maratun,Maratun Thon Entier À L’huile,Maratun Thon Entier À L’huile,زيوت ودهون,Huiles & Margarines,65g,100.0,9.0,False
+6130822000538,, Energie Drink,Energie Drink,مواد غذائية عامة,Épicerie Générale,250 ml,100.0,19.0,False
+6130760000812,SOUMMAM 25da,SOUMMAM 25da FORT,FORT,مواد غذائية عامة,Épicerie Générale,100 g,100.0,19.0,False
+6133414007113,Kool,Kool Kool Supreme,Kool Kool Supreme,مشروبات ومياه,Boissons & Eaux,40g,100.0,19.0,False
+6130803000854,, Sebaou,Sebaou,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6133566000062,,Margarine many, Margarine many,زيوت ودهون,Huiles & Margarines,Unité,100.0,9.0,False
+6130234005640,90 da,هريسة فلوريال,هريسة,معلبات وصلصات,Conserves & Sauces,150 g,100.0,19.0,False
+6130760003011,Soummam,Soummam Acti+ Vanille,Acti+ Vanille,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",100 g,100.0,9.0,False
+6130760003523,Soummam,soummam,Soummam soummam,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,100g,100.0,9.0,False
+6130093063706,Ifri,Ifri Izem Energy,Izem Energy,مواد غذائية عامة,Épicerie Générale,330g,100.0,19.0,False
+6132501547600,Bifa,Bifa Famelio,Famelio,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6132500711033,"Cebon, El Mordjene®","Cebon, El Mordjene® Crème de noisettes grillées",Crème de noisettes grillées,مشروبات ومياه,Boissons & Eaux,350 g,100.0,19.0,False
+6134602000213,, Pain noir complet,Pain noir complet,مواد غذائية عامة,Épicerie Générale,350 g,100.0,19.0,False
+6130234004933,Fleurial,Fleurial Ketchup,Ketchup,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130632000841,casbah,casbah Casbah Premium,Cerises,مواد غذائية عامة,Épicerie Générale,750ml,100.0,19.0,False
+5900852057915,bédina,bédina blédilait croissance,blédilait croissance,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,400g,100.0,9.0,False
+6130024071237,,شنبوان فنيس, شنبوان فنيس,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132242600145,, Fromage Fondu,Fromage Fondu,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130093068022,Ifri,Ifri ,Ifri ,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130093066318,Ifri,6130093066318,Ifri 6130093066318,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130646006037,Danao,Danao Jus,Danone,مشروبات ومياه,Boissons & Eaux,930ml,100.0,19.0,False
+6134261001354,bel,bel la vache qui rit l'original,la vache qui rit l'original,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,330 g,100.0,9.0,False
+6133275000025,Eau minérale naturelle non gazeuse,Eau minérale naturelle non gazeuse Saida Eau Minérale Naturelle Non Gazeuse,Saida Eau Minérale Naturelle Non Gazeuse,مشروبات ومياه,Boissons & Eaux,1,100.0,19.0,False
+30028203,SAF INSTANT,خميرة فورية,Levure Instantanée,مواد غذائية عامة,Épicerie Générale,125 g في ١٠٠ غرام٣٥٥ سعرة حرارية,100.0,19.0,False
+6130686000170,Youkous,Youkous Eau minerale,Eau minerale,مشروبات ومياه,Boissons & Eaux,"1,5 l",100.0,19.0,False
+6130214300239,Sidna,Sidna Moutarde de Dijon FORTE,Moutarde de Dijon FORTE,مواد غذائية عامة,Épicerie Générale,340 gr,100.0,19.0,False
+6130234004926,fleurial,خردل ديجون,Moutarde de Dijon,مواد غذائية عامة,Épicerie Générale,350 g,100.0,19.0,False
+6130669000012,,Salsabil, Salsabil,مشروبات ومياه,Boissons & Eaux,1.5 l,100.0,19.0,False
+6133414005607,palmary,كول شوكولاته,Koolbreak,مشروبات ومياه,Boissons & Eaux,35 g,100.0,19.0,False
+6130093059211,ifri,ifri Ifruit Citronnade,Ifruit Citronnade,بسكويت وحلويات,Biscuits & Confiserie,2 L,100.0,19.0,False
+6130002000075,Rouiba,Rouiba Rouiba Orange,Rouiba Orange,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6133190000018,La zeina,La zeina La zeina,La zeina,مواد غذائية عامة,Épicerie Générale,75cl,100.0,19.0,False
+6130504000900,ATUN,ATUN ATUN THON TOMATE,ATUN ATUN THON TOMATE,معلبات وصلصات,Conserves & Sauces,65g,100.0,19.0,False
+6130093059204,Ifri,مشروب بعصير الليمون,ifrui Citronnade,مواد غذائية عامة,Épicerie Générale,1 liter,100.0,19.0,False
+61302495,, Moutarde de Dijon Forte,Moutarde de Dijon Forte,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6134602000022,, Pain de mie complet,Pain de mie complet,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130093057040,ifri,ifri ifruit orange 2ل,ifruit orange 2ل,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130234004988,"Cevital, Fleurial","Cevital, Fleurial Mayonnaise aux oeufs frais",Mayonnaise aux oeufs frais,معلبات وصلصات,Conserves & Sauces,200 g,100.0,19.0,False
+6134602000015,Arruapan,Arruapan Pain de mie,Pain de mie,مواد غذائية عامة,Épicerie Générale,450g,100.0,19.0,False
+6133839001024,ceregal,ceregal Cérégal,Cérégal,مشروبات ومياه,Boissons & Eaux,250g,100.0,19.0,False
+6130695111287,Hamoud Boualem,Hamoud Boualem Hamoud Boualem Gazouz Blanc 33 سل,Hamoud Boualem Gazouz Blanc 33 سل,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130351001471,SIM,مقاروني,Resort,مواد غذائية عامة,Épicerie Générale,500 g,100.0,19.0,False
+6130445001493,stop,مبيد الحشرات الطائرة,stop مبيد الحشرات الطائرة,مواد غذائية عامة,Épicerie Générale,300مل,100.0,19.0,False
+6133839001031,Céréale,Céréale Céréales,Céréales,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130432000027,, Choco le regal,Choco le regal,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130760003578,Soummam,Soummam Vitamilk,Soummam Vitamilk,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6133166000028,Coca-Cola,Coca-Cola كوكا كولا 2ل,كوكا كولا 2ل,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6130093065885,ifruit,ifruit Raisin Rouge,Raisin Rouge,مواد غذائية عامة,Épicerie Générale,1L,100.0,19.0,False
+6130732003414,, Ben Haroun,Ben Haroun,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6133320001304,"JUMBO, Scitec Nutrition","JUMBO, Scitec Nutrition Nouilles poulet",Nouilles poulet,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132373400010,africa,africa chemma,chemma,مواد غذائية عامة,Épicerie Générale,30,100.0,19.0,False
+6130646006242,Danone,Danone Danone yaourt fruits des bois,Danone yaourt fruits des bois,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130646006440,Danone,Danone Danette,Danone Danette,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130093067346,Ifri,IZEM,ايزم بلاستيك 0٫33 ل,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6133414008943,Palmary,مومنت، شوكولاطة,"Palmary Moment, Chocolate Premium",مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6133414006154,Palmary,Palmary Moment Chocolat noir,Moment Chocolat noir,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6132503530013,"EURL STLD, Le fermier","EURL STLD, Le fermier Le fermier",Le fermier,مواد غذائية عامة,Épicerie Générale,250 g,100.0,19.0,False
+6130760002533,soumam,soumam yoghourt soumam jnina,yoghourt soumam jnina,مواد غذائية عامة,Épicerie Générale,100g,100.0,19.0,False
+6130646002961,Danone,Danone Activia vany,Activia vany,مواد غذائية عامة,Épicerie Générale,100g,100.0,19.0,False
+6131189000308,70da,70da تيانتي,تيانتي,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130234003349,Skore,Skore Sucre blanc en morceaux,Sucre blanc en morceaux,مشروبات ومياه,Boissons & Eaux,750 g,100.0,19.0,False
+6130234004971,, Mayonnaise,Mayonnaise,معلبات وصلصات,Conserves & Sauces,Unité,100.0,19.0,False
+6130384000571,CAB,CAB Confiture d'abricot,Confiture d'abricot,مواد غذائية عامة,Épicerie Générale,425,100.0,19.0,False
+6130015061032,Bimo,Bimo Bissousse,Bissousse,بسكويت وحلويات,Biscuits & Confiserie,200 g,100.0,19.0,False
+6130760002984,soummam,acti+,Actif +,بسكويت وحلويات,Biscuits & Confiserie,100 g,100.0,19.0,False
+6130234004032,, TCHINA 2ل سيفتال,TCHINA 2ل سيفتال,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132119200034,FIT AND STRONG,FIT AND STRONG Beurre de cacahuètes,Beurre de cacahuètes,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,700 g,100.0,9.0,False
+6133320000307,JUMBO,JUMBO Purée de tomates double concentrée,Purée de tomates double concentrée,معلبات وصلصات,Conserves & Sauces,400 g,100.0,19.0,False
+6130760002526,Soummam,Panna Cotta avec nappée framboise,Panna cotta,مواد غذائية عامة,Épicerie Générale,85g,100.0,19.0,False
+6130728000229,magimix,magimix Magi light,Magi light,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,1 g ×50,100.0,19.0,False
+6130336001977,, Potato chips,Potato chips,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130818000030,Tip Top,Tip Top Tiptop,Fromage fondu à tartiner,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,330g,100.0,9.0,False
+6130760002519,soummam,soummam Soumame cerise,Soumame cerise,مواد غذائية عامة,Épicerie Générale,100 g,100.0,19.0,False
+6130822001177,, Star énergie,Star énergie,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6281074342331,الوسام,ارز سيلا بسمتي هندي,الوسام ارز سيلا بسمتي هندي,مواد غذائية عامة,Épicerie Générale,1 kg,100.0,19.0,False
+6130834001172,Trafle,شاربات,Charbet Citronnade,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132501540632,Bifa,Bifa Gaufrettes au cacao,Gaufrettes au cacao,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130234005077,Fleurial,Fleurial Mayonnaise,Mayonnaise,زيوت ودهون,Huiles & Margarines,395g,100.0,9.0,False
+6132501941224,Hodna Lait,Hodna Lait LABEN,LABEN,مواد غذائية عامة,Épicerie Générale,1 Kg,100.0,19.0,False
+6130760003790,Soummam,Soummam ,Soummam ,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130234004063,,تشينا,Boisson au jus orange pêche,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130093066288,Ifri,ifri 20cl,Ifri ifri 20cl,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6281074975539,Basmati,Basmati Riz,Basmati Riz,مواد غذائية عامة,Épicerie Générale,500g,100.0,19.0,False
+6130760002915,Soummam,Soummam Yaourt Ala adin,Soummam Yaourt Ala adin,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,25 da,100.0,9.0,False
+6130384000434,CAB,طماطم,CAB طماطم,مواد غذائية عامة,Épicerie Générale,150.00,100.0,19.0,False
+6130760001703,Soummam 25 da,Soummam 25 da Jnina soummam,Jnina soummam,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6133561000036,, Ifren eau,Ifren eau,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130760001659,Soummam,Soummam Jenina,Jenina,مواد غذائية عامة,Épicerie Générale,90 g,100.0,19.0,False
+6132108100376,, MUESLY CRUNCHY,MUESLY CRUNCHY,مشروبات ومياه,Boissons & Eaux,250 g,100.0,19.0,False
+6130646005474,Activia,Activia Activia abrico,Activia abrico,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+61325012,Papillon,Papillon PAPILLON HALWA CHAMIA,PAPILLON HALWA CHAMIA,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6135064000186,, Harissa,Harissa,معلبات وصلصات,Conserves & Sauces,Unité,100.0,19.0,False
+6130784000171,ملبنة تيفرا حليب,تيفرالي - نمر ميزرانة 115g,Cammembert ptite tiger,مواد غذائية عامة,Épicerie Générale,115 g,100.0,19.0,False
+6130760002694,Soummam,Soummam Laymouna,Laymouna,مواد غذائية عامة,Épicerie Générale,1 l,100.0,19.0,False
+6133166000431,, Coca cola,Coca cola,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6135129000113,Bs,Bs Qaada,Qaada,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6130002003625,Rouiba,Rouiba Excellence - Nectar de mangue,Excellence - Nectar de mangue,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130760000096,Soummam,Soummam Fort,Fort,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130093067261,ifri,ifri Izem Energy,Izem Energy,بسكويت وحلويات,Biscuits & Confiserie,25 cl,100.0,19.0,False
+5410126006957,Lotus,Lotus Biscoff Creamy,Biscoff à tartiner,مشروبات ومياه,Boissons & Eaux,400 g,100.0,19.0,False
+6131575000028,, Walid fondu, Walid fondu,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130646006112,Danone,Danone Danone,Danone Danone,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+0745178413916,, Palets Bretons sablés au beurre,Palets Bretons sablés au beurre,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,19.0,False
+6130646006426,Danone,Danone Yaourt danone,Yaourt danone,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6133079001242,master chips,master chips ,master chips ,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132480500061,promasidor,promasidor Berbere16,Berbere16,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,220 g,100.0,9.0,False
+6130759002391,Président,Président جبن طري للطلي,جبن طري للطلي,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,32 portions / 440g,100.0,9.0,False
+6130413003528,,سليكس,6130413003528,مواد غذائية عامة,Épicerie Générale,150g,100.0,19.0,False
+6135794000395,Food & health F&H,Food & health F&H crème dessert protéinée,Food & health F&H crème dessert protéinée,مواد غذائية عامة,Épicerie Générale,110g,100.0,19.0,False
+6008155010350,twisco,twisco,Chocolat en poudre instantanée,مشروبات ومياه,Boissons & Eaux,500g,100.0,19.0,False
+6130560001002,14000,14000 Lait اوبي,14000 Lait اوبي,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,1l,100.0,9.0,False
+6130015061537,Bimo,Bimo Les biscuits cookies,Les biscuits cookies,مشروبات ومياه,Boissons & Eaux,200 g,100.0,19.0,False
+6133414001395,, Pate a tartiner,Pate a tartiner,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6132108100093,Coeurdecereale,Coeurdecereale Flocons d'avoine Cœur de Céréales,Flocons d'avoine Cœur de Céréales,مواد غذائية عامة,Épicerie Générale,1 kg,100.0,19.0,False
+6130014300224,bimo,bimo Best of Bimo,Best of Bimo,مواد غذائية عامة,Épicerie Générale,250 g,100.0,19.0,False
+6130384000861,CAB,CAB Sauce Pizza,Sauce Pizza,معلبات وصلصات,Conserves & Sauces,420,100.0,19.0,False
+6130426001245,, Biscuits à base de blé sur digestif ELWAFI,Biscuits à base de blé sur digestif ELWAFI,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6130760001512,Soummam 25da,Soummam 25da Soummam Mamzoudj,Soummam Mamzoudj,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130002003649,Rouiba Excellence,Rouiba Excellence Nectar de poire,Nectar de poire,مواد غذائية عامة,Épicerie Générale,75 ml,100.0,19.0,False
+6130760001529,Soummam 25da,Soummam 25da Soumame mamzouj,Soumame mamzouj,مواد غذائية عامة,Épicerie Générale,90 g,100.0,19.0,False
+7622210995063,Côte d'Or,Côte d'Or 180G LT NOISETTE COTE D OR,180G LT NOISETTE COTE D OR,مشروبات ومياه,Boissons & Eaux,180g,100.0,19.0,False
+6130217050711,, L'eau,L'eau,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130695111416,Hamoud Boualem,Hamoud Boualem Slim orange 2 ل,Slim orange 2 ل,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+8000500037560,Kinder,Kinder bueno,Kinder Bueno,مشروبات ومياه,Boissons & Eaux,43g,100.0,19.0,False
+6130413000923,, Tartino, Tartino,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6133320000130,JUMBO,JUMBO Sauce tomate,Sauce tomate,معلبات وصلصات,Conserves & Sauces,1 kg,100.0,19.0,False
+6130351001402,Sim,مقاروني - معكرونة متوسطة,Sim makaroni,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",500g,100.0,9.0,False
+6130586000065,bellat,bellat Kachir bellat ص,Kachir bellat ص,مواد غذائية عامة,Épicerie Générale,250 g,100.0,19.0,False
+6130816010062,ricamar,ricamar Thon en morceaux à la tomate,Thon en morceaux à la tomate,مشروبات ومياه,Boissons & Eaux,65,100.0,19.0,False
+6135240000078,, Manbaa ouwis, Manbaa ouwis,مشروبات ومياه,Boissons & Eaux,6 bouteil 210da,100.0,19.0,False
+3017620421006,Ferrero,Ferrero Pâte à tartiner Nutella noisettes et cacao - 750g,Pâte à tartiner Nutella noisettes et cacao - 750g,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",750 g,100.0,9.0,False
+6131050000253,, sultana,sultana,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130234002229,, Fleurial,Fleurial,زيوت ودهون,Huiles & Margarines,Unité,100.0,9.0,False
+6133414002552,, Maxon biscuits cacaoté,Maxon biscuits cacaoté,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6135414002372,sarl b2l pro,sarl b2l pro Ela crème fraîche légère,Ela crème fraîche légère,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,40cl,100.0,9.0,False
+6133701000018,vitamine drink,vitamine drink Jus de citron,Jus de citron,مشروبات ومياه,Boissons & Eaux,"1,25l",100.0,19.0,False
+7622210995087,Mondelez,Mondelez 180G C OR NOIR NOISETTE,180G C OR NOIR NOISETTE,مشروبات ومياه,Boissons & Eaux,180 g,100.0,19.0,False
+6132007700677,, 500ge,500ge,مشروبات ومياه,Boissons & Eaux,500 g,100.0,19.0,False
+6130646005092,Danone,DANON,يومي,مواد غذائية عامة,Épicerie Générale,100,100.0,19.0,False
+6135231000971,, Préparation fromagère,Préparation fromagère,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,800g,100.0,9.0,False
+6131643000028,,مرحبا,Boisson gazeuse,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+8857122685187,,8857122685187, 8857122685187,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6133136000386,AFIA,زيت عافية,Afia international,زيوت ودهون,Huiles & Margarines,2ل,100.0,9.0,False
+6130494000010,Vichy,Vichy Ben Haroun,Ben Haroun,مشروبات ومياه,Boissons & Eaux,25cl,100.0,19.0,False
+6132505350251,, Beurre,Beurre,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,200g,100.0,9.0,False
+8711000523124,"Jacobs Douwe Egberts, Maxwell House","Jacobs Douwe Egberts, Maxwell House Café",Café,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,200 g e,100.0,19.0,False
+6130003014385,, Schweppes grenadine,Schweppes grenadine,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130760003646,Soummam,Soummam Dialna brassé mini,Dialna brassé mini,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6133414006512,, Regalo COOKIES,Regalo COOKIES,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6134427001297,Bifa,Bifa Snow Ball,Snow Ball,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130760002922,Soummam,Soummam بتي سويس صومام,بتي سويس صومام,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+4058172309519,"Mivolis, dm","Mivolis, dm Multivitamin",Multivitamin,مواد غذائية عامة,Épicerie Générale,20pcs,100.0,19.0,False
+6133414005355,"Regalo, Palmary","Regalo, Palmary Biscuits fourrés à la crème de noisette et cacao",Biscuits fourrés à la crème de noisette et cacao,مشروبات ومياه,Boissons & Eaux,100g,100.0,19.0,False
+6133414007007,Palmary,Palmary Moment éclats de biscuits,Moment éclats de biscuits,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6130816010932,ricamar,ricamar Thon au naturel,Thon au naturel,معلبات وصلصات,Conserves & Sauces,65g×3,100.0,19.0,False
+6130732003391,mouzaia,mouzaia eau de Vichy,eau de Vichy,مشروبات ومياه,Boissons & Eaux,1 litre,100.0,19.0,False
+6130093066042,ifruit,ifruit fruit ananas orange,fruit ananas orange,مواد غذائية عامة,Épicerie Générale,1l,100.0,19.0,False
+3041091606280,Blédina,Blédina Blédine,Blédine,مواد غذائية عامة,Épicerie Générale,250 g,100.0,19.0,False
+6130632000049,Casba,Casba SARL casba,SARL casba,مواد غذائية عامة,Épicerie Générale,750 ml,100.0,19.0,False
+6130766703588,, Confiture d’abricots,Confiture d’abricots,مواد غذائية عامة,Épicerie Générale,400 g,100.0,19.0,False
+5056319205280,hp.  180da,hp.  180da hp,hp.  180da hp,مواد غذائية عامة,Épicerie Générale,paki,100.0,19.0,False
+6132263100020,, Biscuit fitness max proteine,Biscuit fitness max proteine,بسكويت وحلويات,Biscuits & Confiserie,300 gr,100.0,19.0,False
+6132242600077,"société bichari, walid",Walid barq 250g,Fromage fondu à tartiner,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,250g,100.0,9.0,False
+6134961000688,dolcesol,dolcesol Burger,Burger,مواد غذائية عامة,Épicerie Générale,100,100.0,19.0,False
+6130759001011,President,President Camembert président PM,Camembert président PM,مواد غذائية عامة,Épicerie Générale,145g,100.0,19.0,False
+6132376900104,, Protein bar, Protein bar,مواد غذائية عامة,Épicerie Générale,40g,100.0,19.0,False
+6135414002464,, Ela Hrisssa,Ela Hrisssa,معلبات وصلصات,Conserves & Sauces,400 g,100.0,19.0,False
+6130783000462,, Okids 16, Okids 16,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6134261001293,"Bel, La vache qui rit",6134261001293,"Bel, La vache qui rit 6134261001293",حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6131972000225,, Galettes de riz,Galettes de riz,بسكويت وحلويات,Biscuits & Confiserie,220 g,100.0,19.0,False
+6132391400061,City One,City One chicorée 100%,chicorée 100%,مواد غذائية عامة,Épicerie Générale,70 g,100.0,19.0,False
+6133414009902,, التاج,التاج,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6132457700074,N'Gaous,N'Gaous Confiture Extra d’Abricot,Confiture Extra d’Abricot,مواد غذائية عامة,Épicerie Générale,400g,100.0,19.0,False
+6132391400108,City One,City One Café instantané,Café instantané,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,190 g,100.0,19.0,False
+6130093067926,, Ifruit, Ifruit,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130760004896,Soummam 150da,ياقو,Yago,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,1 L,100.0,19.0,False
+11325086,, Gingembre au miel,Gingembre au miel,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+7622210421968,Mondelez International,Mondelez International Véritable Petit Écolier Chocolat au Lait,Véritable Petit Écolier Chocolat au Lait,مشروبات ومياه,Boissons & Eaux,150 g (12x 12.5 g) e,100.0,19.0,False
+6133106001061,, Harissa - SIM,Harissa - SIM,معلبات وصلصات,Conserves & Sauces,Unité,100.0,19.0,False
+6130234000614,Cevital,Cevital Medina 100% végétal,Medina 100% végétal,زيوت ودهون,Huiles & Margarines,1.8 kg,100.0,9.0,False
+6130743016755,Pepsi,Pepsi-Cola,Pepsi Pepsi-Cola,مشروبات ومياه,Boissons & Eaux,33 cl,100.0,19.0,False
+6135829000024,, Ariaf,Ariaf,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6134427001136,daily 80da,دايلي,دايلي 1 لتر,مواد غذائية عامة,Épicerie Générale,1L,100.0,19.0,False
+6130351001457,SIM 70da,SIM 70da Spaghetti,Spaghetti,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",500 g,100.0,9.0,False
+6133414000831,maxon,maxon Maxon chocolate,Maxon chocolate,مشروبات ومياه,Boissons & Eaux,100g,100.0,19.0,False
+6132011100494,Lu. 90da,Lu. 90da Major,Major,مشروبات ومياه,Boissons & Eaux,170 g,100.0,19.0,False
+8711000892091,Grand’mère,Grand’mère Familial,Familial,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,250 grammes,100.0,19.0,False
+3046920022651,Lindt,Lindt Excellence 70% cacao noir intense,Excellence 70% cacao noir intense,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6130760000188,Soummam,Soummam Mousse au Chocolat,Mousse au Chocolat,مشروبات ومياه,Boissons & Eaux,90 g,100.0,19.0,False
+6133414001388,Palmary,ماكسن، فيجيكاو بالحليب و رقائق اللوز,Maxon Lait & amandes,مشروبات ومياه,Boissons & Eaux,140 g,100.0,19.0,False
+6134067001152,Dziriya,Dziriya Chocolat noir à tartiner,Chocolat noir à tartiner,مشروبات ومياه,Boissons & Eaux,220 g,100.0,19.0,False
+6133414001708,Palmary,Palmary MAXON x4 38 gr,MAXON x4 38 gr,مشروبات ومياه,Boissons & Eaux,30 Da,100.0,19.0,False
+6130492000807,Mama,Mama Farine complète T150,Farine complète T150,عجائن وسميد ومواد جافة,"Pâtes, Semoules & Farines",1 kg,100.0,9.0,False
+3518070022398,Novalac,Novalac lait,Lait de suite,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,400g,100.0,9.0,False
+6130760004360,Soummam,Yago,Yago Banane ص,مواد غذائية عامة,Épicerie Générale,170 g,100.0,19.0,False
+6132119200270,jumpy,jumpy Beurre de cacahuete,Beurre de cacahuete,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,350g,100.0,9.0,False
+3041091282866,Blédina,Blédina Lait pour nourrissons,Lait pour nourrissons,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6133414008073,Palmary,Palmary Moment,Palmary Moment,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6132501941231,, RAÏB - LAIT CAILLÉ,RAÏB - LAIT CAILLÉ,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130391000441,essalem,essalem mina,mina,مواد غذائية عامة,Épicerie Générale,100g,100.0,19.0,False
+6133477000076,amir 120da,fromage amir,amir 120da fromage,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,120 g,100.0,9.0,False
+6130632000025,, Vinaigre,Vinaigre,مواد غذائية عامة,Épicerie Générale,760 ml,100.0,19.0,False
+8000500273296,Ferrero,Ferrero Ferrero Rocher,Ferrero Rocher,بسكويت وحلويات,Biscuits & Confiserie,375 g,100.0,19.0,False
+6130760000324,Soummam 25da,Soummam 25da بتسويس,بتسويس,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130093058993,ifri,ifri Ifruit pêche orange,Ifruit pêche orange,بسكويت وحلويات,Biscuits & Confiserie,2L,100.0,19.0,False
+6130093064406,Ifruit,Ifruit Boisson au jus d'ananas,Boisson au jus d'ananas,مشروبات ومياه,Boissons & Eaux,1 litre,100.0,19.0,False
+6130093065649,ifri,ifri Ifruit,Ifruit,مواد غذائية عامة,Épicerie Générale,1 L,100.0,19.0,False
+6130760006074,Soummam,Soummam Yago grenadine petit,Yago grenadine petit,مواد غذائية عامة,Épicerie Générale,170 g,100.0,19.0,False
+6130403000186,Amor Benamor,Amor Benamor Lasagne Mahbouba,Lasagne Mahbouba,مواد غذائية عامة,Épicerie Générale,500g,100.0,19.0,False
+6130759000748,Lactel,Lactel Fromage  frais,Fromage  frais,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6130760002236,Soumam,Mamzoudj,mamzoudj vanille,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6134413000259,, Miel,Miel,بسكويت وحلويات,Biscuits & Confiserie,Unité,100.0,19.0,False
+6135617000021,MEDJANA,MEDJANA MEDJANA 0.5 L,MEDJANA 0.5 L,مشروبات ومياه,Boissons & Eaux,0.5 L,100.0,19.0,False
+6130760002939,25da,25da Alladin,Alladin,زيوت ودهون,Huiles & Margarines,Unité,100.0,9.0,False
+6131110000155,GIPLAIT Laiterue Aures Batna,GIPLAIT Laiterue Aures Batna Fromage fondu,Fromage fondu,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,100 g,100.0,9.0,False
+6132011100401,"lu, mondelez","lu, mondelez Croustille goût Lait carousel",Croustille goût Lait carousel,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,19.0,False
+3183280020382,La Baleine,La Baleine Gros Sel de Mer Iodé,Gros Sel de Mer Iodé,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130093062556,Ifri,Ifri Boisson au jus de pomme fraise au lait,Boisson au jus de pomme fraise au lait,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6133839001017,, Ceregal anneaux au chocolat,Ceregal anneaux au chocolat,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130743018308,PEPSI,PEPSI Pepsi,Pepsi,مشروبات ومياه,Boissons & Eaux,1L,100.0,19.0,False
+6132506960015,Tornado,Tornado sel de table fin,sel de table fin,مواد غذائية عامة,Épicerie Générale,230 g,100.0,19.0,False
+6130093065892,IFRUIT,IFRUIT Ifruit 100% Naturel,Ifruit 100% Naturel,مواد غذائية عامة,Épicerie Générale,1L,100.0,19.0,False
+3017620429484,"Nutella, Ferrero","Nutella, Ferrero Nutella",Nutella,مواد غذائية عامة,Épicerie Générale,825 g,100.0,19.0,False
+6130803000014,, Lait,Lait,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6133079000436,Master Chips ماستر شيبس,Master Chips ماستر شيبس Master Chips ماستر شيبس,Master Chips ماستر شيبس Master Chips ماستر شيبس,مواد غذائية عامة,Épicerie Générale,1,100.0,19.0,False
+6130766703540,Amour,6130766703540,Double concentré de tomates,معلبات وصلصات,Conserves & Sauces,800 g,100.0,19.0,False
+6130093064413,, Jus d'ananas et d'orange,Jus d'ananas et d'orange,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130760000874,Soummam,Soummam Yaourt Light (pêche),Yaourt Light (pêche),حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,100g,100.0,9.0,False
+7614500010013,Toblerone,Oocha Premix Tea With Ganoderma Lucidum,Toblerone,مشروبات ومياه,Boissons & Eaux,100g,100.0,19.0,False
+6132131100046,الوجدان,pate a glacer الوجدان,الوجدان pate a glacer الوجدان,مشروبات ومياه,Boissons & Eaux,250,100.0,19.0,False
+6130014300446,Bimo,Bimo Double mix,Double mix,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+4046234767650,Tchibo,Tchibo Gold Selection,Tchibo Gold Selection,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,200 g,100.0,19.0,False
+6133414006987,, Moment éclat d’amandes,Moment éclat d’amandes,مواد غذائية عامة,Épicerie Générale,90g,100.0,19.0,False
+3041091606273,Blédina,Blédina Blédine fruit et lait,Blédine fruit et lait,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,250 g,100.0,9.0,False
+6130646006044,Danone,Danone Danao,Danone Danao,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130413002897,Cheezy,Cheezy Préparation alimentaire,Cheezy Préparation alimentaire,زيوت ودهون,Huiles & Margarines,16ps,100.0,9.0,False
+0055828910017,Naturoney,Naturoney Organic Honey,Miel Biologique,مواد غذائية عامة,Épicerie Générale,1 kg,100.0,19.0,False
+6130002005759,Rouiba,Rouiba ,Rouiba ,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130646006389,Activia,Activia activia sbah,activia sbah,مواد غذائية عامة,Épicerie Générale,danon,100.0,19.0,False
+6130646006365,Activia,Activia Activia,Activia fibres,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6130743018346,Pepsi,pepsi,Pepsi Pepsi 2L,مشروبات ومياه,Boissons & Eaux,Unité,100.0,19.0,False
+6130093067223,, iFruit mangue 1L, iFruit mangue 1L,مواد غذائية عامة,Épicerie Générale,Unité,100.0,19.0,False
+6111018903161,Nescafé,Classic,Nescafé Classic,قهوة وشاي ومشروبات ساخنة,Cafés & Thés,45 g (25 dh),100.0,19.0,False
+3155251205296,Primevère,Primevère Tartine Doux,Tartine Doux,زيوت ودهون,Huiles & Margarines,250 g,100.0,9.0,False
+3265470030019,Lesieur,Lesieur ketchup,ketchup,مواد غذائية عامة,Épicerie Générale,485 g,100.0,19.0,False
+3045140105502,Milka,Milka Chocolat au lait,Chocolat au lait,مشروبات ومياه,Boissons & Eaux,100 g,100.0,19.0,False
+6130760002434,Soummam,Soummam Jnina fraise,Jnina fraise,مواد غذائية عامة,Épicerie Générale,1 L,100.0,19.0,False
+6132119200027,Jumpy Nuts,Jumpy Nuts Beurre de cacahuète,Beurre de cacahuète,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,Unité,100.0,9.0,False
+6134387000170,Bibila,Bibila Donuts bibila,Donuts bibila,مواد غذائية عامة,Épicerie Générale,40 g,100.0,19.0,False
+6052028798999,ollagro bakery,ollagro bakery COOKIES,COOKIES,بسكويت وحلويات,Biscuits & Confiserie,153g,100.0,19.0,False
+6134067001169,Dziriya,Dziriya Pate a tartiner,Pate a tartiner,مواد غذائية عامة,Épicerie Générale,340 g,100.0,19.0,False
+6130760003196,Soummam. 170da,Soummam. 170da Soumame tarte,Soumame tarte,مواد غذائية عامة,Épicerie Générale,1L,100.0,19.0,False
+6135847000051,Tartinella,Tartinella Tartinella beurre aux cacahuètes,Tartinella beurre aux cacahuètes,حليب ومشتقاته وأجبان,Produits Laitiers & Fromages,350 g,100.0,9.0,False
+6130492000029,Mama    da180         متوسط,طعام ماما,Couscous moyen,مواد غذائية عامة,Épicerie Générale,1 kg,100.0,19.0,False
+6130760003776,soummam,soummam Pot de creme chocolat,Pot de creme chocolat,مشروبات ومياه,Boissons & Eaux,90 g,100.0,19.0,False
