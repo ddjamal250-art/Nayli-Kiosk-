@@ -81,7 +81,14 @@ class _SettingsPageState extends State<SettingsPage> {
                   }
 
                   final logoPath = HiveDatabase.settingsBox.get('shop_logo_path') as String?;
-                  final hasValidLogo = logoPath != null && File(logoPath).existsSync();
+                  bool hasValidLogo = false;
+                  if (logoPath != null && logoPath.isNotEmpty) {
+                    try {
+                      hasValidLogo = File(logoPath).existsSync();
+                    } catch (_) {
+                      hasValidLogo = false;
+                    }
+                  }
 
                   return Column(
                     children: [

@@ -716,8 +716,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void _navigateToSettings() {
     setState(() => _isScanningPaused = true);
+    try {
+      _scannerController.stop();
+    } catch (_) {}
     context.push('/settings').then((_) {
       if (mounted) {
+        if (_isCameraOn) {
+          try {
+            _scannerController.start();
+          } catch (_) {}
+        }
         setState(() {
           _isScanningPaused = false;
           _lastScanTimes.clear();

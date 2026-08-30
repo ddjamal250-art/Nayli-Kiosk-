@@ -42,80 +42,90 @@ class NotificationService {
   /// Gather live store alerts from inventory, customers, and supplier invoices
   static List<StoreAlert> getLiveAlerts() {
     final List<StoreAlert> alerts = [];
-    final threshold = getLowStockThreshold();
+    try {
+      final threshold = getLowStockThreshold();
 
-    // 1. Low stock & Out of stock products
-    final pBox = HiveDatabase.productBox;
-    int outOfStockCount = 0;
-    int lowStockCount = 0;
+      // 1. Low stock & Out of stock products
+      final pBox = HiveDatabase.productBox;
+      int outOfStockCount = 0;
+      int lowStockCount = 0;
 
-    for (final p in pBox.values) {
-      if (p.stock <= 0) {
-        outOfStockCount++;
-      } else if (p.stock <= threshold) {
-        lowStockCount++;
+      for (final p in pBox.values) {
+        if (p.stock <= 0) {
+          outOfStockCount++;
+        } else if (p.stock <= threshold) {
+          lowStockCount++;
+        }
       }
-    }
 
-    if (outOfStockCount > 0) {
-      alerts.add(StoreAlert(
-        id: 'out_of_stock_alert',
-        title: '⚠️ منتجات نفد مخزونها بالكامل ($outOfStockCount منتج)',
-        message: 'يوجد $outOfStockCount صنف في المحل رصيدها 0، يرجى استلام سلع جديدة لتفادي ضياع المبيعات.',
-        type: 'low_stock',
-        timestamp: DateTime.now(),
-        targetRoute: '/products',
-      ));
-    }
-
-    if (lowStockCount > 0) {
-      alerts.add(StoreAlert(
-        id: 'low_stock_alert',
-        title: '📦 منتجات قاربت على النفاد ($lowStockCount منتج)',
-        message: 'يوجد $lowStockCount صنف في المحل رصيدها أقل من أو يساوي $threshold قطع.',
-        type: 'low_stock',
-        timestamp: DateTime.now(),
-        targetRoute: '/products',
-      ));
-    }
-
-    // 2. Customers exceeding credit limits
-    final cBox = HiveDatabase.customersBox;
-    int debtLimitExceededCount = 0;
-    for (final c in cBox.values) {
-      if (c.maxDebtLimit > 0 && c.currentDebt >= c.maxDebtLimit) {
-        debtLimitExceededCount++;
+      if (outOfStockCount > 0) {
+        alerts.add(StoreAlert(
+          id: 'out_of_stock_alert',
+          title: '⚠️ منتجات نفد مخزونها بالكامل ($outOfStockCount منتج)',
+          message: 'يوجد $outOfStockCount صنف في المحل رصيدها 0، يرجى استلام سلع جديدة لتفادي ضياع المبيعات.',
+          type: 'low_stock',
+          timestamp: DateTime.now(),
+          targetRoute: '/products',
+        ));
       }
-    }
 
-    if (debtLimitExceededCount > 0) {
-      alerts.add(StoreAlert(
-        id: 'debt_limit_alert',
-        title: '👥 زبائن تجاوزوا سقف الدين المسموح ($debtLimitExceededCount زبون)',
-        message: 'يوجد $debtLimitExceededCount زبون وصل رصيد ديونهم إلى الحد الأقصى المحدد في الدفتر.',
-        type: 'debt_limit',
-        timestamp: DateTime.now(),
-        targetRoute: '/customers',
-      ));
-    }
+      if (lowStockCount > 0) {
+        alerts.add(StoreAlert(
+          id: 'low_stock_alert',
+          title: '📦 منتجات قاربت على النفاد ($lowStockCount منتج)',
+          message: 'يوجد $lowStockCount صنف في المحل رصيدها أقل من أو يساوي $threshold قطع.',
+          type: 'low_stock',
+          timestamp: DateTime.now(),
+          targetRoute: '/products',
+        ));
+      }
 
-    // 3. Supplier debts
-    final sBox = HiveDatabase.supplierInvoicesBox;
-    double totalSupplierDebt = 0;
-    for (final inv in sBox.values) {
-      final remaining = (inv['remainingAmount'] as num?)?.toDouble() ?? 0.0;
-      totalSupplierDebt += remaining;
-    }
+      // 2. Customers exceeding credit limits
+      final cBox = HiveDatabase.customersBox;
+      int debtLimitExceededCount = 0;
+      for (final c in cBox.values) {
+        if (c is Map) {
+          final maxLimit = (c['maxDebtLimit'] as num?)?.toDouble() ?? 0.0;
+          final curDebt = (c['currentDebt'] as num?)?.toDouble() ?? 0.0;
+          if (maxLimit > 0 && curDebt >= maxLimit) {
+            debtLimitExceededCount++;
+          }
+        }
+      }
 
-    if (totalSupplierDebt > 0) {
-      alerts.add(StoreAlert(
-        id: 'supplier_debt_alert',
-        title: '🚚 ديون مستحقة للموردين (${totalSupplierDebt.toStringAsFixed(0)} دج)',
-        message: 'لديك فواتير موردين غير مسددة بالكامل في قسم فواتير الموردين.',
-        type: 'supplier',
-        timestamp: DateTime.now(),
-        targetRoute: '/products/supplier-invoices',
-      ));
+      if (debtLimitExceededCount > 0) {
+        alerts.add(StoreAlert(
+          id: 'debt_limit_alert',
+          title: '👥 زبائن تجاوزوا سقف الدين المسموح ($debtLimitExceededCount زبون)',
+          message: 'يوجد $debtLimitExceededCount زبون وصل رصيد ديونهم إلى الحد الأقصى المحدد في الدفتر.',
+          type: 'debt_limit',
+          timestamp: DateTime.now(),
+          targetRoute: '/customers',
+        ));
+      }
+
+      // 3. Supplier debts
+      final sBox = HiveDatabase.supplierInvoicesBox;
+      double totalSupplierDebt = 0;
+      for (final inv in sBox.values) {
+        if (inv is Map) {
+          final remaining = (inv['remainingAmount'] as num?)?.toDouble() ?? 0.0;
+          totalSupplierDebt += remaining;
+        }
+      }
+
+      if (totalSupplierDebt > 0) {
+        alerts.add(StoreAlert(
+          id: 'supplier_debt_alert',
+          title: '🚚 ديون مستحقة للموردين (${totalSupplierDebt.toStringAsFixed(0)} دج)',
+          message: 'لديك فواتير موردين غير مسددة بالكامل في قسم فواتير الموردين.',
+          type: 'supplier',
+          timestamp: DateTime.now(),
+          targetRoute: '/products/supplier-invoices',
+        ));
+      }
+    } catch (e) {
+      debugPrint('Error getting live alerts: $e');
     }
 
     return alerts;
