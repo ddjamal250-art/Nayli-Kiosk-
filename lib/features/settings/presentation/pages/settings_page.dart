@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app_settings/app_settings.dart';
@@ -21,6 +22,7 @@ import '../bloc/printer_event.dart';
 import '../bloc/printer_state.dart';
 import '../widgets/activation_modal.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
+import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../customer/presentation/cubit/customer_state.dart';
 
@@ -873,7 +875,13 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: const Text('كشف حساب بالزبائن، أرقام الهواتف، والديون المعلقة'),
               onTap: () {
                 Navigator.pop(ctx);
-                final customers = context.read<CustomerCubit>().state.customers;
+                final custState = context.read<CustomerCubit>().state;
+                final List<Customer> customers = custState is CustomerLoaded
+                    ? custState.customers
+                    : HiveDatabase.customersBox.values
+                        .whereType<Map>()
+                        .map((e) => Customer.fromMap(e))
+                        .toList();
                 final csv = ExcelExportHelper.exportDebtsToCsv(customers);
                 Clipboard.setData(ClipboardData(text: csv));
                 SoundService.playCheckoutSuccess();

@@ -19,8 +19,8 @@ class ExcelExportHelper {
       final ShopModel? shop = shopBox.getAt(0);
       if (shop != null) {
         if (shop.name.isNotEmpty) shopName = shop.name;
-        if (shop.phone.isNotEmpty) shopPhone = shop.phone;
-        if (shop.address.isNotEmpty) shopAddress = shop.address;
+        if (shop.phoneNumber.isNotEmpty) shopPhone = shop.phoneNumber;
+        if (shop.addressLine1.isNotEmpty) shopAddress = shop.addressLine1;
       }
     }
 
@@ -90,7 +90,7 @@ class ExcelExportHelper {
       final phone = '"${c.phoneNumber.replaceAll('"', '""')}"';
       final address = '"${c.address.replaceAll('"', '""')}"';
       final debt = c.currentDebt;
-      final limit = c.creditLimit;
+      final limit = c.maxDebtLimit;
       final status = debt > 0 ? (debt > limit && limit > 0 ? 'تجاوز السقف ⚠️' : 'عليه دين') : 'خالص (0 دج)';
 
       totalDebts += debt;

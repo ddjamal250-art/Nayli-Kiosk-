@@ -415,7 +415,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[800]),
             onPressed: () {
-              context.read<BillingBloc>().add(ParkCurrentCartEvent(tag: controller.text.trim()));
+              context.read<BillingBloc>().add(ParkCurrentCartEvent(label: controller.text.trim()));
               Navigator.pop(ctx);
               context.showAppSnackBar(
                 '⏸️ تم تعليق السلة بنجاح في السلات المؤقتة!',
@@ -1537,8 +1537,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 onPressed: () {
                   context.read<BillingBloc>().add(
                         UpdateQuantityEvent(
-                          productId: item.product.id,
-                          quantity: item.quantity - 1,
+                          item.product.id,
+                          item.quantity - 1,
                         ),
                       );
                 },
@@ -1557,8 +1557,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 onPressed: () {
                   context.read<BillingBloc>().add(
                         UpdateQuantityEvent(
-                          productId: item.product.id,
-                          quantity: item.quantity + 1,
+                          item.product.id,
+                          item.quantity + 1,
                         ),
                       );
                 },

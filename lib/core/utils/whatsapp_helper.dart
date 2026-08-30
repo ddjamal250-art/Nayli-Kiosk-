@@ -33,8 +33,8 @@ class WhatsAppReceiptHelper {
       final ShopModel? shop = shopBox.getAt(0);
       if (shop != null) {
         if (shop.name.isNotEmpty) shopName = shop.name;
-        if (shop.phone.isNotEmpty) shopPhone = shop.phone;
-        if (shop.address.isNotEmpty) shopAddress = shop.address;
+        if (shop.phoneNumber.isNotEmpty) shopPhone = shop.phoneNumber;
+        if (shop.addressLine1.isNotEmpty) shopAddress = shop.addressLine1;
       }
     }
 
