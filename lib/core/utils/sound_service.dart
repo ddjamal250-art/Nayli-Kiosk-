@@ -130,9 +130,10 @@ class SoundService {
         durationMs = 60;
     }
 
-    // Adjust for Action Type: 0 = Scan, 1 = Checkout Success, 2 = Delete, 3 = Warning
+    // Adjust for Action Type: 
+    // 0 = Scan, 1 = Checkout Success, 2 = Delete, 3 = Warning, 4 = Restock Arrivage, 5 = Print, 6 = Save Success, 7 = Tick
     if (soundType == 1) {
-      // Checkout Success (Celebratory)
+      // Checkout Success (Celebratory Cashier Chime)
       freq1 = freq1 * 0.8;
       freq2 = freq1 * 1.5;
       durationMs = max(durationMs, 140);
@@ -148,6 +149,26 @@ class SoundService {
       freq2 = 350;
       durationMs = 160;
       isDoubleTone = true;
+    } else if (soundType == 4) {
+      // Restock / Arrivage (Upbeat ascending tone)
+      freq1 = 1200;
+      freq2 = 1800;
+      durationMs = 100;
+      isDoubleTone = true;
+    } else if (soundType == 5) {
+      // Thermal Print Start (Mechanical acoustic cue)
+      freq1 = 2800;
+      freq2 = 3200;
+      durationMs = 70;
+      isDoubleTone = true;
+    } else if (soundType == 6) {
+      // Save Success (Crisp high pip)
+      freq1 = 2400;
+      durationMs = 50;
+    } else if (soundType == 7) {
+      // Light Tab / Button Tick
+      freq1 = 1800;
+      durationMs = 25;
     }
 
     final int numSamples = (sampleRate * (durationMs / 1000.0)).toInt();
@@ -269,6 +290,46 @@ class SoundService {
       if (hasVib == true) {
         Vibration.vibrate(pattern: [0, 80, 50, 80]);
       }
+    } catch (_) {}
+  }
+
+  /// Play restock arrivage positive sound
+  static Future<void> playRestockSound() async {
+    try {
+      HapticFeedback.mediumImpact();
+      _playSound(4);
+      final hasVib = await Vibration.hasVibrator();
+      if (hasVib == true) {
+        Vibration.vibrate(pattern: [0, 40, 30, 60]);
+      }
+    } catch (_) {}
+  }
+
+  /// Play thermal print start sound
+  static Future<void> playPrintSound() async {
+    try {
+      HapticFeedback.selectionClick();
+      _playSound(5);
+    } catch (_) {}
+  }
+
+  /// Play save confirmation sound
+  static Future<void> playSaveSuccess() async {
+    try {
+      HapticFeedback.mediumImpact();
+      _playSound(6);
+      final hasVib = await Vibration.hasVibrator();
+      if (hasVib == true) {
+        Vibration.vibrate(duration: 45);
+      }
+    } catch (_) {}
+  }
+
+  /// Play light tick on tab / navigation
+  static Future<void> playTabSwitch() async {
+    try {
+      HapticFeedback.selectionClick();
+      _playSound(7);
     } catch (_) {}
   }
 }

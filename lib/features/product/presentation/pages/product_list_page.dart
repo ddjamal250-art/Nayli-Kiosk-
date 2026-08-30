@@ -31,6 +31,8 @@ class _ProductListPageState extends State<ProductListPage> {
   String _searchQuery = '';
   String _selectedCategoryFilter = 'الكل';
   bool _isExporting = false;
+  bool _isMultiSelectMode = false;
+  final Set<String> _selectedProductIds = {};
 
   static const List<String> _categoryTabs = [
     'الكل',
@@ -44,6 +46,250 @@ class _ProductListPageState extends State<ProductListPage> {
     'خضر وفواكه',
     'أخرى',
   ];
+
+  void _toggleProductSelection(String id) {
+    setState(() {
+      if (_selectedProductIds.contains(id)) {
+        _selectedProductIds.remove(id);
+        if (_selectedProductIds.isEmpty) {
+          _isMultiSelectMode = false;
+        }
+      } else {
+        _selectedProductIds.add(id);
+        _isMultiSelectMode = true;
+      }
+    });
+    SoundService.playTabSwitch();
+  }
+
+  void _selectAllFiltered(List<Product> products) {
+    setState(() {
+      _isMultiSelectMode = true;
+      for (final p in products) {
+        _selectedProductIds.add(p.id);
+      }
+    });
+    SoundService.playTabSwitch();
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedProductIds.clear();
+      _isMultiSelectMode = false;
+    });
+    SoundService.playTabSwitch();
+  }
+
+  /// Batch Delete
+  Future<void> _batchDelete(BuildContext context) async {
+    if (_selectedProductIds.isEmpty) return;
+    final count = _selectedProductIds.length;
+    final auth = await SecurityPinHelper.authenticate(context, title: 'تأكيد الحذف الجماعي');
+    if (!auth || !context.mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 24),
+            const SizedBox(width: 8),
+            Text('حذف $count سلع محددة؟', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Text('هل أنت متأكد من رغبتك في حذف $count سلع نهائياً من المخزون؟ لا يمكن التراجع عن هذه العملية.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('نعم، حذف الكل', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      final bloc = context.read<ProductBloc>();
+      for (final id in _selectedProductIds) {
+        bloc.add(DeleteProduct(id));
+      }
+      SoundService.playDeleteSound();
+      context.showAppSnackBar('🗑️ تم حذف $count سلع بنجاح من المخزن!', backgroundColor: Colors.red[800]!);
+      _clearSelection();
+    }
+  }
+
+  /// Batch Move Category
+  Future<void> _batchMoveCategory(BuildContext context, List<Product> allProducts) async {
+    if (_selectedProductIds.isEmpty) return;
+    final count = _selectedProductIds.length;
+    String targetCat = 'مواد غذائية ومعلبات';
+
+    final selectedCat = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
+            children: [
+              const Icon(Icons.drive_file_move_rounded, color: AppTheme.primaryColor, size: 24),
+              const SizedBox(width: 8),
+              Text('نقل $count سلع لقسم آخر 📂', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('اختر القسم المستهدف لنقل السلع المحددة إليه:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: targetCat,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: _categoryTabs.where((c) => c != 'الكل' && c != '⚖️ مواد الميزان').map((cat) {
+                  return DropdownMenuItem(value: cat, child: Text(cat, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)));
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setDialogState(() => targetCat = val);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
+              onPressed: () => Navigator.pop(ctx, targetCat),
+              child: const Text('نقل السلع الآن 💾', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (selectedCat != null && context.mounted) {
+      final bloc = context.read<ProductBloc>();
+      for (final id in _selectedProductIds) {
+        final p = allProducts.firstWhere((item) => item.id == id, orElse: () => allProducts.first);
+        final updated = Product(
+          id: p.id,
+          name: p.name,
+          barcode: p.barcode,
+          price: p.price,
+          costPrice: p.costPrice,
+          wholesalePrice: p.wholesalePrice,
+          stock: p.stock,
+          category: selectedCat,
+          isWeighted: p.isWeighted,
+          expiryDate: p.expiryDate,
+        );
+        bloc.add(UpdateProduct(updated));
+      }
+      SoundService.playSaveSuccess();
+      context.showAppSnackBar('✅ تم نقل $count سلع إلى قسم ($selectedCat) بنجاح!');
+      _clearSelection();
+    }
+  }
+
+  /// Batch Restock (Arrivage for selected items)
+  Future<void> _batchRestock(BuildContext context, List<Product> allProducts) async {
+    if (_selectedProductIds.isEmpty) return;
+    final count = _selectedProductIds.length;
+    int addQty = 10;
+
+    final selectedQty = await showDialog<int>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
+            children: [
+              const Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 24),
+              const SizedBox(width: 8),
+              Text('استلام شحنة لـ $count سلع 📦', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('اختر الكمية المضافة لكل سلعة من السلع المحددة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton.filledTonal(
+                    icon: const Icon(Icons.remove),
+                    onPressed: addQty > 1 ? () => setDialogState(() => addQty--) : null,
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text('+$addQty', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                  ),
+                  IconButton.filledTonal(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => setDialogState(() => addQty++),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                children: [5, 10, 24, 50, 100].map((amt) {
+                  return ActionChip(
+                    label: Text('+$amt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    backgroundColor: addQty == amt ? Colors.green.withOpacity(0.2) : Colors.grey[100],
+                    onPressed: () => setDialogState(() => addQty = amt),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], foregroundColor: Colors.white),
+              onPressed: () => Navigator.pop(ctx, addQty),
+              child: Text('إضافة +$addQty للكل 🚀', style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (selectedQty != null && context.mounted) {
+      final bloc = context.read<ProductBloc>();
+      for (final id in _selectedProductIds) {
+        final p = allProducts.firstWhere((item) => item.id == id, orElse: () => allProducts.first);
+        final updated = Product(
+          id: p.id,
+          name: p.name,
+          barcode: p.barcode,
+          price: p.price,
+          costPrice: p.costPrice,
+          wholesalePrice: p.wholesalePrice,
+          stock: p.stock + selectedQty,
+          category: p.category,
+          isWeighted: p.isWeighted,
+          expiryDate: p.expiryDate,
+        );
+        bloc.add(UpdateProduct(updated));
+      }
+      SoundService.playRestockSound();
+      context.showAppSnackBar('✅ تم استلام الشحنة (+ $selectedQty) لـ $count سلع بنجاح!');
+      _clearSelection();
+    }
+  }
 
   @override
   void initState() {
@@ -342,7 +588,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         expiryDate: product.expiryDate,
                       );
                       context.read<ProductBloc>().add(UpdateProduct(updated));
-                      SoundService.playCheckoutSuccess();
+                      SoundService.playRestockSound();
                       context.showAppSnackBar('✅ تم استلام شحنة الميزان وتحديث المخزون بدقة!');
                     },
                   ),
@@ -407,11 +653,10 @@ class _ProductListPageState extends State<ProductListPage> {
                   ),
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.08),
+                      color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
                     ),
                     child: Text('+$addQty', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
                   ),
@@ -423,8 +668,7 @@ class _ProductListPageState extends State<ProductListPage> {
               ),
               const SizedBox(height: 10),
               Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
+                spacing: 6,
                 children: [5, 10, 24, 50, 100].map((amt) {
                   return ActionChip(
                     label: Text('+$amt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
@@ -458,7 +702,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     expiryDate: product.expiryDate,
                   );
                   context.read<ProductBloc>().add(UpdateProduct(updated));
-                  SoundService.playCheckoutSuccess();
+                  SoundService.playRestockSound();
                   context.showAppSnackBar('✅ تم استلام الشحنة وتحديث المخزون بنجاح!');
                 },
               ),
@@ -495,43 +739,72 @@ class _ProductListPageState extends State<ProductListPage> {
     final borderColor = Colors.grey[100]!;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.chevron_left,
-              size: 28, color: Theme.of(context).primaryColor),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(context.tr('products_management'),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
-            tooltip: 'تصدير وحفظ ملف Excel 📊',
-            onPressed: () {
-              final productState = context.read<ProductBloc>().state;
-              _exportAndSaveExcel(context, productState.products);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
-            tooltip: 'كتالوج السلع الجزائرية (15,500+)',
-            onPressed: () => context.push('/products/catalog'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.local_shipping_outlined, color: AppTheme.primaryColor),
-            tooltip: 'فواتير الموردين والمشتريات',
-            onPressed: () => context.push('/products/supplier-invoices'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.archive_outlined, color: AppTheme.primaryColor),
-            tooltip: context.tr('stock_in'),
-            onPressed: () => context.push('/products/stock-in'),
-          ),
-        ],
-      ),
+      appBar: _isMultiSelectMode
+          ? AppBar(
+              backgroundColor: AppTheme.primaryColor,
+              elevation: 2,
+              leading: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: _clearSelection,
+              ),
+              title: Text(
+                'المحدد: ${_selectedProductIds.length}',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
+              ),
+              actions: [
+                BlocBuilder<ProductBloc, ProductState>(
+                  builder: (context, state) {
+                    final query = _searchQuery.trim().toLowerCase();
+                    final filtered = state.products.where((p) {
+                      final matchesQuery = query.isEmpty || p.name.toLowerCase().contains(query) || p.barcode.contains(query);
+                      if (!matchesQuery) return false;
+                      if (_selectedCategoryFilter == 'الكل') return true;
+                      if (_selectedCategoryFilter == '⚖️ مواد الميزان') {
+                        return p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ');
+                      }
+                      return p.category == _selectedCategoryFilter;
+                    }).toList();
+
+                    return TextButton(
+                      onPressed: () => _selectAllFiltered(filtered),
+                      child: const Text('تحديد الكل', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                    );
+                  },
+                ),
+              ],
+            )
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(Icons.chevron_left,
+                    size: 28, color: Theme.of(context).primaryColor),
+                onPressed: () => context.pop(),
+              ),
+              title: Text(context.tr('products_management'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.checklist_rounded, color: AppTheme.primaryColor),
+                  tooltip: 'تحديد متعدد للسلع ☑️',
+                  onPressed: () => setState(() => _isMultiSelectMode = true),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
+                  tooltip: 'تصدير وحفظ ملف Excel 📊',
+                  onPressed: () {
+                    final productState = context.read<ProductBloc>().state;
+                    _exportAndSaveExcel(context, productState.products);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
+                  tooltip: 'كتالوج السلع الجزائرية (15,500+)',
+                  onPressed: () => context.push('/products/catalog'),
+                ),
+              ],
+            ),
       body: Column(
         children: [
           // Master Catalog Quick Banner
@@ -813,197 +1086,222 @@ class _ProductListPageState extends State<ProductListPage> {
                   itemBuilder: (context, index) {
                     final product = filteredProducts[index];
                     final isWeighable = product.isWeighted || product.barcode.startsWith('SCALE_') || product.name.contains('ميزان') || product.name.contains('كغ');
+                    final isSelected = _selectedProductIds.contains(product.id);
 
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: borderColor),
-                        boxShadow: const [
-                          BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 4,
-                              offset: Offset(0, 2))
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        product.name,
+                    return InkWell(
+                      onTap: () {
+                        if (_isMultiSelectMode) {
+                          _toggleProductSelection(product.id);
+                        } else {
+                          context.push('/products/edit/${product.id}', extra: product);
+                        }
+                      },
+                      onLongPress: () {
+                        _toggleProductSelection(product.id);
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppTheme.primaryColor.withOpacity(0.06) : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected ? AppTheme.primaryColor : borderColor,
+                            width: isSelected ? 1.8 : 1.0,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: Offset(0, 2))
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (_isMultiSelectMode) ...[
+                              Checkbox(
+                                value: isSelected,
+                                activeColor: AppTheme.primaryColor,
+                                onChanged: (_) => _toggleProductSelection(product.id),
+                              ),
+                              const SizedBox(width: 4),
+                            ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          product.name,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14.5),
+                                        ),
+                                      ),
+                                      if (isWeighable) ...[
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.teal.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                                          ),
+                                          child: const Text('⚖️ ميزان', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.teal)),
+                                        ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
                                         style: const TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 14.5),
+                                            fontSize: 13.5,
+                                            color: AppTheme.primaryColor),
                                       ),
-                                    ),
-                                    if (isWeighable) ...[
+                                      const SizedBox(width: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: Colors.teal.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: Colors.teal.withOpacity(0.3)),
-                                        ),
-                                        child: const Text('⚖️ ميزان', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.teal)),
-                                      ),
-                                      const SizedBox(width: 4),
-                                    ],
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Text(
-                                      '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13.5,
-                                          color: AppTheme.primaryColor),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: product.stock > 5
-                                            ? Colors.green.withOpacity(0.1)
-                                            : (product.stock > 0
-                                                ? Colors.orange.withOpacity(0.1)
-                                                : Colors.red.withOpacity(0.1)),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        isWeighable
-                                            ? '${product.stock} كغ'
-                                            : '${product.stock} ${context.tr('in_stock')}',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
                                           color: product.stock > 5
-                                              ? Colors.green[800]
+                                              ? Colors.green.withOpacity(0.1)
                                               : (product.stock > 0
-                                                  ? Colors.orange[800]
-                                                  : Colors.red[800]),
-                                        ),
-                                      ),
-                                    ),
-                                    if (product.category.isNotEmpty && product.category != 'عام') ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[100],
+                                                  ? Colors.orange.withOpacity(0.1)
+                                                  : Colors.red.withOpacity(0.1)),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: Text(product.category, style: const TextStyle(fontSize: 9.5, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                        child: Text(
+                                          isWeighable
+                                              ? '${product.stock} كغ'
+                                              : '${product.stock} ${context.tr('in_stock')}',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: product.stock > 5
+                                                ? Colors.green[800]
+                                                : (product.stock > 0
+                                                    ? Colors.orange[800]
+                                                    : Colors.red[800]),
+                                          ),
+                                        ),
                                       ),
+                                      if (product.category.isNotEmpty && product.category != 'عام') ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(product.category, style: const TextStyle(fontSize: 9.5, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ],
                                     ],
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Modern Options Dropdown Menu (Arrow / More Button)
-                          PopupMenuButton<String>(
-                            tooltip: 'خيارات وإدارة السلعة',
-                            icon: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey[300]!),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.more_horiz_rounded, size: 18, color: Color(0xFF1E293B)),
-                                  SizedBox(width: 2),
-                                  Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: Colors.grey),
+                                  ),
                                 ],
                               ),
                             ),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            onSelected: (action) async {
-                              if (action == 'restock') {
-                                _showQuickRestockModal(product);
-                              } else if (action == 'label') {
-                                _printSingleShelfLabel(context, product);
-                              } else if (action == 'pin') {
-                                _pinToQuickSale(context, product);
-                              } else if (action == 'edit') {
-                                final auth = await SecurityPinHelper.authenticate(
-                                  context,
-                                  title: 'تعديل السلعة والأسعار',
-                                );
-                                if (auth && context.mounted) {
-                                  context.push('/products/edit/${product.id}', extra: product);
+                            // Modern Options Dropdown Menu (Arrow / More Button)
+                            PopupMenuButton<String>(
+                              tooltip: 'خيارات وإدارة السلعة',
+                              icon: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Colors.grey[300]!),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.more_horiz_rounded, size: 18, color: Color(0xFF1E293B)),
+                                    SizedBox(width: 2),
+                                    Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              onSelected: (action) async {
+                                if (action == 'restock') {
+                                  _showQuickRestockModal(product);
+                                } else if (action == 'label') {
+                                  _printSingleShelfLabel(context, product);
+                                } else if (action == 'pin') {
+                                  _pinToQuickSale(context, product);
+                                } else if (action == 'edit') {
+                                  final auth = await SecurityPinHelper.authenticate(
+                                    context,
+                                    title: 'تعديل السلعة والأسعار',
+                                  );
+                                  if (auth && context.mounted) {
+                                    context.push('/products/edit/${product.id}', extra: product);
+                                  }
+                                } else if (action == 'delete') {
+                                  _confirmDelete(context, product);
                                 }
-                              } else if (action == 'delete') {
-                                _confirmDelete(context, product);
-                              }
-                            },
-                            itemBuilder: (ctx) => [
-                              const PopupMenuItem(
-                                value: 'restock',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
-                                    SizedBox(width: 10),
-                                    Text('استلام شحنة جديدة 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                  ],
+                              },
+                              itemBuilder: (ctx) => [
+                                const PopupMenuItem(
+                                  value: 'restock',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
+                                      SizedBox(width: 10),
+                                      Text('استلام شحنة جديدة 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
-                                    SizedBox(width: 10),
-                                    Text('تعديل السلعة والأسعار ✏️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                  ],
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
+                                      SizedBox(width: 10),
+                                      Text('تعديل السلعة والأسعار ✏️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'label',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
-                                    SizedBox(width: 10),
-                                    Text('طباعة ملصق السعر 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                  ],
+                                const PopupMenuItem(
+                                  value: 'label',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
+                                      SizedBox(width: 10),
+                                      Text('طباعة ملصق السعر 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'pin',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
-                                    SizedBox(width: 10),
-                                    Text('تثبيت في البيع السريع ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                  ],
+                                const PopupMenuItem(
+                                  value: 'pin',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
+                                      SizedBox(width: 10),
+                                      Text('تثبيت في البيع السريع ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const PopupMenuDivider(),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                                    SizedBox(width: 10),
-                                    Text('حذف من المخزون 🗑️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
-                                  ],
+                                const PopupMenuDivider(),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                      SizedBox(width: 10),
+                                      Text('حذف من المخزون 🗑️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -1013,6 +1311,109 @@ class _ProductListPageState extends State<ProductListPage> {
           ),
         ],
       ),
+      bottomNavigationBar: (_isMultiSelectMode && _selectedProductIds.isNotEmpty)
+          ? BlocBuilder<ProductBloc, ProductState>(
+              builder: (context, state) {
+                final selectedCount = _selectedProductIds.length;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'إجراءات مجمعة ($selectedCount سلع محددة):',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                            ),
+                            TextButton(
+                              onPressed: _clearSelection,
+                              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                              child: const Text('إلغاء التحديد ✖', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              // Batch Restock
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green[700],
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(Icons.add_shopping_cart, size: 16),
+                                label: const Text('استلام شحنة 📦', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                onPressed: () => _batchRestock(context, state.products),
+                              ),
+                              const SizedBox(width: 8),
+
+                              // Batch Move Category
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(Icons.drive_file_move_outlined, size: 16),
+                                label: const Text('نقل لقسم 📂', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                onPressed: () => _batchMoveCategory(context, state.products),
+                              ),
+                              const SizedBox(width: 8),
+
+                              // Batch Shelf Labels
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.amber[800],
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(Icons.label_outline, size: 16),
+                                label: const Text('طباعة ملصقات 🏷️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                onPressed: () => context.push('/products/shelf-labels'),
+                              ),
+                              const SizedBox(width: 8),
+
+                              // Batch Delete
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red[700],
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(Icons.delete_forever, size: 16),
+                                label: Text('حذف ($selectedCount) 🗑️', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                onPressed: () => _batchDelete(context),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            )
+          : null,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final auth = await SecurityPinHelper.authenticate(

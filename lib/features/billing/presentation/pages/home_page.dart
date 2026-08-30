@@ -77,6 +77,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
   bool _isScanningPaused = false;
   bool _isFlashOn = false;
   bool _isCameraOn = true;
+  double _cameraZoomScale = 0.0;
 
   // Continuous Multi-Scan Mode
   bool _isMultiScanMode = false;
@@ -1344,36 +1345,54 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               ),
             ),
 
-          // Zoom Quick Controls (1x, 2x, 3x) Floating on Right
+          // Single 2x Zoom Toggle Button
           if (_isCameraOn)
             Positioned(
-              right: 12,
-              top: MediaQuery.of(context).size.height * 0.16,
-              child: Column(
-                children: [
-                  for (final zoomVal in [0.0, 0.5, 0.9])
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: InkWell(
-                        onTap: () {
-                          _scannerController.setZoomScale(zoomVal);
-                          SoundService.playScanBeep();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Text(
-                            zoomVal == 0.0 ? '1x' : (zoomVal == 0.5 ? '2x' : '3x'),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-                          ),
+              right: 14,
+              top: MediaQuery.of(context).size.height * 0.17,
+              child: InkWell(
+                onTap: () {
+                  final isZoomed = _cameraZoomScale > 0.1;
+                  final newZoom = isZoomed ? 0.0 : 0.5; // 0.0 = 1x, 0.5 = 2x
+                  setState(() {
+                    _cameraZoomScale = newZoom;
+                  });
+                  _scannerController.setZoomScale(newZoom);
+                  SoundService.playTabSwitch();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: (_cameraZoomScale > 0.1)
+                        ? AppTheme.primaryColor.withOpacity(0.9)
+                        : Colors.black.withOpacity(0.65),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white24,
+                      width: 1.5,
+                    ),
+                    boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.zoom_in_rounded,
+                        size: 16,
+                        color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white70,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        (_cameraZoomScale > 0.1) ? '2x ⚡' : '1x',
+                        style: TextStyle(
+                          color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white70,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
-                    ),
-                ],
+                    ],
+                  ),
+                ),
               ),
             ),
 

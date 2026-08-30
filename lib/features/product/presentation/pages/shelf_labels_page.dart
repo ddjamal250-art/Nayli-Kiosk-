@@ -152,6 +152,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       }
 
       bytes.addAll([29, 86, 66, 0]); // Cut paper
+      SoundService.playPrintSound();
       await PrintBluetoothThermal.writeBytes(bytes);
 
       SoundService.playCheckoutSuccess();
