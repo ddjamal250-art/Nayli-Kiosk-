@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/printer_helper.dart';
+import '../../../../core/utils/snackbar_helper.dart';
+import '../../../../core/utils/sound_service.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 class DailyReportPage extends StatefulWidget {
@@ -532,6 +535,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   return Card(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
+                      onTap: () => _showInvoiceDetailsModal(inv),
                       leading: CircleAvatar(
                         backgroundColor: isCredit ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
                         child: Icon(isCredit ? Icons.credit_card : Icons.receipt, color: isCredit ? Colors.red : Colors.green, size: 20),
@@ -544,14 +548,197 @@ class _DailyReportPageState extends State<DailyReportPage> {
                         'الوقت: $timeStr • ${inv['itemCount'] ?? 1} سلع • فائدة: +${profit.toStringAsFixed(0)} دج',
                         style: const TextStyle(fontSize: 11),
                       ),
-                      trailing: Text(
-                        '${total.toStringAsFixed(0)} دج',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${total.toStringAsFixed(0)} دج',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                        ],
                       ),
                     ),
                   );
                 },
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showInvoiceDetailsModal(Map<String, dynamic> inv) {
+    final invoiceId = inv['id']?.toString() ?? '1';
+    final timestamp = inv['timestamp'] as String? ?? '';
+    final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final isCredit = inv['isCredit'] == true;
+    final customerName = inv['customerName']?.toString() ?? '';
+    final rawItems = inv['items'] as List? ?? [];
+
+    final dateFormatted = timestamp.isNotEmpty
+        ? DateFormat('yyyy/MM/dd - HH:mm').format(DateTime.tryParse(timestamp) ?? DateTime.now())
+        : '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(isCredit ? Icons.credit_card : Icons.receipt_long, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    Text('تفاصيل الفاتورة #$invoiceId', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('📅 التاريخ: $dateFormatted', style: const TextStyle(fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text('💳 طريقة الدفع: ${isCredit ? 'كريدي (دين)' : 'كاش (نقداً)'}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  if (customerName.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text('👤 الزبون: $customerName', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text('🛍️ السلع المشتراة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: rawItems.length,
+                separatorBuilder: (_, __) => const Divider(height: 8),
+                itemBuilder: (_, idx) {
+                  final it = rawItems[idx] as Map;
+                  final name = it['name']?.toString() ?? 'سلعة';
+                  final qty = it['quantity'] ?? 1;
+                  final price = (it['price'] as num?)?.toDouble() ?? 0.0;
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text('$name × $qty', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                      Text('${(price * qty).toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('المجموع الإجمالي:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text('${total.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primaryColor)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.share, size: 18, color: Colors.green),
+                    label: const Text('مشاركة واتساب', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
+                    onPressed: () {
+                      final buffer = StringBuffer();
+                      buffer.writeln('🧾 *فاتورة مشتريات #$invoiceId*');
+                      buffer.writeln('📅 التاريخ: $dateFormatted');
+                      if (customerName.isNotEmpty) buffer.writeln('👤 الزبون: $customerName');
+                      buffer.writeln('---------------------------');
+                      for (var it in rawItems) {
+                        final itMap = it as Map;
+                        final pPrice = (itMap['price'] as num?)?.toDouble() ?? 0.0;
+                        final pQty = (itMap['quantity'] as num?)?.toInt() ?? 1;
+                        buffer.writeln('• ${itMap['name']} × $pQty = ${(pPrice * pQty).toStringAsFixed(0)} دج');
+                      }
+                      buffer.writeln('---------------------------');
+                      buffer.writeln('💰 *المجموع:* ${total.toStringAsFixed(0)} دج');
+                      buffer.writeln('✨ شكراً لتعاملكم معنا!');
+
+                      Clipboard.setData(ClipboardData(text: buffer.toString()));
+                      Navigator.pop(ctx);
+                      context.showAppSnackBar('📋 تم نسخ نص الفاتورة لمشاركتها عبر واتساب!', backgroundColor: Colors.teal[800]!);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.print, size: 18),
+                    label: const Text('إعادة طباعة الوصل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      final printer = PrinterHelper();
+                      final printItems = rawItems.map((it) {
+                        final itMap = it as Map;
+                        final price = (itMap['price'] as num?)?.toDouble() ?? 0.0;
+                        final qty = (itMap['quantity'] as num?)?.toInt() ?? 1;
+                        return {
+                          'name': itMap['name']?.toString() ?? 'سلعة',
+                          'qty': qty,
+                          'price': price,
+                          'total': price * qty,
+                        };
+                      }).toList();
+
+                      await printer.printReceipt(
+                        shopName: 'RECU DE VENTE (DUPLICATA)',
+                        address1: 'Facture #$invoiceId',
+                        address2: dateFormatted,
+                        phone: '',
+                        items: printItems,
+                        total: total,
+                        footer: '--- MERCI POUR VOTRE VISITE ---',
+                      );
+                      if (context.mounted) {
+                        context.showAppSnackBar('✅ تم إرسال أمر إعادة طباعة الوصل!', backgroundColor: Colors.green[800]!);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
