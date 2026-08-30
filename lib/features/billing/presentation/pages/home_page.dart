@@ -1333,6 +1333,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             },
           ),
 
+          // Quick Items Header & Micro-hint
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.bolt, size: 14, color: Colors.amber),
+                    SizedBox(width: 4),
+                    Text('شريط البيع السريع', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  ],
+                ),
+                Text('💡 اضغط واسحب للترتيب', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+
           // Quick Items Horizontal Ribbon with Fluid Drag-and-Drop Reordering
           SizedBox(
             height: 52,

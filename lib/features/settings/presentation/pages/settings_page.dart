@@ -852,34 +852,51 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0xFFE8F5E9), child: Icon(Icons.download, color: Colors.green)),
-              title: const Text('تصدير المخزون كملف Excel (CSV)'),
-              subtitle: const Text('حفظ قائمة السلع والأسعار والكميات في ملف إكسل'),
-              onTap: () async {
+              leading: const CircleAvatar(backgroundColor: Color(0xFFE8F5E9), child: Icon(Icons.table_chart, color: Colors.green)),
+              title: const Text('تصدير المخزون العام كملف Excel (CSV)'),
+              subtitle: const Text('حفظ قائمة السلع والأسعار والكميات وقيمة رأس المال'),
+              onTap: () {
                 Navigator.pop(ctx);
-                final res = await ExcelExportHelper.exportProductsToCSV();
-                if (context.mounted) {
-                  context.showAppSnackBar(
-                    res != null ? '✅ تم حفظ ملف Excel في: $res' : 'تم إلغاء التصدير',
-                    backgroundColor: res != null ? Colors.green[800]! : Colors.grey[800]!,
-                  );
-                }
+                final csv = ExcelExportHelper.exportProductsToCsv();
+                Clipboard.setData(ClipboardData(text: csv));
+                SoundService.playCheckoutSuccess();
+                context.showAppSnackBar(
+                  '📊 تم نسخ بيانات شيت المخزون ورأس المال بتنسيق Excel بنجاح!',
+                  backgroundColor: Colors.green[800]!,
+                );
               },
             ),
-            const Divider(),
+            const Divider(height: 8),
+            ListTile(
+              leading: const CircleAvatar(backgroundColor: Color(0xFFFFF3E0), child: Icon(Icons.people_alt_outlined, color: Colors.orange)),
+              title: const Text('تصدير دفتر ديون الزبائن كملف Excel (CSV)'),
+              subtitle: const Text('كشف حساب بالزبائن، أرقام الهواتف، والديون المعلقة'),
+              onTap: () {
+                Navigator.pop(ctx);
+                final customers = context.read<CustomerCubit>().state.customers;
+                final csv = ExcelExportHelper.exportDebtsToCsv(customers);
+                Clipboard.setData(ClipboardData(text: csv));
+                SoundService.playCheckoutSuccess();
+                context.showAppSnackBar(
+                  '📊 تم نسخ دفتر ديون الزبائن بتنسيق Excel بنجاح!',
+                  backgroundColor: Colors.orange[800]!,
+                );
+              },
+            ),
+            const Divider(height: 8),
             ListTile(
               leading: const CircleAvatar(backgroundColor: Color(0xFFE3F2FD), child: Icon(Icons.cloud_upload, color: Colors.blue)),
-              title: const Text('إنشاء نسخة احتياطية كاملة (Backup)'),
+              title: const Text('إنشاء نسخة احتياطية كاملة (Backup JSON)'),
               subtitle: const Text('حفظ قاعدة بيانات المحل بالكامل في ملف آمن'),
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(ctx);
-                final res = await BackupHelper.exportFullBackup();
-                if (context.mounted) {
-                  context.showAppSnackBar(
-                    res != null ? '✅ تم إنشاء النسخة الاحتياطية بنجاح!' : 'تم الإلغاء',
-                    backgroundColor: res != null ? Colors.blue[800]! : Colors.grey[800]!,
-                  );
-                }
+                final json = BackupHelper.exportDatabaseToJson();
+                Clipboard.setData(ClipboardData(text: json));
+                SoundService.playCheckoutSuccess();
+                context.showAppSnackBar(
+                  '💾 تم إنشاء ونسخ النسخة الاحتياطية الكاملة للمحل بنجاح!',
+                  backgroundColor: Colors.blue[800]!,
+                );
               },
             ),
             const SizedBox(height: 10),

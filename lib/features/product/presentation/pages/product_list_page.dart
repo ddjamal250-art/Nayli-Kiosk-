@@ -558,17 +558,7 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   Future<void> _printSingleShelfLabel(BuildContext context, Product product) async {
-    final isConnected = await PrintBluetoothThermal.connectionStatus;
-    if (!isConnected) {
-      if (context.mounted) {
-        context.showAppSnackBar(
-          '⚠️ الطابعة الحرارية غير متصلة! يرجى تشغيل البلوتوث وتوصيلها في الإعدادات.',
-          backgroundColor: Colors.orange[800]!,
-        );
-      }
-      return;
-    }
-
+    int copies = 1;
     String shopName = AppConstants.defaultShopName;
     final shopBox = HiveDatabase.shopBox;
     if (shopBox.isNotEmpty) {
@@ -576,39 +566,133 @@ class _ProductListPageState extends State<ProductListPage> {
       if (shop != null && shop.name.isNotEmpty) shopName = shop.name;
     }
 
-    final dateStr = DateFormat('yyyy/MM/dd').format(DateTime.now());
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Row(
+            children: [
+              Icon(Icons.label_important_rounded, color: Colors.amber),
+              SizedBox(width: 8),
+              Text('طباعة ملصق الرف 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Live Tag Preview Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.black87, width: 1.5),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
+                ),
+                child: Column(
+                  children: [
+                    Text('🏪 $shopName', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 2),
+                    Text(product.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
+                    ),
+                    if (product.barcode.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text('||||| ${product.barcode} |||||', style: const TextStyle(fontSize: 9, fontFamily: 'monospace', letterSpacing: 1.2)),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
 
-    try {
-      final List<int> bytes = [];
-      bytes.addAll([27, 64]); // Initialize
-      bytes.addAll([27, 97, 1]); // Center align
-      bytes.addAll('$shopName\n'.codeUnits);
-      bytes.addAll([27, 33, 16]); // Double height
-      bytes.addAll('${product.name}\n'.codeUnits);
-      bytes.addAll([27, 33, 48]); // Huge Price
-      bytes.addAll('${product.price.toStringAsFixed(0)} DZD\n'.codeUnits);
-      if (product.barcode.isNotEmpty) {
-        bytes.addAll([27, 33, 0]);
-        bytes.addAll('||||| ${product.barcode} |||||\n'.codeUnits);
-      }
-      bytes.addAll([27, 33, 0]);
-      bytes.addAll('Date: $dateStr\n'.codeUnits);
-      bytes.addAll('--------------------------------\n\n'.codeUnits);
-      bytes.addAll([29, 86, 66, 0]); // Cut paper
+              // Quantity Selector Row
+              const Text('عدد النسخ المراد طباعتها:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (final count in [1, 2, 3, 5]) ...[
+                    ChoiceChip(
+                      label: Text('$count', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      selected: copies == count,
+                      selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+                      onSelected: (v) {
+                        if (v) setDialogState(() => copies = count);
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.print, size: 18),
+              label: Text('طباعة ($copies)', style: const TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final isConnected = await PrintBluetoothThermal.connectionStatus;
+                if (!isConnected) {
+                  if (context.mounted) {
+                    context.showAppSnackBar(
+                      '⚠️ الطابعة الحرارية غير متصلة! يرجى تشغيل البلوتوث وتوصيلها في الإعدادات.',
+                      backgroundColor: Colors.orange[800]!,
+                    );
+                  }
+                  return;
+                }
 
-      await PrintBluetoothThermal.writeBytes(bytes);
-      SoundService.playCheckoutSuccess();
-      if (context.mounted) {
-        context.showAppSnackBar(
-          '✅ تم إرسال ملصق الرف لـ (${product.name}) إلى الطابعة بنجاح!',
-          backgroundColor: Colors.green[800]!,
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        context.showAppSnackBar('حدث خطأ أثناء الطباعة: $e', backgroundColor: Colors.red[800]!);
-      }
-    }
+                final dateStr = DateFormat('yyyy/MM/dd').format(DateTime.now());
+                try {
+                  final List<int> bytes = [];
+                  for (int i = 0; i < copies; i++) {
+                    bytes.addAll([27, 64]); // Initialize
+                    bytes.addAll([27, 97, 1]); // Center
+                    bytes.addAll('$shopName\n'.codeUnits);
+                    bytes.addAll([27, 33, 16]); // Double height
+                    bytes.addAll('${product.name}\n'.codeUnits);
+                    bytes.addAll([27, 33, 48]); // Huge Price
+                    bytes.addAll('${product.price.toStringAsFixed(0)} DZD\n'.codeUnits);
+                    if (product.barcode.isNotEmpty) {
+                      bytes.addAll([27, 33, 0]);
+                      bytes.addAll('||||| ${product.barcode} |||||\n'.codeUnits);
+                    }
+                    bytes.addAll([27, 33, 0]);
+                    bytes.addAll('Date: $dateStr\n'.codeUnits);
+                    bytes.addAll('--------------------------------\n\n'.codeUnits);
+                  }
+                  bytes.addAll([29, 86, 66, 0]); // Cut paper
+                  await PrintBluetoothThermal.writeBytes(bytes);
+                  SoundService.playCheckoutSuccess();
+                  if (context.mounted) {
+                    context.showAppSnackBar(
+                      '✅ تم إرسال $copies ملصق رف لـ (${product.name}) إلى الطابعة بنجاح!',
+                      backgroundColor: Colors.green[800]!,
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    context.showAppSnackBar('حدث خطأ أثناء الطباعة: $e', backgroundColor: Colors.red[800]!);
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

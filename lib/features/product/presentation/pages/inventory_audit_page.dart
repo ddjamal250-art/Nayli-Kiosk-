@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/excel_export_helper.dart';
@@ -38,10 +39,25 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
 
   void _initAuditData() {
     final products = context.read<ProductBloc>().state.products;
-    for (final p in products) {
-      // By default initialized to theoretical stock
-      _countedStock[p.id] = p.stock;
+    final savedDraft = HiveDatabase.settingsBox.get('draft_audit_session');
+    
+    if (savedDraft is Map) {
+      for (final p in products) {
+        if (savedDraft.containsKey(p.id)) {
+          _countedStock[p.id] = (savedDraft[p.id] as num?)?.toInt() ?? p.stock;
+        } else {
+          _countedStock[p.id] = p.stock;
+        }
+      }
+    } else {
+      for (final p in products) {
+        _countedStock[p.id] = p.stock;
+      }
     }
+  }
+
+  void _saveDraftSession() {
+    HiveDatabase.settingsBox.put('draft_audit_session', _countedStock);
   }
 
   void _incrementCount(String productId, int amount) {
@@ -49,6 +65,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
       _countedStock[productId] = (_countedStock[productId] ?? 0) + amount;
       if (_countedStock[productId]! < 0) _countedStock[productId] = 0;
     });
+    _saveDraftSession();
     SoundService.playScanBeep();
   }
 
@@ -56,6 +73,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
     setState(() {
       _countedStock[productId] = value.clamp(0, 999999);
     });
+    _saveDraftSession();
   }
 
   Future<void> _scanBarcodeForAudit() async {
@@ -212,6 +230,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                   context.read<ProductBloc>().add(UpdateProduct(updated));
                 }
               }
+              HiveDatabase.settingsBox.delete('draft_audit_session');
               Navigator.pop(ctx);
               SoundService.playCheckoutSuccess();
               context.showAppSnackBar(
@@ -391,6 +410,23 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                       icon: const Icon(Icons.camera_alt_outlined, size: 18),
                       label: const Text('مسح جرد', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                       onPressed: _scanBarcodeForAudit,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Micro-hint for merchant
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, size: 13, color: Colors.teal),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '💡 امسح الباركود بالكاميرا لزيادة العدد فوراً، أو انقر على رقم أي سلعة لتعديله.',
+                        style: TextStyle(fontSize: 10.5, color: Colors.teal[800], fontWeight: FontWeight.w500),
+                      ),
                     ),
                   ],
                 ),
