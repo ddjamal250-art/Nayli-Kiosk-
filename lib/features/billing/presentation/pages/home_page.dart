@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -25,27 +26,35 @@ class QuickItem {
   final String id;
   final String name;
   final double price;
+  final double costPrice;
   final String icon;
+  final String? linkedProductId;
 
   QuickItem({
     required this.id,
     required this.name,
     required this.price,
+    this.costPrice = 0.0,
     required this.icon,
+    this.linkedProductId,
   });
 
   Map<String, dynamic> toMap() => {
         'id': id,
         'name': name,
         'price': price,
+        'costPrice': costPrice,
         'icon': icon,
+        'linkedProductId': linkedProductId,
       };
 
   factory QuickItem.fromMap(Map<dynamic, dynamic> map) => QuickItem(
         id: map['id'] ?? '',
         name: map['name'] ?? '',
         price: (map['price'] as num?)?.toDouble() ?? 0.0,
+        costPrice: (map['costPrice'] as num?)?.toDouble() ?? 0.0,
         icon: map['icon'] ?? '🛍️',
+        linkedProductId: map['linkedProductId'] as String?,
       );
 }
 
@@ -71,14 +80,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   List<QuickItem> _quickItems = [];
   final DraggableScrollableController _sheetController = DraggableScrollableController();
-  double _currentSheetSize = 0.48;
+  double _currentSheetSize = 0.22;
 
   static final List<QuickItem> _defaultQuickItems = [
-    QuickItem(id: 'bread', name: 'خبز باكيط', price: 10.0, icon: '🥖'),
-    QuickItem(id: 'egg_single', name: 'حبة بيض', price: 20.0, icon: '🥚'),
-    QuickItem(id: 'milk_bag', name: 'حليب شكارة', price: 25.0, icon: '🥛'),
-    QuickItem(id: 'water_500', name: 'ماء 0.5L', price: 25.0, icon: '💧'),
-    QuickItem(id: 'bag_5', name: 'كيس بلاستيكي', price: 5.0, icon: '🛍️'),
+    QuickItem(id: 'bread', name: 'خبز باكيط', price: 10.0, costPrice: 8.5, icon: '🥖'),
+    QuickItem(id: 'egg_single', name: 'حبة بيض', price: 20.0, costPrice: 17.0, icon: '🥚'),
+    QuickItem(id: 'milk_bag', name: 'حليب شكارة', price: 25.0, costPrice: 23.5, icon: '🥛'),
+    QuickItem(id: 'water_500', name: 'ماء 0.5L', price: 25.0, costPrice: 18.0, icon: '💧'),
+    QuickItem(id: 'bag_5', name: 'كيس بلاستيكي', price: 5.0, costPrice: 2.5, icon: '🛍️'),
   ];
 
   @override
@@ -156,12 +165,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   void _addQuickItem(QuickItem item) {
+    if (item.linkedProductId != null && item.linkedProductId!.isNotEmpty) {
+      final productState = context.read<ProductBloc>().state;
+      final matched = productState.products
+          .where((p) => p.id == item.linkedProductId)
+          .firstOrNull;
+      if (matched != null) {
+        context.read<BillingBloc>().add(AddProductToCartEvent(matched));
+        SoundService.playScanBeep();
+        if (_currentSheetSize < 0.35) {
+          _sheetController.animateTo(
+            0.52,
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeOutCubic,
+          );
+        }
+        context.showAppSnackBar(
+          '✅ تمت إضافة ${matched.name} (${matched.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
+          icon: Icons.add_shopping_cart,
+        );
+        return;
+      }
+    }
+
+    final double effectiveCost = item.costPrice > 0 ? item.costPrice : (item.price * 0.8);
     context.read<BillingBloc>().add(AddCustomItemEvent(
           name: item.name,
           price: item.price,
+          costPrice: effectiveCost,
           quantity: 1,
         ));
     SoundService.playScanBeep();
+    if (_currentSheetSize < 0.35) {
+      _sheetController.animateTo(
+        0.52,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    }
     context.showAppSnackBar(
       '✅ تمت إضافة ${item.name} (${item.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
       icon: Icons.add_shopping_cart,
@@ -211,6 +252,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           setState(() => _lastScannedToast = null);
         }
       });
+    } else if (_currentSheetSize < 0.35) {
+      _sheetController.animateTo(
+        0.52,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
     }
 
     context.read<BillingBloc>().add(ScanBarcodeEvent(code));
@@ -547,74 +594,235 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   void _showAddQuickItemDialog() {
+    int selectedTab = 0; // 0 = From Stock, 1 = Custom
     final nameController = TextEditingController();
     final priceController = TextEditingController();
+    final costPriceController = TextEditingController();
     final iconController = TextEditingController(text: '🏷️');
+    final searchStockController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('➕ إضافة سلعة سريعة جديدة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: nameController,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'اسم السلعة', hintText: 'e.g. بيض، ياوورت، تبغ...'),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: priceController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: 'السعر', suffixText: AppConstants.currencySymbol),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: iconController,
-              decoration: const InputDecoration(labelText: 'الأيقونة / الرمز التعبيري', hintText: 'e.g. 🥚, 🥤, 🚬'),
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: 'حفظ وإضافة للشريط',
-              onPressed: () async {
-                final name = nameController.text.trim();
-                final price = double.tryParse(priceController.text.trim()) ?? 0.0;
-                final icon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : '🏷️';
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDlgState) {
+          final products = context.read<ProductBloc>().state.products;
+          final query = searchStockController.text.trim().toLowerCase();
+          final filteredStock = products.where((p) {
+            if (query.isEmpty) return true;
+            return p.name.toLowerCase().contains(query) || p.barcode.contains(query);
+          }).take(30).toList();
 
-                if (name.isNotEmpty && price > 0) {
-                  final newItem = QuickItem(
-                    id: 'quick_${DateTime.now().millisecondsSinceEpoch}',
-                    name: name,
-                    price: price,
-                    icon: icon,
-                  );
-                  await _saveQuickItem(newItem);
-                  if (mounted) Navigator.pop(ctx);
-                }
-              },
+          double parsedPrice = double.tryParse(priceController.text.trim()) ?? 0.0;
+          double parsedCost = double.tryParse(costPriceController.text.trim()) ?? 0.0;
+          double profit = parsedPrice - parsedCost;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
             ),
-          ],
-        ),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.72,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.bolt, color: Colors.amber),
+                          SizedBox(width: 6),
+                          Text('إضافة سلعة لشريط البيع السريع ⚡', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Mode Segmented Buttons (From Stock vs Custom)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Center(child: Text('📦 تثبيت من المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          selected: selectedTab == 0,
+                          selectedColor: AppTheme.primaryColor.withOpacity(0.18),
+                          onSelected: (v) => setDlgState(() => selectedTab = 0),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Center(child: Text('✏️ سلعة مخصصة جديدة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          selected: selectedTab == 1,
+                          selectedColor: AppTheme.primaryColor.withOpacity(0.18),
+                          onSelected: (v) => setDlgState(() => selectedTab = 1),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (selectedTab == 0) ...[
+                    // Tab 1: Pick from Stock
+                    TextField(
+                      controller: searchStockController,
+                      decoration: InputDecoration(
+                        hintText: 'ابحث عن سلعة في المخزون...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      onChanged: (_) => setDlgState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: filteredStock.isEmpty
+                          ? Center(
+                              child: Text('لا توجد سلع في المخزون تطابق البحث', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                            )
+                          : ListView.separated(
+                              itemCount: filteredStock.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              itemBuilder: (_, idx) {
+                                final p = filteredStock[idx];
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                                    child: const Text('🛍️', style: TextStyle(fontSize: 16)),
+                                  ),
+                                  title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  subtitle: Text(
+                                    'السعر: ${p.price.toStringAsFixed(0)} دج • المخزون: ${p.stock} قطعة',
+                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  ),
+                                  trailing: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.primaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    onPressed: () async {
+                                      final newItem = QuickItem(
+                                        id: 'quick_${p.id}',
+                                        name: p.name,
+                                        price: p.price,
+                                        costPrice: p.costPrice,
+                                        icon: '🛍️',
+                                        linkedProductId: p.id,
+                                      );
+                                      await _saveQuickItem(newItem);
+                                      if (mounted) Navigator.pop(ctx);
+                                      context.showAppSnackBar('⚡ تم تثبيت (${p.name}) في شريط البيع السريع بنجاح!', backgroundColor: Colors.teal[800]!);
+                                    },
+                                    child: const Text('تثبيت ⚡', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ] else ...[
+                    // Tab 2: Custom Quick Item
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: nameController,
+                              decoration: const InputDecoration(labelText: 'اسم السلعة', hintText: 'مثال: خبز تقليدي، كيس، سجائر...'),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: priceController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: InputDecoration(labelText: 'سعر البيع (دج)', suffixText: AppConstants.currencySymbol),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: costPriceController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: InputDecoration(labelText: 'سعر الشراء / التكلفة 🔒', suffixText: AppConstants.currencySymbol),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: iconController,
+                              decoration: const InputDecoration(labelText: 'الأيقونة / الرمز التعبيري', hintText: 'e.g. 🥖, 🥚, 🥛, 🛍️'),
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Confidential Notice Banner
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.06),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.shield_outlined, size: 16, color: Colors.blue),
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'سعر التكلفة سري ومحمي ويستخدم لحساب أرباح المحل في التقارير الإدارية فقط.',
+                                      style: TextStyle(fontSize: 11, color: Color(0xFF1E3A8A)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            PrimaryButton(
+                              label: 'حفظ وإضافة لشريط البيع السريع',
+                              onPressed: () async {
+                                final name = nameController.text.trim();
+                                final price = double.tryParse(priceController.text.trim()) ?? 0.0;
+                                final costPrice = double.tryParse(costPriceController.text.trim()) ?? (price * 0.8);
+                                final icon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : '🏷️';
+
+                                if (name.isNotEmpty && price > 0) {
+                                  final newItem = QuickItem(
+                                    id: 'quick_${DateTime.now().millisecondsSinceEpoch}',
+                                    name: name,
+                                    price: price,
+                                    costPrice: costPrice,
+                                    icon: icon,
+                                  );
+                                  await _saveQuickItem(newItem);
+                                  if (mounted) Navigator.pop(ctx);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -622,6 +830,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void _showEditQuickItemDialog(QuickItem item) {
     final nameController = TextEditingController(text: item.name);
     final priceController = TextEditingController(text: item.price.toStringAsFixed(0));
+    final costPriceController = TextEditingController(text: item.costPrice > 0 ? item.costPrice.toStringAsFixed(0) : '');
     final iconController = TextEditingController(text: item.icon);
 
     showModalBottomSheet(
@@ -631,85 +840,112 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDlgState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('✏️ تعديل السلعة السريعة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'اسم السلعة'),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: priceController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: 'السعر', suffixText: AppConstants.currencySymbol),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: iconController,
-              decoration: const InputDecoration(labelText: 'الأيقونة / الرمز التعبيري'),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('حذف'),
-                    onPressed: () async {
-                      await _deleteQuickItem(item.id);
-                      if (mounted) Navigator.pop(ctx);
-                    },
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('✏️ تعديل السلعة السريعة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'اسم السلعة'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: priceController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(labelText: 'سعر البيع', suffixText: AppConstants.currencySymbol),
+                      ),
                     ),
-                    icon: const Icon(Icons.save, color: Colors.white),
-                    label: const Text('حفظ التعديل', style: TextStyle(color: Colors.white)),
-                    onPressed: () async {
-                      final name = nameController.text.trim();
-                      final price = double.tryParse(priceController.text.trim()) ?? item.price;
-                      final icon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : item.icon;
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: costPriceController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(labelText: 'سعر التكلفة 🔒', suffixText: AppConstants.currencySymbol),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: iconController,
+                  decoration: const InputDecoration(labelText: 'الأيقونة / الرمز التعبيري'),
+                ),
+                const SizedBox(height: 18),
 
-                      if (name.isNotEmpty && price > 0) {
-                        final updated = QuickItem(id: item.id, name: name, price: price, icon: icon);
-                        await _saveQuickItem(updated);
-                        if (mounted) Navigator.pop(ctx);
-                      }
-                    },
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('حذف'),
+                        onPressed: () async {
+                          await _deleteQuickItem(item.id);
+                          if (mounted) Navigator.pop(ctx);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        icon: const Icon(Icons.save, color: Colors.white),
+                        label: const Text('حفظ التعديل', style: TextStyle(color: Colors.white)),
+                        onPressed: () async {
+                          final name = nameController.text.trim();
+                          final price = double.tryParse(priceController.text.trim()) ?? item.price;
+                          final costPrice = double.tryParse(costPriceController.text.trim()) ?? item.costPrice;
+                          final icon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : item.icon;
+
+                          if (name.isNotEmpty && price > 0) {
+                            final updated = QuickItem(
+                              id: item.id,
+                              name: name,
+                              price: price,
+                              costPrice: costPrice,
+                              icon: icon,
+                              linkedProductId: item.linkedProductId,
+                            );
+                            await _saveQuickItem(updated);
+                            if (mounted) Navigator.pop(ctx);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -768,73 +1004,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               // 2. DRAGGABLE SCROLLABLE CART SHEET
               DraggableScrollableSheet(
                 controller: _sheetController,
-                initialChildSize: 0.48,
-                minChildSize: 0.12,
-                maxChildSize: 0.92,
+                initialChildSize: 0.22,
+                minChildSize: 0.20,
+                maxChildSize: 0.90,
                 snap: true,
-                snapSizes: const [0.12, 0.48, 0.92],
+                snapSizes: const [0.22, 0.52, 0.90],
                 builder: (context, scrollController) {
                   return _buildBottomPanel(scrollController);
                 },
               ),
-
-              // 3. FLOATING CART BADGE WHEN COLLAPSED TO BOTTOM (< 0.25)
-              if (_currentSheetSize < 0.25)
-                Positioned(
-                  bottom: 16,
-                  left: 16,
-                  right: 16,
-                  child: BlocBuilder<BillingBloc, BillingState>(
-                    builder: (context, state) {
-                      return InkWell(
-                        onTap: () {
-                          _sheetController.animateTo(
-                            0.48,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOutCubic,
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppTheme.primaryColor, Color(0xFF1E40AF)],
-                            ),
-                            borderRadius: BorderRadius.circular(22),
-                            boxShadow: const [
-                              BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4)),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 22),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'سلة المشتريات (${state.cartItems.length} سلع)',
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    '${state.totalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Icon(Icons.keyboard_arrow_up_rounded, color: Colors.white70, size: 22),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
             ],
           ),
         ),
@@ -862,37 +1040,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Multi-Scan Pill Toggle
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      _isMultiScanMode = !_isMultiScanMode;
-                      _multiScanCount = 0;
-                    });
-                    SoundService.playScanBeep();
-                  },
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _isMultiScanMode ? Colors.green[700] : Colors.black54,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white70),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(_isMultiScanMode ? Icons.bolt : Icons.qr_code, color: Colors.white, size: 18),
-                        const SizedBox(width: 6),
-                        Text(
-                          _isMultiScanMode ? 'مسح متعدد ⚡' : 'مسح عادي',
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // Multi-Scan Stacked Barcode Toggle Button
+                _buildMultiScanButton(),
 
                 // Full-Screen Settings & Management Hamburger Button
                 InkWell(
@@ -978,19 +1127,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               ),
             ),
 
-          // Central Scan Target Frame (Positioned comfortably in the top half)
+          // Central Scan Target Frame (Positioned comfortably in the camera area)
           if (_isCameraOn)
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.16,
+              top: MediaQuery.of(context).size.height * 0.20,
               left: 0,
               right: 0,
               child: Center(
                 child: Container(
-                  width: 230,
-                  height: 150,
+                  width: 250,
+                  height: 160,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white70, width: 2),
-                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white.withOpacity(0.85), width: 2.2),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 10),
+                    ],
+                  ),
+                  child: Center(
+                    child: Container(
+                      height: 1.5,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      color: Colors.redAccent.withOpacity(0.7),
+                    ),
                   ),
                 ),
               ),
@@ -1043,8 +1202,105 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               setState(() => _isCameraOn = true);
               _scannerController.start();
             },
-          )
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMultiScanButton() {
+    return Tooltip(
+      message: _isMultiScanMode ? 'المسح المتعدد مفعّل (انقر للتبديل للعادي)' : 'المسح العادي (انقر لتفعيل المسح المتعدد ⚡)',
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _isMultiScanMode = !_isMultiScanMode;
+            _multiScanCount = 0;
+          });
+          SoundService.playScanBeep();
+          HapticFeedback.mediumImpact();
+          context.showAppSnackBar(
+            _isMultiScanMode ? '⚡ تم تفعيل وضع المسح المتعدد السريع' : '📱 تم التبديل إلى وضع المسح الفردي العادي',
+            durationMs: 1500,
+          );
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _isMultiScanMode ? const Color(0xFF15803D) : Colors.black54,
+            border: Border.all(
+              color: _isMultiScanMode ? Colors.greenAccent : Colors.white70,
+              width: _isMultiScanMode ? 1.8 : 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _isMultiScanMode ? Colors.greenAccent.withOpacity(0.35) : Colors.black26,
+                blurRadius: _isMultiScanMode ? 8 : 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (_isMultiScanMode) ...[
+                // Back Barcode layer 3 (Offset top-left, subtle opacity)
+                Transform.translate(
+                  offset: const Offset(-4.5, -4),
+                  child: const Icon(
+                    Icons.qr_code_2_rounded,
+                    color: Colors.white30,
+                    size: 19,
+                  ),
+                ),
+                // Middle Barcode layer 2 (Offset top-left, medium opacity)
+                Transform.translate(
+                  offset: const Offset(-2.2, -2),
+                  child: const Icon(
+                    Icons.qr_code_2_rounded,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
+                ),
+                // Front Barcode layer 1 (Prominent, sharp, full opacity)
+                const Icon(
+                  Icons.qr_code_2_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                // Tiny Active Lightning Accent Badge
+                Positioned(
+                  bottom: 3,
+                  right: 3,
+                  child: Container(
+                    padding: const EdgeInsets.all(1.5),
+                    decoration: const BoxDecoration(
+                      color: Colors.amber,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.bolt,
+                      size: 9,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                // Single Clean Barcode Icon for Normal Single-Scan Mode
+                const Icon(
+                  Icons.qr_code_2_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1079,141 +1335,163 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         controller: scrollController,
         padding: EdgeInsets.zero,
         children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
-
-          // Header with Total and Cart Actions
-          BlocBuilder<BillingBloc, BillingState>(
-            builder: (context, state) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(context.tr('cart'),
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            Text('${state.cartItems.length} ${context.tr('items_count')}',
-                                style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                          ],
-                        ),
-                        const SizedBox(width: 10),
-                        // Clear Cart Button
-                        if (state.cartItems.isNotEmpty) ...[
-                          InkWell(
-                            onTap: _showClearCartConfirmationDialog,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.red.withOpacity(0.3)),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.delete_outline, size: 12, color: Colors.red),
-                                  SizedBox(width: 2),
-                                  Text(
-                                    'إفراغ',
-                                    style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        // Park Cart Button
-                        if (state.cartItems.isNotEmpty) ...[
-                          InkWell(
-                            onTap: _showParkCartDialog,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.pause_circle_outline, size: 12, color: Colors.orange),
-                                  SizedBox(width: 2),
-                                  Text(
-                                    'تعليق',
-                                    style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        // Held Carts Button
-                        if (state.heldCarts.isNotEmpty) ...[
-                          InkWell(
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (_) => const HeldCartsModal(),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.indigo.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.indigo.withOpacity(0.4)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.inventory_2_outlined, size: 12, color: Colors.indigo),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'المعلقة (${state.heldCarts.length})',
-                                    style: const TextStyle(fontSize: 10, color: Colors.indigo, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${state.totalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                        if (state.calculatedDiscount > 0)
-                          Text(
-                            'تخفيض: -${state.calculatedDiscount.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                            style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
+          // Drag handle & Clickable Header to Expand/Collapse
+          InkWell(
+            onTap: () {
+              if (_currentSheetSize < 0.35) {
+                _sheetController.animateTo(
+                  0.52,
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                );
+              } else {
+                _sheetController.animateTo(
+                  0.22,
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                );
+              }
             },
+            child: Column(
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 8, bottom: 6),
+                    decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(3)),
+                  ),
+                ),
+                BlocBuilder<BillingBloc, BillingState>(
+                  builder: (context, state) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        context.tr('cart'),
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        _currentSheetSize > 0.35 ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded,
+                                        size: 20,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '${state.cartItems.length} ${context.tr('items_count')}',
+                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 10),
+                              if (state.cartItems.isNotEmpty) ...[
+                                InkWell(
+                                  onTap: _showClearCartConfirmationDialog,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.delete_outline, size: 12, color: Colors.red),
+                                        SizedBox(width: 2),
+                                        Text('إفراغ', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                InkWell(
+                                  onTap: _showParkCartDialog,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.pause_circle_outline, size: 12, color: Colors.orange),
+                                        SizedBox(width: 2),
+                                        Text('تعليق', style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                              ],
+                              if (state.heldCarts.isNotEmpty) ...[
+                                InkWell(
+                                  onTap: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (_) => const HeldCartsModal(),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.indigo.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: Colors.indigo.withOpacity(0.4)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.inventory_2_outlined, size: 12, color: Colors.indigo),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'المعلقة (${state.heldCarts.length})',
+                                          style: const TextStyle(fontSize: 10, color: Colors.indigo, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${state.totalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                              if (state.calculatedDiscount > 0)
+                                Text(
+                                  'تخفيض: -${state.calculatedDiscount.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                                  style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
           const Divider(height: 12),
 
@@ -1361,7 +1639,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
           // Quick Items Horizontal Ribbon with Fluid Drag-and-Drop Reordering
           SizedBox(
-            height: 52,
+            height: 56,
             child: Row(
               children: [
                 Expanded(
@@ -1387,8 +1665,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         child: InkWell(
                           onTap: () => _addQuickItem(item),
                           onLongPress: () => _showEditQuickItemDialog(item),
+                          borderRadius: BorderRadius.circular(12),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            constraints: const BoxConstraints(minWidth: 85),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
@@ -1398,6 +1678,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               ],
                             ),
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(item.icon, style: const TextStyle(fontSize: 18)),
                                 const SizedBox(width: 6),
@@ -1405,10 +1686,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(item.name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    Text(
+                                      item.name,
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
                                     Text(
                                       '${item.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                                      style: TextStyle(fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w600),
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF1E40AF), fontWeight: FontWeight.w700),
                                     ),
                                   ],
                                 ),
@@ -1508,87 +1792,150 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _buildCartItemCard(BuildContext context, CartItem item) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
+    return Dismissible(
+      key: ValueKey('cart_item_${item.product.id}_${item.quantity}'),
+      direction: DismissDirection.horizontal,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.green[600],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add_circle, color: Colors.white, size: 20),
+            SizedBox(width: 4),
+            Text('+1', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.product.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+      secondaryBackground: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.red[600],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(item.quantity > 1 ? '-1' : 'حذف', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(width: 4),
+            Icon(item.quantity > 1 ? Icons.remove_circle : Icons.delete, color: Colors.white, size: 20),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Swipe Right -> +1
+          context.read<BillingBloc>().add(
+                UpdateQuantityEvent(
+                  item.product.id,
+                  item.quantity + 1,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${item.product.price.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 11),
+              );
+          SoundService.playScanBeep();
+          HapticFeedback.lightImpact();
+          return false;
+        } else {
+          // Swipe Left -> -1 or Delete
+          final newQty = item.quantity - 1;
+          context.read<BillingBloc>().add(
+                UpdateQuantityEvent(
+                  item.product.id,
+                  newQty,
+                ),
+              );
+          SoundService.playItemRemoved();
+          HapticFeedback.mediumImpact();
+          return newQty <= 0;
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.product.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${item.product.price.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove_circle_outline, size: 20, color: Colors.red),
+                  onPressed: () {
+                    context.read<BillingBloc>().add(
+                          UpdateQuantityEvent(
+                            item.product.id,
+                            item.quantity - 1,
+                          ),
+                        );
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    '${item.quantity}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline, size: 20, color: Colors.green),
+                  onPressed: () {
+                    context.read<BillingBloc>().add(
+                          UpdateQuantityEvent(
+                            item.product.id,
+                            item.quantity + 1,
+                          ),
+                        );
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline, size: 20, color: Colors.red),
-                onPressed: () {
-                  context.read<BillingBloc>().add(
-                        UpdateQuantityEvent(
-                          item.product.id,
-                          item.quantity - 1,
-                        ),
-                      );
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  '${item.quantity}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline, size: 20, color: Colors.green),
-                onPressed: () {
-                  context.read<BillingBloc>().add(
-                        UpdateQuantityEvent(
-                          item.product.id,
-                          item.quantity + 1,
-                        ),
-                      );
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Text(
-            '${item.total.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 16, color: Colors.grey),
-            onPressed: () {
-              context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.product.id));
-            },
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Text(
+              '${item.total.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(width: 6),
+            IconButton(
+              icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+              onPressed: () {
+                context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.product.id));
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
       ),
     );
   }

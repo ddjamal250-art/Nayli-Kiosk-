@@ -58,6 +58,27 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
+  void _pinToQuickSale(BuildContext context, Product product) async {
+    final box = HiveDatabase.quickItemsBox;
+    final id = 'quick_${product.id}';
+    final item = {
+      'id': id,
+      'name': product.name,
+      'price': product.price,
+      'costPrice': product.costPrice,
+      'icon': '🛍️',
+      'linkedProductId': product.id,
+    };
+    await box.put(id, item);
+    SoundService.playScanBeep();
+    if (context.mounted) {
+      context.showAppSnackBar(
+        '⚡ تم تثبيت (${product.name}) في شريط البيع السريع بنجاح!',
+        backgroundColor: Colors.teal[800]!,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final borderColor = Colors.grey[100]!;
@@ -443,6 +464,21 @@ class _ProductListPageState extends State<ProductListPage> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.bolt_rounded,
+                                      color: Colors.orange, size: 20),
+                                  constraints: const BoxConstraints(),
+                                  tooltip: 'تثبيت في شريط البيع السريع ⚡',
+                                  padding: const EdgeInsets.all(8),
+                                  onPressed: () => _pinToQuickSale(context, product),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.amber.withOpacity(0.12),

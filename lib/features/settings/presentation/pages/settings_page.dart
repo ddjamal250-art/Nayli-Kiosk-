@@ -118,9 +118,9 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                               alignment: Alignment.center,
                               child: ClipOval(
-                                child: hasValidLogo
+                                child: (hasValidLogo && logoPath != null)
                                     ? Image.file(
-                                        File(logoPath),
+                                        File(logoPath!),
                                         width: 78,
                                         height: 78,
                                         fit: BoxFit.cover,
@@ -320,7 +320,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   iconColor: Colors.orange[800]!,
                   title: 'دفتر ديون الزبائن (Crédit)',
                   subtitle: 'متابعة الديون، التسديدات، وسجل المعاملات',
-                  onTap: () => context.push('/customers'),
+                  onTap: () async {
+                    final auth = await SecurityPinHelper.authenticate(context, title: 'دفتر ديون الزبائن (Crédit)');
+                    if (auth && context.mounted) {
+                      context.push('/customers');
+                    }
+                  },
                 ),
                 _buildDivider(),
                 _buildListItem(
@@ -381,7 +386,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   iconColor: Colors.teal[700]!,
                   title: 'وحدة الجرد السنوي والدوري ورأس المال 📋⚖️',
                   subtitle: 'جرد المخزون بالكاميرا، حساب الفوارق، ورأس مال المحل',
-                  onTap: () => context.push('/products/inventory-audit'),
+                  onTap: () async {
+                    final auth = await SecurityPinHelper.authenticate(context, title: 'وحدة الجرد ورأس المال');
+                    if (auth && context.mounted) {
+                      context.push('/products/inventory-audit');
+                    }
+                  },
                 ),
                 _buildDivider(),
                 _buildListItem(
@@ -389,7 +399,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   iconColor: Colors.green[700]!,
                   title: 'تصدير البيانات والنسخ الاحتياطي (Excel)',
                   subtitle: 'تصدير المخزون والديون كـ Excel وإنشاء نسخة أمان',
-                  onTap: () => _showBackupRestoreSheet(context),
+                  onTap: () async {
+                    final auth = await SecurityPinHelper.authenticate(context, title: 'النسخ الاحتياطي وتصدير البيانات');
+                    if (auth && context.mounted) {
+                      _showBackupRestoreSheet(context);
+                    }
+                  },
                 ),
               ],
             ),
