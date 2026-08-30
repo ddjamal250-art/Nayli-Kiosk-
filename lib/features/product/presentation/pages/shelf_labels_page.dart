@@ -412,85 +412,156 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                         },
                       ),
               ),
-
-              // Live Shelf Tag Preview Box
-              if (_selectedProductIds.isNotEmpty) ...[
-                Builder(
-                  builder: (context) {
-                    final firstSelected = filtered.firstWhere((p) => _selectedProductIds.contains(p.id), orElse: () => filtered.first);
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      color: Colors.grey[100],
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('معاينة شكل بطاقة الرف الحقيقية:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-                          const SizedBox(height: 6),
-                          Center(
-                            child: Container(
-                              width: 220,
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.black87, width: 1.5),
-                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
-                              ),
-                              child: Column(
-                                children: [
-                                  if (_includeShopName)
-                                    const Text('🏪 سوبرماركت النايلي', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                  Text(
-                                    firstSelected.name,
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${firstSelected.price.toStringAsFixed(0)} دج',
-                                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
-                                  ),
-                                  if (_includeBarcode)
-                                    Text('||||| ${firstSelected.barcode} |||||', style: const TextStyle(fontSize: 9, fontFamily: 'monospace', letterSpacing: 1.5)),
-                                  if (_includeDate)
-                                    Text('Date: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}', style: const TextStyle(fontSize: 8, color: Colors.grey)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ],
-
-              // Bottom Print Button
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(color: Colors.white),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    icon: const Icon(Icons.print, size: 20),
-                    label: Text(
-                      'طباعة الملصقات المحددة (${_selectedProductIds.length} بطاقة)',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    onPressed: () => _printSelectedLabels(state.products),
-                  ),
-                ),
-              ),
             ],
           );
         },
+      ),
+      bottomNavigationBar: BlocBuilder<ProductBloc, ProductState>(
+        builder: (context, state) {
+          final totalCopies = _selectedProductIds.fold<int>(0, (sum, id) => sum + (_labelQuantities[id] ?? 1));
+          final hasSelection = _selectedProductIds.isNotEmpty;
+
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, -3),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasSelection) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'المحدد: ${_selectedProductIds.length} سلعة • إجمالي النسخ: $totalCopies ملصق',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                        ),
+                        TextButton.icon(
+                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                          icon: const Icon(Icons.preview_rounded, size: 18, color: Colors.teal),
+                          label: const Text('معاينة الملصق 👁️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.teal)),
+                          onPressed: () => _showLivePreviewSheet(context, state.products),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: hasSelection ? AppTheme.primaryColor : Colors.grey[400],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: hasSelection ? 2 : 0,
+                      ),
+                      icon: _isPrinting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.print, size: 22),
+                      label: Text(
+                        hasSelection
+                            ? 'طباعة الملصقات المحددة ($totalCopies ملصق) 🖨️'
+                            : 'حدد السلع المراد طباعتها',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      onPressed: (_isPrinting || !hasSelection) ? null : () => _printSelectedLabels(state.products),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showLivePreviewSheet(BuildContext context, List<Product> allProducts) {
+    final selectedProducts = allProducts.where((p) => _selectedProductIds.contains(p.id)).toList();
+    if (selectedProducts.isEmpty) return;
+    final first = selectedProducts.first;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.label_important_rounded, color: AppTheme.primaryColor, size: 24),
+                    SizedBox(width: 8),
+                    Text('معاينة بطاقة الرف الحرارية 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: 240,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.black87, width: 2),
+                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+              ),
+              child: Column(
+                children: [
+                  if (_includeShopName)
+                    const Text('🏪 سوبرماركت النايلي', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  Text(
+                    first.name,
+                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${first.price.toStringAsFixed(0)} دج',
+                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.black),
+                  ),
+                  if (_includeBarcode) ...[
+                    const SizedBox(height: 4),
+                    Text('|||||| ${first.barcode} ||||||',
+                        style: const TextStyle(fontSize: 10, fontFamily: 'monospace', letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                  ],
+                  if (_includeDate) ...[
+                    const SizedBox(height: 2),
+                    Text('تاريخ: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
+                        style: const TextStyle(fontSize: 8.5, color: Colors.grey)),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('سيتم طباعة ${_labelQuantities[first.id] ?? 1} نسخ لهذه السلعة',
+                style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }

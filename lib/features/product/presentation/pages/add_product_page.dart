@@ -84,6 +84,7 @@ class _AddProductPageState extends State<AddProductPage> {
 
       if (existingProduct != null && barcode.isNotEmpty) {
         context.showAppSnackBar('⚠️ هذا الباركود ($barcode) مسجل مسبقاً لسلعة أخرى!', backgroundColor: Colors.red[800]!);
+        setState(() => _isSaving = false);
         return;
       }
 
@@ -103,7 +104,8 @@ class _AddProductPageState extends State<AddProductPage> {
       context.read<ProductBloc>().add(AddProduct(product));
       SoundService.playCheckoutSuccess();
       context.showAppSnackBar('✅ تم إضافة واستلام السلعة (${product.name}) بنجاح!');
-      context.pop();
+      await Future.delayed(const Duration(milliseconds: 150));
+      if (mounted) context.pop();
     }
   }
 
@@ -373,14 +375,23 @@ class _AddProductPageState extends State<AddProductPage> {
         ),
         child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: _isSaving ? Colors.grey[600] : AppTheme.primaryColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
-          icon: const Icon(Icons.add_circle),
-          label: const Text('إضافة السلعة للمخزون 📦✨', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          onPressed: _submit,
+          icon: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                )
+              : const Icon(Icons.add_circle),
+          label: Text(
+            _isSaving ? 'جاري الإضافة... ⏳' : 'إضافة السلعة للمخزون 📦✨',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          onPressed: _isSaving ? null : _submit,
         ),
       ),
     );

@@ -567,19 +567,48 @@ class _SettingsPageState extends State<SettingsPage> {
                               onPressed: () => context.read<PrinterBloc>().add(RefreshPrinterEvent()),
                               color: AppTheme.primaryColor,
                             ),
-                          IconButton(
-                            icon: const Icon(Icons.settings),
-                            onPressed: () {
-                              AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
-                            },
-                            color: Colors.grey,
-                          ),
                         ],
                       ),
                     ),
                   ],
                 );
               },
+            ),
+
+            const SizedBox(height: 18),
+
+            // Section 6: Sound FX & 10 Interactive Sound Themes
+            _buildSectionHeader(context, 'المؤثرات الصوتية والنغمات (10 نغمات تفاعلية) 🔊🎵'),
+            _buildListGroup(
+              children: [
+                _buildListItem(
+                  icon: Icons.volume_up_rounded,
+                  iconColor: Colors.deepPurple,
+                  title: 'تفعيل المؤثرات الصوتية',
+                  subtitle: SoundService.isSoundEnabled()
+                      ? 'مفعلة (تشغيل صافرة المسح وإتمام البيع)'
+                      : 'معطلة (كتم أصوات التطبيق)',
+                  trailingWidget: Switch(
+                    value: SoundService.isSoundEnabled(),
+                    activeColor: AppTheme.primaryColor,
+                    onChanged: (val) async {
+                      await SoundService.setSoundEnabled(val);
+                      setState(() {});
+                      if (val) SoundService.playScanBeep();
+                    },
+                  ),
+                ),
+                if (SoundService.isSoundEnabled()) ...[
+                  _buildDivider(),
+                  _buildListItem(
+                    icon: Icons.music_note_rounded,
+                    iconColor: Colors.amber[800]!,
+                    title: 'اختيار وتجربة نغمة الكاشير (${SoundService.themes.firstWhere((t) => t.id == SoundService.getSelectedThemeId(), orElse: () => SoundService.themes.first).icon} ${SoundService.themes.firstWhere((t) => t.id == SoundService.getSelectedThemeId(), orElse: () => SoundService.themes.first).name})',
+                    subtitle: 'استمع وجرب 10 نغمات كاشير ومسح مختلفة واختر المفضلة',
+                    onTap: () => _showSoundThemesModal(context),
+                  ),
+                ],
+              ],
             ),
 
             const SizedBox(height: 18),
@@ -1056,5 +1085,170 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildDivider() {
     return const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9));
+  }
+
+  void _showSoundThemesModal(BuildContext context) {
+    int currentThemeId = SoundService.getSelectedThemeId();
+    double currentVol = SoundService.getVolume();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: const EdgeInsets.all(20),
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.music_note_rounded, color: Colors.amber, size: 24),
+                      SizedBox(width: 8),
+                      Text('معرض نغمات الكاشير (10 نغمات تفاعلية) 🎵',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    ],
+                  ),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Volume Slider
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.volume_up, size: 20, color: Colors.grey[700]),
+                    const SizedBox(width: 8),
+                    Text('مستوى الصوت (${(currentVol * 100).toInt()}%):',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: Slider(
+                        value: currentVol,
+                        activeColor: AppTheme.primaryColor,
+                        onChanged: (v) async {
+                          setModalState(() => currentVol = v);
+                          await SoundService.setVolume(v);
+                        },
+                        onChangeEnd: (v) => SoundService.playScanBeep(themeId: currentThemeId),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('اضغط على "تجربة" للاستماع ثم اختر النغمة المفضلة لك:',
+                  style: TextStyle(fontSize: 11.5, color: Colors.grey, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: SoundService.themes.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (ctx, i) {
+                    final theme = SoundService.themes[i];
+                    final isSelected = currentThemeId == theme.id;
+
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      leading: Container(
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppTheme.primaryColor.withOpacity(0.15) : Colors.grey[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(theme.icon, style: const TextStyle(fontSize: 18)),
+                      ),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              theme.name,
+                              style: TextStyle(
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                fontSize: 13,
+                                color: isSelected ? AppTheme.primaryColor : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text('المفعلة ⚡',
+                                  style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.green)),
+                            ),
+                        ],
+                      ),
+                      subtitle: Text(theme.description, style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton.filledTonal(
+                            icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                            tooltip: 'استماع وتجربة',
+                            onPressed: () {
+                              SoundService.playScanBeep(themeId: theme.id);
+                            },
+                          ),
+                          Radio<int>(
+                            value: theme.id,
+                            groupValue: currentThemeId,
+                            activeColor: AppTheme.primaryColor,
+                            onChanged: (v) async {
+                              if (v != null) {
+                                setModalState(() => currentThemeId = v);
+                                await SoundService.setSelectedThemeId(v);
+                                SoundService.playCheckoutSuccess(themeId: v);
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () async {
+                        setModalState(() => currentThemeId = theme.id);
+                        await SoundService.setSelectedThemeId(theme.id);
+                        SoundService.playScanBeep(themeId: theme.id);
+                        setState(() {});
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('تأكيد واختيار النغمة 💾', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

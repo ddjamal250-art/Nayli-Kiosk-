@@ -1211,50 +1211,45 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               ),
             ),
 
-          // Dynamic Auto-Tracking Scan Target Frame (Follows barcode dynamically or stays centered)
+          // Centered High-Tech Scanner Viewfinder Reticle
           if (_isCameraOn)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              top: _dynamicTargetOffset != null
-                  ? (_dynamicTargetOffset!.dy - 75)
-                  : (MediaQuery.of(context).size.height * 0.18),
-              left: _dynamicTargetOffset != null
-                  ? (_dynamicTargetOffset!.dx - 125)
-                  : (MediaQuery.of(context).size.width / 2 - 125),
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.16,
+              left: (MediaQuery.of(context).size.width - 270) / 2,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 250,
-                height: 150,
+                duration: const Duration(milliseconds: 150),
+                width: 270,
+                height: 160,
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: _isScanFlash
                         ? Colors.greenAccent
-                        : (_isLockedOnBarcode ? Colors.cyanAccent : Colors.white.withOpacity(0.85)),
-                    width: _isScanFlash ? 3.2 : 2.2,
+                        : (_isLockedOnBarcode ? Colors.cyanAccent : Colors.white.withOpacity(0.7)),
+                    width: _isScanFlash ? 3.5 : 2.0,
                   ),
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color: _isScanFlash
-                          ? Colors.greenAccent.withOpacity(0.6)
-                          : (_isLockedOnBarcode ? Colors.cyanAccent.withOpacity(0.4) : Colors.black.withOpacity(0.25)),
-                      blurRadius: _isScanFlash ? 18 : 10,
+                          ? Colors.greenAccent.withOpacity(0.7)
+                          : (_isLockedOnBarcode ? Colors.cyanAccent.withOpacity(0.4) : Colors.black.withOpacity(0.3)),
+                      blurRadius: _isScanFlash ? 20 : 10,
+                      spreadRadius: _isScanFlash ? 2 : 0,
                     ),
                   ],
                 ),
                 child: Stack(
                   children: [
-                    // Dynamic Laser Scan Sweep
+                    // Dynamic Laser Sweep
                     AnimatedBuilder(
                       animation: _laserAnimationController,
                       builder: (context, child) {
                         return Positioned(
-                          top: 10 + (_laserAnimationController.value * 125),
-                          left: 12,
-                          right: 12,
+                          top: 10 + (_laserAnimationController.value * 135),
+                          left: 14,
+                          right: 14,
                           child: Container(
-                            height: 2.5,
+                            height: 3,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(2),
                               gradient: LinearGradient(
@@ -1278,8 +1273,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                   color: _isScanFlash
                                       ? Colors.greenAccent.withOpacity(0.9)
                                       : Colors.redAccent.withOpacity(0.8),
-                                  blurRadius: 8,
-                                  spreadRadius: 1.5,
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
                                 ),
                               ],
                             ),
@@ -1287,17 +1282,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         );
                       },
                     ),
-                    // Corner brackets for futuristic look
+                    // High-tech corner HUD brackets
                     Positioned(
                       top: 6,
                       left: 6,
                       child: Container(
-                        width: 14,
-                        height: 14,
+                        width: 16,
+                        height: 16,
                         decoration: BoxDecoration(
                           border: Border(
-                            top: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
-                            left: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                            top: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
+                            left: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
                           ),
                         ),
                       ),
@@ -1306,12 +1301,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       top: 6,
                       right: 6,
                       child: Container(
-                        width: 14,
-                        height: 14,
+                        width: 16,
+                        height: 16,
                         decoration: BoxDecoration(
                           border: Border(
-                            top: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
-                            right: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                            top: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
+                            right: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
                           ),
                         ),
                       ),
@@ -1320,12 +1315,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       bottom: 6,
                       left: 6,
                       child: Container(
-                        width: 14,
-                        height: 14,
+                        width: 16,
+                        height: 16,
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
-                            left: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                            bottom: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
+                            left: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
                           ),
                         ),
                       ),
@@ -1334,18 +1329,51 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       bottom: 6,
                       right: 6,
                       child: Container(
-                        width: 14,
-                        height: 14,
+                        width: 16,
+                        height: 16,
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
-                            right: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 2.8),
+                            bottom: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
+                            right: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
+              ),
+            ),
+
+          // Zoom Quick Controls (1x, 2x, 3x) Floating on Right
+          if (_isCameraOn)
+            Positioned(
+              right: 12,
+              top: MediaQuery.of(context).size.height * 0.16,
+              child: Column(
+                children: [
+                  for (final zoomVal in [0.0, 0.5, 0.9])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: InkWell(
+                        onTap: () {
+                          _scannerController.setZoomScale(zoomVal);
+                          SoundService.playScanBeep();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(
+                            zoomVal == 0.0 ? '1x' : (zoomVal == 0.5 ? '2x' : '3x'),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 

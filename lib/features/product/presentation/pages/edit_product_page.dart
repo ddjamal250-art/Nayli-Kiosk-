@@ -95,8 +95,12 @@ class _EditProductPageState extends State<EditProductPage> {
     context.showAppSnackBar('📦 تم تزويد المخزون بـ +$amount قطعة!');
   }
 
-  void _submit() {
+  bool _isSaving = false;
+
+  void _submit() async {
+    if (_isSaving) return;
     if (_formKey.currentState!.validate()) {
+      setState(() => _isSaving = true);
       final updatedProduct = Product(
         id: widget.product.id,
         name: _nameCtrl.text.trim(),
@@ -113,7 +117,8 @@ class _EditProductPageState extends State<EditProductPage> {
       context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
       SoundService.playCheckoutSuccess();
       context.showAppSnackBar('✅ تم تحديث وتعديل بيانات السلعة بنجاح!');
-      context.pop();
+      await Future.delayed(const Duration(milliseconds: 150));
+      if (mounted) context.pop();
     }
   }
 
@@ -570,14 +575,23 @@ class _EditProductPageState extends State<EditProductPage> {
         ),
         child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: _isSaving ? Colors.grey[600] : AppTheme.primaryColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
-          icon: const Icon(Icons.save),
-          label: const Text('حفظ التعديلات والاستلام 💾', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          onPressed: _submit,
+          icon: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                )
+              : const Icon(Icons.save),
+          label: Text(
+            _isSaving ? 'جاري الحفظ... ⏳' : 'حفظ التعديلات والاستلام 💾',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          onPressed: _isSaving ? null : _submit,
         ),
       ),
     );
