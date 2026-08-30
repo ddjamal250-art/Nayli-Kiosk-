@@ -462,7 +462,7 @@ class _SettingsPageState extends State<SettingsPage> {
     BuildContext context,
     bool isSoundOn,
     bool isNotifOn,
-    List<AppAlertItem> liveAlerts,
+    List<StoreAlert> liveAlerts,
   ) {
     return _buildCardGroup([
       _buildTile(
