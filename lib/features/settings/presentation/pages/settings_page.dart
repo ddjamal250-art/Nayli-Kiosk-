@@ -368,6 +368,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _buildDivider(),
                 _buildListItem(
+                  icon: Icons.inventory_rounded,
+                  iconColor: Colors.teal[700]!,
+                  title: 'وحدة الجرد السنوي والدوري ورأس المال 📋⚖️',
+                  subtitle: 'جرد المخزون بالكاميرا، حساب الفوارق، ورأس مال المحل',
+                  onTap: () => context.push('/products/inventory-audit'),
+                ),
+                _buildDivider(),
+                _buildListItem(
                   icon: Icons.table_chart_outlined,
                   iconColor: Colors.green[700]!,
                   title: 'تصدير البيانات والنسخ الاحتياطي (Excel)',

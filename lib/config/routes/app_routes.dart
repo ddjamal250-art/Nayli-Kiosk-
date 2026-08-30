@@ -21,6 +21,7 @@ import '../../features/product/domain/entities/product.dart';
 import '../../core/utils/license_service.dart';
 
 import '../../features/product/presentation/pages/shelf_labels_page.dart';
+import '../../features/product/presentation/pages/inventory_audit_page.dart';
 import '../../features/settings/presentation/pages/receipt_customizer_page.dart';
 
 final router = GoRouter(
@@ -117,6 +118,10 @@ final router = GoRouter(
         GoRoute(
           path: 'shelf-labels',
           builder: (context, state) => const ShelfLabelsPage(),
+        ),
+        GoRoute(
+          path: 'inventory-audit',
+          builder: (context, state) => const InventoryAuditPage(),
         ),
         GoRoute(
           path: 'edit/:id',
