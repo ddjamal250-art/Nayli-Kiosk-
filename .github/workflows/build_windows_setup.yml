@@ -27,7 +27,7 @@ jobs:
         run: flutter config --enable-windows-desktop
 
       - name: Scaffold Windows Platform Files
-        run: flutter create --platforms=windows .
+        run: flutter create --platforms=windows --project-name billing_app .
 
       - name: Install dependencies
         run: flutter pub get
@@ -48,3 +48,4 @@ jobs:
         with:
           name: nayli-market-desktop-setup
           path: build/installer/
+
