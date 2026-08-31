@@ -1,4 +1,4 @@
-﻿class AppConstants {
+class AppConstants {
   static const String appName = 'Nayli Market';
 
   // Currency Configuration (e.g. DA, $, EUR, etc.)
@@ -11,4 +11,5 @@
   static const String defaultPhoneNumber = '';
   static const String defaultUpiId = '';
   static const String defaultFooterText = 'Thank you for your visit!';
+  static const String appLogoPath = 'assets/images/app_logo.png';
 }

@@ -3,14 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_server.dart';
-import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/app_constants.dart';
-import '../../../../core/utils/license_service.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
@@ -19,16 +16,9 @@ import '../../../../core/utils/tpe_payment_service.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
-import '../../../product/presentation/bloc/product_state.dart';
-import '../../../shop/presentation/bloc/shop_bloc.dart';
-import '../../../shop/presentation/bloc/shop_state.dart';
 import '../../domain/entities/cart_item.dart';
-import '../../domain/entities/held_cart.dart';
 import '../bloc/billing_bloc.dart';
-import '../bloc/billing_event.dart';
-import '../bloc/billing_state.dart';
 import '../widgets/held_carts_modal.dart';
-import '../widgets/smart_scale_modal.dart';
 
 class DesktopPosPage extends StatefulWidget {
   const DesktopPosPage({super.key});
@@ -135,13 +125,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   }
 
   void _openCashDrawerWithSecurity() async {
-    final isAuthorized = await SecurityPinHelper.verifySupervisorPin(
+    final isAuthorized = await SecurityPinHelper.authenticate(
       context,
-      reason: 'فتح درج النقود بدون بيع (No Sale Drawer Kick)',
+      title: 'فتح درج النقود بدون بيع (No Sale Drawer Kick)',
     );
     if (isAuthorized) {
       await SoundService.playDrawerKick();
-      PrinterHelper.openCashDrawer();
+      await PrinterHelper.openCashDrawer();
       if (mounted) {
         SnackbarHelper.showSuccess(context, 'تم فتح درج النقود بنجاح');
       }
@@ -150,7 +140,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   void _triggerCheckout() {
     final state = context.read<BillingBloc>().state;
-    if (state.cart.isEmpty) {
+    if (state.cartItems.isEmpty) {
       SoundService.playWarningSound();
       SnackbarHelper.showWarning(context, 'السلة فارغة، يرجى مسح المنتجات أولاً');
       return;
@@ -160,7 +150,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   void _confirmClearCart() {
     final state = context.read<BillingBloc>().state;
-    if (state.cart.isEmpty) return;
+    if (state.cartItems.isEmpty) return;
 
     showDialog(
       context: context,
@@ -231,17 +221,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     ),
                     onSubmitted: (code) {
                       final productBloc = context.read<ProductBloc>();
-                      if (productBloc.state is ProductLoaded) {
-                        final products = (productBloc.state as ProductLoaded).products;
-                        final match = products.where((p) => p.barcode == code.trim()).firstOrNull;
-                        setModalState(() {
-                          foundProduct = match;
-                        });
-                        if (match != null) {
-                          SoundService.playScanBeep();
-                        } else {
-                          SoundService.playWarningSound();
-                        }
+                      final products = productBloc.state.products;
+                      final match = products.where((p) => p.barcode == code.trim()).firstOrNull;
+                      setModalState(() {
+                        foundProduct = match;
+                      });
+                      if (match != null) {
+                        SoundService.playScanBeep();
+                      } else {
+                        SoundService.playWarningSound();
                       }
                     },
                   ),
@@ -250,16 +238,16 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.emerald.withOpacity(0.1),
+                        color: const Color(0xFF10B981).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.emerald),
+                        border: Border.all(color: const Color(0xFF10B981)),
                       ),
                       child: Column(
                         children: [
                           Text(foundProduct!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           const SizedBox(height: 8),
                           Text('${foundProduct!.price.toStringAsFixed(2)} د.ج',
-                              style: const TextStyle(color: Colors.emerald, fontSize: 24, fontWeight: FontWeight.bold)),
+                              style: const TextStyle(color: Color(0xFF059669), fontSize: 24, fontWeight: FontWeight.bold)),
                           Text('المخزون المتوفر: ${foundProduct!.stock} قطعة', style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
@@ -350,7 +338,6 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     SoundService.playTabSwitch();
     PosPaymentMethod paymentMethod = PosPaymentMethod.cash;
     double receivedAmount = state.totalAmount;
-    final changeAmount = ValueNotifier<double>(0.0);
     final manualTpeRefController = TextEditingController();
 
     showDialog(
@@ -595,7 +582,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     if (method == PosPaymentMethod.cash) {
       await SoundService.playDrawerKick();
-      PrinterHelper.openCashDrawer();
+      await PrinterHelper.openCashDrawer();
     }
 
     // Clear cart and prepare for next customer
@@ -676,15 +663,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: _isServerRunning ? Colors.emerald.withOpacity(0.1) : Colors.amber.withOpacity(0.1),
+              color: _isServerRunning ? const Color(0xFF10B981).withOpacity(0.1) : Colors.amber.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _isServerRunning ? Colors.emerald : Colors.amber),
+              border: Border.all(color: _isServerRunning ? const Color(0xFF10B981) : Colors.amber),
             ),
             child: Row(
               children: [
-                Icon(Icons.wifi_tethering_rounded, size: 16, color: _isServerRunning ? Colors.emerald : Colors.amber),
+                Icon(Icons.wifi_tethering_rounded, size: 16, color: _isServerRunning ? const Color(0xFF10B981) : Colors.amber),
                 const SizedBox(width: 6),
-                Text('Master Server: $_serverIp:8080', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _isServerRunning ? Colors.emerald.shade800 : Colors.amber.shade900)),
+                Text('Master Server: $_serverIp:8080', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _isServerRunning ? const Color(0xFF065F46) : Colors.amber.shade900)),
               ],
             ),
           ),
@@ -813,7 +800,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
               // Cart Items List
               Expanded(
-                child: state.cart.isEmpty
+                child: state.cartItems.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -827,14 +814,14 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         ),
                       )
                     : ListView.separated(
-                        itemCount: state.cart.length,
+                        itemCount: state.cartItems.length,
                         separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
                         itemBuilder: (context, index) {
-                          final item = state.cart[index];
+                          final item = state.cartItems[index];
                           return ListTile(
                             dense: true,
-                            title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            subtitle: Text('${item.unitPrice.toStringAsFixed(2)} د.ج / ${item.unit}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                            title: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            subtitle: Text('${item.product.price.toStringAsFixed(2)} د.ج', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                             trailing: SizedBox(
                               width: 220,
                               child: Row(
@@ -844,24 +831,24 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                     icon: const Icon(Icons.remove_circle_outline, size: 18, color: Colors.red),
                                     onPressed: () {
                                       SoundService.playTabSwitch();
-                                      context.read<BillingBloc>().add(UpdateCartItemQuantityEvent(item.barcode, item.quantity - 1));
+                                      context.read<BillingBloc>().add(UpdateQuantityEvent(item.product.id, item.quantity - 1));
                                     },
                                   ),
-                                  Text(item.quantity.toStringAsFixed(item.isWeighable ? 2 : 0), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(item.quantity.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
                                   IconButton(
                                     icon: const Icon(Icons.add_circle_outline, size: 18, color: Colors.green),
                                     onPressed: () {
                                       SoundService.playScanBeep();
-                                      context.read<BillingBloc>().add(UpdateCartItemQuantityEvent(item.barcode, item.quantity + 1));
+                                      context.read<BillingBloc>().add(UpdateQuantityEvent(item.product.id, item.quantity + 1));
                                     },
                                   ),
                                   const SizedBox(width: 8),
-                                  Text('${item.totalPrice.toStringAsFixed(2)} د.ج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text('${item.total.toStringAsFixed(2)} د.ج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
                                     onPressed: () {
                                       SoundService.playVoidWarning();
-                                      context.read<BillingBloc>().add(RemoveFromCartEvent(item.barcode));
+                                      context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.product.id));
                                     },
                                   ),
                                 ],
@@ -873,7 +860,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               ),
 
               // Bottom Basket Bulk Reminder
-              if (state.cart.length >= 3)
+              if (state.cartItems.length >= 3)
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
                   color: Colors.amber.shade100,
@@ -899,8 +886,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('عدد المواد: ${state.cart.length} (${state.cart.fold<double>(0, (sum, i) => sum + i.quantity).toStringAsFixed(0)} قطع)', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                        Text('المجموع الأولي: ${state.totalAmount.toStringAsFixed(2)} د.ج', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        Text('عدد المواد: ${state.cartItems.length} (${state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity)} قطع)', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        Text('المجموع: ${state.totalAmount.toStringAsFixed(2)} د.ج', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -953,15 +940,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   Widget _buildRightCatalogPane() {
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
-        List<Product> allProducts = [];
-        if (state is ProductLoaded) {
-          allProducts = state.products;
-        }
-
+        final allProducts = state.products;
         final categories = ['الكل', 'المشروبات', 'البقوليات', 'المنظفات', 'الحلويات', 'الميزان', 'الألبان', 'التوابل'];
         final filteredProducts = _selectedCategory == 'الكل'
             ? allProducts
-            : allProducts.where((p) => (p.category ?? '').contains(_selectedCategory)).toList();
+            : allProducts.where((p) => (p.category).contains(_selectedCategory)).toList();
 
         return Container(
           color: const Color(0xFFF3F4F6),
@@ -1094,10 +1077,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         children: [
           Text('[F1: بحث الباركود]   [F2: تعليق السلة]   [F3: العميل/العضوية]   [F8: فحص السعر]   [F10: فتح الدرج]   [F12 / مسافة: الدفع الفوري]   [Esc: إلغاء]',
               style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-          Text('Costco POS Engine Active ⚡', style: TextStyle(color: Colors.emeraldAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+          Text('Costco POS Engine Active ⚡', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 }
-

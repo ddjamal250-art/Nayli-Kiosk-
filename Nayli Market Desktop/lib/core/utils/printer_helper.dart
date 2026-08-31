@@ -24,6 +24,13 @@ class PrinterHelper {
   bool _isConnected = false;
   bool get isConnected => _isConnected;
 
+  static Future<void> openCashDrawer() async {
+    try {
+      final List<int> drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
+      await PrintBluetoothThermal.writeBytes(drawerCommand);
+    } catch (_) {}
+  }
+
   Future<bool> checkPermission() async {
     Map<Permission, PermissionStatus> statuses = await [
       Permission.bluetooth,

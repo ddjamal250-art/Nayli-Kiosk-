@@ -51,3 +51,17 @@ extension AppSnackBarExtension on BuildContext {
     );
   }
 }
+
+class SnackbarHelper {
+  static void showSuccess(BuildContext context, String message) {
+    context.showAppSnackBar(message, backgroundColor: const Color(0xFF059669), icon: Icons.check_circle_outline);
+  }
+
+  static void showWarning(BuildContext context, String message) {
+    context.showAppSnackBar(message, backgroundColor: const Color(0xFFD97706), icon: Icons.warning_amber_rounded);
+  }
+
+  static void showError(BuildContext context, String message) {
+    context.showAppSnackBar(message, backgroundColor: const Color(0xFFDC2626), icon: Icons.error_outline);
+  }
+}

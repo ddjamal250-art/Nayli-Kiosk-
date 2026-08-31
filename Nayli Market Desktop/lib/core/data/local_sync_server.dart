@@ -144,14 +144,23 @@ class LocalSyncServer {
         final barcode = item['barcode'];
         final qty = (item['quantity'] as num?)?.toDouble() ?? 1.0;
         
-        final product = HiveDatabase.productBox.values.firstWhere(
-          (p) => p.barcode == barcode,
-          orElse: () => ProductModel(barcode: '', name: '', price: 0, costPrice: 0, stock: 0),
-        );
+        final product = HiveDatabase.productBox.values.where((p) => p.barcode == barcode).firstOrNull;
 
-        if (product.barcode.isNotEmpty) {
-          final updatedProduct = product.copyWith(stock: product.stock - qty);
-          await HiveDatabase.productBox.put(product.barcode, updatedProduct);
+        if (product != null) {
+          final newStock = (product.stock - qty.toInt()).clamp(0, 999999);
+          final updatedProduct = ProductModel(
+            id: product.id,
+            name: product.name,
+            barcode: product.barcode,
+            price: product.price,
+            costPrice: product.costPrice,
+            stock: newStock,
+            category: product.category,
+            isWeighted: product.isWeighted,
+            wholesalePrice: product.wholesalePrice,
+            expiryDate: product.expiryDate,
+          );
+          await HiveDatabase.productBox.put(product.id, updatedProduct);
         }
       }
     }
