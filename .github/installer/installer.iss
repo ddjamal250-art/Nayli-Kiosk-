@@ -25,3 +25,4 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "تشغيل برنامج نايل ماركت Nayli Market"; Flags: nowait postinstall skipifsilent
+

@@ -23,11 +23,11 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Enable Windows Desktop Support and Scaffold Runner
-        run: |
-          flutter config --enable-windows-desktop
-          flutter create --platforms=windows --org dz.nayli.market .
-          flutter doctor -v
+      - name: Enable Windows Desktop Support
+        run: flutter config --enable-windows-desktop
+
+      - name: Scaffold Windows Platform Files
+        run: flutter create --platforms=windows .
 
       - name: Install dependencies
         run: flutter pub get
