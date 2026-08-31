@@ -23,10 +23,10 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Enable Windows Desktop Support
+      - name: Enable Windows Desktop Support and Scaffold Runner
         run: |
           flutter config --enable-windows-desktop
-          flutter create --platforms=windows .
+          flutter create --platforms=windows --org dz.nayli.market .
           flutter doctor -v
 
       - name: Install dependencies
@@ -37,7 +37,7 @@ jobs:
 
       - name: Compile Inno Setup Installer
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" windows\installer\installer.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .github\installer\installer.iss
 
       - name: Archive Portable Release Folder
         run: |

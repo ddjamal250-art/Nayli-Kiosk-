@@ -16,20 +16,12 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 
-[Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "french"; MessagesFile: "compiler:Languages\French.isl"
-
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-
 [Files]
 Source: "..\..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-
+Filename: "{app}\{#MyAppExeName}"; Description: "تشغيل برنامج نايل ماركت Nayli Market"; Flags: nowait postinstall skipifsilent
