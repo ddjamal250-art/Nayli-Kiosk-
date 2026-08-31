@@ -5,17 +5,104 @@ import 'package:flutter/foundation.dart';
 import 'hive_database.dart';
 import '../../features/product/data/models/product_model.dart';
 
+class RemoteCartItem {
+  final String barcode;
+  final String name;
+  final double price;
+  final double costPrice;
+  final int quantity;
+  final String? unit;
+
+  RemoteCartItem({
+    required this.barcode,
+    required this.name,
+    required this.price,
+    this.costPrice = 0.0,
+    required this.quantity,
+    this.unit = 'قطعة',
+  });
+
+  Map<String, dynamic> toMap() => {
+    'barcode': barcode,
+    'name': name,
+    'price': price,
+    'costPrice': costPrice,
+    'quantity': quantity,
+    'unit': unit,
+  };
+
+  factory RemoteCartItem.fromMap(Map<String, dynamic> map) => RemoteCartItem(
+    barcode: map['barcode']?.toString() ?? '',
+    name: map['name']?.toString() ?? 'سلعة',
+    price: (map['price'] as num?)?.toDouble() ?? 0.0,
+    costPrice: (map['costPrice'] as num?)?.toDouble() ?? 0.0,
+    quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+    unit: map['unit']?.toString() ?? 'قطعة',
+  );
+}
+
+class RemoteIncomingCart {
+  final String id;
+  final String token; // Short customer ticket code, e.g. #101
+  final String senderName; // e.g. "هاتف المدير" / "البائع المتنقل"
+  final DateTime timestamp;
+  final String? customerName;
+  final List<RemoteCartItem> items;
+  final double totalAmount;
+
+  RemoteIncomingCart({
+    required this.id,
+    required this.token,
+    required this.senderName,
+    required this.timestamp,
+    this.customerName,
+    required this.items,
+    required this.totalAmount,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'token': token,
+    'senderName': senderName,
+    'timestamp': timestamp.toIso8601String(),
+    'customerName': customerName,
+    'items': items.map((i) => i.toMap()).toList(),
+    'totalAmount': totalAmount,
+  };
+
+  factory RemoteIncomingCart.fromMap(Map<String, dynamic> map) {
+    final rawItems = map['items'] as List? ?? [];
+    final itemsList = rawItems.map((i) => RemoteCartItem.fromMap(i as Map<String, dynamic>)).toList();
+    final total = (map['totalAmount'] as num?)?.toDouble() ?? itemsList.fold(0.0, (s, i) => s + (i.price * i.quantity));
+    
+    return RemoteIncomingCart(
+      id: map['id']?.toString() ?? 'rc_${DateTime.now().millisecondsSinceEpoch}',
+      token: map['token']?.toString() ?? '#${DateTime.now().millisecond % 900 + 100}',
+      senderName: map['senderName']?.toString() ?? 'هاتف المحل المتنقل',
+      timestamp: DateTime.tryParse(map['timestamp']?.toString() ?? '') ?? DateTime.now(),
+      customerName: map['customerName']?.toString(),
+      items: itemsList,
+      totalAmount: total,
+    );
+  }
+}
+
 class LocalSyncServer {
   static HttpServer? _server;
   static int port = 8080;
   static bool _isRunning = false;
+  
   static final StreamController<String> _logController = StreamController<String>.broadcast();
   static final StreamController<int> _clientsController = StreamController<int>.broadcast();
+  static final StreamController<RemoteIncomingCart> _remoteCartStreamController = StreamController<RemoteIncomingCart>.broadcast();
+  
+  static final List<RemoteIncomingCart> pendingRemoteCarts = [];
   static int _connectedClients = 0;
 
   static bool get isRunning => _isRunning;
   static Stream<String> get logStream => _logController.stream;
   static Stream<int> get clientsStream => _clientsController.stream;
+  static Stream<RemoteIncomingCart> get remoteCartStream => _remoteCartStreamController.stream;
   static int get connectedClients => _connectedClients;
 
   /// Get local machine Wi-Fi / Ethernet IPv4 address
@@ -47,12 +134,12 @@ class LocalSyncServer {
       _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
       _isRunning = true;
       final ip = await getLocalIp();
-      _logController.add('Server started at http://$ip:$port');
+      _logController.add('Master POS Server started at http://$ip:$port');
 
       _server!.listen((HttpRequest request) async {
         // Enable CORS
         request.response.headers.add('Access-Control-Allow-Origin', '*');
-        request.response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        request.response.headers.add('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
         request.response.headers.add('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept');
 
         if (request.method == 'OPTIONS') {
@@ -71,6 +158,10 @@ class LocalSyncServer {
             await _handleGetCustomers(request);
           } else if (path == '/api/sales' && request.method == 'POST') {
             await _handlePostSale(request);
+          } else if (path == '/api/remote-cart' && request.method == 'POST') {
+            await _handlePostRemoteCart(request);
+          } else if (path == '/api/remote-carts' && request.method == 'GET') {
+            await _handleGetRemoteCarts(request);
           } else {
             request.response.statusCode = HttpStatus.notFound;
             request.response.write(jsonEncode({'error': 'Endpoint not found'}));
@@ -108,6 +199,7 @@ class LocalSyncServer {
       'version': '2.0.0',
       'ip': ip,
       'port': port,
+      'pendingCartsCount': pendingRemoteCarts.length,
       'timestamp': DateTime.now().toIso8601String(),
     };
     request.response.headers.contentType = ContentType.json;
@@ -126,6 +218,32 @@ class LocalSyncServer {
     final customers = HiveDatabase.customersBox.values.toList();
     request.response.headers.contentType = ContentType.json;
     request.response.write(jsonEncode(customers));
+    await request.response.close();
+  }
+
+  /// Handle incoming pre-scanned basket sent from floor seller/manager mobile
+  static Future<void> _handlePostRemoteCart(HttpRequest request) async {
+    final body = await utf8.decoder.bind(request).join();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+
+    final remoteCart = RemoteIncomingCart.fromMap(data);
+    pendingRemoteCarts.insert(0, remoteCart);
+    _remoteCartStreamController.add(remoteCart);
+    _logController.add('New Remote Cart received from ${remoteCart.senderName} (${remoteCart.token})');
+
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode({
+      'success': true,
+      'token': remoteCart.token,
+      'message': 'Cart successfully forwarded to Cashier Register',
+    }));
+    await request.response.close();
+  }
+
+  static Future<void> _handleGetRemoteCarts(HttpRequest request) async {
+    final list = pendingRemoteCarts.map((c) => c.toMap()).toList();
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode(list));
     await request.response.close();
   }
 
@@ -165,10 +283,14 @@ class LocalSyncServer {
       }
     }
 
-    _logController.add('Received sale $invoiceId from mobile terminal');
+    _logController.add('Received completed sale $invoiceId from mobile terminal');
     request.response.headers.contentType = ContentType.json;
     request.response.write(jsonEncode({'success': true, 'invoiceId': invoiceId}));
     await request.response.close();
   }
-}
 
+  /// Remove a pending remote cart after it is processed/loaded by cashier
+  static void removeRemoteCart(String cartId) {
+    pendingRemoteCarts.removeWhere((c) => c.id == cartId);
+  }
+}

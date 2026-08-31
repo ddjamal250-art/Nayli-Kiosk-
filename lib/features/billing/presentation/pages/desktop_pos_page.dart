@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/data/hive_database.dart';
@@ -19,6 +20,8 @@ import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
 import '../widgets/held_carts_modal.dart';
+
+enum PosPriceTier { detail, demiGros, gros }
 
 class DesktopPosPage extends StatefulWidget {
   const DesktopPosPage({super.key});
@@ -37,15 +40,27 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   String _selectedCustomerName = 'زبون عابر (Détail)';
   double _customerCreditBalance = 0.0;
 
+  // Operating Modes
+  PosPriceTier _activePriceTier = PosPriceTier.detail;
+  bool _isReturnMode = false;
+  double _cartDiscountValue = 0.0;
+  bool _isDiscountPercentage = false;
+
   // Costco IPM Speedometer tracking
   int _scannedItemsCount = 0;
   DateTime _sessionStartTime = DateTime.now();
   double _currentIpm = 0.0;
   Timer? _ipmTimer;
 
-  // Local Master Server Status
+  // Local Master Server Status & Remote Carts Stream
   String _serverIp = 'جاري التحديد...';
   bool _isServerRunning = false;
+  StreamSubscription<RemoteIncomingCart>? _remoteCartSub;
+  int _pendingRemoteCartsCount = 0;
+
+  // USB Barcode Wedge Rapid Buffer
+  String _hardwareBarcodeBuffer = '';
+  DateTime _lastHardwareKeyTime = DateTime.now();
 
   @override
   void initState() {
@@ -63,16 +78,32 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     _barcodeFocusNode.dispose();
     _globalKeyboardFocusNode.dispose();
     _ipmTimer?.cancel();
+    _remoteCartSub?.cancel();
     super.dispose();
   }
 
   Future<void> _initLocalServer() async {
     final started = await LocalSyncServer.startServer();
     final ip = await LocalSyncServer.getLocalIp();
+    
+    _remoteCartSub = LocalSyncServer.remoteCartStream.listen((cart) {
+      if (mounted) {
+        setState(() {
+          _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
+        });
+        SoundService.playRestockSound();
+        SnackbarHelper.showSuccess(
+          context,
+          '🔔 سلة جديدة واردة من ${cart.senderName} (رمز: ${cart.token}) بقيمة ${cart.totalAmount.toStringAsFixed(2)} د.ج',
+        );
+      }
+    });
+
     if (mounted) {
       setState(() {
         _isServerRunning = started;
         _serverIp = ip;
+        _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
       });
     }
   }
@@ -94,18 +125,85 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     SoundService.playScanBeep();
   }
 
-  void _handleBarcodeSubmit(String rawBarcode) {
-    if (rawBarcode.trim().isEmpty) return;
-    final barcode = rawBarcode.trim();
+  void _handleBarcodeSubmit(String rawInput) {
+    if (rawInput.trim().isEmpty) return;
+    final input = rawInput.trim();
     _barcodeController.clear();
     _barcodeFocusNode.requestFocus();
 
+    // Check for quantity multiplier syntax (e.g., "5*6130140001019" or "12*")
+    int multiplier = 1;
+    String barcodeToScan = input;
+    if (input.contains('*')) {
+      final parts = input.split('*');
+      final parsedQty = int.tryParse(parts[0]);
+      if (parsedQty != null && parsedQty > 0 && parsedQty <= 500) {
+        multiplier = parsedQty;
+        barcodeToScan = parts.sublist(1).join('*').trim();
+      }
+    }
+
+    if (barcodeToScan.isEmpty) return;
+
     _onItemScanned();
-    context.read<BillingBloc>().add(ScanBarcodeEvent(barcode));
+
+    // Find product to determine effective price tier
+    final productBloc = context.read<ProductBloc>();
+    final products = productBloc.state.products;
+    final product = products.where((p) => p.barcode == barcodeToScan).firstOrNull;
+
+    if (product != null) {
+      double effectivePrice = product.price;
+      if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
+        effectivePrice = product.wholesalePrice;
+      } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
+        effectivePrice = (product.price + product.wholesalePrice) / 2;
+      }
+
+      if (_isReturnMode) {
+        effectivePrice = -effectivePrice.abs();
+      }
+
+      final itemProduct = Product(
+        id: product.id,
+        name: _isReturnMode ? '[إرجاع] ${product.name}' : product.name,
+        barcode: product.barcode,
+        price: effectivePrice,
+        costPrice: product.costPrice,
+        stock: product.stock,
+        category: product.category,
+      );
+
+      for (int i = 0; i < multiplier; i++) {
+        context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
+      }
+    } else {
+      context.read<BillingBloc>().add(ScanBarcodeEvent(barcodeToScan));
+    }
   }
 
   void _handleHotkeys(KeyEvent event) {
     if (event is! KeyDownEvent) return;
+
+    // Hardware Scanner Wedge rapid typing listener
+    final now = DateTime.now();
+    final diffMs = now.difference(_lastHardwareKeyTime).inMilliseconds;
+    _lastHardwareKeyTime = now;
+
+    if (event.character != null && event.character!.isNotEmpty && event.logicalKey != LogicalKeyboardKey.enter) {
+      if (diffMs < 50) {
+        _hardwareBarcodeBuffer += event.character!;
+      } else {
+        _hardwareBarcodeBuffer = event.character!;
+      }
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.enter && _hardwareBarcodeBuffer.length >= 4) {
+      final code = _hardwareBarcodeBuffer;
+      _hardwareBarcodeBuffer = '';
+      _handleBarcodeSubmit(code);
+      return;
+    }
 
     if (event.logicalKey == LogicalKeyboardKey.f1) {
       _barcodeFocusNode.requestFocus();
@@ -113,8 +211,18 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       _showHeldCartsModal();
     } else if (event.logicalKey == LogicalKeyboardKey.f3) {
       _showCustomerSelector();
+    } else if (event.logicalKey == LogicalKeyboardKey.f4) {
+      _showDiscountModal();
+    } else if (event.logicalKey == LogicalKeyboardKey.f5) {
+      _cyclePriceTier();
+    } else if (event.logicalKey == LogicalKeyboardKey.f6) {
+      _toggleReturnMode();
+    } else if (event.logicalKey == LogicalKeyboardKey.f7) {
+      _showQuickCustomItemModal();
     } else if (event.logicalKey == LogicalKeyboardKey.f8) {
       _showPriceChecker();
+    } else if (event.logicalKey == LogicalKeyboardKey.f9) {
+      _showRemoteCartsQueueModal();
     } else if (event.logicalKey == LogicalKeyboardKey.f10) {
       _openCashDrawerWithSecurity();
     } else if (event.logicalKey == LogicalKeyboardKey.f12 || event.logicalKey == LogicalKeyboardKey.space) {
@@ -122,6 +230,334 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     } else if (event.logicalKey == LogicalKeyboardKey.escape) {
       _confirmClearCart();
     }
+  }
+
+  void _cyclePriceTier() {
+    SoundService.playTabSwitch();
+    setState(() {
+      if (_activePriceTier == PosPriceTier.detail) {
+        _activePriceTier = PosPriceTier.demiGros;
+        SnackbarHelper.showWarning(context, 'تم تفعيل: سعر نصف الجملة (Demi-Gros)');
+      } else if (_activePriceTier == PosPriceTier.demiGros) {
+        _activePriceTier = PosPriceTier.gros;
+        SnackbarHelper.showWarning(context, 'تم تفعيل: سعر الجملة (Gros)');
+      } else {
+        _activePriceTier = PosPriceTier.detail;
+        SnackbarHelper.showSuccess(context, 'تمت العودة إلى: سعر التجزئة (Détail)');
+      }
+    });
+  }
+
+  void _toggleReturnMode() {
+    SoundService.playTabSwitch();
+    setState(() {
+      _isReturnMode = !_isReturnMode;
+    });
+    if (_isReturnMode) {
+      SoundService.playWarningSound();
+      SnackbarHelper.showWarning(context, '⚠️ تم تفعيل وضع إرجاع السلع (Return Mode) - ستسجل السلع بالسالب');
+    } else {
+      SoundService.playSaveSuccess();
+      SnackbarHelper.showSuccess(context, 'تم إيقاف وضع الإرجاع والعودة للبيع العادي');
+    }
+  }
+
+  void _showDiscountModal() {
+    SoundService.playTabSwitch();
+    final discountController = TextEditingController();
+    bool isPercent = true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.percent_rounded, color: Colors.purple, size: 28),
+                SizedBox(width: 8),
+                Text('تطبيق تخفيض على الفاتورة (F4)'),
+              ],
+            ),
+            content: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('نسبة مئوية (%)'),
+                        selected: isPercent,
+                        onSelected: (val) => setModalState(() => isPercent = true),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('مبلغ ثابت (د.ج)'),
+                        selected: !isPercent,
+                        onSelected: (val) => setModalState(() => isPercent = false),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: discountController,
+                    autofocus: true,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: isPercent ? 'نسبة التخفيض (مثلاً: 5%)' : 'قيمة التخفيض (د.ج)',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.discount_outlined),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
+                onPressed: () {
+                  final val = double.tryParse(discountController.text.trim()) ?? 0.0;
+                  setState(() {
+                    _cartDiscountValue = val;
+                    _isDiscountPercentage = isPercent;
+                  });
+                  Navigator.pop(ctx);
+                  SoundService.playSaveSuccess();
+                  SnackbarHelper.showSuccess(context, 'تم تطبيق التخفيض بنجاح');
+                },
+                child: const Text('تطبيق التخفيض', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showQuickCustomItemModal() {
+    SoundService.playTabSwitch();
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+    final qtyController = TextEditingController(text: '1');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.add_shopping_cart_rounded, color: Colors.teal, size: 28),
+            SizedBox(width: 8),
+            Text('إضافة سلعة سريعة بدون باركود (F7)'),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'اسم السلعة (مثلاً: خبز تقليدي / بيض فلت)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: priceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'السعر (د.ج)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: qtyController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'الكمية',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            onPressed: () {
+              final name = nameController.text.trim().isEmpty ? 'سلعة سريعة' : nameController.text.trim();
+              final price = double.tryParse(priceController.text.trim()) ?? 0.0;
+              final qty = int.tryParse(qtyController.text.trim()) ?? 1;
+
+              if (price <= 0) {
+                SnackbarHelper.showWarning(context, 'يرجى إدخال سعر صحيح');
+                return;
+              }
+
+              final customProduct = Product(
+                id: 'quick_${DateTime.now().millisecondsSinceEpoch}',
+                name: name,
+                barcode: 'QUICK_${DateTime.now().millisecondsSinceEpoch}',
+                price: _isReturnMode ? -price : price,
+                costPrice: 0.0,
+                stock: 999,
+              );
+
+              for (int i = 0; i < qty; i++) {
+                context.read<BillingBloc>().add(AddProductToCartEvent(customProduct));
+              }
+
+              Navigator.pop(ctx);
+              _onItemScanned();
+              _barcodeFocusNode.requestFocus();
+            },
+            child: const Text('إضافة للسلة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRemoteCartsQueueModal() {
+    SoundService.playTabSwitch();
+    final pending = LocalSyncServer.pendingRemoteCarts;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.phonelink_ring_rounded, color: Colors.indigo, size: 28),
+                const SizedBox(width: 8),
+                Text('السلات الواردة من طاقم المتجر (${pending.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: SizedBox(
+              width: 550,
+              height: 400,
+              child: pending.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_outline_rounded, size: 64, color: Colors.green),
+                          SizedBox(height: 12),
+                          Text('لا توجد سلات معلقة واردة حالياً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          SizedBox(height: 4),
+                          Text('أي سلة يمسحها المدير أو البائع بهاتفه ستظهر هنا فوراً لدفعها', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: pending.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final rc = pending[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          elevation: 1,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.indigo,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(rc.token, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                    ),
+                                    Text('${rc.senderName} • ${DateFormat('HH:mm').format(rc.timestamp)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                    Text('${rc.totalAmount.toStringAsFixed(2)} د.ج', style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.w900, fontSize: 16)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text('المحتويات (${rc.items.length} مواد): ${rc.items.map((i) => "${i.name} (x${i.quantity})").join(", ")}',
+                                    maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                                const SizedBox(height: 10),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButton.icon(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                                      label: const Text('حذف', style: TextStyle(color: Colors.red)),
+                                      onPressed: () {
+                                        LocalSyncServer.removeRemoteCart(rc.id);
+                                        setModalState(() {});
+                                        setState(() {
+                                          _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                                      icon: const Icon(Icons.download_rounded, color: Colors.white, size: 18),
+                                      label: const Text('تحميل في شاشة الدفع', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      onPressed: () {
+                                        // Load items to active cart
+                                        for (final item in rc.items) {
+                                          final prod = Product(
+                                            id: 'remote_${item.barcode}_${DateTime.now().millisecondsSinceEpoch}',
+                                            name: item.name,
+                                            barcode: item.barcode,
+                                            price: item.price,
+                                            costPrice: item.costPrice,
+                                            stock: 999,
+                                          );
+                                          for (int q = 0; q < item.quantity; q++) {
+                                            context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+                                          }
+                                        }
+                                        LocalSyncServer.removeRemoteCart(rc.id);
+                                        setState(() {
+                                          _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
+                                        });
+                                        Navigator.pop(ctx);
+                                        SoundService.playMemberCardScan();
+                                        SnackbarHelper.showSuccess(context, 'تم تحميل سلة الزبون ${rc.token} بنجاح!');
+                                        _barcodeFocusNode.requestFocus();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق')),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   void _openCashDrawerWithSecurity() async {
@@ -159,10 +595,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
             SizedBox(width: 8),
-            Text('إلغاء السلة الحالية'),
+            Text('إلغاء وتفريغ السلة الحالية'),
           ],
         ),
-        content: const Text('هل أنت متأكد من تفريغ وحذف جميع المنتجات من السلة؟'),
+        content: const Text('هل أنت متأكد من مسح جميع المنتجات من السلة؟'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('تراجع')),
           ElevatedButton(
@@ -171,6 +607,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               Navigator.pop(ctx);
               SoundService.playDeleteSound();
               context.read<BillingBloc>().add(ClearCartEvent());
+              setState(() {
+                _cartDiscountValue = 0.0;
+              });
               _barcodeFocusNode.requestFocus();
             },
             child: const Text('نعم، تفريغ السلة', style: TextStyle(color: Colors.white)),
@@ -203,11 +642,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               children: [
                 Icon(Icons.price_check_rounded, color: Colors.blueAccent, size: 28),
                 SizedBox(width: 8),
-                Text('التحقق من السعر (Price Checker - F8)'),
+                Text('التحقق من السعر والمخزون (F8)'),
               ],
             ),
             content: SizedBox(
-              width: 400,
+              width: 420,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -236,19 +675,30 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   const SizedBox(height: 16),
                   if (foundProduct != null)
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0xFF10B981)),
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(foundProduct!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           const SizedBox(height: 8),
-                          Text('${foundProduct!.price.toStringAsFixed(2)} د.ج',
-                              style: const TextStyle(color: Color(0xFF059669), fontSize: 24, fontWeight: FontWeight.bold)),
-                          Text('المخزون المتوفر: ${foundProduct!.stock} قطعة', style: const TextStyle(color: Colors.grey)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('سعر التجزئة: ${foundProduct!.price.toStringAsFixed(2)} د.ج',
+                                  style: const TextStyle(color: Color(0xFF059669), fontSize: 18, fontWeight: FontWeight.bold)),
+                              if (foundProduct!.wholesalePrice > 0)
+                                Text('الجملة: ${foundProduct!.wholesalePrice.toStringAsFixed(2)} د.ج',
+                                    style: const TextStyle(color: Colors.indigo, fontSize: 14, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text('المخزون المتوفر: ${foundProduct!.stock} قطعة • القسم: ${foundProduct!.category}',
+                              style: const TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -337,7 +787,18 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   void _showPaymentModal(BillingState state) {
     SoundService.playTabSwitch();
     PosPaymentMethod paymentMethod = PosPaymentMethod.cash;
-    double receivedAmount = state.totalAmount;
+    
+    // Calculate final total after discount
+    double calculatedTotal = state.totalAmount;
+    if (_cartDiscountValue > 0) {
+      if (_isDiscountPercentage) {
+        calculatedTotal = calculatedTotal - (calculatedTotal * (_cartDiscountValue / 100));
+      } else {
+        calculatedTotal = (calculatedTotal - _cartDiscountValue).clamp(0.0, double.infinity);
+      }
+    }
+
+    double receivedAmount = calculatedTotal;
     final manualTpeRefController = TextEditingController();
 
     showDialog(
@@ -345,7 +806,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
-          final total = state.totalAmount;
+          final total = calculatedTotal;
           final change = (receivedAmount - total).clamp(0.0, 999999.0);
 
           return AlertDialog(
@@ -380,7 +841,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('المبلغ الإجمالي المستحق:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('المبلغ الإجمالي المستحق:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            if (_cartDiscountValue > 0)
+                              Text('تخفيض مطبق: ${_cartDiscountValue.toStringAsFixed(1)}${_isDiscountPercentage ? "%" : " د.ج"}',
+                                  style: const TextStyle(fontSize: 12, color: Colors.purple, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                         Text('${total.toStringAsFixed(2)} د.ج',
                             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.teal)),
                       ],
@@ -588,6 +1057,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     // Clear cart and prepare for next customer
     if (mounted) {
       context.read<BillingBloc>().add(ClearCartEvent());
+      setState(() {
+        _cartDiscountValue = 0.0;
+      });
       SnackbarHelper.showSuccess(context, 'تمت الفوترة والطباعة بنجاح! شكراً لزيارتكم.');
       _barcodeFocusNode.requestFocus();
     }
@@ -606,6 +1078,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             children: [
               // Top Header Bar
               _buildTopHeaderBar(),
+
+              // Return Mode / Wholesale Banner if active
+              if (_isReturnMode || _activePriceTier != PosPriceTier.detail)
+                _buildActiveModeNotice(),
 
               // Main Dual-Pane POS Body
               Expanded(
@@ -636,9 +1112,38 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     );
   }
 
+  Widget _buildActiveModeNotice() {
+    final isReturn = _isReturnMode;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      color: isReturn ? Colors.red.shade700 : Colors.indigo.shade700,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(isReturn ? Icons.assignment_return_rounded : Icons.price_change_rounded, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                isReturn
+                    ? '⚠️ وضع إرجاع السلع نشط (Mode Retour) - ستسجل السلع بالسالب وتسترجع للمخزون'
+                    : '⚡ مستوى السعر الحالي: ${_activePriceTier == PosPriceTier.gros ? "سعر الجملة (Gros)" : "سعر نصف الجملة (Demi-Gros)"}',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ],
+          ),
+          InkWell(
+            onTap: isReturn ? _toggleReturnMode : _cyclePriceTier,
+            child: const Text('إلغاء / تبديل (F5/F6)', style: TextStyle(color: Colors.white, decoration: TextDecoration.underline, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTopHeaderBar() {
     return Container(
-      height: 60,
+      height: 62,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -657,7 +1162,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               Text('نظام الفوترة ونقاط البيع السريعة', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
             ],
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 16),
 
           // Master Server Indicator
           Container(
@@ -675,7 +1180,35 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 10),
+
+          // Incoming Remote Carts Queue Button (F9)
+          InkWell(
+            onTap: _showRemoteCartsQueueModal,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _pendingRemoteCartsCount > 0 ? Colors.indigo : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _pendingRemoteCartsCount > 0 ? Colors.indigo : Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.phonelink_ring_rounded, size: 16, color: _pendingRemoteCartsCount > 0 ? Colors.white : Colors.grey.shade700),
+                  const SizedBox(width: 6),
+                  Text(
+                    'السلات الواردة: $_pendingRemoteCartsCount (F9)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: _pendingRemoteCartsCount > 0 ? Colors.white : Colors.grey.shade800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
 
           // Costco IPM Speedometer
           Container(
@@ -698,6 +1231,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           const Spacer(),
 
           // Navigation Shortcuts
+          IconButton(
+            tooltip: 'سلعة سريعة (F7)',
+            icon: const Icon(Icons.add_shopping_cart_rounded, color: Colors.teal),
+            onPressed: _showQuickCustomItemModal,
+          ),
           IconButton(
             tooltip: 'تعليق السلات (F2)',
             icon: const Icon(Icons.pause_circle_outline_rounded, color: Colors.indigo),
@@ -731,45 +1269,72 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   Widget _buildLeftCartPane() {
     return BlocBuilder<BillingBloc, BillingState>(
       builder: (context, state) {
+        double currentTotal = state.totalAmount;
+        if (_cartDiscountValue > 0) {
+          if (_isDiscountPercentage) {
+            currentTotal = currentTotal - (currentTotal * (_cartDiscountValue / 100));
+          } else {
+            currentTotal = (currentTotal - _cartDiscountValue).clamp(0.0, double.infinity);
+          }
+        }
+
         return Container(
           color: Colors.white,
           child: Column(
             children: [
-              // Customer Bar (F3)
-              InkWell(
-                onTap: _showCustomerSelector,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  color: const Color(0xFFF9FAFB),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.person_pin_rounded, color: Colors.indigo, size: 22),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(_selectedCustomerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            if (_customerCreditBalance > 0)
-                              Text('الديون السابقة: ${_customerCreditBalance.toStringAsFixed(2)} د.ج',
-                                  style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
-                          ],
+              // Customer Bar (F3) & Price Tier Toggle (F5)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                color: const Color(0xFFF9FAFB),
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: _showCustomerSelector,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.person_pin_rounded, color: Colors.indigo, size: 22),
+                          const SizedBox(width: 6),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_selectedCustomerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              if (_customerCreditBalance > 0)
+                                Text('الديون السابقة: ${_customerCreditBalance.toStringAsFixed(2)} د.ج',
+                                    style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    // Price Tier Badge
+                    InkWell(
+                      onTap: _cyclePriceTier,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _activePriceTier == PosPriceTier.gros ? Colors.indigo.shade50 : Colors.teal.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: _activePriceTier == PosPriceTier.gros ? Colors.indigo : Colors.teal),
+                        ),
+                        child: Text(
+                          _activePriceTier == PosPriceTier.detail ? 'تجزئة (F5)' : (_activePriceTier == PosPriceTier.demiGros ? 'نصف جملة (F5)' : 'جملة (F5)'),
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _activePriceTier == PosPriceTier.gros ? Colors.indigo : Colors.teal),
                         ),
                       ),
-                      const Text('تغيير (F3)', style: TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
 
               // Barcode Input Box
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 child: TextField(
                   controller: _barcodeController,
                   focusNode: _barcodeFocusNode,
                   decoration: InputDecoration(
-                    hintText: 'امسح الباركود هنا (F1)...',
+                    hintText: 'امسح الباركود أو اكتب الكمية*باركود (F1)...',
                     prefixIcon: const Icon(Icons.barcode_reader, color: Colors.teal),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.clear),
@@ -876,7 +1441,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
               // Cart Financial Summary
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 decoration: const BoxDecoration(
                   color: Color(0xFFF9FAFB),
                   border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
@@ -887,41 +1452,57 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('عدد المواد: ${state.cartItems.length} (${state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity)} قطع)', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                        Text('المجموع: ${state.totalAmount.toStringAsFixed(2)} د.ج', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            if (_cartDiscountValue > 0)
+                              Text('خصم: ${_cartDiscountValue.toStringAsFixed(0)}${_isDiscountPercentage ? "%" : " د.ج"}  |  ',
+                                  style: const TextStyle(color: Colors.purple, fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text('المجموع: ${state.totalAmount.toStringAsFixed(2)} د.ج', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('الإجمالي الصافي:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        Text('${state.totalAmount.toStringAsFixed(2)} د.ج',
+                        Text('${currentTotal.toStringAsFixed(2)} د.ج',
                             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.teal)),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                            icon: const Icon(Icons.pause_circle_outline, color: Colors.indigo),
-                            label: const Text('تعليق (F2)', style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold)),
+                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                            icon: const Icon(Icons.percent_rounded, color: Colors.purple, size: 18),
+                            label: const Text('تخفيض (F4)', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12)),
+                            onPressed: _showDiscountModal,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                            icon: const Icon(Icons.pause_circle_outline, color: Colors.indigo, size: 18),
+                            label: const Text('تعليق (F2)', style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
                             onPressed: _showHeldCartsModal,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(
                           flex: 2,
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.teal,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               elevation: 2,
                             ),
-                            icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
+                            icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
                             label: const Text('دفع وفوترة (F12)',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                             onPressed: _triggerCheckout,
                           ),
                         ),
@@ -999,10 +1580,26 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         itemCount: filteredProducts.length,
                         itemBuilder: (context, index) {
                           final product = filteredProducts[index];
+                          double displayPrice = product.price;
+                          if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
+                            displayPrice = product.wholesalePrice;
+                          } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
+                            displayPrice = (product.price + product.wholesalePrice) / 2;
+                          }
+
                           return InkWell(
                             onTap: () {
                               _onItemScanned();
-                              context.read<BillingBloc>().add(AddProductToCartEvent(product));
+                              final itemProduct = Product(
+                                id: product.id,
+                                name: _isReturnMode ? '[إرجاع] ${product.name}' : product.name,
+                                barcode: product.barcode,
+                                price: _isReturnMode ? -displayPrice.abs() : displayPrice,
+                                costPrice: product.costPrice,
+                                stock: product.stock,
+                                category: product.category,
+                              );
+                              context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
                             },
                             child: Container(
                               padding: const EdgeInsets.all(10),
@@ -1034,7 +1631,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('${product.price.toStringAsFixed(2)} د.ج',
+                                      Text('${displayPrice.toStringAsFixed(2)} د.ج',
                                           style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.teal)),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1075,7 +1672,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('[F1: بحث الباركود]   [F2: تعليق السلة]   [F3: العميل/العضوية]   [F8: فحص السعر]   [F10: فتح الدرج]   [F12 / مسافة: الدفع الفوري]   [Esc: إلغاء]',
+          Text('[F1: مسح]   [F2: تعليق]   [F3: عميل]   [F4: تخفيض]   [F5: جملة/تجزئة]   [F6: إرجاع]   [F7: سلعة سريعة]   [F8: فحص سعر]   [F9: سلات واردة]   [F12: دفع]',
               style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
           Text('Costco POS Engine Active ⚡', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 11, fontWeight: FontWeight.bold)),
         ],
