@@ -1,11 +1,22 @@
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+
 import '../data/hive_database.dart';
 import '../theme/app_theme.dart';
+import 'license_service.dart';
+import 'sound_service.dart';
 
 class SecurityPinHelper {
   static const String _pinHashKey = 'security_pin_hash_v2';
   static const String _pinEnabledKey = 'security_pin_enabled';
   static const String _salt = 'NAYLI_SECURE_PIN_SALT_2026_@#!';
+
+  // In-memory active recovery OTP
+  static String? _activeRecoveryOtp;
+  static DateTime? _otpExpiry;
 
   /// Hash the PIN using cryptographic salt - no plain text stored
   static String _hashPin(String pin) {
@@ -40,6 +51,7 @@ class SecurityPinHelper {
   static Future<void> disablePin() async {
     final box = HiveDatabase.settingsBox;
     await box.put(_pinEnabledKey, false);
+    await box.delete(_pinHashKey);
   }
 
   /// Verify entered PIN against stored cryptographic hash (Zero Hardcoded PINs)
@@ -51,6 +63,65 @@ class SecurityPinHelper {
     if (savedHash == null || savedHash.isEmpty) return true;
 
     return savedHash == _hashPin(enteredPin);
+  }
+
+  /// Send Emergency Recovery OTP to Telegram Bot
+  static Future<bool> sendRecoveryOtpToTelegram() async {
+    final box = HiveDatabase.settingsBox;
+    final token = box.get('telegram_bot_token', defaultValue: '') as String;
+    final chatId = box.get('telegram_chat_id', defaultValue: '') as String;
+
+    if (token.isEmpty || chatId.isEmpty) {
+      return false; // Telegram bot not configured yet
+    }
+
+    // Generate random 6-digit OTP
+    final random = Random();
+    final otp = (random.nextInt(899999) + 100000).toString();
+    _activeRecoveryOtp = otp;
+    _otpExpiry = DateTime.now().add(const Duration(minutes: 10));
+
+    final deviceId = LicenseService.getDeviceId();
+    final timeStr = DateFormat('yyyy/MM/dd HH:mm').format(DateTime.now());
+
+    final message = '''
+🔐 *[نايلي ماركت - Nayli Market]*
+🚨 *طلب استرجاع رمز المشرف (PIN Reset Request)*
+📍 *معرف الجهاز:* `$deviceId`
+🕒 *التوقيت:* $timeStr
+
+🔑 *كود الاسترجاع المؤقت (OTP):*
+👉 `$otp` 👈
+
+⏳ *ملاحظة:* هذا الكود صالح لمدة *10 دقائق* فقط. لا تشاركه مع أي عامل في المحل!
+''';
+
+    try {
+      final url = Uri.parse('https://api.telegram.org/bot$token/sendMessage');
+      final res = await http.post(url, body: {
+        'chat_id': chatId,
+        'text': message,
+        'parse_mode': 'Markdown',
+      });
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Verify entered OTP and reset PIN
+  static bool verifyAndResetWithOtp(String enteredOtp) {
+    if (_activeRecoveryOtp == null || _otpExpiry == null) return false;
+    if (DateTime.now().isAfter(_otpExpiry!)) {
+      _activeRecoveryOtp = null;
+      return false;
+    }
+    if (_activeRecoveryOtp == enteredOtp.trim()) {
+      _activeRecoveryOtp = null;
+      disablePin();
+      return true;
+    }
+    return false;
   }
 
   /// Shows a PIN authentication dialog for protected operations
@@ -111,6 +182,141 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
     }
   }
 
+  Future<void> _showTelegramRecovery() async {
+    final box = HiveDatabase.settingsBox;
+    final hasTelegram = (box.get('telegram_bot_token', defaultValue: '') as String).isNotEmpty &&
+        (box.get('telegram_chat_id', defaultValue: '') as String).isNotEmpty;
+
+    if (!hasTelegram) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('إعداد التلغرام مطلوب', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            'لم يتم ربط بوت التلغرام في إعدادات النسخ الاحتياطي بعد.\n\nيرجى التواصل مع المطور عبر الواتساب أو استخدام بوابة المطور الميداني المباشر لتصفير الرمز فوراً دون فقدان أي بيانات.',
+            style: TextStyle(fontSize: 13, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('حسناً'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final otpCtrl = TextEditingController();
+    bool isSending = false;
+    String? otpError;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.telegram, color: Colors.teal, size: 26),
+              SizedBox(width: 8),
+              Text('استرجاع الرمز عبر التلغرام', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'اضغط أدناه لإرسال كود فك القفل (OTP) فوراً وبشكل آمن إلى حساب التلغرام الخاص بالمدير:',
+                style: TextStyle(fontSize: 12.5, color: Colors.black87, height: 1.4),
+              ),
+              const SizedBox(height: 14),
+
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: isSending
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                label: Text(
+                  isSending ? 'جاري الإرسال...' : 'إرسال كود OTP إلى التلغرام 📲',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                onPressed: isSending
+                    ? null
+                    : () async {
+                        setDlgState(() => isSending = true);
+                        final sent = await SecurityPinHelper.sendRecoveryOtpToTelegram();
+                        setDlgState(() => isSending = false);
+                        if (sent) {
+                          SoundService.playSaveSuccess();
+                          setDlgState(() => otpError = null);
+                        } else {
+                          setDlgState(() => otpError = 'تعذر الاتصال ببوت التلغرام! تأكد من اتصال الإنترنت.');
+                        }
+                      },
+              ),
+
+              const SizedBox(height: 16),
+              TextField(
+                controller: otpCtrl,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 4),
+                decoration: InputDecoration(
+                  labelText: 'أدخل كود الـ OTP المكون من 6 أرقام',
+                  labelStyle: const TextStyle(fontSize: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  errorText: otpError,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                final success = SecurityPinHelper.verifyAndResetWithOtp(otpCtrl.text);
+                if (success) {
+                  SoundService.playSaveSuccess();
+                  Navigator.pop(ctx); // Close recovery dialog
+                  Navigator.pop(context, true); // Unlock PIN dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('🎉 تم التحقق بنجاح! تم تصفير رمز الـ PIN ويمكنك الآن تعيين رمز جديد.'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  setDlgState(() => otpError = 'كود الـ OTP غير صحيح أو انتهت صلاحيته!');
+                }
+              },
+              child: const Text('تأكيد وإلغاء القفل 🔓', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -168,7 +374,7 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
               ),
             ],
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Keypad
             Column(
@@ -181,6 +387,22 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
                 const SizedBox(height: 10),
                 _buildRow(['C', '0', 'DEL']),
               ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // Telegram Recovery Button
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.teal[700],
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+              ),
+              icon: const Icon(Icons.telegram, size: 18),
+              label: const Text(
+                'نسيت رمز المشرف؟ (استرجاع عبر تلغرام 🔑)',
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+              ),
+              onPressed: _showTelegramRecovery,
             ),
           ],
         ),
