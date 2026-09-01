@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/kiosk_service.dart';
 
@@ -31,6 +32,8 @@ import '../bloc/billing_bloc.dart';
 import '../widgets/held_carts_modal.dart';
 import '../widgets/quick_items_manager_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
+import '../widgets/pos_payment_modal.dart';
+import '../widgets/pos_header_toolbar.dart';
 
 enum PosPriceTier { detail, demiGros, gros }
 
@@ -1474,293 +1477,22 @@ $itemsSummary
   }
 
   void _showPaymentModal(BillingState state) {
-    SoundService.playTabSwitch();
-    PosPaymentMethod paymentMethod = PosPaymentMethod.cash;
-    
-    // Calculate final total after discount
-    double calculatedTotal = state.totalAmount;
-    if (_cartDiscountValue > 0) {
-      if (_isDiscountPercentage) {
-        calculatedTotal = calculatedTotal - (calculatedTotal * (_cartDiscountValue / 100));
-      } else {
-        calculatedTotal = (calculatedTotal - _cartDiscountValue).clamp(0.0, double.infinity);
-      }
-    }
-
-    double receivedAmount = calculatedTotal;
-    final manualTpeRefController = TextEditingController();
-
-    showDialog(
+    PosPaymentModal.show(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) {
-          final total = calculatedTotal;
-          final change = (receivedAmount - total).clamp(0.0, 999999.0);
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                const Icon(Icons.point_of_sale_rounded, color: Colors.teal, size: 30),
-                const SizedBox(width: 8),
-                Text(context.tr('btn_pay_checkout'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            content: SizedBox(
-              width: 580,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Total Box
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.teal.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.teal.shade200),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(context.tr('cart_net_total'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                            if (_cartDiscountValue > 0)
-                              Text('${context.tr("discount")}: ${_cartDiscountValue.toStringAsFixed(1)}${_isDiscountPercentage ? "%" : " DA"}',
-                                  style: const TextStyle(fontSize: 12, color: Colors.purple, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        Text('${total.toStringAsFixed(2)} DA',
-                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.teal)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Payment Method Selector
-                  Text(context.tr('payment_mode'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: PosPaymentMethod.values.map((method) {
-                      final isSelected = paymentMethod == method;
-                      return ChoiceChip(
-                        selected: isSelected,
-                        label: Text('${method.icon} ${method.titleAr}'),
-                        selectedColor: Colors.teal,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        onSelected: (val) {
-                          if (val) {
-                            setModalState(() {
-                              paymentMethod = method;
-                            });
-                            SoundService.playTabSwitch();
-                          }
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Dynamic Content based on method
-                  if (paymentMethod == PosPaymentMethod.cash) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            autofocus: true,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: context.tr('paid_amount'),
-                              border: const OutlineInputBorder(),
-                              prefixIcon: const Icon(Icons.money),
-                            ),
-                            onChanged: (val) {
-                              final numVal = double.tryParse(val) ?? 0.0;
-                              setModalState(() {
-                                receivedAmount = numVal;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(context.tr('change_due'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                              Text('${change.toStringAsFixed(2)} DA',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: change >= 0 ? Colors.green : Colors.red)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Quick Bill Buttons
-                    Row(
-                      children: [500, 1000, 2000, 5000].map((bill) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ActionChip(
-                            label: Text('+$bill DA'),
-                            onPressed: () {
-                              setModalState(() {
-                                receivedAmount = bill.toDouble();
-                              });
-                              SoundService.playTabSwitch();
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ] else if (paymentMethod == PosPaymentMethod.tpeCard) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.credit_card_rounded, color: Colors.blueAccent),
-                              SizedBox(width: 8),
-                              Text('TPE (CIB / Edahabia)', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: manualTpeRefController,
-                            decoration: const InputDecoration(
-                              labelText: 'SATIM Ref / Ticket Code',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (paymentMethod == PosPaymentMethod.baridiPayQr) ...[
-                    Center(
-                      child: Column(
-                        children: [
-                          QrImageView(
-                            data: TpePaymentService.generateBaridiPayQrPayload(
-                              amount: total,
-                              invoiceNumber: 'INV-${DateTime.now().millisecondsSinceEpoch}',
-                            ),
-                            version: QrVersions.auto,
-                            size: 160.0,
-                          ),
-                          const SizedBox(height: 8),
-                          const Text('BaridiMob (BaridiPay QR)',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
-                        ],
-                      ),
-                    ),
-                  ] else if (paymentMethod == PosPaymentMethod.customerCredit) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.account_balance_wallet_rounded, color: Colors.amber),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${context.tr("remaining_to_credit")} ${total.toStringAsFixed(2)} DA ($_selectedCustomerName)',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.green.shade800,
-                  side: BorderSide(color: Colors.green.shade600),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                ),
-                icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.green, size: 18),
-                label: const Text('واتساب 💬', style: TextStyle(fontWeight: FontWeight.bold)),
-                onPressed: () => _sendWhatsAppReceipt(total, context.read<BillingBloc>().state),
-              ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                ),
-                icon: const Icon(Icons.print_rounded, color: Colors.white),
-                label: Text(context.tr('confirm_and_print'),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                onPressed: () async {
-                  if (paymentMethod == PosPaymentMethod.customerCredit && _selectedCustomerId != null) {
-                    final cData = HiveDatabase.customersBox.get(_selectedCustomerId);
-                    double maxLimit = 50000.0;
-                    if (cData is Map) {
-                      maxLimit = (cData['maxDebtLimit'] as num?)?.toDouble() ?? 50000.0;
-                    }
-                    final projectedDebt = _customerCreditBalance + total;
-                    if (projectedDebt > maxLimit) {
-                      final authorized = await SecurityPinHelper.authenticate(
-                        context,
-                        title: '⚠️ تجاوز سقف الدين (${maxLimit.toStringAsFixed(0)} DA) - إذن المشرف',
-                      );
-                      if (!authorized) {
-                        SnackbarHelper.showError(context, '❌ تم إلغاء البيع: رُفض تجاوز سقف الدين بدون إذن المشرف.');
-                        return;
-                      }
-                    }
-                  }
-
-                  Navigator.pop(ctx);
-                  await _finalizeSale(paymentMethod, total, manualTpeRefController.text);
-                },
-              ),
-            ],
-          );
-        },
-      ),
+      state: state,
+      cartDiscountValue: _cartDiscountValue,
+      isDiscountPercentage: _isDiscountPercentage,
+      selectedCustomerId: _selectedCustomerId,
+      selectedCustomerName: _selectedCustomerName,
+      customerCreditBalance: _customerCreditBalance,
+      onFinalizeSale: (method, total, tpeRef, {bool printReceipt = true}) =>
+          _finalizeSale(method, total, tpeRef, printReceipt: printReceipt),
+      onSendWhatsAppReceipt: (total, billingState) =>
+          _sendWhatsAppReceipt(total, billingState),
     );
   }
 
-  Future<void> _finalizeSale(PosPaymentMethod method, double total, String tpeRef) async {
+  Future<void> _finalizeSale(PosPaymentMethod method, double total, String tpeRef, {bool printReceipt = true}) async {
     final billingBloc = context.read<BillingBloc>();
     final isCredit = method == PosPaymentMethod.customerCredit;
 
@@ -1793,6 +1525,7 @@ $itemsSummary
       paidAmount: isCredit ? 0.0 : total,
       previousDebt: _customerCreditBalance,
       newDebtTotal: isCredit ? (_customerCreditBalance + total) : _customerCreditBalance,
+      skipPhysicalPrint: !printReceipt,
     ));
 
     // 2. If credit, update customer debt in Hive
@@ -1897,202 +1630,12 @@ $itemsSummary
   }
 
   Widget _buildTopHeaderBar() {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
-      ),
-      child: Row(
-        children: [
-          // Brand Logo with elegant rounded container
-          Container(
-            width: 44,
-            height: 44,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.asset(
-                AppConstants.appLogoPath,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.storefront, color: Colors.teal, size: 28),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Text(
-                    'Nayli Market POS',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5, color: Color(0xFF0F172A), letterSpacing: 0.3),
-                  ),
-                  SizedBox(width: 6),
-                  Text('🇩🇿', style: TextStyle(fontSize: 14)),
-                ],
-              ),
-              Text(
-                context.tr('pos_title'),
-                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          const SizedBox(width: 20),
-
-          // Customer-Facing Professional Welcome Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.teal.shade50,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.teal.shade200),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.verified_rounded, size: 16, color: Colors.teal),
-                const SizedBox(width: 6),
-                Text(context.tr('pos_welcome'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Discreet LAN Network Sync Indicator for Cashier (Tooltip only)
-          Tooltip(
-            message: _isServerRunning ? 'LAN OK: $_serverIp:8080' : 'LAN Standby',
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _isServerRunning ? Colors.green.shade50 : Colors.amber.shade50,
-                border: Border.all(color: _isServerRunning ? Colors.green : Colors.amber),
-              ),
-              child: Icon(
-                _isServerRunning ? Icons.wifi_rounded : Icons.wifi_off_rounded,
-                size: 16,
-                color: _isServerRunning ? Colors.green.shade700 : Colors.amber.shade800,
-              ),
-            ),
-          ),
-
-          if (_pendingRemoteCartsCount > 0) ...[
-            const SizedBox(width: 8),
-            // Incoming Remote Carts Queue Button (F9)
-            InkWell(
-              onTap: _showRemoteCartsQueueModal,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.indigo,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.phonelink_ring_rounded, size: 16, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${context.tr("pos_incoming_carts")}: $_pendingRemoteCartsCount (F9)',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-
-          const Spacer(),
-
-          // Cash Drawer Quick Kick with Bank Icon (F10)
-          IconButton(
-            tooltip: context.tr('pos_open_drawer'),
-            icon: const Icon(Icons.account_balance_rounded, color: Colors.amber, size: 22),
-            onPressed: _openCashDrawerWithSecurity,
-          ),
-
-          // Navigation Shortcuts (Documents, Backups, Shifts, Catalog, Products, Reports, Settings)
-          IconButton(
-            tooltip: context.tr('pos_commercial_docs'),
-            icon: const Icon(Icons.description_outlined, color: Colors.teal),
-            onPressed: () => context.push('/documents'),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_backup_sync'),
-            icon: const Icon(Icons.cloud_sync_rounded, color: Colors.blueAccent),
-            onPressed: () => context.push('/backups'),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_shifts_zreport'),
-            icon: const Icon(Icons.badge_rounded, color: Colors.indigo),
-            onPressed: () => context.push('/shifts'),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_master_catalog'),
-            icon: const Icon(Icons.library_books_rounded, color: Colors.deepOrange),
-            onPressed: () => context.push('/master-catalog'),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_inventory'),
-            icon: const Icon(Icons.inventory_2_outlined, color: Colors.green),
-            onPressed: () => context.push('/products'),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_reports'),
-            icon: const Icon(Icons.analytics_outlined, color: Colors.purple),
-            onPressed: () => context.push('/reports'),
-          ),
-          IconButton(
-            tooltip: 'طابعات ويندوز (الوصولات والمستندات)',
-            icon: const Icon(Icons.print_outlined, color: Colors.teal),
-            onPressed: () => PrinterSelectionDialog.show(context),
-          ),
-          IconButton(
-            tooltip: 'إدارة الشبكة والمزامنة المحلية (LAN & Wi-Fi)',
-            icon: const Icon(Icons.wifi_tethering_rounded, color: Colors.indigo),
-            onPressed: () => context.push('/lan-sync'),
-          ),
-          IconButton(
-            tooltip: 'كشك فاحص الأسعار للزبائن 🛍️',
-            icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF4F46E5)),
-            onPressed: () => context.push('/kiosk'),
-          ),
-          IconButton(
-            tooltip: 'إعدادات كشك الأسعار والعروض ⚙️',
-            icon: const Icon(Icons.tv_rounded, color: Colors.blueGrey),
-            onPressed: () => context.push('/kiosk-settings'),
-          ),
-          IconButton(
-            tooltip: 'مراقبة الصلاحية والتوالف ⏳',
-            icon: const Icon(Icons.hourglass_bottom_rounded, color: Colors.amber),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpiryMonitorPage())),
-          ),
-          IconButton(
-            tooltip: 'إعدادات التشغيل المتقدمة والموازين 🎛️',
-            icon: const Icon(Icons.tune_rounded, color: Colors.blueGrey),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage())),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_settings'),
-            icon: const Icon(Icons.settings_outlined, color: Colors.grey),
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
-      ),
+    return PosHeaderToolbar(
+      isServerRunning: _isServerRunning,
+      serverIp: _serverIp,
+      pendingRemoteCartsCount: _pendingRemoteCartsCount,
+      onOpenDrawer: _openCashDrawerWithSecurity,
+      onShowRemoteCartsQueue: _showRemoteCartsQueueModal,
     );
   }
 

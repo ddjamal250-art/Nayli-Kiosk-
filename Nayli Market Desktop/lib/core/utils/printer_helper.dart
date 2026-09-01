@@ -56,6 +56,39 @@ class PrinterHelper {
     await HiveDatabase.settingsBox.put('default_document_printer', name);
   }
 
+  static bool isThermalPrinter(String printerName) {
+    final lower = printerName.toLowerCase();
+    const thermalKeywords = [
+      'pos', 'thermal', 'receipt', 'ticket', '80', '58', 'xp-', 'xprinter',
+      'tm-t', 'tm-m', 'star', 'citizen', 'epson tm', 'bixolon', 'zj', 'rp',
+      'sp-pos', 'hoin', 'rongta', 'sunmi', 'gprinter', 'black copper', 'vsc',
+      'zywell', 'netum', 'munbyn', 'milestone', 'isy'
+    ];
+    for (final kw in thermalKeywords) {
+      if (lower.contains(kw)) return true;
+    }
+    return false;
+  }
+
+  static Printer? findBestThermalPrinter(List<Printer> printers) {
+    if (printers.isEmpty) return null;
+    
+    // 1. Saved preference
+    if (defaultThermalPrinter.isNotEmpty) {
+      final saved = printers.where((p) => p.name == defaultThermalPrinter).firstOrNull;
+      if (saved != null) return saved;
+    }
+
+    // 2. Scan printers for thermal keywords
+    for (final p in printers) {
+      if (isThermalPrinter(p.name)) {
+        return p;
+      }
+    }
+
+    return null;
+  }
+
   static Future<void> openCashDrawer() async {
     try {
       final List<int> drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
@@ -194,17 +227,21 @@ class PrinterHelper {
 
       final bytes = await doc.save();
       final printers = await Printing.listPrinters();
-      final targetName = specificPrinterName ?? defaultThermalPrinter;
+      
       Printer? target;
-      if (targetName.isNotEmpty) {
-        target = printers.where((p) => p.name == targetName).firstOrNull;
+      if (specificPrinterName != null && specificPrinterName.isNotEmpty) {
+        target = printers.where((p) => p.name == specificPrinterName).firstOrNull;
       }
-      target ??= printers.where((p) => p.isDefault).firstOrNull ?? (printers.isNotEmpty ? printers.first : null);
+
+      // Look up target thermal printer or saved preference
+      target ??= findBestThermalPrinter(printers);
 
       if (target != null) {
         return await Printing.directPrintPdf(printer: target, onLayout: (_) => bytes);
       } else {
-        return await Printing.layoutPdf(onLayout: (_) => bytes);
+        // DO NOT silently send 80mm receipts to big office A4 laser printers!
+        // Instead, open the print dialog so the user can select their thermal printer explicitly
+        return await Printing.layoutPdf(onLayout: (_) => bytes, name: 'Nayli_Receipt_${DateTime.now().millisecondsSinceEpoch}');
       }
     } catch (_) {
       return false;
@@ -289,6 +326,7 @@ class PrinterHelper {
     double newDebtTotal = 0.0,
     String? footer,
     List<String> extraLines = const [],
+    String? specificPrinterName,
   }) async {
     // If running on Windows desktop, use native Windows spooler
     if (Platform.isWindows) {
@@ -306,6 +344,7 @@ class PrinterHelper {
         paidAmount: paidAmount,
         newDebtTotal: newDebtTotal,
         footer: footer,
+        specificPrinterName: specificPrinterName,
       );
       return;
     }

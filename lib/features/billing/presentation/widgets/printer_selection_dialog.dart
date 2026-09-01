@@ -57,7 +57,7 @@ class _PrinterSelectionDialogState extends State<PrinterSelectionDialog> {
         _isLoading = false;
         // Auto-fallback if empty
         if (_selectedThermalPrinter == null || _selectedThermalPrinter!.isEmpty) {
-          _selectedThermalPrinter = list.where((p) => p.isDefault).firstOrNull?.name ?? (list.isNotEmpty ? list.first.name : null);
+          _selectedThermalPrinter = PrinterHelper.findBestThermalPrinter(list)?.name;
         }
         if (_selectedDocumentPrinter == null || _selectedDocumentPrinter!.isEmpty) {
           _selectedDocumentPrinter = list.where((p) => p.isDefault).firstOrNull?.name ?? (list.isNotEmpty ? list.first.name : null);
@@ -252,6 +252,19 @@ class _PrinterSelectionDialogState extends State<PrinterSelectionDialog> {
                                                   child: const Text('افتراضية ويندوز', style: TextStyle(fontSize: 9, color: Colors.black54)),
                                                 ),
                                               ],
+                                              const SizedBox(width: 6),
+                                              if (PrinterHelper.isThermalPrinter(p.name))
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(color: Colors.teal.shade50, border: Border.all(color: Colors.teal.shade300), borderRadius: BorderRadius.circular(4)),
+                                                  child: const Text('طابعة حرارية (80mm/58mm)', style: TextStyle(fontSize: 9, color: Colors.teal, fontWeight: FontWeight.bold)),
+                                                )
+                                              else
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(color: Colors.blueGrey.shade50, borderRadius: BorderRadius.circular(4)),
+                                                  child: const Text('طابعة مكتبية A4', style: TextStyle(fontSize: 9, color: Colors.blueGrey, fontWeight: FontWeight.w600)),
+                                                ),
                                             ],
                                           ),
                                           if (p.url.isNotEmpty)

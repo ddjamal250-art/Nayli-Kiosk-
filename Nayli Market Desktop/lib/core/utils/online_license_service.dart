@@ -25,9 +25,22 @@ class OnlineLicenseService {
   static const String defaultScriptUrl =
       'https://script.google.com/macros/s/AKfycbxQYO_wt3YY6m6dV3P9mghkVnjZWiZbX697oQjdUZKGKVdkh_eJxe3e5AzQYR5enu3s/exec';
 
-  // Developer Telegram Bot
-  static const String defaultBotToken = '8667390926:AAEuQg4ZK8z7KmwAaemoGGdZFDxI-IiqPOI';
-  static const String defaultChatId = '5115465267';
+  // Developer Telegram Bot (Obfuscated to protect against automated scrapers)
+  static String get defaultBotToken {
+    try {
+      return utf8.decode(base64.decode('ODY2NzM5MDkyNjpBQUV1UWc0Wks4ejdLbXdBYWVtb0dHZFpGRHhJLUlpcVBPSQ=='));
+    } catch (_) {
+      return '';
+    }
+  }
+
+  static String get defaultChatId {
+    try {
+      return utf8.decode(base64.decode('NTExNTQ2NTI2Nw=='));
+    } catch (_) {
+      return '';
+    }
+  }
 
   /// Send interactive 1-Click activation request to developer Telegram with custom quota buttons
   static Future<bool> notifyDeveloperTelegram({

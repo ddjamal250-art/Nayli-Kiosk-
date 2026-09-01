@@ -334,21 +334,24 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'paidAmount': event.paidAmount,
       });
 
-      // 3. Print physical receipt
-      await printerHelper.printReceipt(
-        shopName: event.shopName,
-        address1: event.address1,
-        address2: event.address2,
-        phone: event.phone,
-        items: items,
-        total: state.totalAmount,
-        footer: event.footer,
-        customerName: event.customerName,
-        isCredit: event.isCredit,
-        paidAmount: event.paidAmount,
-        previousDebt: event.previousDebt,
-        newDebtTotal: event.newDebtTotal,
-      );
+      // 3. Print physical receipt (unless skipped)
+      if (!event.skipPhysicalPrint) {
+        await printerHelper.printReceipt(
+          shopName: event.shopName,
+          address1: event.address1,
+          address2: event.address2,
+          phone: event.phone,
+          items: items,
+          total: state.totalAmount,
+          footer: event.footer,
+          customerName: event.customerName,
+          isCredit: event.isCredit,
+          paidAmount: event.paidAmount,
+          previousDebt: event.previousDebt,
+          newDebtTotal: event.newDebtTotal,
+          specificPrinterName: event.specificPrinterName,
+        );
+      }
 
       emit(state.copyWith(isPrinting: false, printSuccess: true));
     } catch (e) {

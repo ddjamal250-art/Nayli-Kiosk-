@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../billing/presentation/widgets/printer_selection_dialog.dart';
 
 class ReceiptCustomizerPage extends StatefulWidget {
   const ReceiptCustomizerPage({super.key});
@@ -214,6 +215,12 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     ];
 
     if (Platform.isWindows) {
+      if (PrinterHelper.defaultThermalPrinter.isEmpty) {
+        final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
+        if (chosen == null || !mounted) return;
+        setState(() {});
+      }
+
       final ok = await PrinterHelper.printReceiptWindows(
         shopName: _shopNameCtrl.text.trim(),
         address1: _showAddress ? _addressCtrl.text.trim() : null,
@@ -227,9 +234,10 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       );
       if (mounted) {
         if (ok) {
-          SnackbarHelper.showSuccess(context, '🖨️ تم إرسال الوصل التجريبي إلى طابعة Windows بنجاح!');
+          final printerName = PrinterHelper.defaultThermalPrinter.isNotEmpty ? ' (${PrinterHelper.defaultThermalPrinter})' : '';
+          SnackbarHelper.showSuccess(context, '🖨️ تم إرسال الوصل التجريبي إلى طابعة$printerName بنجاح!');
         } else {
-          SnackbarHelper.showWarning(context, 'يرجى تحديد طابعة الويندوز الافتراضية من شاشة إعدادات الطابعات.');
+          SnackbarHelper.showWarning(context, 'يرجى تحديد طابعة الوصولات الحرارية من شاشة اختيار الطابعات.');
         }
       }
       return;
@@ -285,6 +293,36 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
           onPressed: () => context.pop(),
         ),
         actions: [
+          // Thermal printer selector button
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal.shade800 : Colors.deepOrange,
+              side: BorderSide(
+                color: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal.shade400 : Colors.deepOrange,
+                width: 1.2,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            icon: Icon(
+              Icons.print,
+              size: 16,
+              color: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal : Colors.deepOrange,
+            ),
+            label: Text(
+              PrinterHelper.defaultThermalPrinter.isNotEmpty
+                  ? 'طابعة الوصل: ${PrinterHelper.defaultThermalPrinter}'
+                  : '⚠️ اختر طابعة الإيصالات',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+            onPressed: () async {
+              final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
+              if (chosen != null && mounted) {
+                setState(() {});
+              }
+            },
+          ),
+          const SizedBox(width: 8),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.teal.shade700,

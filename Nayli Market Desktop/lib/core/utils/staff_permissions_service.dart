@@ -95,3 +95,4 @@ class StaffPermissionsService {
     await HiveDatabase.settingsBox.put(_keyExpiryTracking, value);
   }
 }
+
