@@ -17,6 +17,7 @@ import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../../core/utils/tpe_payment_service.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
@@ -1065,9 +1066,9 @@ $itemsSummary
 
   void _showHeldCartsModal() {
     SoundService.playTabSwitch();
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
+      desktopMaxWidth: 600,
       builder: (ctx) => const HeldCartsModal(),
     );
   }

@@ -12,9 +12,11 @@ extension AppSnackBarExtension on BuildContext {
     bool isError = false,
   }) {
     final messenger = ScaffoldMessenger.of(this);
-    messenger.hideCurrentSnackBar();
+    messenger.clearSnackBars();
     final effectiveBg = isError ? const Color(0xFFDC2626) : backgroundColor;
     final effectiveIcon = icon ?? (isError ? Icons.error_outline : null);
+    final screenWidth = MediaQuery.of(this).size.width;
+    final isDesktop = screenWidth >= 650;
 
     messenger.showSnackBar(
       SnackBar(
@@ -36,6 +38,13 @@ extension AppSnackBarExtension on BuildContext {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.white70, size: 16),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              tooltip: 'إغلاق',
+              onPressed: () => messenger.hideCurrentSnackBar(),
+            ),
           ],
         ),
         action: actionLabel != null
@@ -46,10 +55,11 @@ extension AppSnackBarExtension on BuildContext {
               )
             : null,
         backgroundColor: effectiveBg,
-        duration: durationMs != null ? Duration(milliseconds: durationMs) : duration,
+        duration: durationMs != null ? Duration(milliseconds: durationMs) : (duration.inMilliseconds < 2000 ? const Duration(milliseconds: 2200) : duration),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        width: isDesktop ? 480 : null,
+        margin: isDesktop ? null : const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         elevation: 6,
       ),
     );

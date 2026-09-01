@@ -14,6 +14,7 @@ import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/notification_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
+import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/language_cubit.dart';
 
@@ -663,11 +664,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// 1. Finance & Reports Hub Sheet
   void _showFinanceHubSheet(BuildContext context) {
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      desktopMaxWidth: 560,
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -742,11 +741,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// 2. Inventory & Supply Hub Sheet
   void _showInventoryHubSheet(BuildContext context) {
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      desktopMaxWidth: 560,
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
@@ -835,11 +832,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// 3. Partners & Customer Credit Hub Sheet
   void _showPartnersHubSheet(BuildContext context) {
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      desktopMaxWidth: 560,
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -985,9 +980,9 @@ class _SettingsPageState extends State<SettingsPage> {
   // ==========================================
 
   void _showLanguageModal(BuildContext context, Locale currentLocale) {
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      desktopMaxWidth: 440,
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -1022,15 +1017,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _showNotificationsHub(BuildContext context) {
     final alerts = NotificationService.getLiveAlerts();
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      desktopMaxWidth: 600,
       builder: (ctx) => Container(
         height: MediaQuery.of(context).size.height * 0.75,
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
         child: Column(
           children: [
@@ -1265,15 +1259,14 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showBackupRestoreSheet(BuildContext context) {
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      desktopMaxWidth: 560,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1362,13 +1355,9 @@ class _SettingsPageState extends State<SettingsPage> {
     int currentThemeId = SoundService.getSelectedThemeId();
     double currentVol = SoundService.getVolume();
 
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      desktopMaxWidth: 560,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
           padding: const EdgeInsets.all(20),

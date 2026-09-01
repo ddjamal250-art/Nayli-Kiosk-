@@ -68,24 +68,52 @@ class KioskService {
   // ذاكرة مؤقتة لمنع إغراق الكاشير بالتنبيهات (Cooldown 5 دقائق لكل باركود مكرر)
   static final Map<String, DateTime> _alertCooldowns = {};
 
-  /// جلب إعدادات الكشك
+  /// جلب إعدادات الكشك بأمان تام ضد أخطاء الأنواع
   static Map<String, dynamic> getSettings() {
-    final box = HiveDatabase.settingsBox;
-    final shopName = box.get('shop_name', defaultValue: 'Nayli Market') as String;
-    return {
-      'productDisplayDuration':
-          box.get('kiosk_product_display_duration', defaultValue: 10) as int,
-      'arrowDirection':
-          box.get('kiosk_arrow_direction', defaultValue: 'down') as String,
-      'greetingTitle': box.get(
-          'kiosk_greeting_title', defaultValue: 'مرحباً بكم في ' + shopName) as String,
-      'greetingSubtitle': box.get('kiosk_greeting_subtitle',
-          defaultValue: 'مرر باركود السلعة تحت الماسح لمعرفة السعر') as String,
-      'promoSlides': List<String>.from(
-          box.get('kiosk_promo_slides', defaultValue: <String>[])),
-      'soundEnabled':
-          box.get('kiosk_sound_enabled', defaultValue: true) as bool,
-    };
+    try {
+      final box = HiveDatabase.settingsBox;
+      final rawShopName = box.get('shop_name', defaultValue: 'Nayli Market');
+      final shopName = rawShopName?.toString().isNotEmpty == true ? rawShopName.toString() : 'Nayli Market';
+
+      final rawDuration = box.get('kiosk_product_display_duration', defaultValue: 10);
+      final duration = (rawDuration is num) ? rawDuration.toInt() : (int.tryParse(rawDuration?.toString() ?? '') ?? 10);
+
+      final rawArrow = box.get('kiosk_arrow_direction', defaultValue: 'down');
+      final arrow = rawArrow?.toString().isNotEmpty == true ? rawArrow.toString() : 'down';
+
+      final rawTitle = box.get('kiosk_greeting_title', defaultValue: 'مرحباً بكم في ' + shopName);
+      final title = rawTitle?.toString().isNotEmpty == true ? rawTitle.toString() : ('مرحباً بكم في ' + shopName);
+
+      final rawSubtitle = box.get('kiosk_greeting_subtitle', defaultValue: 'مرر باركود السلعة تحت الماسح لمعرفة السعر');
+      final subtitle = rawSubtitle?.toString().isNotEmpty == true ? rawSubtitle.toString() : 'مرر باركود السلعة تحت الماسح لمعرفة السعر';
+
+      final rawSlides = box.get('kiosk_promo_slides');
+      List<String> slides = [];
+      if (rawSlides is Iterable) {
+        slides = rawSlides.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
+      }
+
+      final rawSound = box.get('kiosk_sound_enabled', defaultValue: true);
+      final soundEnabled = rawSound == true || rawSound == 'true' || rawSound == 1;
+
+      return {
+        'productDisplayDuration': duration,
+        'arrowDirection': arrow,
+        'greetingTitle': title,
+        'greetingSubtitle': subtitle,
+        'promoSlides': slides,
+        'soundEnabled': soundEnabled,
+      };
+    } catch (e) {
+      return {
+        'productDisplayDuration': 10,
+        'arrowDirection': 'down',
+        'greetingTitle': 'مرحباً بكم في متجرنا',
+        'greetingSubtitle': 'مرر باركود السلعة تحت الماسح لمعرفة السعر',
+        'promoSlides': <String>[],
+        'soundEnabled': true,
+      };
+    }
   }
 
   /// حفظ إعدادات الكشك
@@ -258,24 +286,38 @@ class KioskService {
     }
   }
 
-  /// جلب قائمة السلع المنسية غير المسجلة
+  /// جلب قائمة السلع المنسية غير المسجلة بأمان
   static List<Map<String, dynamic>> getUnlistedScans() {
-    final rawList =
-        HiveDatabase.settingsBox.get('kiosk_unlisted_scans', defaultValue: <dynamic>[]);
-    return rawList
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
+    try {
+      final rawList =
+          HiveDatabase.settingsBox.get('kiosk_unlisted_scans', defaultValue: <dynamic>[]);
+      if (rawList is! Iterable) return [];
+      final result = <Map<String, dynamic>>[];
+      for (final e in rawList) {
+        if (e is Map) {
+          result.add(Map<String, dynamic>.from(e));
+        }
+      }
+      return result;
+    } catch (_) {
+      return [];
+    }
   }
 
   /// حذف سلعة من سجل السلع المنسية (بعد إضافتها للمخزون)
   static Future<void> removeUnlistedScan(String barcode) async {
-    final box = HiveDatabase.settingsBox;
-    final rawList = box.get('kiosk_unlisted_scans', defaultValue: <dynamic>[]);
-    final list = rawList
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .where((item) => item['barcode'] != barcode)
-        .toList();
-    await box.put('kiosk_unlisted_scans', list);
+    try {
+      final box = HiveDatabase.settingsBox;
+      final rawList = box.get('kiosk_unlisted_scans', defaultValue: <dynamic>[]);
+      if (rawList is! Iterable) return;
+      final list = <Map<String, dynamic>>[];
+      for (final e in rawList) {
+        if (e is Map && e['barcode']?.toString() != barcode) {
+          list.add(Map<String, dynamic>.from(e));
+        }
+      }
+      await box.put('kiosk_unlisted_scans', list);
+    } catch (_) {}
   }
 
   /// مسح كامل سجل السلع المنسية

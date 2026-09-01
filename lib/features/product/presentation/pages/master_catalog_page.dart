@@ -14,6 +14,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
+import '../../../../core/utils/adaptive_modal_helper.dart';
 
 class MasterCatalogPage extends StatefulWidget {
   const MasterCatalogPage({super.key});
@@ -95,22 +96,13 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     int qtyToAdd = existingProduct != null ? 0 : 12;
     final qtyController = TextEditingController(text: qtyToAdd > 0 ? qtyToAdd.toString() : '12');
 
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      desktopMaxWidth: 560,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           return Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              top: 20,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-            ),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -326,6 +318,18 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                 ),
               ],
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: 'تحديث وتحميل الكتالوج',
+                onPressed: () async {
+                  await MasterCatalogService.instance.init();
+                  setState(() {});
+                  SnackbarHelper.showInfo(context, 'تم تحديث قائمة السلع (${allItems.length} منتج متوفر)');
+                },
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
           body: Column(
             children: [
@@ -559,7 +563,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
               ),
             ],
           ),
-          bottomSheet: _selectedBarcodes.isEmpty
+          bottomNavigationBar: _selectedBarcodes.isEmpty
               ? null
               : Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -576,17 +580,26 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                         'تم تحديد ${_selectedBarcodes.length} منتج من الكتالوج',
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        ),
-                        icon: const Icon(Icons.add_task_rounded, color: Colors.white),
-                        label: const Text(
-                          'إضافة المحددة لمخزون المحل فوراً',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        onPressed: () => _batchAddSelectedToShop(allItems, existingProductsMap),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: _clearSelection,
+                            child: const Text('إلغاء التحديد', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                            ),
+                            icon: const Icon(Icons.add_task_rounded, color: Colors.white, size: 18),
+                            label: const Text(
+                              'إضافة المحددة لمخزون المحل فوراً',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () => _batchAddSelectedToShop(allItems, existingProductsMap),
+                          ),
+                        ],
                       ),
                     ],
                   ),

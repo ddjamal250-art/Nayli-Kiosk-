@@ -5,26 +5,29 @@ import 'master_catalog_seed.dart';
 
 class MasterCatalogService {
   static final MasterCatalogService instance = MasterCatalogService._();
-  MasterCatalogService._();
+  
+  MasterCatalogService._() {
+    // تهيئة فورية ومتزامنة لسلع الكتالوج الجزائري لضمان ألا تظهر المكتبة فارغة أبداً
+    _categories.addAll(MasterCatalogSeed.categories);
+    for (final item in MasterCatalogSeed.items) {
+      _barcodeMap[item.barcode.trim()] = item;
+      _allItems.add(item);
+      _categories.add(item.category);
+    }
+    _isLoaded = true;
+  }
 
   final Map<String, MasterCatalogItem> _barcodeMap = {};
   final List<MasterCatalogItem> _allItems = [];
   final Set<String> _categories = {'الكل'};
-  bool _isLoaded = false;
+  bool _isLoaded = true;
 
   bool get isLoaded => _isLoaded;
   List<MasterCatalogItem> get allItems => _allItems.isNotEmpty ? _allItems : MasterCatalogSeed.items;
   List<String> get categoryNames => _categories.toList();
 
   Future<void> init() async {
-    if (_isLoaded) return;
     try {
-      // 1. Populate with seed items first as fast fallback
-      for (final item in MasterCatalogSeed.items) {
-        _barcodeMap[item.barcode.trim()] = item;
-        _allItems.add(item);
-        _categories.add(item.category);
-      }
 
       // 2. Load and index algerian_supermarket_products.json (high quality local supermarket items)
       try {

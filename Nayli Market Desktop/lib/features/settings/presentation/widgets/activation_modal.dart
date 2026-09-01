@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/utils/license_service.dart';
 import '../../../../core/utils/online_license_service.dart';
+import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../shop/data/models/shop_model.dart';
@@ -10,13 +12,9 @@ class ActivationModal extends StatefulWidget {
   const ActivationModal({super.key});
 
   static Future<void> show(BuildContext context) {
-    return showModalBottomSheet(
+    return AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      desktopMaxWidth: 560,
       builder: (ctx) => const ActivationModal(),
     );
   }

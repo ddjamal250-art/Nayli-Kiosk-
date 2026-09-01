@@ -43,27 +43,43 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
   }
 
   void _loadSettings() {
-    final cfg = KioskService.getSettings();
-    setState(() {
-      _displayDuration = cfg['productDisplayDuration'] as int? ?? 10;
-      _arrowDirection = cfg['arrowDirection'] as String? ?? 'down';
-      _greetingTitleCtrl.text = cfg['greetingTitle'] as String? ?? 'مرحباً بكم في متجرنا';
-      _greetingSubtitleCtrl.text = cfg['greetingSubtitle'] as String? ?? 'مرر باركود السلعة تحت الماسح لمعرفة السعر';
-    });
+    try {
+      final cfg = KioskService.getSettings();
+      if (mounted) {
+        setState(() {
+          _displayDuration = (cfg['productDisplayDuration'] as num?)?.toInt() ?? 10;
+          _arrowDirection = cfg['arrowDirection']?.toString() ?? 'down';
+          _greetingTitleCtrl.text = cfg['greetingTitle']?.toString() ?? 'مرحباً بكم في متجرنا';
+          _greetingSubtitleCtrl.text = cfg['greetingSubtitle']?.toString() ?? 'مرر باركود السلعة تحت الماسح لمعرفة السعر';
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading kiosk settings: $e');
+    }
   }
 
   void _loadUnlistedScans() {
-    setState(() {
-      _unlistedScans = KioskService.getUnlistedScans();
-    });
+    try {
+      if (mounted) {
+        setState(() {
+          _unlistedScans = KioskService.getUnlistedScans();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading unlisted scans: $e');
+    }
   }
 
   void _fetchServerInfo() async {
-    final ip = await LocalSyncServer.getLocalIp();
-    setState(() {
-      _serverIp = ip;
-      _serverPort = LocalSyncServer.port;
-    });
+    try {
+      final ip = await LocalSyncServer.getLocalIp();
+      if (mounted) {
+        setState(() {
+          _serverIp = ip.isNotEmpty ? ip : '127.0.0.1';
+          _serverPort = LocalSyncServer.port > 0 ? LocalSyncServer.port : 8080;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _save() async {
@@ -148,9 +164,10 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: QrImageView(
-                        data: kioskWebUrl,
+                        data: kioskWebUrl.isNotEmpty ? kioskWebUrl : 'http://127.0.0.1:8080/kiosk',
                         version: QrVersions.auto,
                         size: 90.0,
+                        errorStateBuilder: (cxt, err) => const Icon(Icons.qr_code, size: 80, color: Colors.indigo),
                       ),
                     ),
                     const SizedBox(width: 16),

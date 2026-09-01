@@ -1,19 +1,17 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/utils/license_service.dart';
+import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class DeveloperMasterPortal extends StatefulWidget {
   const DeveloperMasterPortal({super.key});
 
   static Future<void> show(BuildContext context) {
-    return showModalBottomSheet(
+    return AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      desktopMaxWidth: 560,
       builder: (ctx) => const DeveloperMasterPortal(),
     );
   }
@@ -198,7 +196,7 @@ class _DeveloperMasterPortalState extends State<DeveloperMasterPortal> with Sing
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('معرف هذا الهاتف: $deviceId', style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 13)),
+                    Text('معرف ${Platform.isWindows ? "هذا الحاسوب" : "هذا الهاتف"}: $deviceId', style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 4),
                     Text('الحالة: ${LicenseService.getLicenseTypeLabel()}', style: const TextStyle(fontSize: 12, color: Colors.black87)),
                     if (!isPerm) ...[
@@ -211,7 +209,7 @@ class _DeveloperMasterPortalState extends State<DeveloperMasterPortal> with Sing
 
               _buildOptionCard(
                 title: '🌟 تفعيل دائم مدى الحياة (Permanent Pro)',
-                subtitle: 'فتح كافة الميزات لهذا الهاتف بنقرة واحدة',
+                subtitle: 'فتح كافة الميزات لهذا الجهاز بنقرة واحدة',
                 color: Colors.green,
                 icon: Icons.verified_rounded,
                 onTap: () async {

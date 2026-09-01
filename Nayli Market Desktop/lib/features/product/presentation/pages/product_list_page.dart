@@ -15,6 +15,7 @@ import '../../../../core/utils/app_validators.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../shop/data/models/shop_model.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
@@ -411,11 +412,9 @@ class _ProductListPageState extends State<ProductListPage> {
     final TextEditingController costCtrl = TextEditingController(text: costPerKg.toStringAsFixed(0));
     final TextEditingController tareCtrl = TextEditingController(text: '0');
 
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      desktopMaxWidth: 560,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final double parsedGross = double.tryParse(grossWeightCtrl.text.trim()) ?? grossWeight;
@@ -612,19 +611,12 @@ class _ProductListPageState extends State<ProductListPage> {
     }
 
     int addQty = 10;
-    showModalBottomSheet(
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      desktopMaxWidth: 540,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
