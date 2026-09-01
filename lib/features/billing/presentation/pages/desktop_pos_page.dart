@@ -2295,6 +2295,7 @@ $itemsSummary
                                 ),
                             ],
                           ),
+                        ),
                         const SizedBox(width: 6),
                         OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(

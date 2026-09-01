@@ -127,13 +127,13 @@ class SecurityPinHelper {
   }
 
   /// Shows a PIN authentication dialog for protected operations
-  static Future<bool> authenticate(BuildContext context, {String title = 'رمز الأمان PIN'}) async {
+  static Future<bool> authenticate(BuildContext context, {String title = 'رمز الأمان PIN', String? message}) async {
     if (!isPinEnabled()) return true;
 
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => _PinAuthDialog(title: title),
+      builder: (ctx) => _PinAuthDialog(title: title, message: message),
     );
 
     return result ?? false;
@@ -142,7 +142,8 @@ class SecurityPinHelper {
 
 class _PinAuthDialog extends StatefulWidget {
   final String title;
-  const _PinAuthDialog({required this.title});
+  final String? message;
+  const _PinAuthDialog({required this.title, this.message});
 
   @override
   State<_PinAuthDialog> createState() => _PinAuthDialogState();

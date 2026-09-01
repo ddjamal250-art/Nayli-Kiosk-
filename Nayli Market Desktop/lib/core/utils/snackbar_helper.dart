@@ -9,15 +9,19 @@ extension AppSnackBarExtension on BuildContext {
     IconData? icon,
     String? actionLabel,
     VoidCallback? onAction,
+    bool isError = false,
   }) {
     final messenger = ScaffoldMessenger.of(this);
     messenger.hideCurrentSnackBar();
+    final effectiveBg = isError ? const Color(0xFFDC2626) : backgroundColor;
+    final effectiveIcon = icon ?? (isError ? Icons.error_outline : null);
+
     messenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            if (icon != null) ...[
-              Icon(icon, color: Colors.white, size: 18),
+            if (effectiveIcon != null) ...[
+              Icon(effectiveIcon, color: Colors.white, size: 18),
               const SizedBox(width: 8),
             ],
             Expanded(
@@ -41,7 +45,7 @@ extension AppSnackBarExtension on BuildContext {
                 onPressed: onAction ?? () {},
               )
             : null,
-        backgroundColor: backgroundColor,
+        backgroundColor: effectiveBg,
         duration: durationMs != null ? Duration(milliseconds: durationMs) : duration,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -63,5 +67,9 @@ class SnackbarHelper {
 
   static void showError(BuildContext context, String message) {
     context.showAppSnackBar(message, backgroundColor: const Color(0xFFDC2626), icon: Icons.error_outline);
+  }
+
+  static void showInfo(BuildContext context, String message) {
+    context.showAppSnackBar(message, backgroundColor: const Color(0xFF2563EB), icon: Icons.info_outline);
   }
 }

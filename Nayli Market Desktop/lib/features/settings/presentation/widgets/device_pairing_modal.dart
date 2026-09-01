@@ -166,6 +166,7 @@ class DevicePairingModal extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
               const SizedBox(height: 14),
 
               // WhatsApp Integration Card

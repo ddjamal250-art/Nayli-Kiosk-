@@ -31,9 +31,27 @@ class BackupSnapshotInfo {
     required this.customersCount,
     required this.documentsCount,
   });
+
+  String get readableSize {
+    if (fileSize < 1024) return '$fileSize B';
+    if (fileSize < 1024 * 1024) return '${(fileSize / 1024).toStringAsFixed(1)} KB';
+    return '${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB';
+  }
 }
 
 class BackupService {
+  /// Delete a local backup file
+  static Future<bool> deleteBackup(String path) async {
+    try {
+      final f = File(path);
+      if (await f.exists()) {
+        await f.delete();
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   /// Get dedicated local backup directory
   static Future<Directory> getBackupDirectory() async {
     Directory baseDir;

@@ -543,37 +543,29 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
 
           _buildGuideItem(
             '1. خيار الشاشات الذكية و Android TV Box (الأسهل والأكثر استقراراً):',
-            '• لا يتطلب تثبيت أي تطبيق على الإطلاق.
-'
-            '• فتح متصفح التلفاز (Chrome / TV Browser) والانتقال للرابط الموضح أعلاه.
-'
-            '• قارئ الباركود USB يُركب مباشرة في فتحة USB الخاصة بالتلفاز أو الـ TV Box (يعمل كـ HID Keyboard قياسي).
-'
+            '• لا يتطلب تثبيت أي تطبيق على الإطلاق.\n'
+            '• فتح متصفح التلفاز (Chrome / TV Browser) والانتقال للرابط الموضح أعلاه.\n'
+            '• قارئ الباركود USB يُركب مباشرة في فتحة USB الخاصة بالتلفاز أو الـ TV Box (يعمل كـ HID Keyboard قياسي).\n'
             '• يُنصح بضبط المتصفح على (ملء الشاشة Fullscreen F11) وحفظ الرابط كصفحة رئيسية.',
           ),
 
           _buildGuideItem(
             '2. خيار حاسوب مستقل أو All-in-One PC في الرواق:',
-            '• تثبيت برنامج Nayli Market Desktop Setup.
-'
-            '• تشغيل الشاشة مباشرة عبر المسار: /kiosk بملء الشاشة.
-'
+            '• تثبيت برنامج Nayli Market Desktop Setup.\n'
+            '• تشغيل الشاشة مباشرة عبر المسار: /kiosk بملء الشاشة.\n'
             '• ميزة الذاكرة الاحتياطية (Offline Cache) تضمن استمرار فحص الأسعار حتى لو انقطع الكابل.',
           ),
 
           _buildGuideItem(
             '3. خيار تابلت أندرويد معلق على عمود:',
-            '• التوصيل عبر شبكة الواي فاي الخاصة بالمحل.
-'
+            '• التوصيل عبر شبكة الواي فاي الخاصة بالمحل.\n'
             '• استخدام كابل OTG لتوصيل قارئ الباركود USB بالتابلت أو استخدام قارئ بلوتوث لاسلكي.',
           ),
 
           _buildGuideItem(
             '4. إعدادات الروتر والجدار الناري (Router & Firewall Recommendations):',
-            '• يُفضل تثبيت عنوان IP ثابت لحاسوب المدير (DHCP Static Lease / Address Reservation) في الروتر.
-'
-            '• التأكد من السماح للمنفذ ' + _serverPort.toString() + ' في جدار حماية ويندوز (Windows Defender Firewall Inbound Rules).
-'
+            '• يُفضل تثبيت عنوان IP ثابت لحاسوب المدير (DHCP Static Lease / Address Reservation) في الروتر.\n'
+            '• التأكد من السماح للمنفذ ' + _serverPort.toString() + ' في جدار حماية ويندوز (Windows Defender Firewall Inbound Rules).\n'
             '• الكابل المفضل: كابل إيثرنت Cat6 موصول بالسويتش لضمان سرعة استجابة فورية (أقل من 10ms).',
           ),
         ],

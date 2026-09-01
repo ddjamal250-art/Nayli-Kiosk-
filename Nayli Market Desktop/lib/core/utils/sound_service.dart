@@ -328,6 +328,8 @@ class SoundService {
     } catch (_) {}
   }
 
+  static Future<void> playBarcodeBeep({int? themeId}) => playScanBeep(themeId: themeId);
+
   /// Play Costco Member / VIP card recognized chime
   static Future<void> playMemberCardScan() async {
     try {
@@ -406,6 +408,7 @@ class SoundService {
 
   static Future<void> playItemRemoved() => playDeleteSound();
   static Future<void> playVoidWarning() => playDeleteSound();
+  static Future<void> playWarning({int? themeId}) => playWarningSound(themeId: themeId);
 
   /// Play error / warning alert tone
   static Future<void> playWarningSound({int? themeId}) async {

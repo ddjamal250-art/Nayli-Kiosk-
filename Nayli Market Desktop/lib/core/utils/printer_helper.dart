@@ -119,6 +119,8 @@ class PrinterHelper {
   /// Print Cashier Sale Receipt for Windows POS
   static Future<bool> printReceiptWindows({
     required String shopName,
+    String? address1,
+    String? address2,
     required String phone,
     required List<Map<String, dynamic>> items,
     required double total,
@@ -128,6 +130,7 @@ class PrinterHelper {
     double previousDebt = 0.0,
     double paidAmount = 0.0,
     double newDebtTotal = 0.0,
+    String? footer,
     String? specificPrinterName,
   }) async {
     try {
@@ -140,6 +143,8 @@ class PrinterHelper {
               crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
                 pw.Text(shopName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+                if (address1 != null && address1.isNotEmpty) pw.Text(address1, style: const pw.TextStyle(fontSize: 8.5)),
+                if (address2 != null && address2.isNotEmpty) pw.Text(address2, style: const pw.TextStyle(fontSize: 8.5)),
                 if (phone.isNotEmpty) pw.Text('Tel: $phone', style: const pw.TextStyle(fontSize: 8.5)),
                 pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
                 pw.Divider(thickness: 0.5),
@@ -180,7 +185,7 @@ class PrinterHelper {
                   pw.Text('Total du: ${newDebtTotal.toStringAsFixed(2)} DA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
                 ],
                 pw.SizedBox(height: 8),
-                pw.Text('Merci pour votre visite!', style: const pw.TextStyle(fontSize: 8)),
+                pw.Text((footer != null && footer.isNotEmpty) ? footer : 'Merci pour votre visite!', style: const pw.TextStyle(fontSize: 8)),
               ],
             );
           },
@@ -250,8 +255,29 @@ class PrinterHelper {
     }
   }
 
+  /// Print plain text on thermal receipt printer
+  Future<void> printText(String text) async {
+    try {
+      if (Platform.isWindows) {
+        final doc = pw.Document();
+        doc.addPage(
+          pw.Page(
+            pageFormat: const PdfPageFormat(72 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm),
+            build: (ctx) => pw.Text(text, style: const pw.TextStyle(fontSize: 10)),
+          ),
+        );
+        final bytes = await doc.save();
+        await Printing.layoutPdf(onLayout: (_) => bytes);
+      } else {
+        await PrintBluetoothThermal.writeString(printText: PrintTextSize(size: 1, text: text));
+      }
+    } catch (_) {}
+  }
+
   Future<void> printReceipt({
     required String shopName,
+    String? address1,
+    String? address2,
     required String phone,
     required List<Map<String, dynamic>> items,
     required double total,
@@ -261,12 +287,15 @@ class PrinterHelper {
     double previousDebt = 0.0,
     double paidAmount = 0.0,
     double newDebtTotal = 0.0,
+    String? footer,
     List<String> extraLines = const [],
   }) async {
     // If running on Windows desktop, use native Windows spooler
     if (Platform.isWindows) {
       await printReceiptWindows(
         shopName: shopName,
+        address1: address1,
+        address2: address2,
         phone: phone,
         items: items,
         total: total,
@@ -276,6 +305,7 @@ class PrinterHelper {
         previousDebt: previousDebt,
         paidAmount: paidAmount,
         newDebtTotal: newDebtTotal,
+        footer: footer,
       );
       return;
     }

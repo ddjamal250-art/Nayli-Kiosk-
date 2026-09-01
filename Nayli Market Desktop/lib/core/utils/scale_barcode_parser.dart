@@ -14,9 +14,14 @@ class ScaleBarcodeResult {
     this.embeddedPrice,
     required this.rawBarcode,
   });
+
+  String get itemCode => productCode;
+  double get weightOrPrice => weightKg ?? embeddedPrice ?? 0.0;
 }
 
 class ScaleBarcodeParser {
+  static bool isScaleBarcode(String barcode) => parse(barcode).isScaleBarcode;
+
   /// Parses standard 13-digit retail weighing scale barcodes (Prefix 20, 21, 22, 28, 29)
   static ScaleBarcodeResult parse(String barcode) {
     final clean = barcode.trim();
