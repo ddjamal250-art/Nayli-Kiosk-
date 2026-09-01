@@ -132,10 +132,9 @@ class LicenseService {
     await box.put(_licenseTypeKey, 'locked');
   }
 
-  /// Compatibility helpers
+  /// Local bypass is strictly prohibited - All activations must pass through OnlineLicenseService
   static bool activate(String key) {
-    grantPermanentLicense();
-    return true;
+    return false;
   }
 
   static String generateKeyForDevice(
@@ -146,5 +145,4 @@ class LicenseService {
   }) {
     return 'NAYLI-$deviceId-ACTIVE';
   }
-}
 }

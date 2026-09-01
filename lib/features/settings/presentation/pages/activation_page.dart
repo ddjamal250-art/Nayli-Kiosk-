@@ -21,11 +21,9 @@ class _ActivationPageState extends State<ActivationPage> {
   final TextEditingController _storeNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _manualKeyController = TextEditingController();
 
   String? _errorMessage;
   bool _isCheckingOnline = false;
-  bool _isManualKeyMode = false;
 
   @override
   void initState() {
@@ -52,7 +50,6 @@ class _ActivationPageState extends State<ActivationPage> {
     _storeNameController.dispose();
     _phoneController.dispose();
     _cityController.dispose();
-    _manualKeyController.dispose();
     super.dispose();
   }
 
@@ -172,32 +169,6 @@ class _ActivationPageState extends State<ActivationPage> {
     }
   }
 
-  void _activateManualKey() {
-    final key = _manualKeyController.text.trim();
-    if (key.isEmpty) {
-      setState(() => _errorMessage = 'يرجى إدخال كود التفعيل');
-      return;
-    }
-
-    final success = LicenseService.activate(key);
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 تم تفعيل التطبيق بنجاح! مرحباً بك في Nayli Market'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) context.go('/');
-      });
-    } else {
-      setState(() {
-        _errorMessage = '❌ كود التفعيل غير صحيح أو غير متطابق!';
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final deviceId = LicenseService.getDeviceId();
@@ -216,7 +187,7 @@ class _ActivationPageState extends State<ActivationPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 580),
+                constraints: const BoxConstraints(maxWidth: 560),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -372,145 +343,88 @@ class _ActivationPageState extends State<ActivationPage> {
                           ),
                           const SizedBox(height: 16),
 
-                          if (!_isManualKeyMode) ...[
-                            // Online Mode Inputs
-                            TextField(
-                              controller: _storeNameController,
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                              decoration: InputDecoration(
-                                labelText: 'اسم المحل التجاري * (مثال: سوبرماركت البركة)',
-                                labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-                                prefixIcon: const Icon(Icons.storefront_rounded, color: Color(0xFF38BDF8), size: 20),
-                                filled: true,
-                                fillColor: const Color(0xFF0F172A),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          // Store Name Input
+                          TextField(
+                            controller: _storeNameController,
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            decoration: InputDecoration(
+                              labelText: 'اسم المحل التجاري * (مثال: سوبرماركت البركة)',
+                              labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
+                              prefixIcon: const Icon(Icons.storefront_rounded, color: Color(0xFF38BDF8), size: 20),
+                              filled: true,
+                              fillColor: const Color(0xFF0F172A),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _phoneController,
+                                  keyboardType: TextInputType.phone,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  decoration: InputDecoration(
+                                    labelText: 'رقم الهاتف (للتواصل)',
+                                    labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                    prefixIcon: const Icon(Icons.phone_rounded, color: Color(0xFF38BDF8), size: 18),
+                                    filled: true,
+                                    fillColor: const Color(0xFF0F172A),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  ),
+                                ),
                               ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: _cityController,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  decoration: InputDecoration(
+                                    labelText: 'المدينة / الولاية',
+                                    labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                    prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF38BDF8), size: 18),
+                                    filled: true,
+                                    fillColor: const Color(0xFF0F172A),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          if (_errorMessage != null) ...[
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 10),
-
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _phoneController,
-                                    keyboardType: TextInputType.phone,
-                                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                                    decoration: InputDecoration(
-                                      labelText: 'رقم الهاتف (للتواصل)',
-                                      labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-                                      prefixIcon: const Icon(Icons.phone_rounded, color: Color(0xFF38BDF8), size: 18),
-                                      filled: true,
-                                      fillColor: const Color(0xFF0F172A),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _cityController,
-                                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                                    decoration: InputDecoration(
-                                      labelText: 'المدينة / الولاية',
-                                      labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-                                      prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF38BDF8), size: 18),
-                                      filled: true,
-                                      fillColor: const Color(0xFF0F172A),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            if (_errorMessage != null) ...[
-                              Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-
-                            // 100% Online Cloud Activation Button
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 4,
-                              ),
-                              icon: _isCheckingOnline
-                                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : const Icon(Icons.cloud_sync_rounded, color: Colors.white, size: 22),
-                              label: Text(
-                                _isCheckingOnline ? 'جاري التحقق وإرسال الطلب...' : '🚀 تفعيل وترخيص النسخة أونلاين (Cloud Activate)',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              onPressed: _isCheckingOnline ? null : _activateOnline,
-                            ),
-                          ] else ...[
-                            // Manual Key Mode
-                            TextField(
-                              controller: _manualKeyController,
-                              textCapitalization: TextCapitalization.characters,
-                              style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 14),
-                              decoration: InputDecoration(
-                                labelText: 'أدخل كود التفعيل (Activation Key)',
-                                labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-                                hintText: 'مثال: NAYLI-2026',
-                                hintStyle: TextStyle(color: Colors.grey[600]),
-                                prefixIcon: const Icon(Icons.key_rounded, color: Color(0xFF38BDF8), size: 20),
-                                filled: true,
-                                fillColor: const Color(0xFF0F172A),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                errorText: _errorMessage,
-                              ),
-                              onSubmitted: (_) => _activateManualKey(),
-                            ),
-                            const SizedBox(height: 16),
-
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green[600],
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-                              label: const Text(
-                                'تفعيل بالكود والدخول ⚡',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              onPressed: _activateManualKey,
-                            ),
                           ],
 
-                          const SizedBox(height: 12),
-
-                          // Toggle Mode Button
-                          TextButton(
-                            style: TextButton.styleFrom(foregroundColor: const Color(0xFF38BDF8)),
-                            onPressed: () {
-                              setState(() {
-                                _isManualKeyMode = !_isManualKeyMode;
-                                _errorMessage = null;
-                              });
-                            },
-                            child: Text(
-                              _isManualKeyMode
-                                  ? '🌐 العودة إلى التفعيل التلقائي السحابي (Online)'
-                                  : '🔑 لدي كود تفعيل جاهز (إدخال يدوي)',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          // 100% PURE Online Cloud Activation Button (NO LOCAL BACKDOOR)
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 4,
                             ),
+                            icon: _isCheckingOnline
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.cloud_sync_rounded, color: Colors.white, size: 22),
+                            label: Text(
+                              _isCheckingOnline ? 'جاري الاتصال والتحقق السحابي...' : '🚀 تفعيل وترخيص النسخة أونلاين (Cloud Activate)',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            onPressed: _isCheckingOnline ? null : _activateOnline,
                           ),
                         ],
                       ),
