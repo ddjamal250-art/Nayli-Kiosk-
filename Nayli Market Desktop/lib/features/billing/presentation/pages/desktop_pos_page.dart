@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../data/kiosk_service.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_server.dart';
@@ -63,6 +64,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   bool _isServerRunning = false;
   StreamSubscription<RemoteIncomingCart>? _remoteCartSub;
   StreamSubscription<RemoteIncomingCart>? _handoffCartSub;
+  StreamSubscription<Map<String, dynamic>>? _unlistedKioskScanSub;
   int _pendingRemoteCartsCount = 0;
 
   // USB Barcode Wedge Rapid Buffer
@@ -100,6 +102,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     _ipmTimer?.cancel();
     _remoteCartSub?.cancel();
     _handoffCartSub?.cancel();
+    _unlistedKioskScanSub?.cancel();
     super.dispose();
   }
 
@@ -124,6 +127,38 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       if (mounted) {
         SoundService.playMemberCardScan();
         _showIncomingHandoffBanner(cart);
+      }
+    });
+
+    _unlistedKioskScanSub = KioskService.unlistedScanStream.listen((scanData) {
+      if (mounted) {
+        SoundService.playWarning();
+        final barcode = scanData['barcode']?.toString() ?? '';
+        final count = scanData['scanCount'] ?? 1;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFC2410C),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 8),
+            content: Row(
+              children: [
+                const Icon(Icons.notification_important_rounded, color: Colors.white, size: 24),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '⚠️ كشك الزبائن: زبون مسح سلعة غير مسجلة ($barcode) • مسحت $count مرات',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            action: SnackBarAction(
+              label: 'أضف للمخزون ➕',
+              textColor: Colors.amberAccent,
+              onPressed: () => context.push('/add-product?barcode=$barcode'),
+            ),
+          ),
+        );
       }
     });
 
@@ -1923,6 +1958,16 @@ $itemsSummary
             tooltip: 'إدارة الشبكة والمزامنة المحلية (LAN & Wi-Fi)',
             icon: const Icon(Icons.wifi_tethering_rounded, color: Colors.indigo),
             onPressed: () => context.push('/lan-sync'),
+          ),
+          IconButton(
+            tooltip: 'كشك فاحص الأسعار للزبائن 🛍️',
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF4F46E5)),
+            onPressed: () => context.push('/kiosk'),
+          ),
+          IconButton(
+            tooltip: 'إعدادات كشك الأسعار والعروض ⚙️',
+            icon: const Icon(Icons.tv_rounded, color: Colors.blueGrey),
+            onPressed: () => context.push('/kiosk-settings'),
           ),
           IconButton(
             tooltip: context.tr('pos_settings'),

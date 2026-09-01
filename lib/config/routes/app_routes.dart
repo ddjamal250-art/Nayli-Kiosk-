@@ -30,6 +30,8 @@ import '../../features/documents/presentation/pages/documents_hub_page.dart';
 import '../../features/backup/presentation/pages/backup_page.dart';
 import '../../features/shifts/presentation/pages/shifts_page.dart';
 import '../../features/settings/presentation/pages/lan_sync_settings_page.dart';
+import '../../features/billing/presentation/pages/kiosk_price_checker_page.dart';
+import '../../features/settings/presentation/pages/kiosk_settings_page.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -165,6 +167,14 @@ final router = GoRouter(
     GoRoute(
       path: '/lan-sync',
       builder: (context, state) => const LanSyncSettingsPage(),
+    ),
+    GoRoute(
+      path: '/kiosk',
+      builder: (context, state) => const KioskPriceCheckerPage(),
+    ),
+    GoRoute(
+      path: '/kiosk-settings',
+      builder: (context, state) => const KioskSettingsPage(),
     ),
   ],
 );

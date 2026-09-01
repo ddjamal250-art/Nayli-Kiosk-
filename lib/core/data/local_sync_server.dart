@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'hive_database.dart';
 import '../../features/product/data/models/product_model.dart';
+import '../../features/billing/data/kiosk_service.dart';
 
 class RemoteCartItem {
   final String barcode;
@@ -192,6 +193,14 @@ class LocalSyncServer {
             await _handlePostPosHandoff(request);
           } else if (path == '/api/remote-carts' && request.method == 'GET') {
             await _handleGetRemoteCarts(request);
+          } else if (path == '/api/kiosk-config' && request.method == 'GET') {
+            await _handleGetKioskConfig(request);
+          } else if (path == '/api/kiosk-config' && request.method == 'POST') {
+            await _handlePostKioskConfig(request);
+          } else if (path == '/api/kiosk-lookup' && request.method == 'GET') {
+            await _handleKioskLookup(request);
+          } else if (path == '/kiosk' && request.method == 'GET') {
+            await _handleWebKiosk(request);
           } else {
             request.response.statusCode = HttpStatus.notFound;
             request.response.write(jsonEncode({'error': 'Endpoint not found'}));
@@ -380,6 +389,239 @@ class LocalSyncServer {
   /// Remove a pending remote cart after it is processed/loaded by cashier
   static void removeRemoteCart(String cartId) {
     pendingRemoteCarts.removeWhere((c) => c.id == cartId);
+  }
+
+  static Future<void> _handleGetKioskConfig(HttpRequest request) async {
+    final config = KioskService.getSettings();
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode(config));
+    await request.response.close();
+  }
+
+  static Future<void> _handlePostKioskConfig(HttpRequest request) async {
+    final body = await utf8.decoder.bind(request).join();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+    await KioskService.saveSettings(
+      productDisplayDuration: data['productDisplayDuration'] as int?,
+      arrowDirection: data['arrowDirection'] as String?,
+      greetingTitle: data['greetingTitle'] as String?,
+      greetingSubtitle: data['greetingSubtitle'] as String?,
+      promoSlides: (data['promoSlides'] as List?)?.cast<String>(),
+      soundEnabled: data['soundEnabled'] as bool?,
+    );
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode({'success': true}));
+    await request.response.close();
+  }
+
+  static Future<void> _handleKioskLookup(HttpRequest request) async {
+    final barcode = request.uri.queryParameters['barcode'] ?? '';
+    final result = KioskService.lookupBarcode(barcode);
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode(result.toJson()));
+    await request.response.close();
+  }
+
+  static Future<void> _handleWebKiosk(HttpRequest request) async {
+    final config = KioskService.getSettings();
+    final greetingTitle = config['greetingTitle'] ?? 'Nayli Market';
+    final greetingSubtitle = config['greetingSubtitle'] ?? 'مرر باركود السلعة تحت الماسح';
+    final duration = config['productDisplayDuration'] ?? 10;
+    final arrowDir = config['arrowDirection'] ?? 'down';
+
+    String arrowSymbol = '⬇️';
+    if (arrowDir == 'front') arrowSymbol = '⏺️';
+    if (arrowDir == 'left') arrowSymbol = '⬅️';
+    if (arrowDir == 'right') arrowSymbol = '➡️';
+
+    final html = '''<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nayli Market - كشك فاحص الأسعار الذكي</title>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --accent: #0D9488;
+      --bg: #0F172A;
+      --card-bg: rgba(30, 41, 59, 0.88);
+      --text: #F8FAFC;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Kufi Arabic', sans-serif; user-select: none; }
+    body { background: radial-gradient(circle at top right, #1E1B4B, #0F172A); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    header { padding: 18px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .logo { font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #818CF8; }
+    .status-badge { background: rgba(16,185,129,0.2); color: #34D399; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+    main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
+    
+    #idle-view { text-align: center; max-width: 800px; width: 100%; }
+    .idle-title { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; margin-bottom: 15px; color: #E0E7FF; text-shadow: 0 4px 20px rgba(79,70,229,0.3); }
+    .idle-subtitle { font-size: clamp(1.1rem, 2.5vw, 1.6rem); color: #94A3B8; margin-bottom: 40px; }
+    
+    .scanner-pointer { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; }
+    .scanner-text { font-size: 1.2rem; font-weight: bold; color: #38BDF8; }
+    .arrow-icon { font-size: 4rem; animation: pulseArrow 1.4s ease-in-out infinite; color: #F59E0B; }
+    @keyframes pulseArrow {
+      0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 10px #F59E0B); }
+      50% { transform: translateY(14px) scale(1.15); filter: drop-shadow(0 0 25px #F59E0B); }
+    }
+    
+    #product-card { display: none; background: var(--card-bg); backdrop-filter: blur(16px); border: 2px solid rgba(255,255,255,0.15); border-radius: 28px; padding: 40px; max-width: 750px; width: 100%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transform: scale(0.95); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    #product-card.active { display: block; transform: scale(1); }
+    .product-badge { display: inline-block; background: #0D9488; color: white; padding: 6px 18px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; margin-bottom: 16px; }
+    .product-name { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 900; margin-bottom: 20px; line-height: 1.2; }
+    .price-container { background: rgba(15,23,42,0.8); border: 2px solid #6366F1; border-radius: 20px; padding: 20px; margin-bottom: 25px; }
+    .price-value { font-size: clamp(2.8rem, 7vw, 4.5rem); font-weight: 900; color: #38BDF8; font-variant-numeric: tabular-nums; }
+    .price-currency { font-size: 1.5rem; color: #818CF8; margin-right: 8px; }
+    .pack-offer { background: rgba(245,158,11,0.15); border: 1px dashed #F59E0B; color: #FBBF24; padding: 12px 18px; border-radius: 14px; font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; }
+    .timer-ring { font-size: 0.9rem; color: #64748B; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    
+    #not-found-card { display: none; background: rgba(185,28,28,0.2); border: 2px solid #EF4444; border-radius: 24px; padding: 35px; max-width: 650px; width: 100%; text-align: center; }
+    #not-found-card.active { display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">🛍️ <span>Nayli Price Checker</span></div>
+    <div class="status-badge">● متصل بالسيرفر المحلي</div>
+  </header>
+
+  <main>
+    <div id="idle-view">
+      <h1 class="idle-title">$greetingTitle</h1>
+      <p class="idle-subtitle">$greetingSubtitle</p>
+      
+      <div class="scanner-pointer">
+        <div class="arrow-icon">$arrowSymbol</div>
+        <div class="scanner-text">وجه الباركود إلى هنا لمعرفة السعر</div>
+      </div>
+    </div>
+
+    <div id="product-card">
+      <div class="product-badge" id="prod-badge">متوفر في المتجر ✅</div>
+      <h2 class="product-name" id="prod-name">اسم السلعة</h2>
+      
+      <div class="price-container">
+        <span class="price-value" id="prod-price">0.00</span>
+        <span class="price-currency">DA</span>
+      </div>
+
+      <div class="pack-offer" id="prod-pack" style="display:none;"></div>
+      <div class="timer-ring">⏳ يعود لوضع العروض بعد <span id="seconds-left">$duration</span> ثوانٍ</div>
+    </div>
+
+    <div id="not-found-card">
+      <div style="font-size:3.5rem; margin-bottom:15px;">🤝</div>
+      <h2 style="font-size:1.8rem; margin-bottom:10px; color:#FCA5A5;">عذراً! هذا المنتج غير مسجل في النظام بعد</h2>
+      <p style="color:#E2E8F0; font-size:1.1rem;">تم إشعار الكاشير بنسيان إضافة السلعة، تفضل بسؤال موظف المحل لمساعدتك فوراً</p>
+    </div>
+  </main>
+
+  <script>
+    let duration = $duration;
+    let timeoutId = null;
+    let intervalId = null;
+    let buffer = "";
+    let lastKeyTime = Date.now();
+
+    function playChime(freq = 600, duration = 0.15) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch(e){}
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const now = Date.now();
+      if (now - lastKeyTime > 150) buffer = "";
+      lastKeyTime = now;
+
+      if (e.key === "Enter") {
+        if (buffer.trim().length >= 3) {
+          lookupBarcode(buffer.trim());
+        }
+        buffer = "";
+        return;
+      }
+
+      if (e.key.length === 1) {
+        buffer += e.key;
+      }
+    });
+
+    function showIdle() {
+      document.getElementById("idle-view").style.display = "block";
+      document.getElementById("product-card").classList.remove("active");
+      document.getElementById("not-found-card").classList.remove("active");
+      if (intervalId) clearInterval(intervalId);
+    }
+
+    async function lookupBarcode(barcode) {
+      playChime(880, 0.2);
+      try {
+        const res = await fetch("/api/kiosk-lookup?barcode=" + encodeURIComponent(barcode));
+        const data = await res.json();
+        
+        if (data.found) {
+          document.getElementById("idle-view").style.display = "none";
+          document.getElementById("not-found-card").classList.remove("active");
+          
+          document.getElementById("prod-name").textContent = data.name;
+          document.getElementById("prod-price").textContent = Number(data.price).toFixed(2);
+          
+          const packEl = document.getElementById("prod-pack");
+          if (data.packPrice > 0 && data.packMultiplier > 1) {
+            packEl.style.display = "block";
+            packEl.textContent = "🌟 متوفر أيضاً كـ " + (data.packName || "حزمة") + " x" + data.packMultiplier + " بسعر " + Number(data.packPrice).toFixed(2) + " DA";
+          } else {
+            packEl.style.display = "none";
+          }
+
+          document.getElementById("product-card").classList.add("active");
+
+          let left = duration;
+          document.getElementById("seconds-left").textContent = left;
+          if (intervalId) clearInterval(intervalId);
+          intervalId = setInterval(() => {
+            left--;
+            document.getElementById("seconds-left").textContent = left;
+            if (left <= 0) {
+              clearInterval(intervalId);
+              showIdle();
+            }
+          }, 1000);
+
+          if (timeoutId) clearTimeout(timeoutId);
+          timeoutId = setTimeout(showIdle, duration * 1000);
+        } else {
+          document.getElementById("idle-view").style.display = "none";
+          document.getElementById("product-card").classList.remove("active");
+          document.getElementById("not-found-card").classList.add("active");
+          
+          playChime(300, 0.3);
+          if (timeoutId) clearTimeout(timeoutId);
+          timeoutId = setTimeout(showIdle, 4500);
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>''';
+
+    request.response.headers.contentType = ContentType.html;
+    request.response.write(html);
+    await request.response.close();
   }
 }
 

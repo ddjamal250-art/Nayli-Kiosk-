@@ -472,6 +472,14 @@ class _SettingsPageState extends State<SettingsPage> {
         subtitle: 'ربط هواتف العمال عبر كود QR ومزامنة السلات لحظياً',
         onTap: () => context.push('/lan-sync'),
       ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.tv_rounded,
+        iconColor: const Color(0xFF4F46E5),
+        title: 'كشك فاحص الأسعار وشاشات العروض الترويجية 🛍️',
+        subtitle: 'تخصيص مدة العرض، سهم الماسح، ورابط الشاشات الذكية (LAN Kiosk)',
+        onTap: () => context.push('/kiosk-settings'),
+      ),
     ]);
   }
 
