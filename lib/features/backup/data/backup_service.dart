@@ -60,7 +60,7 @@ class BackupService {
     }
     
     // Commercial documents
-    final docBox = await DocumentService.box;
+    final docBox = HiveDatabase.commercialDocsBox;
     final documents = docBox.values.toList();
 
     final backupData = {
@@ -230,7 +230,7 @@ class BackupService {
 
       // 4. Restore Documents
       if (data['documents'] is List) {
-        final docBox = await DocumentService.box;
+        final docBox = HiveDatabase.commercialDocsBox;
         await docBox.clear();
         for (var doc in (data['documents'] as List)) {
           final id = doc['id']?.toString() ?? doc['reference']?.toString();

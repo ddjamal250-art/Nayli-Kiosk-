@@ -65,3 +65,4 @@ class Product extends Equatable {
         expiryDate,
       ];
 }
+

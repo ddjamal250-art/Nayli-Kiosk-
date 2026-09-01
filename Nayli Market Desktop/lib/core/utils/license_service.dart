@@ -58,26 +58,40 @@ class LicenseService {
     return DateTime.now().isBefore(expiry);
   }
 
+  /// Check if current license is permanent
+  static bool isPermanent() {
+    final box = HiveDatabase.settingsBox;
+    final type = box.get(_licenseTypeKey) as String?;
+    return type == 'permanent';
+  }
+
+  /// Get remaining days until expiry
+  static int getRemainingDays() {
+    if (isPermanent()) return 9999;
+    final box = HiveDatabase.settingsBox;
+    final expiryStr = box.get(_licenseExpiryKey) as String?;
+    if (expiryStr == null) return 0;
+    final expiry = DateTime.tryParse(expiryStr);
+    if (expiry == null) return 0;
+    final diff = expiry.difference(DateTime.now()).inDays;
+    return diff > 0 ? diff : 0;
+  }
+
+  /// License Plan label for display
+  static String getLicenseTypeLabel() => getLicensePlan();
+
   /// License Plan details for display
   static String getLicensePlan() {
     final box = HiveDatabase.settingsBox;
     final type = box.get(_licenseTypeKey) as String?;
     if (type == 'permanent') return 'نسخة أصلية دائمة (مدى الحياة)';
     if (type == 'subscription') {
-      final expiry = DateTime.tryParse(box.get(_licenseExpiryKey, defaultValue: '') as String);
-      if (expiry != null) {
-        final days = expiry.difference(DateTime.now()).inDays;
-        return 'اشتراك سنوي نشط (متبقي $days يوم)';
-      }
-      return 'اشتراك سنوي';
+      final days = getRemainingDays();
+      return 'اشتراك سنوي نشط (متبقي $days يوم)';
     }
     if (type == 'trial') {
-      final expiry = DateTime.tryParse(box.get(_licenseExpiryKey, defaultValue: '') as String);
-      if (expiry != null) {
-        final days = expiry.difference(DateTime.now()).inDays;
-        return 'فترة تجريبية (متبقي $days يوم)';
-      }
-      return 'فترة تجريبية';
+      final days = getRemainingDays();
+      return 'فترة تجريبية (متبقي $days يوم)';
     }
     return 'غير مفعل';
   }
@@ -124,7 +138,12 @@ class LicenseService {
     return true;
   }
 
-  static String generateKeyForDevice(String deviceId, {int days = 365, bool isLifetime = true}) {
+  static String generateKeyForDevice(
+    String deviceId, {
+    int days = 365,
+    bool isLifetime = true,
+    String? plan,
+  }) {
     return 'NAYLI-$deviceId-ACTIVE';
   }
 }

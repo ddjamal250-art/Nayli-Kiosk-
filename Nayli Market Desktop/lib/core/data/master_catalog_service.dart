@@ -14,7 +14,7 @@ class MasterCatalogService {
 
   bool get isLoaded => _isLoaded;
   List<MasterCatalogItem> get allItems => _allItems.isNotEmpty ? _allItems : MasterCatalogSeed.items;
-  List<String> get categories => _categories.toList();
+  List<String> get categoryNames => _categories.toList();
 
   Future<void> init() async {
     if (_isLoaded) return;
@@ -230,6 +230,6 @@ class MasterCatalogService {
   static List<MasterCatalogItem> getAllItems() => instance.allItems;
   static List<MasterCatalogItem> searchAndFilter({String query = '', String category = 'الكل', int limit = 50}) =>
       instance.search(query, category: category, limit: limit);
-  static List<String> get categories => instance.categories;
-  static List<String> get categoryList => instance.categories;
+  static List<String> get categories => instance._categories.toList();
+  static List<String> get categoryList => instance._categories.toList();
 }
