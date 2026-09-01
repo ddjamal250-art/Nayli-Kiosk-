@@ -12,6 +12,7 @@ import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_server.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/utils/barcode_normalizer.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
@@ -641,7 +642,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                       label: Text(context.tr('resume_cart'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       onPressed: () {
                                         for (final item in rc.items) {
-                                          final prod = Product(
+                                          final existingProd = HiveDatabase.productBox.values
+                                              .where((p) => BarcodeNormalizer.matches(p.barcode, item.barcode))
+                                              .firstOrNull;
+                                          final prod = existingProd ?? Product(
                                             id: 'remote_${item.barcode}_${DateTime.now().millisecondsSinceEpoch}',
                                             name: item.name,
                                             barcode: item.barcode,
@@ -747,7 +751,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   void _loadRemoteCartIntoActive(RemoteIncomingCart cart) {
     for (final item in cart.items) {
-      final prod = Product(
+      final existingProd = HiveDatabase.productBox.values
+          .where((p) => BarcodeNormalizer.matches(p.barcode, item.barcode))
+          .firstOrNull;
+      final prod = existingProd ?? Product(
         id: 'handoff_${item.barcode}_${DateTime.now().millisecondsSinceEpoch}',
         name: item.name,
         barcode: item.barcode,

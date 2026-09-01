@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'hive_database.dart';
 import '../../features/product/data/models/product_model.dart';
 import '../../features/billing/data/kiosk_service.dart';
+import '../utils/barcode_normalizer.dart';
 
 class RemoteCartItem {
   final String barcode;
@@ -359,22 +360,13 @@ class LocalSyncServer {
         final barcode = item['barcode'];
         final qty = (item['quantity'] as num?)?.toDouble() ?? 1.0;
         
-        final product = HiveDatabase.productBox.values.where((p) => p.barcode == barcode).firstOrNull;
+        final product = HiveDatabase.productBox.values
+            .where((p) => BarcodeNormalizer.matches(p.barcode, barcode?.toString()))
+            .firstOrNull;
 
-        if (product != null) {
+        if (product != null && product is ProductModel) {
           final newStock = (product.stock - qty.toInt()).clamp(0, 999999);
-          final updatedProduct = ProductModel(
-            id: product.id,
-            name: product.name,
-            barcode: product.barcode,
-            price: product.price,
-            costPrice: product.costPrice,
-            stock: newStock,
-            category: product.category,
-            isWeighted: product.isWeighted,
-            wholesalePrice: product.wholesalePrice,
-            expiryDate: product.expiryDate,
-          );
+          final updatedProduct = product.copyWith(stock: newStock);
           await HiveDatabase.productBox.put(product.id, updatedProduct);
         }
       }
