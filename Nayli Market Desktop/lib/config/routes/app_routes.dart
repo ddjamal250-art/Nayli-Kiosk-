@@ -29,6 +29,7 @@ import '../../features/billing/presentation/pages/desktop_pos_page.dart';
 import '../../features/documents/presentation/pages/documents_hub_page.dart';
 import '../../features/backup/presentation/pages/backup_page.dart';
 import '../../features/shifts/presentation/pages/shifts_page.dart';
+import '../../features/settings/presentation/pages/lan_sync_settings_page.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -160,6 +161,10 @@ final router = GoRouter(
     GoRoute(
       path: '/shop',
       builder: (context, state) => const ShopDetailsPage(),
+    ),
+    GoRoute(
+      path: '/lan-sync',
+      builder: (context, state) => const LanSyncSettingsPage(),
     ),
   ],
 );

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/cart_item.dart';
@@ -256,7 +257,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       PrintReceiptEvent event, Emitter<BillingState> emit) async {
     final printerHelper = PrinterHelper();
 
-    if (!printerHelper.isConnected) {
+    if (!Platform.isWindows && !printerHelper.isConnected) {
       final savedMac = HiveDatabase.settingsBox.get('printer_mac');
       if (savedMac != null) {
         final connected = await printerHelper.connect(savedMac);

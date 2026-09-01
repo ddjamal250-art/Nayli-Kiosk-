@@ -23,6 +23,7 @@ import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
 import '../widgets/held_carts_modal.dart';
 import '../widgets/quick_items_manager_dialog.dart';
+import '../widgets/printer_selection_dialog.dart';
 
 enum PosPriceTier { detail, demiGros, gros }
 
@@ -80,6 +81,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
     _initLocalServer();
     _startIpmCalculator();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -89,6 +91,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleGlobalHardwareKey);
     _barcodeController.dispose();
     _barcodeFocusNode.dispose();
     _globalKeyboardFocusNode.dispose();
@@ -235,8 +238,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
   }
 
-  void _handleHotkeys(KeyEvent event) {
-    if (event is! KeyDownEvent) return;
+  bool _handleGlobalHardwareKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
 
     // Hardware Scanner Wedge rapid typing listener
     final now = DateTime.now();
@@ -255,34 +258,53 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       final code = _hardwareBarcodeBuffer;
       _hardwareBarcodeBuffer = '';
       _handleBarcodeSubmit(code);
-      return;
+      return true;
     }
 
     if (event.logicalKey == LogicalKeyboardKey.f1) {
       _barcodeFocusNode.requestFocus();
+      _barcodeController.selection = TextSelection(baseOffset: 0, extentOffset: _barcodeController.text.length);
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f2) {
-      _showHeldCartsModal();
+      _handleHoldOrResumeCart();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f3) {
       _showCustomerSelector();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f4) {
       _showDiscountModal();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f5) {
       _cyclePriceTier();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f6) {
       _toggleReturnMode();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f7) {
       _showQuickCustomItemModal();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f8) {
       _showPriceChecker();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f9) {
       _showRemoteCartsQueueModal();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f10) {
       _openCashDrawerWithSecurity();
-    } else if (event.logicalKey == LogicalKeyboardKey.f12 || event.logicalKey == LogicalKeyboardKey.space) {
+      return true;
+    } else if (event.logicalKey == LogicalKeyboardKey.f12 || (event.logicalKey == LogicalKeyboardKey.space && !_barcodeFocusNode.hasFocus)) {
       _triggerCheckout();
+      return true;
     } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-      _confirmClearCart();
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        _confirmClearCart();
+      }
+      return true;
     }
+
+    return false;
   }
 
   void _cyclePriceTier() {
@@ -670,12 +692,176 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     );
   }
 
+  void _handleHoldOrResumeCart() {
+    SoundService.playTabSwitch();
+    final billingState = context.read<BillingBloc>().state;
+    if (billingState.cartItems.isNotEmpty) {
+      context.read<BillingBloc>().add(const ParkCurrentCartEvent());
+      SoundService.playSaveSuccess();
+      SnackbarHelper.showSuccess(
+        context,
+        '⏸️ تم تعليق السلة بنجاح وحفظها مؤقتاً (F2)',
+      );
+      setState(() {
+        _cartDiscountValue = 0.0;
+        _barcodeController.clear();
+      });
+      _barcodeFocusNode.requestFocus();
+    } else {
+      _showHeldCartsModal();
+    }
+  }
+
   void _showHeldCartsModal() {
     SoundService.playTabSwitch();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) => const HeldCartsModal(),
+    );
+  }
+
+  void _showCategoryProductsModal(String catKey, String catName) {
+    SoundService.playTabSwitch();
+    final searchController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            final allProducts = context.read<ProductBloc>().state.products;
+            final query = searchController.text.trim().toLowerCase();
+
+            final productsInCat = allProducts.where((p) {
+              if (catKey != 'all') {
+                final def = _categoriesDef.firstWhere((c) => c['key'] == catKey, orElse: () => {'ar': ''});
+                final arLabel = def['ar'] ?? '';
+                final pCat = p.category.toLowerCase();
+                if (!pCat.contains(arLabel.toLowerCase())) return false;
+              }
+              if (query.isNotEmpty) {
+                return p.name.toLowerCase().contains(query) || p.barcode.contains(query);
+              }
+              return true;
+            }).toList();
+
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Container(
+                width: 720,
+                height: 560,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: Colors.teal.shade50, shape: BoxShape.circle),
+                          child: const Icon(Icons.category_rounded, color: Colors.teal, size: 24),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('منتجات صنف: $catName (${productsInCat.length})',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              const Text('انقر على أي منتج لإضافته مباشرة إلى السلة الحالية',
+                                  style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(dialogCtx)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'بحث في هذا الصنف بالاسم أو الباركود...',
+                        prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                        suffixIcon: searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  searchController.clear();
+                                  setDialogState(() {});
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: const Color(0xFFF3F4F6),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                      ),
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: productsInCat.isEmpty
+                          ? Center(
+                              child: Text('لا توجد منتجات مسجلة في صنف $catName',
+                                  style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                            )
+                          : GridView.builder(
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                childAspectRatio: 2.2,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                              itemCount: productsInCat.length,
+                              itemBuilder: (c, idx) {
+                                final prod = productsInCat[idx];
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(10),
+                                  onTap: () {
+                                    SoundService.playScanBeep();
+                                    context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+                                    SnackbarHelper.showSuccess(context, 'تمت إضافة ${prod.name} للسلة');
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.grey.shade300),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(prod.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('${prod.price.toStringAsFixed(2)} DA',
+                                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+                                            Text('مخزون: ${prod.stock}',
+                                                style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: prod.stock > 0 ? Colors.green : Colors.red)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1354,6 +1540,16 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             onPressed: () => context.push('/reports'),
           ),
           IconButton(
+            tooltip: 'طابعات ويندوز (الوصولات والمستندات)',
+            icon: const Icon(Icons.print_outlined, color: Colors.teal),
+            onPressed: () => PrinterSelectionDialog.show(context),
+          ),
+          IconButton(
+            tooltip: 'إدارة الشبكة والمزامنة المحلية (LAN & Wi-Fi)',
+            icon: const Icon(Icons.wifi_tethering_rounded, color: Colors.indigo),
+            onPressed: () => context.push('/lan-sync'),
+          ),
+          IconButton(
             tooltip: context.tr('pos_settings'),
             icon: const Icon(Icons.settings_outlined, color: Colors.grey),
             onPressed: () => context.push('/settings'),
@@ -1634,11 +1830,43 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         ),
                         const SizedBox(width: 6),
                         Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                            icon: const Icon(Icons.pause_circle_outline, color: Colors.indigo, size: 18),
-                            label: Text(context.tr('btn_hold'), style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
-                            onPressed: _showHeldCartsModal,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    side: const BorderSide(color: Colors.indigo, width: 1.2),
+                                  ),
+                                  icon: const Icon(Icons.pause_circle_outline, color: Colors.indigo, size: 18),
+                                  label: Text(
+                                    state.activeHeldCarts.isNotEmpty
+                                        ? 'تعليق (${state.activeHeldCarts.length})'
+                                        : 'تعليق (F2)',
+                                    style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12),
+                                  ),
+                                  onPressed: _handleHoldOrResumeCart,
+                                ),
+                              ),
+                              if (state.activeHeldCarts.isNotEmpty)
+                                Positioned(
+                                  top: -5,
+                                  right: -5,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.orange,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      '${state.activeHeldCarts.length}',
+                                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -1735,168 +1963,93 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   }
 
   Widget _buildRightCatalogPane() {
-    return BlocBuilder<ProductBloc, ProductState>(
-      builder: (context, state) {
-        final allProducts = state.products;
-
-        final filteredProducts = _selectedCategoryKey == 'all'
-            ? allProducts
-            : allProducts.where((p) {
-                final def = _categoriesDef.firstWhere((c) => c['key'] == _selectedCategoryKey, orElse: () => {'ar': ''});
-                final arLabel = def['ar'] ?? '';
-                final trLabel = context.tr(def['tr'] ?? '');
-                final pCat = p.category.toLowerCase();
-                return pCat.contains(arLabel.toLowerCase()) || pCat.contains(trLabel.toLowerCase());
-              }).toList();
-
-        return Container(
-          color: const Color(0xFFF3F4F6),
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Quick Sell Staples Ribbon (Bread, Eggs, Chakhchoukha...)
-              _buildQuickStaplesRibbon(),
-              const SizedBox(height: 10),
-
-              // Categories Horizontal Scroll with Touch Physics
-              SizedBox(
-                height: 44,
-                child: ListView.separated(
-                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _categoriesDef.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final cat = _categoriesDef[index];
-                    final isSelected = _selectedCategoryKey == cat['key'];
-                    return ChoiceChip(
-                      selected: isSelected,
-                      label: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        child: Text(context.tr(cat['tr']!)),
-                      ),
-                      selectedColor: Colors.teal,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black87,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      onSelected: (val) {
-                        setState(() {
-                          _selectedCategoryKey = cat['key']!;
-                        });
-                        SoundService.playTabSwitch();
-                      },
-                    );
-                  },
+    return Container(
+      color: const Color(0xFFF3F4F6),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Top Categories Bar (with Modal on click) + Customize Quick Items button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Quick Items Title & Manage Button
+                InkWell(
+                  onTap: _openQuickItemsManager,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.teal.shade200),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
+                        SizedBox(width: 4),
+                        Text('ترتيب وتخصيص ⚙️', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(width: 8),
+                const SizedBox(height: 24, child: VerticalDivider(width: 1)),
+                const SizedBox(width: 8),
 
-              // Products Grid with Touch Physics and Generous Tap Targets
-              Expanded(
-                child: filteredProducts.isEmpty
-                    ? Center(
-                        child: Text(context.tr('no_customers_found'),
-                            style: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.bold)),
-                      )
-                    : GridView.builder(
-                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          childAspectRatio: 1.15,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                        ),
-                        itemCount: filteredProducts.length,
-                        itemBuilder: (context, index) {
-                          final product = filteredProducts[index];
-                          double displayPrice = product.price;
-                          if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
-                            displayPrice = product.wholesalePrice;
-                          } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
-                            displayPrice = (product.price + product.wholesalePrice) / 2;
-                          }
+                // Categories chips
+                Expanded(
+                  child: SizedBox(
+                    height: 38,
+                    child: ListView.separated(
+                      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _categoriesDef.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 6),
+                      itemBuilder: (context, index) {
+                        final cat = _categoriesDef[index];
+                        final catName = context.tr(cat['tr']!);
 
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(10),
-                            onTap: () {
-                              _onItemScanned();
-                              final itemProduct = Product(
-                                id: product.id,
-                                name: _isReturnMode ? '[${context.tr("return_mode")}] ${product.name}' : product.name,
-                                barcode: product.barcode,
-                                price: _isReturnMode ? -displayPrice.abs() : displayPrice,
-                                costPrice: product.costPrice,
-                                stock: product.stock,
-                                category: product.category,
-                              );
-                              context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE5E7EB)),
-                                boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          product.name,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('${displayPrice.toStringAsFixed(2)} DA',
-                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.teal)),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: product.stock > 5 ? Colors.green.shade50 : Colors.red.shade50,
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          '${product.stock}',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: product.stock > 5 ? Colors.green.shade700 : Colors.red.shade700,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
+                        return ActionChip(
+                          avatar: const Icon(Icons.category_outlined, size: 14, color: Colors.teal),
+                          label: Text(catName, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                          backgroundColor: const Color(0xFFF8FAFC),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          onPressed: () {
+                            _showCategoryProductsModal(cat['key']!, catName);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+          const SizedBox(height: 12),
+
+          // 2. Main Area: Large Quick Sale Items Grid (مع إمكانية إضافة منتج جديد)
+          Expanded(
+            child: _buildQuickItemsGrid(),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildQuickStaplesRibbon() {
+  Widget _buildQuickItemsGrid() {
     final box = HiveDatabase.quickItemsBox;
     final items = box.values.toList();
     final List<Map<dynamic, dynamic>> quickList = [];
@@ -1905,102 +2058,133 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
     quickList.sort((a, b) => ((a['orderIndex'] as num?)?.toInt() ?? 0).compareTo((b['orderIndex'] as num?)?.toInt() ?? 0));
 
-    return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+    return GridView.builder(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 1.35,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
-      child: Row(
-        children: [
-          // Customize & Reorder button
-          InkWell(
-            onTap: _openQuickItemsManager,
-            borderRadius: BorderRadius.circular(8),
+      itemCount: quickList.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          // Add new quick item card
+          return InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: _showQuickCustomItemModal,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.teal.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.teal.shade200),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.teal.shade300, width: 1.5),
+                boxShadow: [
+                  BoxShadow(color: Colors.teal.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 3)),
+                ],
               ),
-              child: const Row(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
-                  SizedBox(width: 4),
-                  Text('تخصيص وترتيب ⚙️', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.teal.shade50, shape: BoxShape.circle),
+                    child: const Icon(Icons.add_rounded, size: 28, color: Colors.teal),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '+ إضافة منتج سريع',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal),
+                  ),
+                  const Text(
+                    'سلعة حرة بدون باركود (F7)',
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          const VerticalDivider(width: 1, indent: 4, endIndent: 4),
-          const SizedBox(width: 8),
+          );
+        }
 
-          // Horizontal Quick Tiles
-          Expanded(
-            child: quickList.isEmpty
-                ? const Center(child: Text('اضغط "تخصيص وترتيب" لإضافة الخبز والبيض...', style: TextStyle(fontSize: 11, color: Colors.grey)))
-                : ListView.separated(
-                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: quickList.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 6),
-                    itemBuilder: (context, index) {
-                      final item = quickList[index];
-                      final name = item['name']?.toString() ?? '';
-                      final price = (item['price'] as num?)?.toDouble() ?? 0.0;
-                      final icon = item['icon']?.toString() ?? '🏷️';
-                      final barcode = item['barcode']?.toString() ?? '';
-                      final id = item['id']?.toString() ?? barcode;
-                      final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
+        final item = quickList[index - 1];
+        final name = item['name']?.toString() ?? '';
+        final price = (item['price'] as num?)?.toDouble() ?? 0.0;
+        final icon = item['icon']?.toString() ?? '🏷️';
+        final barcode = item['barcode']?.toString() ?? '';
+        final id = item['id']?.toString() ?? barcode;
+        final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
+        final stock = (item['stock'] as num?)?.toInt() ?? 999;
 
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () {
-                          _onItemScanned();
-                          final prod = Product(
-                            id: id,
-                            name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
-                            barcode: barcode,
-                            price: _isReturnMode ? -price.abs() : price,
-                            costPrice: cost,
-                            stock: (item['stock'] as num?)?.toInt() ?? 999,
-                            category: 'بيع سريع',
-                          );
-                          context.read<BillingBloc>().add(AddProductToCartEvent(prod));
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9FAFB),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(icon, style: const TextStyle(fontSize: 18)),
-                              const SizedBox(width: 6),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                                  Text('${price.toStringAsFixed(0)} DA', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.teal)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+        return InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            _onItemScanned();
+            final prod = Product(
+              id: id,
+              name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
+              barcode: barcode,
+              price: _isReturnMode ? -price.abs() : price,
+              costPrice: cost,
+              stock: stock,
+              category: 'بيع سريع',
+            );
+            context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+          },
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(icon, style: const TextStyle(fontSize: 22)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('سريع ⚡', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.teal)),
+                    ),
+                  ],
+                ),
+                Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${price.toStringAsFixed(2)} DA',
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.teal),
+                    ),
+                    const Icon(Icons.add_shopping_cart_rounded, size: 18, color: Colors.teal),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

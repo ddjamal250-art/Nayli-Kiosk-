@@ -22,6 +22,7 @@ import '../bloc/printer_event.dart';
 import '../bloc/printer_state.dart';
 import '../widgets/activation_modal.dart';
 import '../widgets/device_pairing_modal.dart';
+import '../../../billing/presentation/widgets/printer_selection_dialog.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
@@ -454,6 +455,22 @@ class _SettingsPageState extends State<SettingsPage> {
         title: 'مولد وطباعة ملصقات الرفوف والباركود',
         subtitle: 'توليد وطباعة بطاقات الأسعار للرفوف مباشرة',
         onTap: () => context.push('/products/shelf-labels'),
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.print_rounded,
+        iconColor: Colors.indigo,
+        title: 'طابعات ويندوز (التعرف التلقائي والفصل)',
+        subtitle: 'تحديد طابعة التوصيل الحرارية (80mm) وطابعة الفواتير (A4)',
+        onTap: () => PrinterSelectionDialog.show(context),
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.wifi_tethering_rounded,
+        iconColor: Colors.teal,
+        title: 'إدارة الشبكة المحلية والمزامنة (LAN & Wi-Fi)',
+        subtitle: 'ربط هواتف العمال عبر كود QR ومزامنة السلات لحظياً',
+        onTap: () => context.push('/lan-sync'),
       ),
     ]);
   }

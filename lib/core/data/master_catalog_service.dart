@@ -54,6 +54,7 @@ class MasterCatalogService {
               category: category.isNotEmpty ? category : 'عام',
               defaultPrice: price > 0 ? price : 100.0,
               defaultCost: cost > 0 ? cost : 80.0,
+              imageUrl: raw['image_url']?.toString(),
             );
 
             _barcodeMap[barcode] = catalogItem;

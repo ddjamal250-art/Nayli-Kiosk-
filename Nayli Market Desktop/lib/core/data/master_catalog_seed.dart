@@ -4,6 +4,7 @@ class MasterCatalogItem {
   final String category;
   final double defaultPrice;
   final double defaultCost;
+  final String? imageUrl;
 
   const MasterCatalogItem({
     required this.barcode,
@@ -11,7 +12,20 @@ class MasterCatalogItem {
     required this.category,
     this.defaultPrice = 0.0,
     this.defaultCost = 0.0,
+    this.imageUrl,
   });
+
+  String get categoryIcon {
+    if (category.contains('ألبان') || category.contains('حليب') || category.contains('ياغورت')) return '🥛';
+    if (category.contains('مشروب') || category.contains('عصير') || category.contains('ماء')) return '🥤';
+    if (category.contains('تنظيف') || category.contains('صابون')) return '🧼';
+    if (category.contains('حلويات') || category.contains('بسكويت') || category.contains('شوكولا')) return '🍫';
+    if (category.contains('معلبات') || category.contains('تونة') || category.contains('طماطم')) return '🥫';
+    if (category.contains('ميزان') || category.contains('بقوليات') || category.contains('عدس')) return '⚖️';
+    if (category.contains('خبز') || category.contains('مخبوزات')) return '🥖';
+    if (category.contains('بيض')) return '🥚';
+    return '📦';
+  }
 }
 
 class MasterCatalogSeed {
