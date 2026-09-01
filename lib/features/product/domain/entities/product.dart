@@ -11,6 +11,10 @@ class Product extends Equatable {
   final bool isWeighted;
   final double wholesalePrice;
   final String? expiryDate;
+  final String? packBarcode;
+  final int packMultiplier;
+  final double packPrice;
+  final String? packName;
 
   const Product({
     required this.id,
@@ -23,6 +27,10 @@ class Product extends Equatable {
     this.isWeighted = false,
     this.wholesalePrice = 0.0,
     this.expiryDate,
+    this.packBarcode,
+    this.packMultiplier = 1,
+    this.packPrice = 0.0,
+    this.packName,
   });
 
   Product copyWith({
@@ -36,6 +44,10 @@ class Product extends Equatable {
     bool? isWeighted,
     double? wholesalePrice,
     String? expiryDate,
+    String? packBarcode,
+    int? packMultiplier,
+    double? packPrice,
+    String? packName,
   }) {
     return Product(
       id: id ?? this.id,
@@ -48,6 +60,10 @@ class Product extends Equatable {
       isWeighted: isWeighted ?? this.isWeighted,
       wholesalePrice: wholesalePrice ?? this.wholesalePrice,
       expiryDate: expiryDate ?? this.expiryDate,
+      packBarcode: packBarcode ?? this.packBarcode,
+      packMultiplier: packMultiplier ?? this.packMultiplier,
+      packPrice: packPrice ?? this.packPrice,
+      packName: packName ?? this.packName,
     );
   }
 
@@ -63,6 +79,10 @@ class Product extends Equatable {
         isWeighted,
         wholesalePrice,
         expiryDate,
+        packBarcode,
+        packMultiplier,
+        packPrice,
+        packName,
       ];
 }
 

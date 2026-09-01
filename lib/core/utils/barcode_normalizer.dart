@@ -67,6 +67,25 @@ class BarcodeNormalizer {
       }
     }
 
+    // أولوية 3: مطابقة باركود الحزمة / الكرتونة (Pack Barcode)
+    for (final p in products) {
+      if (p.packBarcode != null && p.packBarcode!.isNotEmpty) {
+        if (matches(p.packBarcode, cleanScan)) {
+          return Product(
+            id: '${p.id}_pack',
+            name: '${p.name} (${p.packName ?? "حزمة"} x${p.packMultiplier})',
+            barcode: p.packBarcode!,
+            price: p.packPrice > 0 ? p.packPrice : (p.price * p.packMultiplier),
+            costPrice: p.costPrice * p.packMultiplier,
+            stock: p.stock ~/ (p.packMultiplier > 0 ? p.packMultiplier : 1),
+            category: p.category,
+            isWeighted: false,
+            packMultiplier: p.packMultiplier,
+          );
+        }
+      }
+    }
+
     return null;
   }
 }

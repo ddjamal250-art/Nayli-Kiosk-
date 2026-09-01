@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'hive_database.dart';
 import '../../features/product/data/models/product_model.dart';
 
@@ -96,6 +97,7 @@ class LocalSyncServer {
   static final StreamController<String> _logController = StreamController<String>.broadcast();
   static final StreamController<int> _clientsController = StreamController<int>.broadcast();
   static final StreamController<RemoteIncomingCart> _remoteCartStreamController = StreamController<RemoteIncomingCart>.broadcast();
+  static final StreamController<RemoteIncomingCart> _posHandoffStreamController = StreamController<RemoteIncomingCart>.broadcast();
   
   static final List<RemoteIncomingCart> pendingRemoteCarts = [];
   static int _connectedClients = 0;
@@ -104,6 +106,7 @@ class LocalSyncServer {
   static Stream<String> get logStream => _logController.stream;
   static Stream<int> get clientsStream => _clientsController.stream;
   static Stream<RemoteIncomingCart> get remoteCartStream => _remoteCartStreamController.stream;
+  static Stream<RemoteIncomingCart> get posHandoffStream => _posHandoffStreamController.stream;
   static int get connectedClients => _connectedClients;
 
   /// Get local machine Wi-Fi / Ethernet IPv4 address
@@ -185,6 +188,8 @@ class LocalSyncServer {
             await _handlePostSale(request);
           } else if (path == '/api/remote-cart' && request.method == 'POST') {
             await _handlePostRemoteCart(request);
+          } else if (path == '/api/pos-handoff' && request.method == 'POST') {
+            await _handlePostPosHandoff(request);
           } else if (path == '/api/remote-carts' && request.method == 'GET') {
             await _handleGetRemoteCarts(request);
           } else {
@@ -270,6 +275,45 @@ class LocalSyncServer {
     request.response.headers.contentType = ContentType.json;
     request.response.write(jsonEncode(list));
     await request.response.close();
+  }
+
+  static Future<void> _handlePostPosHandoff(HttpRequest request) async {
+    final body = await utf8.decoder.bind(request).join();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+
+    final handoffCart = RemoteIncomingCart.fromMap(data);
+    pendingRemoteCarts.insert(0, handoffCart);
+    _remoteCartStreamController.add(handoffCart);
+    _posHandoffStreamController.add(handoffCart);
+    _logController.add('POS Register Handoff received from ${handoffCart.senderName} (${handoffCart.token})');
+
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode({
+      'success': true,
+      'token': handoffCart.token,
+      'message': 'Cart successfully received by peer cashier',
+    }));
+    await request.response.close();
+  }
+
+  /// Forward cart to another peer Cashier register on LAN (e.g. when out of change)
+  static Future<bool> forwardCartToPeer({
+    required String peerIp,
+    int peerPort = 8080,
+    required RemoteIncomingCart cart,
+  }) async {
+    try {
+      final url = Uri.parse('http://$peerIp:$peerPort/api/pos-handoff');
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(cart.toMap()),
+      ).timeout(const Duration(seconds: 4));
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('Failed to forward cart to peer at $peerIp:$peerPort: $e');
+      return false;
+    }
   }
 
   static Future<void> _handleGetDocuments(HttpRequest request) async {

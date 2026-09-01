@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/commercial_pdf_generator.dart';
+import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../data/commercial_document_service.dart';
@@ -135,6 +137,111 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
     }
   }
 
+  void _showPosTicketsArchiveModal(BuildContext context) {
+    SoundService.playTabSwitch();
+    final rawInvoices = HiveDatabase.invoicesBox.values.whereType<Map>().toList().reversed.toList();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.receipt_long_rounded, color: Colors.indigo, size: 28),
+                const SizedBox(width: 8),
+                Text('أرشيف وصولات الكاشير السريعة (${rawInvoices.length}) 🧾',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
+            content: SizedBox(
+              width: 600,
+              height: 480,
+              child: rawInvoices.isEmpty
+                  ? const Center(
+                      child: Text('لا توجد وصولات مسجلة بعد في النظام',
+                          style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                    )
+                  : ListView.separated(
+                      itemCount: rawInvoices.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, idx) {
+                        final inv = rawInvoices[idx];
+                        final timeStr = inv['timestamp']?.toString() ?? '';
+                        final dt = DateTime.tryParse(timeStr) ?? DateTime.now();
+                        final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+                        final customer = inv['customerName']?.toString() ?? 'زبون عابر';
+                        final method = inv['paymentMethod']?.toString() ?? (inv['isCredit'] == true ? 'Crédit' : 'Espèces');
+                        final items = List<Map<String, dynamic>>.from(inv['items'] ?? []);
+
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.indigo.shade50,
+                            child: const Icon(Icons.receipt_rounded, color: Colors.indigo),
+                          ),
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('وصل #${inv['id'] ?? (idx + 1)} • $customer',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text('${total.toStringAsFixed(2)} DA',
+                                  style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.teal, fontSize: 14)),
+                            ],
+                          ),
+                          subtitle: Text(
+                            '${DateFormat('yyyy/MM/dd HH:mm').format(dt)}  |  طريقة الدفع: $method  |  عدد السلع: ${items.length}',
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                          trailing: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            ),
+                            icon: const Icon(Icons.print_rounded, size: 16, color: Colors.white),
+                            label: const Text('طباعة نسخة (Duplicata)',
+                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            onPressed: () async {
+                              final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Market');
+                              final shopPhone = HiveDatabase.settingsBox.get('shop_phone', defaultValue: '');
+                              final printed = await PrinterHelper.printReceiptWindows(
+                                shopName: '$shopName (DUPLICATA)',
+                                phone: shopPhone,
+                                items: items,
+                                total: total,
+                                customerName: customer,
+                                isCredit: inv['isCredit'] == true,
+                                paidAmount: (inv['paidAmount'] as num?)?.toDouble() ?? 0.0,
+                              );
+                              if (printed) {
+                                SoundService.playCheckoutSuccess();
+                                if (context.mounted) {
+                                  SnackbarHelper.showSuccess(context, '✅ تم إرسال النسخة المطابقة إلى طابعة الويندوز');
+                                }
+                              } else {
+                                if (context.mounted) {
+                                  SnackbarHelper.showWarning(context, '⚠️ تعذر إرسال أمر الطباعة، تأكد من اتصال الطابعة');
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('إغلاق'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 800;
@@ -235,6 +342,20 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       onPressed: _scanPaperReceipt,
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueGrey.shade800,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 18),
+                      label: const Text(
+                        'وصولات الكاشير (Duplicata) 🧾',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      onPressed: () => _showPosTicketsArchiveModal(context),
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton.icon(

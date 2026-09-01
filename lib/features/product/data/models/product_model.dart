@@ -35,6 +35,18 @@ class ProductModel extends Product {
   @override
   @HiveField(9)
   final String? expiryDate;
+  @override
+  @HiveField(10)
+  final String? packBarcode;
+  @override
+  @HiveField(11)
+  final int packMultiplier;
+  @override
+  @HiveField(12)
+  final double packPrice;
+  @override
+  @HiveField(13)
+  final String? packName;
 
   const ProductModel({
     required this.id,
@@ -47,6 +59,10 @@ class ProductModel extends Product {
     this.isWeighted = false,
     this.wholesalePrice = 0.0,
     this.expiryDate,
+    this.packBarcode,
+    this.packMultiplier = 1,
+    this.packPrice = 0.0,
+    this.packName,
   }) : super(
           id: id,
           name: name,
@@ -58,7 +74,46 @@ class ProductModel extends Product {
           isWeighted: isWeighted,
           wholesalePrice: wholesalePrice,
           expiryDate: expiryDate,
+          packBarcode: packBarcode,
+          packMultiplier: packMultiplier,
+          packPrice: packPrice,
+          packName: packName,
         );
+
+  @override
+  ProductModel copyWith({
+    String? id,
+    String? name,
+    String? barcode,
+    double? price,
+    double? costPrice,
+    int? stock,
+    String? category,
+    bool? isWeighted,
+    double? wholesalePrice,
+    String? expiryDate,
+    String? packBarcode,
+    int? packMultiplier,
+    double? packPrice,
+    String? packName,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      barcode: barcode ?? this.barcode,
+      price: price ?? this.price,
+      costPrice: costPrice ?? this.costPrice,
+      stock: stock ?? this.stock,
+      category: category ?? this.category,
+      isWeighted: isWeighted ?? this.isWeighted,
+      wholesalePrice: wholesalePrice ?? this.wholesalePrice,
+      expiryDate: expiryDate ?? this.expiryDate,
+      packBarcode: packBarcode ?? this.packBarcode,
+      packMultiplier: packMultiplier ?? this.packMultiplier,
+      packPrice: packPrice ?? this.packPrice,
+      packName: packName ?? this.packName,
+    );
+  }
 
   factory ProductModel.fromEntity(Product product) {
     return ProductModel(
@@ -72,6 +127,10 @@ class ProductModel extends Product {
       isWeighted: product.isWeighted,
       wholesalePrice: product.wholesalePrice,
       expiryDate: product.expiryDate,
+      packBarcode: product.packBarcode,
+      packMultiplier: product.packMultiplier,
+      packPrice: product.packPrice,
+      packName: product.packName,
     );
   }
 
@@ -87,6 +146,10 @@ class ProductModel extends Product {
       isWeighted: isWeighted,
       wholesalePrice: wholesalePrice,
       expiryDate: expiryDate,
+      packBarcode: packBarcode,
+      packMultiplier: packMultiplier,
+      packPrice: packPrice,
+      packName: packName,
     );
   }
 
@@ -102,6 +165,10 @@ class ProductModel extends Product {
       isWeighted: json['isWeighted'] as bool? ?? false,
       wholesalePrice: (json['wholesalePrice'] as num?)?.toDouble() ?? 0.0,
       expiryDate: json['expiryDate'] as String?,
+      packBarcode: json['packBarcode'] as String?,
+      packMultiplier: (json['packMultiplier'] as num?)?.toInt() ?? 1,
+      packPrice: (json['packPrice'] as num?)?.toDouble() ?? 0.0,
+      packName: json['packName'] as String?,
     );
   }
 
@@ -117,6 +184,10 @@ class ProductModel extends Product {
       'isWeighted': isWeighted,
       'wholesalePrice': wholesalePrice,
       'expiryDate': expiryDate,
+      'packBarcode': packBarcode,
+      'packMultiplier': packMultiplier,
+      'packPrice': packPrice,
+      'packName': packName,
     };
   }
 }

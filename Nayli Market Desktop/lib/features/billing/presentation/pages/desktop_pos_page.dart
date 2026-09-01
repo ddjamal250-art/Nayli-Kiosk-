@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_server.dart';
@@ -61,6 +62,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   String _serverIp = '127.0.0.1';
   bool _isServerRunning = false;
   StreamSubscription<RemoteIncomingCart>? _remoteCartSub;
+  StreamSubscription<RemoteIncomingCart>? _handoffCartSub;
   int _pendingRemoteCartsCount = 0;
 
   // USB Barcode Wedge Rapid Buffer
@@ -97,6 +99,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     _globalKeyboardFocusNode.dispose();
     _ipmTimer?.cancel();
     _remoteCartSub?.cancel();
+    _handoffCartSub?.cancel();
     super.dispose();
   }
 
@@ -114,6 +117,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           context,
           '🔔 ${context.tr('pos_incoming_carts')}: ${cart.senderName} (${cart.token}) - ${cart.totalAmount.toStringAsFixed(2)} DA',
         );
+      }
+    });
+
+    _handoffCartSub = LocalSyncServer.posHandoffStream.listen((cart) {
+      if (mounted) {
+        SoundService.playMemberCardScan();
+        _showIncomingHandoffBanner(cart);
       }
     });
 
@@ -291,6 +301,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f10) {
       _openCashDrawerWithSecurity();
+      return true;
+    } else if (event.logicalKey == LogicalKeyboardKey.f11) {
+      _showRegisterHandoffModal(context.read<BillingBloc>().state);
       return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f12 || (event.logicalKey == LogicalKeyboardKey.space && !_barcodeFocusNode.hasFocus)) {
       _triggerCheckout();
@@ -631,6 +644,302 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         },
       ),
     );
+  }
+
+  void _showIncomingHandoffBanner(RemoteIncomingCart cart) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.orange, size: 30),
+            const SizedBox(width: 8),
+            Text('سلة محولة من زميلك (${cart.senderName}) 🔀',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('تذكرة: ${cart.token}  •  المبلغ: ${cart.totalAmount.toStringAsFixed(2)} DA',
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.teal)),
+            const SizedBox(height: 8),
+            Text('تحتوي على (${cart.items.length} سلع): ${cart.items.map((i) => i.name).join(", ")}',
+                style: const TextStyle(fontSize: 12, color: Colors.black87)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(10)),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'قام زميلك بتحويل هذه السلة لتخليص الزبون بسبب نفاد الصرف لديه.',
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('تأجيل في القائمة (F9)'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            icon: const Icon(Icons.download_rounded, color: Colors.white),
+            label: const Text('فتح السلة والمحاسبة الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _loadRemoteCartIntoActive(cart);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _loadRemoteCartIntoActive(RemoteIncomingCart cart) {
+    for (final item in cart.items) {
+      final prod = Product(
+        id: 'handoff_${item.barcode}_${DateTime.now().millisecondsSinceEpoch}',
+        name: item.name,
+        barcode: item.barcode,
+        price: item.price,
+        costPrice: item.costPrice,
+        stock: 999,
+      );
+      for (int q = 0; q < item.quantity; q++) {
+        context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+      }
+    }
+    LocalSyncServer.removeRemoteCart(cart.id);
+    setState(() {
+      _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
+    });
+    SoundService.playCheckoutSuccess();
+    SnackbarHelper.showSuccess(context, '✅ تم استلام سلة ${cart.token} بنجاح!');
+    _barcodeFocusNode.requestFocus();
+  }
+
+  void _showRegisterHandoffModal(BillingState state) {
+    if (state.cartItems.isEmpty) {
+      SnackbarHelper.showWarning(context, 'السلة فارغة! لا توجد سلع لتحويلها.');
+      return;
+    }
+
+    final ipController = TextEditingController(
+      text: HiveDatabase.settingsBox.get('peer_cashier_ip', defaultValue: '192.168.1.50'),
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Row(
+          children: [
+            Icon(Icons.swap_horizontal_circle_rounded, color: Colors.indigo, size: 28),
+            SizedBox(width: 8),
+            Text('تحويل السلة لكاشير آخر (خلاصلك الصرف؟) 🔀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('السلة الحالية: ${state.cartItems.length} سلع • المجموع: ${state.totalAmount.toStringAsFixed(2)} DA',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.teal)),
+            const SizedBox(height: 12),
+            const Text('أدخل عنوان IP لجهاز الكاشير الثاني في الشبكة المحلية:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: ipController,
+              decoration: const InputDecoration(
+                labelText: 'عنوان IP لجهاز الزميل (Peer IP)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.computer_rounded),
+                hintText: '192.168.1.50',
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              children: [
+                ActionChip(
+                  label: const Text('كاشير 2 (192.168.1.15)'),
+                  onPressed: () => ipController.text = '192.168.1.15',
+                ),
+                ActionChip(
+                  label: const Text('كاشير 3 (192.168.1.20)'),
+                  onPressed: () => ipController.text = '192.168.1.20',
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+            icon: const Icon(Icons.send_rounded, color: Colors.white),
+            label: const Text('تحويل السلة لزميلك الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            onPressed: () async {
+              final targetIp = ipController.text.trim();
+              if (targetIp.isEmpty) return;
+
+              await HiveDatabase.settingsBox.put('peer_cashier_ip', targetIp);
+              Navigator.pop(ctx);
+
+              final token = '#${DateTime.now().millisecondsSinceEpoch % 900 + 100}';
+              final handoffCart = RemoteIncomingCart(
+                id: 'handoff_${DateTime.now().millisecondsSinceEpoch}',
+                token: token,
+                senderName: 'كاشير 1 (نفاد الصرف)',
+                timestamp: DateTime.now(),
+                customerName: _selectedCustomerName,
+                items: state.cartItems.map((ci) => RemoteCartItem(
+                  barcode: ci.product.barcode,
+                  name: ci.product.name,
+                  price: ci.product.price,
+                  costPrice: ci.product.costPrice,
+                  quantity: ci.quantity,
+                )).toList(),
+                totalAmount: state.totalAmount,
+              );
+
+              final success = await LocalSyncServer.forwardCartToPeer(
+                peerIp: targetIp,
+                cart: handoffCart,
+              );
+
+              if (success) {
+                context.read<BillingBloc>().add(ClearCartEvent());
+                setState(() {
+                  _cartDiscountValue = 0.0;
+                });
+                SoundService.playCheckoutSuccess();
+                SnackbarHelper.showSuccess(context, '✅ تم تحويل السلة $token بنجاح إلى كاشير ($targetIp)! يمكنك استقبال الزبون التالي.');
+                _barcodeFocusNode.requestFocus();
+              } else {
+                SnackbarHelper.showError(context, '❌ تعذر إرسال السلة إلى ($targetIp). تأكد من تشغيل البرنامج لدى زميلك.');
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendWhatsAppReceipt(double total, BillingState state) async {
+    String? customerPhone;
+    if (_selectedCustomerId != null) {
+      final cData = HiveDatabase.customersBox.get(_selectedCustomerId);
+      if (cData is Map) {
+        customerPhone = cData['phone']?.toString();
+      }
+    }
+
+    final phoneController = TextEditingController(text: customerPhone ?? '');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.chat_bubble_outline_rounded, color: Colors.green, size: 26),
+            SizedBox(width: 8),
+            Text('إرسال الوصل الرقمي عبر WhatsApp 💬', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('الزبون: $_selectedCustomerName  •  المبلغ: ${total.toStringAsFixed(2)} DA',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'رقم هاتف الزبون (الجزائر)',
+                hintText: '0661234567 أو 0550123456',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.phone_iphone_rounded),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10)),
+            icon: const Icon(Icons.send_rounded, color: Colors.white),
+            label: const Text('إرسال الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    var rawPhone = phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (rawPhone.startsWith('0')) {
+      rawPhone = '213${rawPhone.substring(1)}';
+    } else if (!rawPhone.startsWith('213') && rawPhone.isNotEmpty) {
+      rawPhone = '213$rawPhone';
+    }
+
+    if (rawPhone.length < 11) {
+      SnackbarHelper.showError(context, 'رقم الهاتف غير صالح!');
+      return;
+    }
+
+    final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Market');
+    final invoiceNumber = '#${DateTime.now().millisecondsSinceEpoch % 90000 + 10000}';
+    final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+
+    final itemsSummary = state.cartItems.map((ci) => '• ${ci.product.name} (x${ci.quantity}) = ${(ci.product.price * ci.quantity).toStringAsFixed(0)} DA').join('\n');
+
+    final message = '''
+🧾 *وصل مشتريات رقمي - $shopName*
+رقم الوصل: $invoiceNumber
+التاريخ: $dateStr
+الزبون: $_selectedCustomerName
+--------------------------------
+$itemsSummary
+--------------------------------
+💰 *المجموع الصافي: ${total.toStringAsFixed(2)} DA*
+رصيد الديون المتبقي: ${_customerCreditBalance.toStringAsFixed(2)} DA
+
+شكراً لتعاملكم معنا! • Merci de votre visite!
+''';
+
+    final uri = Uri.parse('https://wa.me/$rawPhone?text=${Uri.encodeComponent(message)}');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        SoundService.playCheckoutSuccess();
+        SnackbarHelper.showSuccess(context, '✅ تم فتح WhatsApp بنجاح!');
+      } else {
+        SnackbarHelper.showError(context, 'تعذر فتح تطبيق WhatsApp');
+      }
+    } catch (e) {
+      SnackbarHelper.showError(context, 'خطأ في إرسال الواتساب: $e');
+    }
   }
 
   void _openCashDrawerWithSecurity() async {
@@ -1260,6 +1569,16 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.green.shade800,
+                  side: BorderSide(color: Colors.green.shade600),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+                icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.green, size: 18),
+                label: const Text('واتساب 💬', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () => _sendWhatsAppReceipt(total, context.read<BillingBloc>().state),
+              ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
@@ -1269,6 +1588,25 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                 label: Text(context.tr('confirm_and_print'),
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 onPressed: () async {
+                  if (paymentMethod == PosPaymentMethod.customerCredit && _selectedCustomerId != null) {
+                    final cData = HiveDatabase.customersBox.get(_selectedCustomerId);
+                    double maxLimit = 50000.0;
+                    if (cData is Map) {
+                      maxLimit = (cData['maxDebtLimit'] as num?)?.toDouble() ?? 50000.0;
+                    }
+                    final projectedDebt = _customerCreditBalance + total;
+                    if (projectedDebt > maxLimit) {
+                      final authorized = await SecurityPinHelper.authenticate(
+                        context,
+                        title: '⚠️ تجاوز سقف الدين (${maxLimit.toStringAsFixed(0)} DA) - إذن المشرف',
+                      );
+                      if (!authorized) {
+                        SnackbarHelper.showError(context, '❌ تم إلغاء البيع: رُفض تجاوز سقف الدين بدون إذن المشرف.');
+                        return;
+                      }
+                    }
+                  }
+
                   Navigator.pop(ctx);
                   await _finalizeSale(paymentMethod, total, manualTpeRefController.text);
                 },
@@ -1905,6 +2243,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                 ),
                             ],
                           ),
+                        const SizedBox(width: 6),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                            side: const BorderSide(color: Colors.deepOrange, width: 1.2),
+                          ),
+                          icon: const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.deepOrange, size: 18),
+                          label: const Text('تحويل (F11)', style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12)),
+                          onPressed: () => _showRegisterHandoffModal(state),
                         ),
                         const SizedBox(width: 6),
                         Expanded(

@@ -295,19 +295,19 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       // 1. Auto-deduct stock from Hive for all sold products
       final productBox = HiveDatabase.productBox;
       for (final cartItem in state.cartItems) {
-        final productModel = productBox.get(cartItem.product.id);
+        final originalId = cartItem.product.id.endsWith('_pack')
+            ? cartItem.product.id.replaceAll('_pack', '')
+            : cartItem.product.id;
+        final productModel = productBox.get(originalId);
         if (productModel != null) {
-          final newStock = (productModel.stock - cartItem.quantity).clamp(0, 999999);
+          final multiplier = cartItem.product.id.endsWith('_pack')
+              ? cartItem.product.packMultiplier
+              : 1;
+          final deductAmount = cartItem.quantity * (multiplier > 0 ? multiplier : 1);
+          final newStock = (productModel.stock - deductAmount).clamp(0, 999999);
           productBox.put(
-            cartItem.product.id,
-            ProductModel(
-              id: productModel.id,
-              name: productModel.name,
-              barcode: productModel.barcode,
-              price: productModel.price,
-              costPrice: productModel.costPrice,
-              stock: newStock,
-            ),
+            originalId,
+            productModel.copyWith(stock: newStock),
           );
         }
       }

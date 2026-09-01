@@ -166,6 +166,36 @@ class DevicePairingModal extends StatelessWidget {
                     ),
                   ],
                 ),
+              const SizedBox(height: 14),
+
+              // WhatsApp Integration Card
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.chat_bubble_rounded, color: Colors.green, size: 32),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('3. وصولات الواتساب الرقمية (WhatsApp Receipts) 💬',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
+                          SizedBox(height: 2),
+                          Text(
+                            'مفعل تلقائياً عند شاشة الدفع: إرسال تفاصيل الفاتورة ورصيد الديون المتبقي مباشرة إلى واتساب الزبون بضغطة زر وبدون اشتراكات خارجية.',
+                            style: TextStyle(fontSize: 11, color: Colors.black87, height: 1.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 16),

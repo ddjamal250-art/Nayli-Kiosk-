@@ -27,13 +27,17 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       isWeighted: fields[7] as bool? ?? false,
       wholesalePrice: (fields[8] as num?)?.toDouble() ?? 0.0,
       expiryDate: fields[9] as String?,
+      packBarcode: fields[10] as String?,
+      packMultiplier: (fields[11] as num?)?.toInt() ?? 1,
+      packPrice: (fields[12] as num?)?.toDouble() ?? 0.0,
+      packName: fields[13] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductModel obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -53,7 +57,15 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       ..writeByte(8)
       ..write(obj.wholesalePrice)
       ..writeByte(9)
-      ..write(obj.expiryDate);
+      ..write(obj.expiryDate)
+      ..writeByte(10)
+      ..write(obj.packBarcode)
+      ..writeByte(11)
+      ..write(obj.packMultiplier)
+      ..writeByte(12)
+      ..write(obj.packPrice)
+      ..writeByte(13)
+      ..write(obj.packName);
   }
 
   @override
