@@ -390,3 +390,4 @@ class PrinterHelper {
     return List.from(text.codeUnits);
   }
 }
+

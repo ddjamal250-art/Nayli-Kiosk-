@@ -129,13 +129,33 @@ class LocalSyncServer {
   /// Start Embedded Master Server
   static Future<bool> startServer({int customPort = 8080}) async {
     if (_isRunning) return true;
-    port = customPort;
 
     try {
-      _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
-      _isRunning = true;
-      final ip = await getLocalIp();
-      _logController.add('Master POS Server started at http://$ip:$port');
+      final candidatePorts = [customPort, 8081, 8082, 8888, 9090];
+      HttpServer? boundServer;
+    int boundPort = customPort;
+
+    for (final p in candidatePorts) {
+      try {
+        boundServer = await HttpServer.bind(InternetAddress.anyIPv4, p);
+        boundPort = p;
+        break;
+      } catch (e) {
+        debugPrint('Port $p is busy, trying next...');
+      }
+    }
+
+    if (boundServer == null) {
+      debugPrint('Failed to bind LocalSyncServer to any port');
+      _isRunning = false;
+      return false;
+    }
+
+    port = boundPort;
+    _server = boundServer;
+    _isRunning = true;
+    final ip = await getLocalIp();
+    _logController.add('Master POS Server started at http://$ip:$port');
 
       _server!.listen((HttpRequest request) async {
         // Enable CORS

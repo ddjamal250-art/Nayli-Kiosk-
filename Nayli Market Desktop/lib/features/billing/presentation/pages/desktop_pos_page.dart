@@ -1281,6 +1281,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   }
 
   Future<void> _finalizeSale(PosPaymentMethod method, double total, String tpeRef) async {
+    final billingBloc = context.read<BillingBloc>();
+    final isCredit = method == PosPaymentMethod.customerCredit;
+
     if (method == PosPaymentMethod.tpeCard) {
       await TpePaymentService.processTpePayment(amount: total, manualReference: tpeRef);
     } else {
@@ -1292,11 +1295,50 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       await PrinterHelper.openCashDrawer();
     }
 
-    // Clear cart and prepare for next customer
+    // 1. Dispatch PrintReceiptEvent to deduct stock and save invoice in invoicesBox
+    final shopBox = HiveDatabase.shopBox;
+    final shop = shopBox.isNotEmpty ? shopBox.getAt(0) : null;
+    final shopName = shop?.name ?? 'Nayli Market';
+    final shopPhone = shop?.phoneNumber ?? '';
+
+    billingBloc.add(PrintReceiptEvent(
+      shopName: shopName,
+      address1: '',
+      address2: '',
+      phone: shopPhone,
+      footer: '',
+      customerName: _selectedCustomerName,
+      isCredit: isCredit,
+      paymentMethod: method == PosPaymentMethod.tpeCard ? 'TPE / Carte' : (isCredit ? 'Crédit' : 'Espèces'),
+      paidAmount: isCredit ? 0.0 : total,
+      previousDebt: _customerCreditBalance,
+      newDebtTotal: isCredit ? (_customerCreditBalance + total) : _customerCreditBalance,
+    ));
+
+    // 2. If credit, update customer debt in Hive
+    if (isCredit && _selectedCustomerId != null) {
+      try {
+        final cBox = HiveDatabase.customersBox;
+        final cData = cBox.get(_selectedCustomerId);
+        if (cData is Map) {
+          final updatedData = Map<String, dynamic>.from(cData);
+          final currentDebt = (updatedData['debt'] as num?)?.toDouble() ?? 0.0;
+          updatedData['debt'] = currentDebt + total;
+          await cBox.put(_selectedCustomerId, updatedData);
+        }
+      } catch (e) {
+        debugPrint('Error updating customer debt: $e');
+      }
+    }
+
+    // 3. Clear cart and prepare for next customer
     if (mounted) {
-      context.read<BillingBloc>().add(ClearCartEvent());
+      billingBloc.add(ClearCartEvent());
       setState(() {
         _cartDiscountValue = 0.0;
+        _selectedCustomerId = null;
+        _selectedCustomerName = 'زبون عابر (Détail)';
+        _customerCreditBalance = 0.0;
       });
       SnackbarHelper.showSuccess(context, context.tr('printed_success'));
       _barcodeFocusNode.requestFocus();
@@ -1305,13 +1347,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: _globalKeyboardFocusNode,
-      autofocus: true,
-      onKeyEvent: _handleHotkeys,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF3F4F6),
-        body: SafeArea(
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F4F6),
+      body: SafeArea(
           child: Column(
             children: [
               // Top Header Bar
@@ -1346,8 +1384,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildActiveModeNotice() {

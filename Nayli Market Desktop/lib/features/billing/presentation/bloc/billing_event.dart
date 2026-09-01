@@ -96,6 +96,7 @@ class PrintReceiptEvent extends BillingEvent {
   final String footer;
   final String? customerName;
   final bool isCredit;
+  final String paymentMethod;
   final double paidAmount;
   final double previousDebt;
   final double newDebtTotal;
@@ -108,6 +109,7 @@ class PrintReceiptEvent extends BillingEvent {
     required this.footer,
     this.customerName,
     this.isCredit = false,
+    this.paymentMethod = 'Espèces',
     this.paidAmount = 0.0,
     this.previousDebt = 0.0,
     this.newDebtTotal = 0.0,
@@ -122,6 +124,7 @@ class PrintReceiptEvent extends BillingEvent {
         footer,
         customerName ?? '',
         isCredit,
+        paymentMethod,
         paidAmount,
         previousDebt,
         newDebtTotal,

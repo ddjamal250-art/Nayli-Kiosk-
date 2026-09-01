@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -263,7 +265,92 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     }
   }
 
+  void _handleLanPairingQr(String jsonStr) async {
+    try {
+      final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+      final ip = data['ip']?.toString() ?? '';
+      final port = data['port']?.toString() ?? '8080';
+      final shopName = data['shopName']?.toString() ?? 'Nayli Market';
+
+      await HiveDatabase.settingsBox.put('master_pos_ip', ip);
+      await HiveDatabase.settingsBox.put('master_pos_port', port);
+      await HiveDatabase.settingsBox.put('shop_name', shopName);
+
+      SoundService.playMemberCardScan();
+      if (mounted) {
+        context.showAppSnackBar(
+          '✅ تم ربط الهاتف بنجاح مع كاشير: $shopName ($ip:$port)',
+          icon: Icons.wifi_tethering_rounded,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        context.showAppSnackBar('❌ خطأ في قراءة رمز الاقتران', isError: true);
+      }
+    }
+  }
+
+  Future<void> _sendCartToMasterPos(BillingState state) async {
+    final ip = HiveDatabase.settingsBox.get('master_pos_ip', defaultValue: '') as String;
+    final port = HiveDatabase.settingsBox.get('master_pos_port', defaultValue: '8080').toString();
+
+    if (ip.isEmpty) {
+      context.showAppSnackBar(
+        '⚠️ يرجى مسح كود QR من شاشة الكاشير لربط الهاتف بالشبكة أولاً',
+        isError: true,
+        icon: Icons.qr_code_scanner_rounded,
+      );
+      return;
+    }
+
+    try {
+      final randomTicket = '#${(DateTime.now().millisecondsSinceEpoch % 900 + 100)}';
+      final payload = {
+        'id': 'rc_${DateTime.now().millisecondsSinceEpoch}',
+        'token': randomTicket,
+        'senderName': 'هاتف العامل (Floor)',
+        'customerName': 'زبون المحل',
+        'totalAmount': state.totalAmount,
+        'items': state.cartItems.map((ci) => {
+          'barcode': ci.product.barcode,
+          'name': ci.product.name,
+          'price': ci.product.price,
+          'costPrice': ci.product.costPrice,
+          'quantity': ci.quantity,
+          'unit': 'قطعة',
+        }).toList(),
+      };
+
+      final url = Uri.parse('http://$ip:$port/api/remote-cart');
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200) {
+        SoundService.playCheckoutSuccess();
+        context.read<BillingBloc>().add(ClearCartEvent());
+        if (mounted) {
+          context.showAppSnackBar(
+            '✅ تم إرسال السلة بنجاح إلى الكاشير برقم تذكرة: $randomTicket',
+            icon: Icons.send_rounded,
+          );
+        }
+      } else {
+        context.showAppSnackBar('❌ تعذر إرسال السلة: خطأ من السيرفر (${res.statusCode})', isError: true);
+      }
+    } catch (e) {
+      context.showAppSnackBar('❌ تعذر الاتصال بالكاشير ($ip:$port). تأكد من تشغيل الواي فاي والسيرفر', isError: true);
+    }
+  }
+
   void _handleScannedBarcode(String code) {
+    if (code.contains('nayli_lan_pair')) {
+      _handleLanPairingQr(code);
+      return;
+    }
+
     SoundService.playScanBeep();
     HapticFeedback.lightImpact();
 
@@ -2101,18 +2188,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: PrimaryButton(
-                      label: '${context.tr('review_order')} (${state.totalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol})',
-                      onPressed: () async {
-                        setState(() => _isScanningPaused = true);
-                        await context.push('/checkout');
-                        if (mounted) {
-                          setState(() {
-                            _isScanningPaused = false;
-                            _lastScanTimes.clear();
-                          });
-                        }
-                      },
+                    child: Column(
+                      children: [
+                        // Button 1: Send Cart to Master POS Desktop (F9)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.indigo.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 2,
+                            ),
+                            icon: const Icon(Icons.send_rounded, size: 20),
+                            label: const Text(
+                              'إرسال السلة للكاشير الرئيسي (F9) 📤',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            onPressed: () => _sendCartToMasterPos(state),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Button 2: Local Checkout
+                        PrimaryButton(
+                          label: '${context.tr('review_order')} (${state.totalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol})',
+                          onPressed: () async {
+                            setState(() => _isScanningPaused = true);
+                            await context.push('/checkout');
+                            if (mounted) {
+                              setState(() {
+                                _isScanningPaused = false;
+                                _lastScanTimes.clear();
+                              });
+                            }
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),

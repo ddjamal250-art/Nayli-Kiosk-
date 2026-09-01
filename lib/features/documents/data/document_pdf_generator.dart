@@ -24,9 +24,16 @@ class DocumentPdfGenerator {
     final shopAi = HiveDatabase.settingsBox.get('shop_ai', defaultValue: '16012345678');
     final shopBank = HiveDatabase.settingsBox.get('shop_bank', defaultValue: 'BNA / CCP: 001234567 Clé 89');
 
-    // Font loading for Arabic & Latin
-    final font = await PdfGoogleFonts.cairoRegular();
-    final fontBold = await PdfGoogleFonts.cairoBold();
+    // Font loading for Arabic & Latin with offline fallback
+    pw.Font font;
+    pw.Font fontBold;
+    try {
+      font = await PdfGoogleFonts.cairoRegular();
+      fontBold = await PdfGoogleFonts.cairoBold();
+    } catch (_) {
+      font = pw.Font.helvetica();
+      fontBold = pw.Font.helveticaBold();
+    }
 
     pdf.addPage(
       pw.Page(

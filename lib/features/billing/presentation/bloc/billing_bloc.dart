@@ -68,7 +68,10 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         ));
         return;
       } else if (scaleResult.weightKg != null) {
-        final result = await getProductByBarcodeUseCase(scaleResult.productCode);
+        var result = await getProductByBarcodeUseCase(scaleResult.productCode);
+        if (result.isLeft() && scaleResult.productCodeAlt.isNotEmpty) {
+          result = await getProductByBarcodeUseCase(scaleResult.productCodeAlt);
+        }
         result.fold(
           (_) {
             // Add as generic weight item
@@ -326,6 +329,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'itemCount': state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity),
         'items': items,
         'isCredit': event.isCredit,
+        'paymentMethod': event.paymentMethod,
         'customerName': event.customerName,
         'paidAmount': event.paidAmount,
       });
