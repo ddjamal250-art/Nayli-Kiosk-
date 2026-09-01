@@ -218,7 +218,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
         shopName: _shopNameCtrl.text.trim(),
         address1: _showAddress ? _addressCtrl.text.trim() : null,
         address2: _showSlogan ? _sloganCtrl.text.trim() : null,
-        phone: _showPhone ? _phoneCtrl.text.trim() : null,
+        phone: _showPhone ? _phoneCtrl.text.trim() : '',
         items: testItems,
         total: 1270.0,
         footer: _showFooterNote ? _footerNoteCtrl.text.trim() : '--- NAYLI MARKET ---',

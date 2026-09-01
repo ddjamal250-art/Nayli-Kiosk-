@@ -7,6 +7,7 @@ import '../../../../core/utils/expiry_tracker_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/data/local_sync_server.dart';
+import '../../../product/presentation/pages/expiry_monitor_page.dart';
 
 class AdvancedPosSettingsPage extends StatefulWidget {
   const AdvancedPosSettingsPage({super.key});

@@ -461,5 +461,8 @@ class SoundService {
       _playSound(7);
     } catch (_) {}
   }
+
+  /// Play click sound
+  static Future<void> playClick() => playTabSwitch();
 }
 

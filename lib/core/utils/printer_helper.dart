@@ -121,7 +121,7 @@ class PrinterHelper {
     required String shopName,
     String? address1,
     String? address2,
-    required String phone,
+    String? phone,
     required List<Map<String, dynamic>> items,
     required double total,
     double discount = 0.0,
@@ -145,7 +145,7 @@ class PrinterHelper {
                 pw.Text(shopName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
                 if (address1 != null && address1.isNotEmpty) pw.Text(address1, style: const pw.TextStyle(fontSize: 8.5)),
                 if (address2 != null && address2.isNotEmpty) pw.Text(address2, style: const pw.TextStyle(fontSize: 8.5)),
-                if (phone.isNotEmpty) pw.Text('Tel: $phone', style: const pw.TextStyle(fontSize: 8.5)),
+                if (phone != null && phone.isNotEmpty) pw.Text('Tel: $phone', style: const pw.TextStyle(fontSize: 8.5)),
                 pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
                 pw.Divider(thickness: 0.5),
                 ...items.map((item) {
