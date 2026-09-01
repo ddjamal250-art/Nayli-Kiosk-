@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
-import '../data/document_pdf_generator.dart';
-import '../data/document_service.dart';
-import '../domain/entities/commercial_document.dart';
+import '../../data/document_pdf_generator.dart';
+import '../../data/document_service.dart';
+import '../../domain/entities/commercial_document.dart';
 import 'create_edit_document_page.dart';
 
 class DocumentsPage extends StatefulWidget {
@@ -426,3 +426,4 @@ class _DocumentsPageState extends State<DocumentsPage> {
     );
   }
 }
+

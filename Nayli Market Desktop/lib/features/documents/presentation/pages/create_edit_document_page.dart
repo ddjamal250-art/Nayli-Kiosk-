@@ -5,9 +5,9 @@ import '../../../../core/data/hive_database.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../product/domain/entities/product.dart';
-import '../data/document_pdf_generator.dart';
-import '../data/document_service.dart';
-import '../domain/entities/commercial_document.dart';
+import '../../data/document_pdf_generator.dart';
+import '../../data/document_service.dart';
+import '../../domain/entities/commercial_document.dart';
 
 class CreateEditDocumentPage extends StatefulWidget {
   final CommercialDocument? initialDocument;
@@ -711,3 +711,4 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
     );
   }
 }
+

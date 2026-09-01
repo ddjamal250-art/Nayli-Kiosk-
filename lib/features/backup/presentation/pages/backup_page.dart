@@ -6,7 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
-import '../data/backup_service.dart';
+import '../../data/backup_service.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});

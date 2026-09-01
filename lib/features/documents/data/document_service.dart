@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
-import 'commercial_document.dart';
+import '../domain/entities/commercial_document.dart';
 
 class DocumentService {
   static const String boxName = 'commercial_documents_box';

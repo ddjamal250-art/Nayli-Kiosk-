@@ -596,3 +596,4 @@ class _LossesPageState extends State<LossesPage> {
     );
   }
 }
+

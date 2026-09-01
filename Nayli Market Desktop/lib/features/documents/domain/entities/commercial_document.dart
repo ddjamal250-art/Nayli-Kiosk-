@@ -304,3 +304,4 @@ class CommercialDocument {
         convertedToId: map['convertedToId']?.toString(),
       );
 }
+

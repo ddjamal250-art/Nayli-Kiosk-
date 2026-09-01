@@ -596,4 +596,3 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     );
   }
 }
-}

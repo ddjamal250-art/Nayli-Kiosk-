@@ -56,3 +56,4 @@ class BarcodeGeneratorHelper {
     return (maxSku + 1).toString();
   }
 }
+

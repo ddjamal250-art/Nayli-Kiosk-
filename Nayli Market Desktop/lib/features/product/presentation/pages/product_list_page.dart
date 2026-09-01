@@ -47,6 +47,10 @@ class _ProductListPageState extends State<ProductListPage> {
     {'key': 'other', 'ar': 'أخرى', 'fr': 'Autres', 'en': 'Other'},
   ];
 
+  List<String> get _categoryTabs => _categoryTabsDef.map((c) => c['ar']!).toList();
+  String get _selectedCategoryFilter =>
+      _selectedCategoryIndex < _categoryTabsDef.length ? _categoryTabsDef[_selectedCategoryIndex]['ar']! : 'الكل';
+
   void _toggleProductSelection(String id) {
     setState(() {
       if (_selectedProductIds.contains(id)) {

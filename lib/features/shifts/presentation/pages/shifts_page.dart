@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
-import '../data/shift_service.dart';
+import '../../data/shift_service.dart';
 
 class ShiftsPage extends StatefulWidget {
   const ShiftsPage({super.key});

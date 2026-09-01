@@ -134,3 +134,4 @@ class LocalSyncClient {
     return false;
   }
 }
+

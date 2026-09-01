@@ -1,7 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import '../../../../core/data/hive_database.dart';
+import '../../../core/data/hive_database.dart';
 import '../domain/entities/commercial_document.dart';
 
 class CommercialDocumentService {
@@ -154,3 +154,4 @@ class CommercialDocumentService {
     };
   }
 }
+

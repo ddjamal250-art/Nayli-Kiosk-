@@ -132,9 +132,9 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
   void _onCustomerSelected(Customer customer) {
     setState(() {
       _entityNameCtrl.text = customer.name;
-      _entityPhoneCtrl.text = customer.phone ?? '';
-      _entityAddressCtrl.text = customer.address ?? '';
-      _previousBalanceCtrl.text = customer.debt.toStringAsFixed(2);
+      _entityPhoneCtrl.text = customer.phoneNumber;
+      _entityAddressCtrl.text = customer.address;
+      _previousBalanceCtrl.text = customer.currentDebt.toStringAsFixed(2);
     });
   }
 

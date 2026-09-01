@@ -257,8 +257,8 @@ class _StockInPageState extends State<StockInPage> {
         _isExistingInShop = false;
         _existingProductId = null;
         _nameController.text = masterMatch.name;
-        _priceController.text = masterMatch.suggestedPrice.toStringAsFixed(2);
-        _costPriceController.text = (masterMatch.suggestedPrice * 0.82).toStringAsFixed(2);
+        _priceController.text = masterMatch.defaultPrice.toStringAsFixed(2);
+        _costPriceController.text = masterMatch.defaultCost.toStringAsFixed(2);
         _currentStock = 0;
       });
       SoundService.playScanBeep();
@@ -852,5 +852,4 @@ class _StockInPageState extends State<StockInPage> {
       ),
     );
   }
-}
 }

@@ -224,4 +224,12 @@ class MasterCatalogService {
 
     return results;
   }
+
+  // Static helper aliases for convenience across UI pages
+  static MasterCatalogItem? searchByBarcode(String barcode) => instance.lookup(barcode);
+  static List<MasterCatalogItem> getAllItems() => instance.allItems;
+  static List<MasterCatalogItem> searchAndFilter({String query = '', String category = 'الكل', int limit = 50}) =>
+      instance.search(query, category: category, limit: limit);
+  static List<String> get categories => instance.categories;
+  static List<String> get categoryList => instance.categories;
 }

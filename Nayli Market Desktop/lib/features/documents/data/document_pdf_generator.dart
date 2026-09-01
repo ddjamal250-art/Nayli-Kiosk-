@@ -5,8 +5,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/data/hive_database.dart';
-import '../../../../core/utils/app_constants.dart';
+import '../../../core/data/hive_database.dart';
+import '../../../core/utils/app_constants.dart';
 import '../domain/entities/commercial_document.dart';
 
 class DocumentPdfGenerator {
@@ -281,3 +281,4 @@ class DocumentPdfGenerator {
     }
   }
 }
+

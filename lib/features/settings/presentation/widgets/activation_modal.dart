@@ -410,4 +410,3 @@ class _ActivationModalState extends State<ActivationModal> {
     );
   }
 }
-}

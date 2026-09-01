@@ -73,7 +73,8 @@ class RemoteIncomingCart {
   factory RemoteIncomingCart.fromMap(Map<String, dynamic> map) {
     final rawItems = map['items'] as List? ?? [];
     final itemsList = rawItems.map((i) => RemoteCartItem.fromMap(i as Map<String, dynamic>)).toList();
-    final total = (map['totalAmount'] as num?)?.toDouble() ?? itemsList.fold(0.0, (s, i) => s + (i.price * i.quantity));
+    final double total = (map['totalAmount'] as num?)?.toDouble() ??
+        itemsList.fold<double>(0.0, (double s, i) => s + (i.price * i.quantity));
     
     return RemoteIncomingCart(
       id: map['id']?.toString() ?? 'rc_${DateTime.now().millisecondsSinceEpoch}',
