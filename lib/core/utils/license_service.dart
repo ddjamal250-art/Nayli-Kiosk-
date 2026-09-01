@@ -147,3 +147,4 @@ class LicenseService {
     return 'NAYLI-$deviceId-ACTIVE';
   }
 }
+}
