@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../../../../core/data/local_sync_server.dart';
 import '../../../../core/utils/snackbar_helper.dart';
@@ -101,6 +103,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // بطاقة رابط كشك الويب للشاشات الذكية مع QR Code
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -131,37 +134,75 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'افتح متصفح الويب على أي شاشة ذكية أو جهاز TV Box في الرواق واكتب الرابط المباشر أدناه ليعمل كشك فاحص الأسعار فورياً دون تثبيت أي برامج:',
+                  'افتح متصفح الويب على أي شاشة ذكية أو جهاز TV Box في الرواق واكتب الرابط المباشر أو امسح كود QR أدناه:',
                   style: TextStyle(color: Color(0xFFC7D2FE), fontSize: 13),
                 ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.black38,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.indigo.shade300.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SelectableText(
-                          kioskWebUrl,
-                          style: const TextStyle(
-                            color: Color(0xFF38BDF8),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            fontFamily: 'monospace',
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: QrImageView(
+                        data: kioskWebUrl,
+                        version: QrVersions.auto,
+                        size: 90.0,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.black38,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.indigo.shade300.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: SelectableText(
+                                    kioskWebUrl,
+                                    style: const TextStyle(
+                                      color: Color(0xFF38BDF8),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 20),
+                                  tooltip: 'نسخ الرابط',
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: kioskWebUrl));
+                                    SnackbarHelper.showSuccess(context, '✅ تم نسخ الرابط');
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.open_in_browser_rounded, color: Colors.white, size: 20),
+                                  tooltip: 'تجربة في المتصفح',
+                                  onPressed: () => launchUrlString(kioskWebUrl),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            '📱 امسح كود QR من كاميرا الهاتف أو التابلت للفتح والتجربة الفورية بالشبكة',
+                            style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.open_in_browser_rounded, color: Colors.white),
-                        tooltip: 'تجربة في المتصفح',
-                        onPressed: () => launchUrlString(kioskWebUrl),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -169,6 +210,12 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
 
           const SizedBox(height: 24),
 
+          // دليل مهندسي وتقنيي الشبكات التفصيلي الميداني
+          _buildNetworkEngineerTechnicalGuide(context),
+
+          const SizedBox(height: 24),
+
+          // بطاقة إعدادات الكشك العامة
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 1,
@@ -306,6 +353,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
 
           const SizedBox(height: 24),
 
+          // سجل السلع المنسية غير المسجلة
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 1,
@@ -438,6 +486,134 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetworkEngineerTechnicalGuide(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 1,
+      color: const Color(0xFFF8FAFC),
+      child: ExpansionTile(
+        initiallyExpanded: true,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.indigo.shade50,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.engineering_rounded, color: Colors.indigo),
+        ),
+        title: const Text(
+          'دليل مهندسي وتقنيي الشبكات للتثبيت والربط (Technical Network Guide) 🛠️',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
+        ),
+        subtitle: const Text(
+          'معلومات المنظومة والشبكة لتمكين أي تقني من ربط الشاشات بالسيرفر بسهولة',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        childrenPadding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTechRow('عنوان السيرفر المحلي (Host IP):', _serverIp),
+                _buildTechRow('منفذ الاتصال (Port):', _serverPort.toString() + ' (TCP Inbound)'),
+                _buildTechRow('بروتوكول الخدمة (Protocol):', 'HTTP REST + Embedded Web Server (Zero Overhead)'),
+                _buildTechRow('نطاق الشبكة المطلوب (Subnet):', 'نفس الشبكة المحلية (LAN / Wi-Fi Subnet e.g. 192.168.1.x)'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          const Text(
+            'طرق التركيب المتاحة للمهندس حسب عتاد المحل:',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+          ),
+          const SizedBox(height: 10),
+
+          _buildGuideItem(
+            '1. خيار الشاشات الذكية و Android TV Box (الأسهل والأكثر استقراراً):',
+            '• لا يتطلب تثبيت أي تطبيق على الإطلاق.
+'
+            '• فتح متصفح التلفاز (Chrome / TV Browser) والانتقال للرابط الموضح أعلاه.
+'
+            '• قارئ الباركود USB يُركب مباشرة في فتحة USB الخاصة بالتلفاز أو الـ TV Box (يعمل كـ HID Keyboard قياسي).
+'
+            '• يُنصح بضبط المتصفح على (ملء الشاشة Fullscreen F11) وحفظ الرابط كصفحة رئيسية.',
+          ),
+
+          _buildGuideItem(
+            '2. خيار حاسوب مستقل أو All-in-One PC في الرواق:',
+            '• تثبيت برنامج Nayli Market Desktop Setup.
+'
+            '• تشغيل الشاشة مباشرة عبر المسار: /kiosk بملء الشاشة.
+'
+            '• ميزة الذاكرة الاحتياطية (Offline Cache) تضمن استمرار فحص الأسعار حتى لو انقطع الكابل.',
+          ),
+
+          _buildGuideItem(
+            '3. خيار تابلت أندرويد معلق على عمود:',
+            '• التوصيل عبر شبكة الواي فاي الخاصة بالمحل.
+'
+            '• استخدام كابل OTG لتوصيل قارئ الباركود USB بالتابلت أو استخدام قارئ بلوتوث لاسلكي.',
+          ),
+
+          _buildGuideItem(
+            '4. إعدادات الروتر والجدار الناري (Router & Firewall Recommendations):',
+            '• يُفضل تثبيت عنوان IP ثابت لحاسوب المدير (DHCP Static Lease / Address Reservation) في الروتر.
+'
+            '• التأكد من السماح للمنفذ ' + _serverPort.toString() + ' في جدار حماية ويندوز (Windows Defender Firewall Inbound Rules).
+'
+            '• الكابل المفضل: كابل إيثرنت Cat6 موصول بالسويتش لضمان سرعة استجابة فورية (أقل من 10ms).',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTechRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155))),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SelectableText(
+              value,
+              style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuideItem(String title, String desc) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+          const SizedBox(height: 6),
+          Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.5)),
         ],
       ),
     );
