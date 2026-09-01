@@ -16,6 +16,12 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 
+; Seamless Upgrade Directives
+UsePreviousAppDir=yes
+DisableDirPage=auto
+CloseApplications=yes
+RestartApplications=no
+
 [Files]
 Source: "..\..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
@@ -24,5 +30,21 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "تشغيل برنامج نايل ماركت Nayli Market"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "تشغيل برنامج نايلي ماركت Nayli Market"; Flags: nowait postinstall skipifsilent
 
+[Code]
+function InitializeSetup(): Boolean;
+var
+  InstalledVersion: String;
+begin
+  Result := True;
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1', 'DisplayVersion', InstalledVersion) or
+     RegQueryStringValue(HKCU, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1', 'DisplayVersion', InstalledVersion) then
+  begin
+    MsgBox('تم اكتشاف نسخة سابقة من برنامج (' + '{#MyAppName}' + ') مثبتة على هذا الحاسوب.' + #13#10 + #13#10 +
+           'الإصدار المثبت: ' + InstalledVersion + #13#10 +
+           'الإصدار الجديد: ' + '{#MyAppVersion}' + #13#10 + #13#10 +
+           'سيتم الآن تحديث ملفات البرنامج تلقائياً فوق الإصدار القديم مع الحفاظ التام والكامل على جميع بيانات المحل، المخزون، والديون دون أي تغيير أو مساس بها.',
+           mbInformation, MB_OK);
+  end;
+end;
