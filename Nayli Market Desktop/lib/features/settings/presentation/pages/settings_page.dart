@@ -21,6 +21,7 @@ import '../bloc/printer_bloc.dart';
 import '../bloc/printer_event.dart';
 import '../bloc/printer_state.dart';
 import '../widgets/activation_modal.dart';
+import '../widgets/device_pairing_modal.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
@@ -696,6 +697,17 @@ class _SettingsPageState extends State<SettingsPage> {
                 context.push('/shifts');
               },
             ),
+            const Divider(height: 8),
+            _buildHubActionTile(
+              icon: Icons.auto_stories_rounded,
+              iconColor: Colors.indigo,
+              title: 'مركز الوثائق والفواتير الشامل (Devis, BL, Factures) 📑',
+              subtitle: 'عروض أسعار، وصولات تسليم، فواتير رسمية، وصولات قبض، وأرشفة',
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/documents');
+              },
+            ),
             const SizedBox(height: 10),
           ],
         ),
@@ -1304,6 +1316,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             ),
+            const Divider(height: 8),
+            ListTile(
+              leading: const CircleAvatar(backgroundColor: Color(0xFFE8EAF6), child: Icon(Icons.qr_code_scanner_rounded, color: Colors.indigo)),
+              title: const Text('ربط الهاتف والتلغرام بالباركود (QR Pairing) 📲'),
+              subtitle: const Text('استقبال تقارير المبيعات والأرباح والنسخ السحابي ومسح الباركود بالهاتف'),
+              onTap: () {
+                Navigator.pop(ctx);
+                DevicePairingModal.show(context);
+              },
+            ),
             const SizedBox(height: 10),
           ],
         ),
@@ -1506,6 +1528,75 @@ class _SettingsPageState extends State<SettingsPage> {
               onPressed: () => Navigator.pop(ctx),
               child: const Text('إغلاق', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLanguageModal(BuildContext context, Locale currentLocale) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.language_rounded, color: Colors.teal, size: 24),
+                    SizedBox(width: 8),
+                    Text('لغة التطبيق / Application Language', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 14),
+            ListTile(
+              leading: const Text('🇩🇿', style: TextStyle(fontSize: 24)),
+              title: const Text('العربية (Arabic)', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: currentLocale.languageCode == 'ar' ? const Icon(Icons.check_circle, color: Colors.teal) : null,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: currentLocale.languageCode == 'ar' ? Colors.teal.shade50 : null,
+              onTap: () {
+                context.read<LanguageCubit>().setLanguage('ar');
+                SoundService.playSaveSuccess();
+                Navigator.pop(ctx);
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Text('🇫🇷', style: TextStyle(fontSize: 24)),
+              title: const Text('Français (French)', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: currentLocale.languageCode == 'fr' ? const Icon(Icons.check_circle, color: Colors.teal) : null,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: currentLocale.languageCode == 'fr' ? Colors.teal.shade50 : null,
+              onTap: () {
+                context.read<LanguageCubit>().setLanguage('fr');
+                SoundService.playSaveSuccess();
+                Navigator.pop(ctx);
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
+              title: const Text('English (English)', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: currentLocale.languageCode == 'en' ? const Icon(Icons.check_circle, color: Colors.teal) : null,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: currentLocale.languageCode == 'en' ? Colors.teal.shade50 : null,
+              onTap: () {
+                context.read<LanguageCubit>().setLanguage('en');
+                SoundService.playSaveSuccess();
+                Navigator.pop(ctx);
+              },
+            ),
+            const SizedBox(height: 14),
           ],
         ),
       ),

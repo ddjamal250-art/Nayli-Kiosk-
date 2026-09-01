@@ -91,8 +91,10 @@ class _DailyReportPageState extends State<DailyReportPage> {
       for (var key in box.keys) {
         final val = box.get(key);
         if (val is Map) {
-          final loss = (val['totalLossCost'] as num?)?.toDouble() ?? 0.0;
-          total += loss;
+          if (val['isReimbursable'] != true) {
+            final loss = (val['totalLossCost'] as num?)?.toDouble() ?? 0.0;
+            total += loss;
+          }
         }
       }
     } catch (_) {}

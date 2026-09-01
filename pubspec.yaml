@@ -48,6 +48,11 @@ dependencies:
   app_settings: ^7.0.0
   image_picker: ^1.1.2
   qr_flutter: ^4.1.0
+  pdf: ^3.11.1
+  printing: ^5.13.2
+  url_launcher: ^6.3.0
+  archive: ^3.6.1
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

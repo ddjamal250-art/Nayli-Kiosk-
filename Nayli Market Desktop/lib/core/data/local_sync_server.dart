@@ -156,6 +156,10 @@ class LocalSyncServer {
             await _handleGetProducts(request);
           } else if (path == '/api/customers' && request.method == 'GET') {
             await _handleGetCustomers(request);
+          } else if (path == '/api/documents' && request.method == 'GET') {
+            await _handleGetDocuments(request);
+          } else if (path == '/api/documents' && request.method == 'POST') {
+            await _handlePostDocument(request);
           } else if (path == '/api/sales' && request.method == 'POST') {
             await _handlePostSale(request);
           } else if (path == '/api/remote-cart' && request.method == 'POST') {
@@ -247,6 +251,25 @@ class LocalSyncServer {
     await request.response.close();
   }
 
+  static Future<void> _handleGetDocuments(HttpRequest request) async {
+    final docs = HiveDatabase.commercialDocsBox.values.whereType<Map>().toList();
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode(docs));
+    await request.response.close();
+  }
+
+  static Future<void> _handlePostDocument(HttpRequest request) async {
+    final body = await utf8.decoder.bind(request).join();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+    final docId = data['id']?.toString() ?? 'doc_${DateTime.now().millisecondsSinceEpoch}';
+    await HiveDatabase.commercialDocsBox.put(docId, data);
+
+    _logController.add('Synced commercial document $docId (${data['documentNumber']}) from mobile device');
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode({'success': true, 'id': docId}));
+    await request.response.close();
+  }
+
   static Future<void> _handlePostSale(HttpRequest request) async {
     final body = await utf8.decoder.bind(request).join();
     final data = jsonDecode(body) as Map<String, dynamic>;
@@ -294,3 +317,4 @@ class LocalSyncServer {
     pendingRemoteCarts.removeWhere((c) => c.id == cartId);
   }
 }
+

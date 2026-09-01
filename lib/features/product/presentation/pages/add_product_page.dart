@@ -10,6 +10,7 @@ import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/app_validators.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
@@ -105,6 +106,11 @@ class _AddProductPageState extends State<AddProductPage> {
       );
 
       context.read<ProductBloc>().add(AddProduct(product));
+      CatalogCrowdsourceHelper.silentHarvest(
+        product,
+        category: _selectedCategory,
+        unit: _isWeighted ? 'كغ' : 'حبة',
+      );
       SoundService.playCheckoutSuccess();
       context.showAppSnackBar('✅ تم إضافة واستلام السلعة (${product.name}) بنجاح!');
       await Future.delayed(const Duration(milliseconds: 150));

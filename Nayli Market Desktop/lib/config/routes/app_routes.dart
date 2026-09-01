@@ -26,6 +26,9 @@ import '../../features/product/presentation/pages/losses_page.dart';
 import '../../features/settings/presentation/pages/receipt_customizer_page.dart';
 
 import '../../features/billing/presentation/pages/desktop_pos_page.dart';
+import '../../features/documents/presentation/pages/documents_hub_page.dart';
+import '../../features/backup/presentation/pages/backup_page.dart';
+import '../../features/shifts/presentation/pages/shifts_page.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -95,8 +98,16 @@ final router = GoRouter(
       builder: (context, state) => const DevisPage(),
     ),
     GoRoute(
+      path: '/documents',
+      builder: (context, state) => const DocumentsHubPage(),
+    ),
+    GoRoute(
+      path: '/backups',
+      builder: (context, state) => const BackupPage(),
+    ),
+    GoRoute(
       path: '/shifts',
-      builder: (context, state) => const CashierShiftsPage(),
+      builder: (context, state) => const ShiftsPage(),
     ),
     GoRoute(
       path: '/products',

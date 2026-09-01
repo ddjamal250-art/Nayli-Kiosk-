@@ -1,6 +1,18 @@
+import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+
+class TouchAndMouseScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.trackpad,
+  };
+}
 import 'config/routes/app_routes.dart';
 import 'core/data/hive_database.dart';
 import 'core/data/master_catalog_service.dart';
@@ -61,6 +73,7 @@ class MyApp extends StatelessWidget {
             title: 'Nayli Market',
             theme: AppTheme.lightTheme,
             routerConfig: router,
+            scrollBehavior: TouchAndMouseScrollBehavior(),
             debugShowCheckedModeBanner: false,
             locale: locale,
             supportedLocales: const [

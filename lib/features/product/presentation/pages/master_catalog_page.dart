@@ -12,6 +12,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/utils/sound_service.dart';
+import '../../../../core/utils/snackbar_helper.dart';
 
 class MasterCatalogPage extends StatefulWidget {
   const MasterCatalogPage({super.key});
@@ -26,6 +28,9 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
   final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
   int _displayLimit = 50;
+
+  // Persistent Multi-selection across searches and category filters
+  final Set<String> _selectedBarcodes = {};
 
   @override
   void initState() {
@@ -50,6 +55,33 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _toggleBarcodeSelection(String barcode) {
+    setState(() {
+      if (_selectedBarcodes.contains(barcode)) {
+        _selectedBarcodes.remove(barcode);
+      } else {
+        _selectedBarcodes.add(barcode);
+      }
+    });
+    SoundService.playTabSwitch();
+  }
+
+  void _selectAllInList(List<MasterCatalogItem> items) {
+    setState(() {
+      for (var item in items) {
+        _selectedBarcodes.add(item.barcode);
+      }
+    });
+    SoundService.playTabSwitch();
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedBarcodes.clear();
+    });
+    SoundService.playTabSwitch();
   }
 
   void _showAddOrEditModal(MasterCatalogItem item, Product? existingProduct) {
@@ -98,56 +130,40 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.qr_code, size: 18, color: AppTheme.primaryColor),
-                      const SizedBox(width: 8),
-                      Text(
-                        'باركود: ${item.barcode}',
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      const Spacer(),
-                      Text(
-                        item.category,
-                        style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 12),
-                TextFormField(
+                Text(
+                  'باركود: ${item.barcode} • التصنيف: ${item.category}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                TextField(
                   controller: nameController,
                   decoration: InputDecoration(
                     labelText: context.tr('product_name'),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: TextField(
                         controller: sellingPriceController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
-                          labelText: context.tr('selling_price'),
-                          prefixText: '${AppConstants.currencySymbol} ',
+                          labelText: 'سعر البيع (${AppConstants.currencySymbol})',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: TextFormField(
+                      child: TextField(
                         controller: costPriceController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
-                          labelText: context.tr('cost_price'),
-                          prefixText: '${AppConstants.currencySymbol} ',
+                          labelText: 'سعر الشراء (${AppConstants.currencySymbol})',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
@@ -156,28 +172,35 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
+                    IconButton(
+                      onPressed: () {
+                        int val = int.tryParse(qtyController.text) ?? 12;
+                        if (val > 1) {
+                          val--;
+                          setModalState(() => qtyController.text = val.toString());
+                        }
+                      },
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
                     Expanded(
-                      child: TextFormField(
+                      child: TextField(
                         controller: qtyController,
+                        textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: existingProduct != null ? 'إضافة كمية للمخزون' : context.tr('initial_stock'),
+                          labelText: existingProduct != null ? 'إضافة كمية للمخزون' : 'الكمية المستلمة',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ...[6, 12, 24, 48].map((q) => Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: ActionChip(
-                        label: Text('+$q', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        padding: const EdgeInsets.all(0),
-                        onPressed: () {
-                          setModalState(() {
-                            qtyController.text = q.toString();
-                          });
-                        },
-                      ),
-                    )),
+                    IconButton(
+                      onPressed: () {
+                        int val = int.tryParse(qtyController.text) ?? 12;
+                        val++;
+                        setModalState(() => qtyController.text = val.toString());
+                      },
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -197,6 +220,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                           price: price,
                           costPrice: cost,
                           stock: existingProduct.stock + qty,
+                          category: item.category,
                         );
                         context.read<ProductBloc>().add(UpdateProduct(updated));
                       } else {
@@ -207,22 +231,15 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                           price: price,
                           costPrice: cost,
                           stock: qty,
+                          category: item.category,
                         );
                         context.read<ProductBloc>().add(AddProduct(newProduct));
                       }
 
-                      final hasVib = await Vibration.hasVibrator();
-                      if (hasVib == true) Vibration.vibrate(duration: 40);
-
                       if (mounted) {
                         Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('✅ تم حفظ "$name" في مخزون المحل'),
-                            backgroundColor: Colors.green,
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
+                        SoundService.playSaveSuccess();
+                        SnackbarHelper.showSuccess(context, 'تم حفظ "$name" في مخزون المحل');
                       }
                     }
                   },
@@ -237,138 +254,121 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     );
   }
 
-  void _showBatchImportDialog(List<MasterCatalogItem> availableItems) {
-    int defaultStock = 12;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.playlist_add_check, color: AppTheme.primaryColor),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'استيراد جماعي تلقائي',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'سيتم إضافة ${availableItems.length} منتج من تصنيف "$_selectedCategory" إلى قاعدة بيانات المحل بالأسعار المقترحة ومخزون افتراضي $defaultStock علبة لكل منتج.',
-              style: const TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'يمكنك في أي وقت لاحق تعديل الأسعار أو استلام كميات جديدة.',
-              style: TextStyle(fontSize: 11, color: Colors.grey),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.tr('cancel')),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
-            onPressed: () {
-              for (final item in availableItems) {
-                final newProduct = Product(
-                  id: const Uuid().v4(),
-                  name: item.name,
-                  barcode: item.barcode,
-                  price: item.defaultPrice,
-                  costPrice: item.defaultCost,
-                  stock: defaultStock,
-                );
-                context.read<ProductBloc>().add(AddProduct(newProduct));
-              }
+  void _batchAddSelectedToShop(List<MasterCatalogItem> allItems, Map<String, Product> existingMap) {
+    final selectedItems = allItems.where((i) => _selectedBarcodes.contains(i.barcode)).toList();
+    if (selectedItems.isEmpty) return;
 
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('🎉 تم بنجاح استيراد ${availableItems.length} منتج إلى المحل!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('تأكيد الاستيراد السريع', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+    for (var item in selectedItems) {
+      final existing = existingMap[item.barcode.trim()];
+      if (existing != null) {
+        final updated = Product(
+          id: existing.id,
+          name: existing.name,
+          barcode: existing.barcode,
+          price: existing.price,
+          costPrice: existing.costPrice,
+          stock: existing.stock + 12,
+          category: item.category,
+        );
+        context.read<ProductBloc>().add(UpdateProduct(updated));
+      } else {
+        final newProduct = Product(
+          id: const Uuid().v4(),
+          name: item.name,
+          barcode: item.barcode,
+          price: item.defaultPrice,
+          costPrice: item.defaultCost,
+          stock: 12,
+          category: item.category,
+        );
+        context.read<ProductBloc>().add(AddProduct(newProduct));
+      }
+    }
+
+    final count = selectedItems.length;
+    _clearSelection();
+    SoundService.playCheckoutSuccess();
+    SnackbarHelper.showSuccess(context, 'تمت إضافة $count سلعة بنجاح إلى مخزون المحل!');
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
-        final existingProductsMap = {for (var p in state.products) p.barcode.trim(): p};
-        final filteredItems = MasterCatalogService.instance.search(_searchQuery, category: _selectedCategory, limit: 0);
+        final existingProducts = state.products;
+        final existingProductsMap = {
+          for (var p in existingProducts) p.barcode.trim(): p,
+        };
+
+        final allItems = MasterCatalogService.getAllItems();
+        final filteredItems = MasterCatalogService.searchAndFilter(
+          query: _searchQuery,
+          category: _selectedCategory,
+        );
         final displayedItems = filteredItems.take(_displayLimit).toList();
-        final notInShopItems = filteredItems.where((item) => !existingProductsMap.containsKey(item.barcode)).toList();
-        final categoriesList = MasterCatalogService.instance.categories;
-        final totalDatasetCount = MasterCatalogService.instance.allItems.length;
 
         return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
           appBar: AppBar(
-            title: Text(
-              'مكتبة السلع الجزائرية ($totalDatasetCount منتج)',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            centerTitle: true,
-            leading: IconButton(
-              icon: const Icon(Icons.chevron_left, size: 28),
-              onPressed: () => context.pop(),
-            ),
-            actions: [
-              if (notInShopItems.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.playlist_add_check, color: AppTheme.primaryColor),
-                  tooltip: 'استيراد جماعي (${notInShopItems.length})',
-                  onPressed: () => _showBatchImportDialog(notInShopItems),
+            elevation: 0,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black87,
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'مكتبة السلع الجزائرية (${allItems.length} منتج)',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-            ],
+                Text(
+                  'حدد السلع بـ (Checkboxes) واضغط إضافة جماعية للمحل',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+              ],
+            ),
           ),
           body: Column(
             children: [
-              // Search Bar
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              // Search Header
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                color: Colors.white,
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'ابحث باسم المنتج، الماركة (رامي، صومام...) أو الباركود...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
+                    prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () => _searchController.clear(),
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
                           )
                         : null,
+                    filled: true,
+                    fillColor: Colors.grey[100],
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
 
-              // Categories Horizontal List
+              // Categories Horizontal Bar
               Container(
-                height: 42,
-                margin: const EdgeInsets.symmetric(vertical: 4),
+                height: 48,
+                color: Colors.white,
                 child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: categoriesList.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  itemCount: MasterCatalogService.categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
-                    final cat = categoriesList[index];
-                    final isSelected = cat == _selectedCategory;
+                    final cat = MasterCatalogService.categories[index];
+                    final isSelected = _selectedCategory == cat;
                     return ChoiceChip(
                       label: Text(
                         cat,
@@ -394,24 +394,33 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                 ),
               ),
 
-              // Items Count & Batch Info Bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              // Multi-selection actions row
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: const Color(0xFFF1F5F9),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${filteredItems.length} سلعة مطابقة (عرض ${displayedItems.length})',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                      '${filteredItems.length} سلعة مطابقة • (${_selectedBarcodes.length} محددة)',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                     ),
-                    if (notInShopItems.isNotEmpty)
-                      GestureDetector(
-                        onTap: () => _showBatchImportDialog(notInShopItems),
-                        child: Text(
-                          '⚡ استيراد الكل (${notInShopItems.length})',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          icon: const Icon(Icons.select_all, size: 18),
+                          label: const Text('تحديد الكل المعروض'),
+                          onPressed: () => _selectAllInList(displayedItems),
                         ),
-                      ),
+                        if (_selectedBarcodes.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: _clearSelection,
+                            child: const Text('إلغاء التحديد', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -431,22 +440,25 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                       )
                     : ListView.separated(
                         controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
                         itemCount: displayedItems.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final item = displayedItems[index];
                           final existing = existingProductsMap[item.barcode.trim()];
                           final isInShop = existing != null;
+                          final isSelected = _selectedBarcodes.contains(item.barcode);
 
                           return Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isSelected ? AppTheme.primaryColor.withOpacity(0.06) : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isInShop ? Colors.green.withOpacity(0.4) : Colors.grey[200]!,
-                                width: isInShop ? 1.5 : 1,
+                                color: isSelected
+                                    ? AppTheme.primaryColor
+                                    : (isInShop ? Colors.green.withOpacity(0.4) : Colors.grey[200]!),
+                                width: isSelected ? 2 : (isInShop ? 1.5 : 1),
                               ),
                               boxShadow: [
                                 BoxShadow(
@@ -459,21 +471,12 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // Category / Status Icon
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: isInShop ? Colors.green.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(
-                                    isInShop ? Icons.check_circle : Icons.inventory_2_outlined,
-                                    color: isInShop ? Colors.green : AppTheme.primaryColor,
-                                    size: 22,
-                                  ),
+                                // Checkbox for multi-selection
+                                Checkbox(
+                                  value: isSelected,
+                                  activeColor: AppTheme.primaryColor,
+                                  onChanged: (_) => _toggleBarcodeSelection(item.barcode),
                                 ),
-                                const SizedBox(width: 12),
 
                                 // Details
                                 Expanded(
@@ -556,8 +559,41 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
               ),
             ],
           ),
+          bottomSheet: _selectedBarcodes.isEmpty
+              ? null
+              : Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, -4)),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'تم تحديد ${_selectedBarcodes.length} منتج من الكتالوج',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        icon: const Icon(Icons.add_task_rounded, color: Colors.white),
+                        label: const Text(
+                          'إضافة المحددة لمخزون المحل فوراً',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () => _batchAddSelectedToShop(allItems, existingProductsMap),
+                      ),
+                    ],
+                  ),
+                ),
         );
       },
     );
   }
+}
 }

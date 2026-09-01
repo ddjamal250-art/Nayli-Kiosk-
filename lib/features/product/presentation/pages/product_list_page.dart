@@ -29,22 +29,22 @@ class ProductListPage extends StatefulWidget {
 class _ProductListPageState extends State<ProductListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedCategoryFilter = 'الكل';
+  int _selectedCategoryIndex = 0;
   bool _isExporting = false;
   bool _isMultiSelectMode = false;
   final Set<String> _selectedProductIds = {};
 
-  static const List<String> _categoryTabs = [
-    'الكل',
-    '⚖️ مواد الميزان',
-    'مواد غذائية ومعلبات',
-    'حليب ومشتقاته',
-    'مخبوزات وعجائن',
-    'مشروبات ومياه',
-    'نظافة وتجميل',
-    'حلويات وسكاكر',
-    'خضر وفواكه',
-    'أخرى',
+  static const List<Map<String, String>> _categoryTabsDef = [
+    {'key': 'all', 'ar': 'الكل', 'fr': 'Tous', 'en': 'All'},
+    {'key': 'scale', 'ar': '⚖️ مواد الميزان', 'fr': '⚖️ Vrac & Balance', 'en': '⚖️ Scale & Bulk'},
+    {'key': 'food', 'ar': 'مواد غذائية', 'fr': 'Alimentation', 'en': 'Groceries'},
+    {'key': 'dairy', 'ar': 'حليب ومشتقاته', 'fr': 'Produits Laitiers', 'en': 'Dairy'},
+    {'key': 'bakery', 'ar': 'مخبوزات وعجائن', 'fr': 'Boulangerie & Pâtes', 'en': 'Bakery & Pasta'},
+    {'key': 'beverages', 'ar': 'مشروبات ومياه', 'fr': 'Boissons & Eaux', 'en': 'Beverages & Water'},
+    {'key': 'cleaning', 'ar': 'نظافة وتجميل', 'fr': 'Entretien & Hygiène', 'en': 'Cleaning & Hygiene'},
+    {'key': 'sweets', 'ar': 'حلويات وسكاكر', 'fr': 'Confiserie & Biscuits', 'en': 'Sweets & Biscuits'},
+    {'key': 'fruits', 'ar': 'خضر وفواكه', 'fr': 'Fruits & Légumes', 'en': 'Fruits & Veg'},
+    {'key': 'other', 'ar': 'أخرى', 'fr': 'Autres', 'en': 'Other'},
   ];
 
   void _toggleProductSelection(String id) {
@@ -758,11 +758,13 @@ class _ProductListPageState extends State<ProductListPage> {
                     final filtered = state.products.where((p) {
                       final matchesQuery = query.isEmpty || p.name.toLowerCase().contains(query) || p.barcode.contains(query);
                       if (!matchesQuery) return false;
-                      if (_selectedCategoryFilter == 'الكل') return true;
-                      if (_selectedCategoryFilter == '⚖️ مواد الميزان') {
+                      if (_selectedCategoryIndex == 0) return true;
+                      if (_selectedCategoryIndex == 1) {
                         return p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ');
                       }
-                      return p.category == _selectedCategoryFilter;
+                      final catDef = _categoryTabsDef[_selectedCategoryIndex];
+                      final pCat = p.category.toLowerCase();
+                      return pCat.contains((catDef['ar'] ?? '').toLowerCase()) || pCat.contains((catDef['fr'] ?? '').toLowerCase());
                     }).toList();
 
                     return TextButton(
@@ -971,27 +973,35 @@ class _ProductListPageState extends State<ProductListPage> {
                 height: 42,
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 child: ListView.separated(
+                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _categoryTabs.length,
+                  itemCount: _categoryTabsDef.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (ctx, idx) {
-                    final cat = _categoryTabs[idx];
-                    final isSelected = _selectedCategoryFilter == cat;
+                    final catDef = _categoryTabsDef[idx];
+                    final isSelected = _selectedCategoryIndex == idx;
+                    final langCode = Localizations.localeOf(context).languageCode;
+                    final label = catDef[langCode] ?? catDef['ar'] ?? '';
 
                     // Calculate count for this tab
                     int count = 0;
-                    if (cat == 'الكل') {
+                    if (idx == 0) {
                       count = state.products.length;
-                    } else if (cat == '⚖️ مواد الميزان') {
+                    } else if (idx == 1) {
                       count = state.products.where((p) => p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')).length;
                     } else {
-                      count = state.products.where((p) => p.category == cat).length;
+                      final arName = (catDef['ar'] ?? '').toLowerCase();
+                      final frName = (catDef['fr'] ?? '').toLowerCase();
+                      count = state.products.where((p) {
+                        final pCat = p.category.toLowerCase();
+                        return pCat.contains(arName) || pCat.contains(frName);
+                      }).length;
                     }
 
                     return FilterChip(
                       label: Text(
-                        '$cat ($count)',
+                        '$label ($count)',
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
@@ -999,13 +1009,13 @@ class _ProductListPageState extends State<ProductListPage> {
                         ),
                       ),
                       selected: isSelected,
-                      selectedColor: cat == '⚖️ مواد الميزان' ? Colors.teal : AppTheme.primaryColor,
+                      selectedColor: idx == 1 ? Colors.teal : AppTheme.primaryColor,
                       backgroundColor: isSelected ? AppTheme.primaryColor : Colors.grey[100],
                       checkmarkColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       onSelected: (selected) {
                         setState(() {
-                          _selectedCategoryFilter = cat;
+                          _selectedCategoryIndex = idx;
                         });
                         SoundService.playScanBeep();
                       },
@@ -1054,14 +1064,16 @@ class _ProductListPageState extends State<ProductListPage> {
                       product.barcode.toLowerCase().contains(_searchQuery);
                   if (!matchesSearch) return false;
 
-                  if (_selectedCategoryFilter == 'الكل') return true;
-                  if (_selectedCategoryFilter == '⚖️ مواد الميزان') {
+                  if (_selectedCategoryIndex == 0) return true;
+                  if (_selectedCategoryIndex == 1) {
                     return product.isWeighted ||
                         product.barcode.startsWith('SCALE_') ||
                         product.name.contains('ميزان') ||
                         product.name.contains('كغ');
                   }
-                  return product.category == _selectedCategoryFilter;
+                  final catDef = _categoryTabsDef[_selectedCategoryIndex];
+                  final pCat = product.category.toLowerCase();
+                  return pCat.contains((catDef['ar'] ?? '').toLowerCase()) || pCat.contains((catDef['fr'] ?? '').toLowerCase());
                 }).toList();
 
                 if (filteredProducts.isEmpty) {

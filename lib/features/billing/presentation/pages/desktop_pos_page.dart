@@ -8,6 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_server.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/security_pin_helper.dart';
@@ -17,9 +18,11 @@ import '../../../../core/utils/tpe_payment_service.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
+import '../../../shifts/data/shift_service.dart';
 import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
 import '../widgets/held_carts_modal.dart';
+import '../widgets/quick_items_manager_dialog.dart';
 
 enum PosPriceTier { detail, demiGros, gros }
 
@@ -35,7 +38,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   final FocusNode _barcodeFocusNode = FocusNode();
   final FocusNode _globalKeyboardFocusNode = FocusNode();
 
-  String _selectedCategory = 'الكل';
+  String _selectedCategoryKey = 'all';
   String? _selectedCustomerId;
   String _selectedCustomerName = 'زبون عابر (Détail)';
   double _customerCreditBalance = 0.0;
@@ -45,6 +48,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   bool _isReturnMode = false;
   double _cartDiscountValue = 0.0;
   bool _isDiscountPercentage = false;
+  bool _showTouchNumpad = false;
 
   // Costco IPM Speedometer tracking
   int _scannedItemsCount = 0;
@@ -53,7 +57,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   Timer? _ipmTimer;
 
   // Local Master Server Status & Remote Carts Stream
-  String _serverIp = 'جاري التحديد...';
+  String _serverIp = '127.0.0.1';
   bool _isServerRunning = false;
   StreamSubscription<RemoteIncomingCart>? _remoteCartSub;
   int _pendingRemoteCartsCount = 0;
@@ -61,6 +65,17 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   // USB Barcode Wedge Rapid Buffer
   String _hardwareBarcodeBuffer = '';
   DateTime _lastHardwareKeyTime = DateTime.now();
+
+  static const List<Map<String, String>> _categoriesDef = [
+    {'key': 'all', 'tr': 'cat_all', 'ar': 'الكل'},
+    {'key': 'beverages', 'tr': 'cat_beverages', 'ar': 'المشروبات'},
+    {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'البقوليات'},
+    {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات'},
+    {'key': 'sweets', 'tr': 'cat_sweets', 'ar': 'الحلويات'},
+    {'key': 'scale', 'tr': 'cat_scale', 'ar': 'الميزان'},
+    {'key': 'dairy', 'tr': 'cat_dairy', 'ar': 'الألبان'},
+    {'key': 'spices', 'tr': 'cat_spices', 'ar': 'التوابل'},
+  ];
 
   @override
   void initState() {
@@ -94,7 +109,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         SoundService.playRestockSound();
         SnackbarHelper.showSuccess(
           context,
-          '🔔 سلة جديدة واردة من ${cart.senderName} (رمز: ${cart.token}) بقيمة ${cart.totalAmount.toStringAsFixed(2)} د.ج',
+          '🔔 ${context.tr('pos_incoming_carts')}: ${cart.senderName} (${cart.token}) - ${cart.totalAmount.toStringAsFixed(2)} DA',
         );
       }
     });
@@ -147,7 +162,45 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     _onItemScanned();
 
-    // Find product to determine effective price tier
+    // 1. Check if input matches any Quick Item shortCode or barcode
+    final quickBox = HiveDatabase.quickItemsBox;
+    Map? matchedQuickItem;
+    for (var val in quickBox.values) {
+      if (val is Map) {
+        final sc = val['shortCode']?.toString().trim();
+        final bc = val['barcode']?.toString().trim();
+        final id = val['id']?.toString().trim();
+        if (sc == barcodeToScan || bc == barcodeToScan || id == barcodeToScan) {
+          matchedQuickItem = val;
+          break;
+        }
+      }
+    }
+
+    if (matchedQuickItem != null) {
+      final qPrice = (matchedQuickItem['price'] as num?)?.toDouble() ?? 0.0;
+      final qCost = (matchedQuickItem['costPrice'] as num?)?.toDouble() ?? 0.0;
+      final qName = matchedQuickItem['name']?.toString() ?? 'Article';
+      final qBarcode = matchedQuickItem['barcode']?.toString() ?? barcodeToScan;
+      final qId = matchedQuickItem['id']?.toString() ?? barcodeToScan;
+
+      final quickProduct = Product(
+        id: qId,
+        name: _isReturnMode ? '[${context.tr('return_mode')}] $qName' : qName,
+        barcode: qBarcode,
+        price: _isReturnMode ? -qPrice.abs() : qPrice,
+        costPrice: qCost,
+        stock: (matchedQuickItem['stock'] as num?)?.toInt() ?? 999,
+        category: 'بيع سريع',
+      );
+
+      for (int i = 0; i < multiplier; i++) {
+        context.read<BillingBloc>().add(AddProductToCartEvent(quickProduct));
+      }
+      return;
+    }
+
+    // 2. Find product in product catalog
     final productBloc = context.read<ProductBloc>();
     final products = productBloc.state.products;
     final product = products.where((p) => p.barcode == barcodeToScan).firstOrNull;
@@ -166,7 +219,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
       final itemProduct = Product(
         id: product.id,
-        name: _isReturnMode ? '[إرجاع] ${product.name}' : product.name,
+        name: _isReturnMode ? '[${context.tr('return_mode')}] ${product.name}' : product.name,
         barcode: product.barcode,
         price: effectivePrice,
         costPrice: product.costPrice,
@@ -237,13 +290,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     setState(() {
       if (_activePriceTier == PosPriceTier.detail) {
         _activePriceTier = PosPriceTier.demiGros;
-        SnackbarHelper.showWarning(context, 'تم تفعيل: سعر نصف الجملة (Demi-Gros)');
+        SnackbarHelper.showWarning(context, context.tr('tier_demi_gros'));
       } else if (_activePriceTier == PosPriceTier.demiGros) {
         _activePriceTier = PosPriceTier.gros;
-        SnackbarHelper.showWarning(context, 'تم تفعيل: سعر الجملة (Gros)');
+        SnackbarHelper.showWarning(context, context.tr('tier_gros'));
       } else {
         _activePriceTier = PosPriceTier.detail;
-        SnackbarHelper.showSuccess(context, 'تمت العودة إلى: سعر التجزئة (Détail)');
+        SnackbarHelper.showSuccess(context, context.tr('tier_detail'));
       }
     });
   }
@@ -255,10 +308,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     });
     if (_isReturnMode) {
       SoundService.playWarningSound();
-      SnackbarHelper.showWarning(context, '⚠️ تم تفعيل وضع إرجاع السلع (Return Mode) - ستسجل السلع بالسالب');
+      SnackbarHelper.showWarning(context, context.tr('return_mode_active'));
     } else {
       SoundService.playSaveSuccess();
-      SnackbarHelper.showSuccess(context, 'تم إيقاف وضع الإرجاع والعودة للبيع العادي');
+      SnackbarHelper.showSuccess(context, context.tr('return_mode'));
     }
   }
 
@@ -272,11 +325,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           return AlertDialog(
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.percent_rounded, color: Colors.purple, size: 28),
-                SizedBox(width: 8),
-                Text('تطبيق تخفيض على الفاتورة (F4)'),
+                const Icon(Icons.percent_rounded, color: Colors.purple, size: 28),
+                const SizedBox(width: 8),
+                Text(context.tr('discount')),
               ],
             ),
             content: SizedBox(
@@ -288,13 +341,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ChoiceChip(
-                        label: const Text('نسبة مئوية (%)'),
+                        label: const Text('نسبة %'),
                         selected: isPercent,
                         onSelected: (val) => setModalState(() => isPercent = true),
                       ),
                       const SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('مبلغ ثابت (د.ج)'),
+                        label: const Text('مبلغ د.ج'),
                         selected: !isPercent,
                         onSelected: (val) => setModalState(() => isPercent = false),
                       ),
@@ -306,7 +359,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     autofocus: true,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: isPercent ? 'نسبة التخفيض (مثلاً: 5%)' : 'قيمة التخفيض (د.ج)',
+                      labelText: isPercent ? 'نسبة الخصم (%)' : 'مبلغ الخصم (DA)',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.discount_outlined),
                     ),
@@ -315,7 +368,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
                 onPressed: () {
@@ -326,9 +379,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   });
                   Navigator.pop(ctx);
                   SoundService.playSaveSuccess();
-                  SnackbarHelper.showSuccess(context, 'تم تطبيق التخفيض بنجاح');
+                  SnackbarHelper.showSuccess(context, context.tr('apply_discount'));
                 },
-                child: const Text('تطبيق التخفيض', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(context.tr('apply_discount'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -346,11 +399,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.add_shopping_cart_rounded, color: Colors.teal, size: 28),
-            SizedBox(width: 8),
-            Text('إضافة سلعة سريعة بدون باركود (F7)'),
+            const Icon(Icons.add_shopping_cart_rounded, color: Colors.teal, size: 28),
+            const SizedBox(width: 8),
+            Text(context.tr('quick_item_no_barcode')),
           ],
         ),
         content: SizedBox(
@@ -361,9 +414,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               TextField(
                 controller: nameController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'اسم السلعة (مثلاً: خبز تقليدي / بيض فلت)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.tr('item_name'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -374,9 +427,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     child: TextField(
                       controller: priceController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'السعر (د.ج)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: context.tr('item_price'),
+                        border: const OutlineInputBorder(),
                       ),
                     ),
                   ),
@@ -385,9 +438,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     child: TextField(
                       controller: qtyController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'الكمية',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: context.tr('quantity'),
+                        border: const OutlineInputBorder(),
                       ),
                     ),
                   ),
@@ -397,16 +450,16 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
             onPressed: () {
-              final name = nameController.text.trim().isEmpty ? 'سلعة سريعة' : nameController.text.trim();
+              final name = nameController.text.trim().isEmpty ? 'Article' : nameController.text.trim();
               final price = double.tryParse(priceController.text.trim()) ?? 0.0;
               final qty = int.tryParse(qtyController.text.trim()) ?? 1;
 
               if (price <= 0) {
-                SnackbarHelper.showWarning(context, 'يرجى إدخال سعر صحيح');
+                SnackbarHelper.showWarning(context, context.tr('enter_valid_amount'));
                 return;
               }
 
@@ -427,7 +480,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               _onItemScanned();
               _barcodeFocusNode.requestFocus();
             },
-            child: const Text('إضافة للسلة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(context.tr('save_and_add_cart'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -447,26 +500,25 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               children: [
                 const Icon(Icons.phonelink_ring_rounded, color: Colors.indigo, size: 28),
                 const SizedBox(width: 8),
-                Text('السلات الواردة من طاقم المتجر (${pending.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('${context.tr('pos_incoming_carts')} (${pending.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             content: SizedBox(
               width: 550,
               height: 400,
               child: pending.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_outline_rounded, size: 64, color: Colors.green),
-                          SizedBox(height: 12),
-                          Text('لا توجد سلات معلقة واردة حالياً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          SizedBox(height: 4),
-                          Text('أي سلة يمسحها المدير أو البائع بهاتفه ستظهر هنا فوراً لدفعها', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          const Icon(Icons.check_circle_outline_rounded, size: 64, color: Colors.green),
+                          const SizedBox(height: 12),
+                          Text(context.tr('cart_empty'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
                     )
                   : ListView.separated(
+                      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                       itemCount: pending.length,
                       separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (context, index) {
@@ -491,11 +543,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                       child: Text(rc.token, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                                     ),
                                     Text('${rc.senderName} • ${DateFormat('HH:mm').format(rc.timestamp)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                                    Text('${rc.totalAmount.toStringAsFixed(2)} د.ج', style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.w900, fontSize: 16)),
+                                    Text('${rc.totalAmount.toStringAsFixed(2)} DA', style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.w900, fontSize: 16)),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                Text('المحتويات (${rc.items.length} مواد): ${rc.items.map((i) => "${i.name} (x${i.quantity})").join(", ")}',
+                                Text('(${rc.items.length}): ${rc.items.map((i) => "${i.name} (x${i.quantity})").join(", ")}',
                                     maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.black87)),
                                 const SizedBox(height: 10),
                                 Row(
@@ -503,7 +555,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                   children: [
                                     TextButton.icon(
                                       icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                                      label: const Text('حذف', style: TextStyle(color: Colors.red)),
+                                      label: Text(context.tr('delete'), style: const TextStyle(color: Colors.red)),
                                       onPressed: () {
                                         LocalSyncServer.removeRemoteCart(rc.id);
                                         setModalState(() {});
@@ -516,9 +568,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                     ElevatedButton.icon(
                                       style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
                                       icon: const Icon(Icons.download_rounded, color: Colors.white, size: 18),
-                                      label: const Text('تحميل في شاشة الدفع', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      label: Text(context.tr('resume_cart'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       onPressed: () {
-                                        // Load items to active cart
                                         for (final item in rc.items) {
                                           final prod = Product(
                                             id: 'remote_${item.barcode}_${DateTime.now().millisecondsSinceEpoch}',
@@ -538,7 +589,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                         });
                                         Navigator.pop(ctx);
                                         SoundService.playMemberCardScan();
-                                        SnackbarHelper.showSuccess(context, 'تم تحميل سلة الزبون ${rc.token} بنجاح!');
+                                        SnackbarHelper.showSuccess(context, 'OK: ${rc.token}');
                                         _barcodeFocusNode.requestFocus();
                                       },
                                     ),
@@ -552,7 +603,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('close'))),
             ],
           );
         },
@@ -563,13 +614,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   void _openCashDrawerWithSecurity() async {
     final isAuthorized = await SecurityPinHelper.authenticate(
       context,
-      title: 'فتح درج النقود بدون بيع (No Sale Drawer Kick)',
+      title: context.tr('pos_open_drawer'),
     );
     if (isAuthorized) {
       await SoundService.playDrawerKick();
       await PrinterHelper.openCashDrawer();
       if (mounted) {
-        SnackbarHelper.showSuccess(context, 'تم فتح درج النقود بنجاح');
+        SnackbarHelper.showSuccess(context, context.tr('pos_open_drawer'));
       }
     }
   }
@@ -578,7 +629,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     final state = context.read<BillingBloc>().state;
     if (state.cartItems.isEmpty) {
       SoundService.playWarningSound();
-      SnackbarHelper.showWarning(context, 'السلة فارغة، يرجى مسح المنتجات أولاً');
+      SnackbarHelper.showWarning(context, context.tr('cart_empty'));
       return;
     }
     _showPaymentModal(state);
@@ -591,16 +642,16 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-            SizedBox(width: 8),
-            Text('إلغاء وتفريغ السلة الحالية'),
+            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            const SizedBox(width: 8),
+            Text(context.tr('clear_cart')),
           ],
         ),
-        content: const Text('هل أنت متأكد من مسح جميع المنتجات من السلة؟'),
+        content: Text(context.tr('clear_cart_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('تراجع')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
@@ -612,7 +663,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               });
               _barcodeFocusNode.requestFocus();
             },
-            child: const Text('نعم، تفريغ السلة', style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('clear_cart'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -638,11 +689,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           return AlertDialog(
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.price_check_rounded, color: Colors.blueAccent, size: 28),
-                SizedBox(width: 8),
-                Text('التحقق من السعر والمخزون (F8)'),
+                const Icon(Icons.price_check_rounded, color: Colors.blueAccent, size: 28),
+                const SizedBox(width: 8),
+                Text(context.tr('price_check_f8')),
               ],
             ),
             content: SizedBox(
@@ -653,10 +704,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   TextField(
                     controller: checkerController,
                     autofocus: true,
-                    decoration: const InputDecoration(
-                      hintText: 'امسح الباركود أو اكتبه هنا...',
-                      prefixIcon: Icon(Icons.qr_code_scanner),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      hintText: context.tr('search'),
+                      prefixIcon: const Icon(Icons.qr_code_scanner),
+                      border: const OutlineInputBorder(),
                     ),
                     onSubmitted: (code) {
                       final productBloc = context.read<ProductBloc>();
@@ -689,15 +740,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('سعر التجزئة: ${foundProduct!.price.toStringAsFixed(2)} د.ج',
+                              Text('${foundProduct!.price.toStringAsFixed(2)} DA',
                                   style: const TextStyle(color: Color(0xFF059669), fontSize: 18, fontWeight: FontWeight.bold)),
                               if (foundProduct!.wholesalePrice > 0)
-                                Text('الجملة: ${foundProduct!.wholesalePrice.toStringAsFixed(2)} د.ج',
+                                Text('${foundProduct!.wholesalePrice.toStringAsFixed(2)} DA',
                                     style: const TextStyle(color: Colors.indigo, fontSize: 14, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text('المخزون المتوفر: ${foundProduct!.stock} قطعة • القسم: ${foundProduct!.category}',
+                          Text('${context.tr('in_stock')}: ${foundProduct!.stock} • ${foundProduct!.category}',
                               style: const TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
@@ -706,7 +757,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('close'))),
             ],
           );
         },
@@ -719,11 +770,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.person_pin_rounded, color: Colors.indigo, size: 28),
-            SizedBox(width: 8),
-            Text('اختيار العميل / بطاقة العضوية (F3)'),
+            const Icon(Icons.person_pin_rounded, color: Colors.indigo, size: 28),
+            const SizedBox(width: 8),
+            Text(context.tr('select_customer')),
           ],
         ),
         content: SizedBox(
@@ -733,15 +784,16 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             builder: (context, state) {
               final customers = HiveDatabase.customersBox.values.toList();
               return ListView(
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 children: [
                   ListTile(
                     leading: const CircleAvatar(backgroundColor: Colors.grey, child: Icon(Icons.person_outline, color: Colors.white)),
-                    title: const Text('زبون عابر (Détail - أسعار التجزئة)', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('بدون حساب ديون أو نقاط ولاء'),
+                    title: const Text('Client Détail (Comptoir)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Sans crédit ni fidélité'),
                     onTap: () {
                       setState(() {
                         _selectedCustomerId = null;
-                        _selectedCustomerName = 'زبون عابر (Détail)';
+                        _selectedCustomerName = 'Client Détail';
                         _customerCreditBalance = 0.0;
                       });
                       Navigator.pop(ctx);
@@ -751,12 +803,12 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   ),
                   const Divider(),
                   ...customers.map((c) {
-                    final name = c['name'] ?? 'زبون';
+                    final name = c['name'] ?? 'Client';
                     final debt = (c['debt'] as num?)?.toDouble() ?? 0.0;
                     return ListTile(
                       leading: const CircleAvatar(backgroundColor: Colors.indigo, child: Icon(Icons.badge_rounded, color: Colors.white)),
                       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('الرصيد / الكريدي: ${debt.toStringAsFixed(2)} د.ج',
+                      subtitle: Text('${context.tr('current_debt')}: ${debt.toStringAsFixed(2)} DA',
                           style: TextStyle(color: debt > 0 ? Colors.red : Colors.green)),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
@@ -767,7 +819,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         });
                         Navigator.pop(ctx);
                         SoundService.playMemberCardScan();
-                        SnackbarHelper.showSuccess(context, 'تم ربط العميل: $name');
+                        SnackbarHelper.showSuccess(context, name);
                         _barcodeFocusNode.requestFocus();
                       },
                     );
@@ -778,7 +830,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
         ],
       ),
     );
@@ -815,7 +867,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               children: [
                 const Icon(Icons.point_of_sale_rounded, color: Colors.teal, size: 30),
                 const SizedBox(width: 8),
-                const Text('إتمام الدفع والفوترة (F12)', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(context.tr('btn_pay_checkout'), style: const TextStyle(fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -844,13 +896,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('المبلغ الإجمالي المستحق:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text(context.tr('cart_net_total'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                             if (_cartDiscountValue > 0)
-                              Text('تخفيض مطبق: ${_cartDiscountValue.toStringAsFixed(1)}${_isDiscountPercentage ? "%" : " د.ج"}',
+                              Text('${context.tr("discount")}: ${_cartDiscountValue.toStringAsFixed(1)}${_isDiscountPercentage ? "%" : " DA"}',
                                   style: const TextStyle(fontSize: 12, color: Colors.purple, fontWeight: FontWeight.bold)),
                           ],
                         ),
-                        Text('${total.toStringAsFixed(2)} د.ج',
+                        Text('${total.toStringAsFixed(2)} DA',
                             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.teal)),
                       ],
                     ),
@@ -858,7 +910,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   const SizedBox(height: 16),
 
                   // Payment Method Selector
-                  const Text('طريقة الدفع:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(context.tr('payment_mode'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -894,10 +946,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           child: TextField(
                             autofocus: true,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'المبلغ المستلم من الزبون (د.ج)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.money),
+                            decoration: InputDecoration(
+                              labelText: context.tr('paid_amount'),
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.money),
                             ),
                             onChanged: (val) {
                               final numVal = double.tryParse(val) ?? 0.0;
@@ -918,8 +970,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              const Text('الفكة / الصرف للزبون:', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                              Text('${change.toStringAsFixed(2)} د.ج',
+                              Text(context.tr('change_due'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              Text('${change.toStringAsFixed(2)} DA',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -936,7 +988,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         return Padding(
                           padding: const EdgeInsets.only(right: 6),
                           child: ActionChip(
-                            label: Text('+$bill د.ج'),
+                            label: Text('+$bill DA'),
                             onPressed: () {
                               setModalState(() {
                                 receivedAmount = bill.toDouble();
@@ -962,14 +1014,14 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                             children: [
                               Icon(Icons.credit_card_rounded, color: Colors.blueAccent),
                               SizedBox(width: 8),
-                              Text('جهاز الدفع الإلكتروني TPE (CIB / الذهبية)', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Text('TPE (CIB / Edahabia)', style: TextStyle(fontWeight: FontWeight.bold)),
                             ],
                           ),
                           const SizedBox(height: 8),
                           TextField(
                             controller: manualTpeRefController,
                             decoration: const InputDecoration(
-                              labelText: 'رقم المعاملة / كود التذكرة (SATIM Ref - اختياري)',
+                              labelText: 'SATIM Ref / Ticket Code',
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
@@ -990,7 +1042,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                             size: 160.0,
                           ),
                           const SizedBox(height: 8),
-                          const Text('امسح الرمز عبر تطبيق BaridiMob (بريدي باي)',
+                          const Text('BaridiMob (BaridiPay QR)',
                               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
                         ],
                       ),
@@ -1009,7 +1061,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'سيتم تسجيل مبلغ ${total.toStringAsFixed(2)} د.ج في حساب: $_selectedCustomerName',
+                              '${context.tr("remaining_to_credit")} ${total.toStringAsFixed(2)} DA ($_selectedCustomerName)',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -1021,15 +1073,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 ),
                 icon: const Icon(Icons.print_rounded, color: Colors.white),
-                label: const Text('تأكيد وطباعة الفاتورة (Enter)',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                label: Text(context.tr('confirm_and_print'),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 onPressed: () async {
                   Navigator.pop(ctx);
                   await _finalizeSale(paymentMethod, total, manualTpeRefController.text);
@@ -1060,7 +1112,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       setState(() {
         _cartDiscountValue = 0.0;
       });
-      SnackbarHelper.showSuccess(context, 'تمت الفوترة والطباعة بنجاح! شكراً لزيارتكم.');
+      SnackbarHelper.showSuccess(context, context.tr('printed_success'));
       _barcodeFocusNode.requestFocus();
     }
   }
@@ -1126,15 +1178,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               const SizedBox(width: 8),
               Text(
                 isReturn
-                    ? '⚠️ وضع إرجاع السلع نشط (Mode Retour) - ستسجل السلع بالسالب وتسترجع للمخزون'
-                    : '⚡ مستوى السعر الحالي: ${_activePriceTier == PosPriceTier.gros ? "سعر الجملة (Gros)" : "سعر نصف الجملة (Demi-Gros)"}',
+                    ? context.tr('return_mode_active')
+                    : '⚡ ${_activePriceTier == PosPriceTier.gros ? context.tr("tier_gros") : context.tr("tier_demi_gros")}',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ],
           ),
           InkWell(
             onTap: isReturn ? _toggleReturnMode : _cyclePriceTier,
-            child: const Text('إلغاء / تبديل (F5/F6)', style: TextStyle(color: Colors.white, decoration: TextDecoration.underline, fontWeight: FontWeight.bold, fontSize: 12)),
+            child: const Text('F5 / F6', style: TextStyle(color: Colors.white, decoration: TextDecoration.underline, fontWeight: FontWeight.bold, fontSize: 12)),
           ),
         ],
       ),
@@ -1143,7 +1195,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   Widget _buildTopHeaderBar() {
     return Container(
-      height: 62,
+      height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -1151,113 +1203,122 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       ),
       child: Row(
         children: [
-          // Logo & Name
-          Image.asset(AppConstants.appLogoPath, height: 36, errorBuilder: (_, __, ___) => const Icon(Icons.storefront, color: Colors.teal, size: 36)),
+          // Logo & Store Name
+          Image.asset(AppConstants.appLogoPath, height: 38, errorBuilder: (_, __, ___) => const Icon(Icons.storefront, color: Colors.teal, size: 38)),
           const SizedBox(width: 10),
-          const Column(
+          Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Nayli Market POS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF1F2937))),
-              Text('نظام الفوترة ونقاط البيع السريعة', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+              const Text('Nayli Market POS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF1F2937))),
+              Text(context.tr('pos_title'), style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
             ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
 
-          // Master Server Indicator
+          // Customer-Facing Professional Welcome Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: _isServerRunning ? const Color(0xFF10B981).withOpacity(0.1) : Colors.amber.withOpacity(0.1),
+              color: Colors.teal.shade50,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _isServerRunning ? const Color(0xFF10B981) : Colors.amber),
+              border: Border.all(color: Colors.teal.shade200),
             ),
             child: Row(
               children: [
-                Icon(Icons.wifi_tethering_rounded, size: 16, color: _isServerRunning ? const Color(0xFF10B981) : Colors.amber),
+                const Icon(Icons.verified_rounded, size: 16, color: Colors.teal),
                 const SizedBox(width: 6),
-                Text('Master Server: $_serverIp:8080', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _isServerRunning ? const Color(0xFF065F46) : Colors.amber.shade900)),
+                Text(context.tr('pos_welcome'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal)),
               ],
             ),
           ),
           const SizedBox(width: 10),
 
-          // Incoming Remote Carts Queue Button (F9)
-          InkWell(
-            onTap: _showRemoteCartsQueueModal,
+          // Discreet LAN Network Sync Indicator for Cashier (Tooltip only)
+          Tooltip(
+            message: _isServerRunning ? 'LAN OK: $_serverIp:8080' : 'LAN Standby',
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: _pendingRemoteCartsCount > 0 ? Colors.indigo : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _pendingRemoteCartsCount > 0 ? Colors.indigo : Colors.grey.shade300),
+                shape: BoxShape.circle,
+                color: _isServerRunning ? Colors.green.shade50 : Colors.amber.shade50,
+                border: Border.all(color: _isServerRunning ? Colors.green : Colors.amber),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.phonelink_ring_rounded, size: 16, color: _pendingRemoteCartsCount > 0 ? Colors.white : Colors.grey.shade700),
-                  const SizedBox(width: 6),
-                  Text(
-                    'السلات الواردة: $_pendingRemoteCartsCount (F9)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: _pendingRemoteCartsCount > 0 ? Colors.white : Colors.grey.shade800,
-                    ),
-                  ),
-                ],
+              child: Icon(
+                _isServerRunning ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+                size: 16,
+                color: _isServerRunning ? Colors.green.shade700 : Colors.amber.shade800,
               ),
             ),
           ),
-          const SizedBox(width: 10),
 
-          // Costco IPM Speedometer
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.indigo.shade50,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.indigo.shade200),
+          if (_pendingRemoteCartsCount > 0) ...[
+            const SizedBox(width: 8),
+            // Incoming Remote Carts Queue Button (F9)
+            InkWell(
+              onTap: _showRemoteCartsQueueModal,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.indigo,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.phonelink_ring_rounded, size: 16, color: Colors.white),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${context.tr("pos_incoming_carts")}: $_pendingRemoteCartsCount (F9)',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.speed_rounded, size: 16, color: Colors.indigo),
-                const SizedBox(width: 6),
-                Text('سرعة الكاشير: ${_currentIpm.toStringAsFixed(0)} IPM ⚡',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.indigo)),
-              ],
-            ),
-          ),
+          ],
 
           const Spacer(),
 
-          // Navigation Shortcuts
+          // Cash Drawer Quick Kick with Bank Icon (F10)
           IconButton(
-            tooltip: 'سلعة سريعة (F7)',
-            icon: const Icon(Icons.add_shopping_cart_rounded, color: Colors.teal),
-            onPressed: _showQuickCustomItemModal,
-          ),
-          IconButton(
-            tooltip: 'تعليق السلات (F2)',
-            icon: const Icon(Icons.pause_circle_outline_rounded, color: Colors.indigo),
-            onPressed: _showHeldCartsModal,
-          ),
-          IconButton(
-            tooltip: 'فحص الأسعار (F8)',
-            icon: const Icon(Icons.price_check_rounded, color: Colors.blue),
-            onPressed: _showPriceChecker,
-          ),
-          IconButton(
-            tooltip: 'فتح الدرج الآلي (F10)',
-            icon: const Icon(Icons.savings_outlined, color: Colors.amber),
+            tooltip: context.tr('pos_open_drawer'),
+            icon: const Icon(Icons.account_balance_rounded, color: Colors.amber, size: 22),
             onPressed: _openCashDrawerWithSecurity,
           ),
+
+          // Navigation Shortcuts (Documents, Backups, Shifts, Catalog, Products, Reports, Settings)
           IconButton(
-            tooltip: 'التقارير اليومية',
+            tooltip: context.tr('pos_commercial_docs'),
+            icon: const Icon(Icons.description_outlined, color: Colors.teal),
+            onPressed: () => context.push('/documents'),
+          ),
+          IconButton(
+            tooltip: context.tr('pos_backup_sync'),
+            icon: const Icon(Icons.cloud_sync_rounded, color: Colors.blueAccent),
+            onPressed: () => context.push('/backups'),
+          ),
+          IconButton(
+            tooltip: context.tr('pos_shifts_zreport'),
+            icon: const Icon(Icons.badge_rounded, color: Colors.indigo),
+            onPressed: () => context.push('/shifts'),
+          ),
+          IconButton(
+            tooltip: context.tr('pos_master_catalog'),
+            icon: const Icon(Icons.library_books_rounded, color: Colors.deepOrange),
+            onPressed: () => context.push('/master-catalog'),
+          ),
+          IconButton(
+            tooltip: context.tr('pos_inventory'),
+            icon: const Icon(Icons.inventory_2_outlined, color: Colors.green),
+            onPressed: () => context.push('/products'),
+          ),
+          IconButton(
+            tooltip: context.tr('pos_reports'),
             icon: const Icon(Icons.analytics_outlined, color: Colors.purple),
             onPressed: () => context.push('/reports'),
           ),
           IconButton(
-            tooltip: 'الإعدادات والعتاد',
+            tooltip: context.tr('pos_settings'),
             icon: const Icon(Icons.settings_outlined, color: Colors.grey),
             onPressed: () => context.push('/settings'),
           ),
@@ -1299,7 +1360,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                             children: [
                               Text(_selectedCustomerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               if (_customerCreditBalance > 0)
-                                Text('الديون السابقة: ${_customerCreditBalance.toStringAsFixed(2)} د.ج',
+                                Text('${context.tr("current_debt")}: ${_customerCreditBalance.toStringAsFixed(2)} DA',
                                     style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
                             ],
                           ),
@@ -1318,7 +1379,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           border: Border.all(color: _activePriceTier == PosPriceTier.gros ? Colors.indigo : Colors.teal),
                         ),
                         child: Text(
-                          _activePriceTier == PosPriceTier.detail ? 'تجزئة (F5)' : (_activePriceTier == PosPriceTier.demiGros ? 'نصف جملة (F5)' : 'جملة (F5)'),
+                          _activePriceTier == PosPriceTier.detail ? context.tr('tier_detail') : (_activePriceTier == PosPriceTier.demiGros ? context.tr('tier_demi_gros') : context.tr('tier_gros')),
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _activePriceTier == PosPriceTier.gros ? Colors.indigo : Colors.teal),
                         ),
                       ),
@@ -1327,43 +1388,65 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                 ),
               ),
 
-              // Barcode Input Box
+              // Barcode Input Box with Touch Numpad toggle
               Padding(
                 padding: const EdgeInsets.all(10),
-                child: TextField(
-                  controller: _barcodeController,
-                  focusNode: _barcodeFocusNode,
-                  decoration: InputDecoration(
-                    hintText: 'امسح الباركود أو اكتب الكمية*باركود (F1)...',
-                    prefixIcon: const Icon(Icons.barcode_reader, color: Colors.teal),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => _barcodeController.clear(),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _barcodeController,
+                        focusNode: _barcodeFocusNode,
+                        decoration: InputDecoration(
+                          hintText: context.tr('scan_input_hint'),
+                          prefixIcon: const Icon(Icons.barcode_reader, color: Colors.teal),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => _barcodeController.clear(),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF3F4F6),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                        ),
+                        onSubmitted: _handleBarcodeSubmit,
+                      ),
                     ),
-                    filled: true,
-                    fillColor: const Color(0xFFF3F4F6),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                  ),
-                  onSubmitted: _handleBarcodeSubmit,
+                    const SizedBox(width: 8),
+                    // Touch Numpad Toggle Button
+                    IconButton.filled(
+                      style: IconButton.styleFrom(backgroundColor: _showTouchNumpad ? Colors.teal : Colors.grey.shade200),
+                      icon: Icon(Icons.dialpad_rounded, color: _showTouchNumpad ? Colors.white : Colors.black87),
+                      tooltip: 'لوحة الأرقام اللمسية (Touch Numpad)',
+                      onPressed: () {
+                        setState(() {
+                          _showTouchNumpad = !_showTouchNumpad;
+                        });
+                        SoundService.playTabSwitch();
+                      },
+                    ),
+                  ],
                 ),
               ),
+
+              // Touch Numpad if toggled on
+              if (_showTouchNumpad) _buildTouchNumpad(),
 
               // Items Table Header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: const Color(0xFFF3F4F6),
-                child: const Row(
+                child: Row(
                   children: [
-                    Expanded(flex: 4, child: Text('المنتج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                    Expanded(flex: 2, child: Text('الكمية', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                    Expanded(flex: 2, child: Text('السعر', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                    Expanded(flex: 2, child: Text('الإجمالي', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                    SizedBox(width: 32),
+                    Expanded(flex: 4, child: Text(context.tr('table_product'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                    Expanded(flex: 2, child: Text(context.tr('table_qty'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                    Expanded(flex: 2, child: Text(context.tr('table_price'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                    Expanded(flex: 2, child: Text(context.tr('table_total'), textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                    const SizedBox(width: 32),
                   ],
                 ),
               ),
 
-              // Cart Items List
+              // Cart Items List (with smooth touch scroll physics)
               Expanded(
                 child: state.cartItems.isEmpty
                     ? Center(
@@ -1372,13 +1455,14 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           children: [
                             Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey.shade300),
                             const SizedBox(height: 12),
-                            Text('السلة فارغة', style: TextStyle(fontSize: 16, color: Colors.grey.shade400, fontWeight: FontWeight.bold)),
+                            Text(context.tr('cart_empty'), style: TextStyle(fontSize: 16, color: Colors.grey.shade400, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
-                            Text('امسح الباركود أو اختر من قائمة المنتجات السريعة', style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+                            Text(context.tr('cart_empty_hint'), style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
                           ],
                         ),
                       )
                     : ListView.separated(
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                         itemCount: state.cartItems.length,
                         separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
                         itemBuilder: (context, index) {
@@ -1386,31 +1470,53 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           return ListTile(
                             dense: true,
                             title: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            subtitle: Text('${item.product.price.toStringAsFixed(2)} د.ج', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                            subtitle: Text('${item.product.price.toStringAsFixed(2)} DA', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                             trailing: SizedBox(
-                              width: 220,
+                              width: 230,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove_circle_outline, size: 18, color: Colors.red),
-                                    onPressed: () {
+                                  // Generous touch target stepper (-)
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(20),
+                                    onTap: () {
                                       SoundService.playTabSwitch();
                                       context.read<BillingBloc>().add(UpdateQuantityEvent(item.product.id, item.quantity - 1));
                                     },
+                                    child: Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade50,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.remove, size: 20, color: Colors.red),
+                                    ),
                                   ),
-                                  Text(item.quantity.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  IconButton(
-                                    icon: const Icon(Icons.add_circle_outline, size: 18, color: Colors.green),
-                                    onPressed: () {
+                                  const SizedBox(width: 8),
+                                  Text(item.quantity.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                  const SizedBox(width: 8),
+                                  // Generous touch target stepper (+)
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(20),
+                                    onTap: () {
                                       SoundService.playScanBeep();
                                       context.read<BillingBloc>().add(UpdateQuantityEvent(item.product.id, item.quantity + 1));
                                     },
+                                    child: Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade50,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.add, size: 20, color: Colors.green),
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text('${item.total.toStringAsFixed(2)} د.ج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(width: 10),
+                                  Text('${item.total.toStringAsFixed(2)} DA', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
+                                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.grey),
                                     onPressed: () {
                                       SoundService.playVoidWarning();
                                       context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.product.id));
@@ -1424,70 +1530,78 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       ),
               ),
 
-              // Bottom Basket Bulk Reminder
-              if (state.cartItems.length >= 3)
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                  color: Colors.amber.shade100,
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inventory_2_outlined, size: 14, color: Colors.brown),
-                      SizedBox(width: 6),
-                      Text('تذكير Costco: هل قمت بمسح السلع الكبيرة أسفل العربة؟', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.brown)),
-                    ],
-                  ),
-                ),
-
-              // Cart Financial Summary
+              // Prominently Enlarged Cart Financial Summary Block
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF9FAFB),
-                  border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+                  color: Color(0xFFF8FAFC),
+                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1.5)),
                 ),
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('عدد المواد: ${state.cartItems.length} (${state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity)} قطع)', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        Text('${context.tr("cart_items_count")}: ${state.cartItems.length} (${state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity)})',
+                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600)),
                         Row(
                           children: [
                             if (_cartDiscountValue > 0)
-                              Text('خصم: ${_cartDiscountValue.toStringAsFixed(0)}${_isDiscountPercentage ? "%" : " د.ج"}  |  ',
-                                  style: const TextStyle(color: Colors.purple, fontSize: 12, fontWeight: FontWeight.bold)),
-                            Text('المجموع: ${state.totalAmount.toStringAsFixed(2)} د.ج', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              Text('${context.tr("discount")}: ${_cartDiscountValue.toStringAsFixed(0)}${_isDiscountPercentage ? "%" : " DA"}  |  ',
+                                  style: const TextStyle(color: Colors.purple, fontSize: 13, fontWeight: FontWeight.bold)),
+                            Text('${context.tr("total")}: ${state.totalAmount.toStringAsFixed(2)} DA',
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                           ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('الإجمالي الصافي:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        Text('${currentTotal.toStringAsFixed(2)} د.ج',
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.teal)),
-                      ],
+                    const SizedBox(height: 8),
+
+                    // Big Enlarged Total Price Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 3)),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(context.tr('cart_net_total'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white70)),
+                          Text(
+                            '${currentTotal.toStringAsFixed(2)} DA',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 28,
+                              color: Color(0xFF34D399),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
+
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                             icon: const Icon(Icons.percent_rounded, color: Colors.purple, size: 18),
-                            label: const Text('تخفيض (F4)', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12)),
+                            label: Text(context.tr('btn_discount'), style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12)),
                             onPressed: _showDiscountModal,
                           ),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                             icon: const Icon(Icons.pause_circle_outline, color: Colors.indigo, size: 18),
-                            label: const Text('تعليق (F2)', style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
+                            label: Text(context.tr('btn_hold'), style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
                             onPressed: _showHeldCartsModal,
                           ),
                         ),
@@ -1496,13 +1610,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           flex: 2,
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              backgroundColor: const Color(0xFF059669),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               elevation: 2,
                             ),
-                            icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
-                            label: const Text('دفع وفوترة (F12)',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                            icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
+                            label: Text(context.tr('btn_pay_checkout'),
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                             onPressed: _triggerCheckout,
                           ),
                         ),
@@ -1518,14 +1632,86 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     );
   }
 
+  Widget _buildTouchNumpad() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      color: Colors.grey.shade100,
+      child: Column(
+        children: [
+          _buildNumpadRow(['1', '2', '3', '*']),
+          const SizedBox(height: 6),
+          _buildNumpadRow(['4', '5', '6', 'C']),
+          const SizedBox(height: 6),
+          _buildNumpadRow(['7', '8', '9', 'DEL']),
+          const SizedBox(height: 6),
+          _buildNumpadRow(['0', '00', '.', 'ENTER']),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumpadRow(List<String> keys) {
+    return Row(
+      children: keys.map((k) {
+        final isEnter = k == 'ENTER';
+        final isSpecial = k == 'C' || k == 'DEL' || k == '*';
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: InkWell(
+              onTap: () {
+                SoundService.playTabSwitch();
+                if (k == 'ENTER') {
+                  _handleBarcodeSubmit(_barcodeController.text);
+                } else if (k == 'C') {
+                  _barcodeController.clear();
+                } else if (k == 'DEL') {
+                  if (_barcodeController.text.isNotEmpty) {
+                    _barcodeController.text = _barcodeController.text.substring(0, _barcodeController.text.length - 1);
+                  }
+                } else {
+                  _barcodeController.text += k;
+                }
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isEnter ? Colors.teal : (isSpecial ? Colors.indigo.shade50 : Colors.white),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Text(
+                  k,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isEnter ? Colors.white : (isSpecial ? Colors.indigo : Colors.black87),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildRightCatalogPane() {
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
         final allProducts = state.products;
-        final categories = ['الكل', 'المشروبات', 'البقوليات', 'المنظفات', 'الحلويات', 'الميزان', 'الألبان', 'التوابل'];
-        final filteredProducts = _selectedCategory == 'الكل'
+
+        final filteredProducts = _selectedCategoryKey == 'all'
             ? allProducts
-            : allProducts.where((p) => (p.category).contains(_selectedCategory)).toList();
+            : allProducts.where((p) {
+                final def = _categoriesDef.firstWhere((c) => c['key'] == _selectedCategoryKey, orElse: () => {'ar': ''});
+                final arLabel = def['ar'] ?? '';
+                final trLabel = context.tr(def['tr'] ?? '');
+                final pCat = p.category.toLowerCase();
+                return pCat.contains(arLabel.toLowerCase()) || pCat.contains(trLabel.toLowerCase());
+              }).toList();
 
         return Container(
           color: const Color(0xFFF3F4F6),
@@ -1533,19 +1719,27 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Categories Horizontal Scroll
+              // Quick Sell Staples Ribbon (Bread, Eggs, Chakhchoukha...)
+              _buildQuickStaplesRibbon(),
+              const SizedBox(height: 10),
+
+              // Categories Horizontal Scroll with Touch Physics
               SizedBox(
-                height: 40,
+                height: 44,
                 child: ListView.separated(
+                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                   scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
+                  itemCount: _categoriesDef.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
-                    final cat = categories[index];
-                    final isSelected = _selectedCategory == cat;
+                    final cat = _categoriesDef[index];
+                    final isSelected = _selectedCategoryKey == cat['key'];
                     return ChoiceChip(
                       selected: isSelected,
-                      label: Text(cat),
+                      label: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Text(context.tr(cat['tr']!)),
+                      ),
                       selectedColor: Colors.teal,
                       labelStyle: TextStyle(
                         color: isSelected ? Colors.white : Colors.black87,
@@ -1553,7 +1747,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       ),
                       onSelected: (val) {
                         setState(() {
-                          _selectedCategory = cat;
+                          _selectedCategoryKey = cat['key']!;
                         });
                         SoundService.playTabSwitch();
                       },
@@ -1563,14 +1757,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               ),
               const SizedBox(height: 12),
 
-              // Products Grid
+              // Products Grid with Touch Physics and Generous Tap Targets
               Expanded(
                 child: filteredProducts.isEmpty
                     ? Center(
-                        child: Text('لا توجد منتجات مسجلة في هذا القسم',
+                        child: Text(context.tr('no_customers_found'),
                             style: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.bold)),
                       )
                     : GridView.builder(
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
                           childAspectRatio: 1.15,
@@ -1588,11 +1783,12 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           }
 
                           return InkWell(
+                            borderRadius: BorderRadius.circular(10),
                             onTap: () {
                               _onItemScanned();
                               final itemProduct = Product(
                                 id: product.id,
-                                name: _isReturnMode ? '[إرجاع] ${product.name}' : product.name,
+                                name: _isReturnMode ? '[${context.tr("return_mode")}] ${product.name}' : product.name,
                                 barcode: product.barcode,
                                 price: _isReturnMode ? -displayPrice.abs() : displayPrice,
                                 costPrice: product.costPrice,
@@ -1631,7 +1827,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('${displayPrice.toStringAsFixed(2)} د.ج',
+                                      Text('${displayPrice.toStringAsFixed(2)} DA',
                                           style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.teal)),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1664,19 +1860,136 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     );
   }
 
+  Widget _buildQuickStaplesRibbon() {
+    final box = HiveDatabase.quickItemsBox;
+    final items = box.values.toList();
+    final List<Map<dynamic, dynamic>> quickList = [];
+    for (var it in items) {
+      if (it is Map) quickList.add(it);
+    }
+    quickList.sort((a, b) => ((a['orderIndex'] as num?)?.toInt() ?? 0).compareTo((b['orderIndex'] as num?)?.toInt() ?? 0));
+
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          // Customize & Reorder button
+          InkWell(
+            onTap: _openQuickItemsManager,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.teal.shade200),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
+                  SizedBox(width: 4),
+                  Text('تخصيص وترتيب ⚙️', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const VerticalDivider(width: 1, indent: 4, endIndent: 4),
+          const SizedBox(width: 8),
+
+          // Horizontal Quick Tiles
+          Expanded(
+            child: quickList.isEmpty
+                ? const Center(child: Text('اضغط "تخصيص وترتيب" لإضافة الخبز والبيض...', style: TextStyle(fontSize: 11, color: Colors.grey)))
+                : ListView.separated(
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: quickList.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                    itemBuilder: (context, index) {
+                      final item = quickList[index];
+                      final name = item['name']?.toString() ?? '';
+                      final price = (item['price'] as num?)?.toDouble() ?? 0.0;
+                      final icon = item['icon']?.toString() ?? '🏷️';
+                      final barcode = item['barcode']?.toString() ?? '';
+                      final id = item['id']?.toString() ?? barcode;
+                      final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
+
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          _onItemScanned();
+                          final prod = Product(
+                            id: id,
+                            name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
+                            barcode: barcode,
+                            price: _isReturnMode ? -price.abs() : price,
+                            costPrice: cost,
+                            stock: (item['stock'] as num?)?.toInt() ?? 999,
+                            category: 'بيع سريع',
+                          );
+                          context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(icon, style: const TextStyle(fontSize: 18)),
+                              const SizedBox(width: 6),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                  Text('${price.toStringAsFixed(0)} DA', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.teal)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openQuickItemsManager() {
+    SoundService.playTabSwitch();
+    showDialog(
+      context: context,
+      builder: (_) => const QuickItemsManagerDialog(),
+    ).then((_) => setState(() {}));
+  }
+
   Widget _buildBottomHotkeysBar() {
     return Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       color: const Color(0xFF1F2937),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('[F1: مسح]   [F2: تعليق]   [F3: عميل]   [F4: تخفيض]   [F5: جملة/تجزئة]   [F6: إرجاع]   [F7: سلعة سريعة]   [F8: فحص سعر]   [F9: سلات واردة]   [F12: دفع]',
-              style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-          Text('Costco POS Engine Active ⚡', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 11, fontWeight: FontWeight.bold)),
+          Text(context.tr('hotkeys_hint'),
+              style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text('Nayli POS Engine ⚡', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 }
+
