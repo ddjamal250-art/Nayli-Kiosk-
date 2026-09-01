@@ -1203,15 +1203,51 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       ),
       child: Row(
         children: [
-          // Logo & Store Name
-          Image.asset(AppConstants.appLogoPath, height: 38, errorBuilder: (_, __, ___) => const Icon(Icons.storefront, color: Colors.teal, size: 38)),
-          const SizedBox(width: 10),
+          // Brand Logo with elegant rounded container
+          Container(
+            width: 44,
+            height: 44,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                AppConstants.appLogoPath,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.storefront, color: Colors.teal, size: 28),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Nayli Market POS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF1F2937))),
-              Text(context.tr('pos_title'), style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+              const Row(
+                children: [
+                  Text(
+                    'Nayli Market POS',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5, color: Color(0xFF0F172A), letterSpacing: 0.3),
+                  ),
+                  SizedBox(width: 6),
+                  Text('🇩🇿', style: TextStyle(fontSize: 14)),
+                ],
+              ),
+              Text(
+                context.tr('pos_title'),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+              ),
             ],
           ),
           const SizedBox(width: 20),
