@@ -202,6 +202,10 @@ class LocalSyncServer {
             await _handleKioskLookup(request);
           } else if (path == '/kiosk' && request.method == 'GET') {
             await _handleWebKiosk(request);
+          } else if (path == '/display' && request.method == 'GET') {
+            await _handleWebCustomerDisplay(request);
+          } else if (path == '/api/customer-display' && request.method == 'GET') {
+            await _handleGetCustomerDisplay(request);
           } else {
             request.response.statusCode = HttpStatus.notFound;
             request.response.write(jsonEncode({'error': 'Endpoint not found'}));
@@ -615,5 +619,221 @@ class LocalSyncServer {
     request.response.write(html);
     await request.response.close();
   }
+
+  // ==========================================
+  // CUSTOMER FACING DISPLAY (شاشة الزبون الثانية)
+  // ==========================================
+  static Map<String, dynamic> _liveCustomerDisplayData = {
+    'items': <Map<String, dynamic>>[],
+    'total': 0.0,
+    'subtotal': 0.0,
+    'discount': 0.0,
+    'customerName': '',
+    'change': 0.0,
+    'timestamp': 0,
+  };
+
+  static void updateCustomerDisplay({
+    required List<Map<String, dynamic>> items,
+    required double total,
+    required double subtotal,
+    required double discount,
+    String? customerName,
+    double change = 0.0,
+  }) {
+    _liveCustomerDisplayData = {
+      'items': items,
+      'total': total,
+      'subtotal': subtotal,
+      'discount': discount,
+      'customerName': customerName ?? '',
+      'change': change,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+  }
+
+  static Future<void> _handleGetCustomerDisplay(HttpRequest request) async {
+    request.response.headers.contentType = ContentType.json;
+    request.response.statusCode = HttpStatus.ok;
+    request.response.write(jsonEncode(_liveCustomerDisplayData));
+    await request.response.close();
+  }
+
+  static Future<void> _handleWebCustomerDisplay(HttpRequest request) async {
+    final shopBox = HiveDatabase.shopBox;
+    final shopName = shopBox.isNotEmpty ? shopBox.values.first.name : 'Nayli Market';
+
+    final html = '''<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>$shopName - شاشة الزبون</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", sans-serif; }
+    body { background: #0F172A; color: #F8FAFC; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #1E293B; padding: 18px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
+    .shop-title { font-size: 1.8rem; font-weight: 800; color: #38BDF8; display: flex; align-items: center; gap: 10px; }
+    .status-dot { width: 12px; height: 12px; background: #10B981; border-radius: 50%; display: inline-block; }
+    .container { display: flex; flex: 1; height: calc(100vh - 80px); }
+    .items-pane { flex: 6; padding: 24px; overflow-y: auto; }
+    .summary-pane { flex: 4; background: #1E293B; padding: 30px; display: flex; flex-direction: column; justify-content: space-between; border-right: 2px solid #334155; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: right; padding: 12px; border-bottom: 2px solid #334155; color: #94A3B8; font-size: 1.1rem; }
+    td { padding: 16px 12px; border-bottom: 1px solid #334155; font-size: 1.2rem; }
+    .item-qty { font-weight: bold; color: #FBBF24; text-align: center; }
+    .item-total { font-weight: bold; color: #38BDF8; text-align: left; }
+    .total-card { background: #0F172A; padding: 24px; border-radius: 20px; border: 2px solid #38BDF8; text-align: center; margin-bottom: 20px; }
+    .total-label { font-size: 1.3rem; color: #94A3B8; margin-bottom: 6px; }
+    .total-val { font-size: 3.5rem; font-weight: 900; color: #38BDF8; font-family: monospace; }
+    .currency { font-size: 1.8rem; margin-right: 8px; color: #38BDF8; }
+    .row-detail { display: flex; justify-content: space-between; font-size: 1.2rem; color: #CBD5E1; padding: 8px 0; }
+    .welcome-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; text-align: center; padding: 40px; }
+    .welcome-emoji { font-size: 6rem; margin-bottom: 20px; animation: bounce 2s infinite; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shop-title"><span>🛒</span> $shopName</div>
+    <div style="display: flex; align-items: center; gap: 8px; color: #94A3B8; font-size: 1.1rem;">
+      <span class="status-dot"></span> الكاسة متصلة
+    </div>
+  </header>
+
+  <div class="container" id="pos-view">
+    <div class="items-pane">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50%;">السلعة</th>
+            <th style="width: 15%; text-align:center;">الكمية</th>
+            <th style="width: 15%; text-align:center;">السعر</th>
+            <th style="width: 20%; text-align:left;">المجموع</th>
+          </tr>
+        </thead>
+        <tbody id="items-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="summary-pane">
+      <div>
+        <div class="total-card">
+          <div class="total-label">المجموع الإجمالي الواجب دفعه</div>
+          <div class="total-val"><span id="total-amount">0</span> <span class="currency">دج</span></div>
+        </div>
+
+        <div class="row-detail">
+          <span>المجموع الجزئي:</span>
+          <span id="subtotal-amount" style="font-weight: bold;">0 دج</span>
+        </div>
+        <div class="row-detail" id="discount-row" style="display: none; color: #F87171;">
+          <span>التخفيض المطبق:</span>
+          <span id="discount-amount" style="font-weight: bold;">0 دج</span>
+        </div>
+        <div class="row-detail" id="customer-row" style="display: none; color: #34D399;">
+          <span>الزبون:</span>
+          <span id="customer-name" style="font-weight: bold;"></span>
+        </div>
+        <div class="row-detail" id="change-row" style="display: none; color: #FBBF24; font-size: 1.4rem; margin-top: 10px;">
+          <span>الصرف المتبقي:</span>
+          <span id="change-amount" style="font-weight: 900;">0 دج</span>
+        </div>
+      </div>
+
+      <div style="text-align: center; color: #64748B; font-size: 1rem; border-top: 1px solid #334155; padding-top: 14px;">
+        ✨ مرحباً بكم ونتشرف بخدمتكم دائماً ✨
+      </div>
+    </div>
+  </div>
+
+  <div class="welcome-screen" id="welcome-view" style="display: none;">
+    <div class="welcome-emoji">🏪</div>
+    <h1 style="font-size: 3rem; margin-bottom: 12px; color: #38BDF8;">مرحباً بكم في $shopName</h1>
+    <p style="font-size: 1.5rem; color: #94A3B8;">جودة عالية وأسعار مدروسة في متناول الجميع</p>
+    <div style="margin-top: 30px; font-size: 1.2rem; color: #64748B;">يرجى وضع السلع على الحزام أو أمام الكاشير للمسح</div>
+  </div>
+
+  <script>
+    let lastTimestamp = 0;
+
+    async function pollDisplay() {
+      try {
+        const res = await fetch('/api/customer-display');
+        if (res.ok) {
+          const data = await res.json();
+          renderData(data);
+        }
+      } catch (e) {
+        console.error("Display poll error:", e);
+      }
+    }
+
+    function renderData(data) {
+      const items = data.items || [];
+      const total = Number(data.total) || 0;
+      const subtotal = Number(data.subtotal) || 0;
+      const discount = Number(data.discount) || 0;
+      const change = Number(data.change) || 0;
+      const customer = data.customerName || '';
+
+      if (items.length === 0 && total === 0) {
+        document.getElementById('pos-view').style.display = 'none';
+        document.getElementById('welcome-view').style.display = 'flex';
+        return;
+      }
+
+      document.getElementById('welcome-view').style.display = 'none';
+      document.getElementById('pos-view').style.display = 'flex';
+
+      document.getElementById('total-amount').textContent = total.toLocaleString('fr-DZ', { minimumFractionDigits: 0 });
+      document.getElementById('subtotal-amount').textContent = subtotal.toLocaleString('fr-DZ') + ' دج';
+
+      if (discount > 0) {
+        document.getElementById('discount-row').style.display = 'flex';
+        document.getElementById('discount-amount').textContent = '-' + discount.toLocaleString('fr-DZ') + ' دج';
+      } else {
+        document.getElementById('discount-row').style.display = 'none';
+      }
+
+      if (customer.trim().length > 0) {
+        document.getElementById('customer-row').style.display = 'flex';
+        document.getElementById('customer-name').textContent = customer;
+      } else {
+        document.getElementById('customer-row').style.display = 'none';
+      }
+
+      if (change > 0) {
+        document.getElementById('change-row').style.display = 'flex';
+        document.getElementById('change-amount').textContent = change.toLocaleString('fr-DZ') + ' دج';
+      } else {
+        document.getElementById('change-row').style.display = 'none';
+      }
+
+      const tbody = document.getElementById('items-tbody');
+      tbody.innerHTML = '';
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>\${item.name || ''}</strong></td>
+          <td class="item-qty">\${item.qty || 1}</td>
+          <td style="text-align:center;">\${(Number(item.price) || 0).toLocaleString('fr-DZ')} دج</td>
+          <td class="item-total">\${(Number(item.total) || 0).toLocaleString('fr-DZ')} دج</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    setInterval(pollDisplay, 700);
+    pollDisplay();
+  </script>
+</body>
+</html>''';
+
+    request.response.headers.contentType = ContentType.html;
+    request.response.write(html);
+    await request.response.close();
+  }
 }
+
 

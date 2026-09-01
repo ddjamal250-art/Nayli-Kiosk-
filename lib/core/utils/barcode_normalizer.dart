@@ -88,4 +88,91 @@ class BarcodeNormalizer {
 
     return null;
   }
+
+  /// فحص وتفكيك باركود الموازين الإلكترونية (Dibal, CAS, Bizerba, Aclas)
+  /// التنسيق الشائع: 20 IIIII WWWWW C (13 رقم EAN-13)
+  /// حيث 20 أو 21 بادئة، IIIII كود السلعة، WWWWW الوزن بالجرام أو السعر
+  static ScaleBarcodeResult? parseScaleBarcode(
+    String barcode, {
+    List<String> prefixes = const ['20', '21', '22', '28', '29'],
+    bool isPriceBased = false,
+  }) {
+    final cleanCode = clean(barcode);
+    if (cleanCode.length != 13) return null;
+
+    final prefix = cleanCode.substring(0, 2);
+    if (!prefixes.contains(prefix)) return null;
+
+    // استخراج كود السلعة الداخلي (5 أرقام بعد البادئة)
+    final itemCode = cleanCode.substring(2, 7);
+    final strippedItemCode = stripLeadingZeros(itemCode);
+
+    // استخراج القيمة (5 أرقام قبل خانة التحقق الأخيرة)
+    final valueRaw = cleanCode.substring(7, 12);
+    final valueInt = int.tryParse(valueRaw) ?? 0;
+
+    if (isPriceBased) {
+      final price = valueInt.toDouble();
+      return ScaleBarcodeResult(
+        rawBarcode: cleanCode,
+        itemCode: strippedItemCode,
+        weightKg: 1.0,
+        totalPrice: price,
+        isWeightBased: false,
+      );
+    } else {
+      // الوزن بالكيلوجرام (01500 جرام = 1.500 كغ)
+      final weightKg = (valueInt / 1000.0);
+      return ScaleBarcodeResult(
+        rawBarcode: cleanCode,
+        itemCode: strippedItemCode,
+        weightKg: weightKg > 0 ? weightKg : 1.0,
+        isWeightBased: true,
+      );
+    }
+  }
+
+  /// البحث عن منتج ميزان إلكتروني باستخدام نتيجة تفكيك باركود الميزان
+  static Product? findScaleProduct(List<Product> products, ScaleBarcodeResult scaleResult) {
+    // 1. مطابقة مباشرة لكود السلعة أو كود الميزان
+    for (final p in products) {
+      final cleanBarcode = clean(p.barcode);
+      final stripped = stripLeadingZeros(cleanBarcode);
+      if (cleanBarcode == scaleResult.itemCode ||
+          stripped == scaleResult.itemCode ||
+          cleanBarcode == 'SCALE_${scaleResult.itemCode}' ||
+          cleanBarcode == scaleResult.rawBarcode) {
+        return p;
+      }
+    }
+
+    // 2. مطابقة بالبادئة أو التسمية
+    for (final p in products) {
+      if (p.isWeighted) {
+        final cleanBarcode = clean(p.barcode);
+        if (cleanBarcode.endsWith(scaleResult.itemCode) ||
+            cleanBarcode.contains(scaleResult.itemCode)) {
+          return p;
+        }
+      }
+    }
+
+    return null;
+  }
+}
+
+class ScaleBarcodeResult {
+  final String rawBarcode;
+  final String itemCode;
+  final double weightKg;
+  final double? totalPrice;
+  final bool isWeightBased;
+
+  const ScaleBarcodeResult({
+    required this.rawBarcode,
+    required this.itemCode,
+    required this.weightKg,
+    this.totalPrice,
+    this.isWeightBased = true,
+  });
 }

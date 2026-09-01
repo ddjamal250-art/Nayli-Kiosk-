@@ -32,6 +32,8 @@ import '../../features/shifts/presentation/pages/shifts_page.dart';
 import '../../features/settings/presentation/pages/lan_sync_settings_page.dart';
 import '../../features/billing/presentation/pages/kiosk_price_checker_page.dart';
 import '../../features/settings/presentation/pages/kiosk_settings_page.dart';
+import '../../features/settings/presentation/pages/advanced_pos_settings_page.dart';
+import '../../features/product/presentation/pages/expiry_monitor_page.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -175,6 +177,14 @@ final router = GoRouter(
     GoRoute(
       path: '/kiosk-settings',
       builder: (context, state) => const KioskSettingsPage(),
+    ),
+    GoRoute(
+      path: '/advanced-pos-settings',
+      builder: (context, state) => const AdvancedPosSettingsPage(),
+    ),
+    GoRoute(
+      path: '/expiry-monitor',
+      builder: (context, state) => const ExpiryMonitorPage(),
     ),
   ],
 );

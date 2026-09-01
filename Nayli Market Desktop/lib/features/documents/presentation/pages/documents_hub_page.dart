@@ -389,6 +389,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                       _buildFilterChip('Versements (قبض ودفع)', CommercialDocType.versement),
                       _buildFilterChip('Bons d\'Achat (شراء)', CommercialDocType.achat),
                       _buildFilterChip('Bons de Route (شحن)', CommercialDocType.bonDeRoute),
+                      _buildFilterChip('Bons de Retour (إرجاع للمورد) 🔄', CommercialDocType.retourFournisseur),
                     ],
                   ),
                 ),
@@ -658,6 +659,8 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
         return Colors.purple;
       case CommercialDocType.bonDeRoute:
         return Colors.deepOrange;
+      case CommercialDocType.retourFournisseur:
+        return Colors.red.shade700;
     }
   }
 }

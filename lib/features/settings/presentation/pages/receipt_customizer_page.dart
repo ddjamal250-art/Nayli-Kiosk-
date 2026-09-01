@@ -936,3 +936,4 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     );
   }
 }
+

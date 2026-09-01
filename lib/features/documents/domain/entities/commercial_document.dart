@@ -8,6 +8,7 @@ enum CommercialDocType {
   versement, // وصل دفع وقبض Bon de Versement
   achat, // وصل شراء من مورد Bon d'Achat
   bonDeRoute, // وصل شحن وطريق Bon de Route
+  retourFournisseur, // وصل إرجاع سلع للمورد Bon de Retour
 }
 
 enum CommercialDocStatus {
@@ -152,6 +153,8 @@ class CommercialDocument {
         return 'وصل شراء مورد (Bon d\'Achat)';
       case CommercialDocType.bonDeRoute:
         return 'وصل الشحن والتوزيع (Bon de Route)';
+      case CommercialDocType.retourFournisseur:
+        return 'وصل إرجاع للمورد (Bon de Retour)';
     }
   }
 
@@ -171,6 +174,8 @@ class CommercialDocument {
         return 'ACH';
       case CommercialDocType.bonDeRoute:
         return 'ROU';
+      case CommercialDocType.retourFournisseur:
+        return 'RET';
     }
   }
 

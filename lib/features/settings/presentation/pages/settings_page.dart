@@ -21,6 +21,7 @@ import '../../../../core/localization/language_cubit.dart';
 import '../bloc/printer_bloc.dart';
 import '../bloc/printer_event.dart';
 import '../bloc/printer_state.dart';
+import 'advanced_pos_settings_page.dart';
 import '../widgets/activation_modal.dart';
 import '../widgets/device_pairing_modal.dart';
 import '../../../billing/presentation/widgets/printer_selection_dialog.dart';
@@ -602,6 +603,16 @@ class _SettingsPageState extends State<SettingsPage> {
           if (auth && context.mounted) {
             _showBackupRestoreSheet(context);
           }
+        },
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.tune_rounded,
+        iconColor: Colors.indigo,
+        title: 'إعدادات نمط التشغيل المتقدم (اختياري 100%) 🎛️',
+        subtitle: 'موازين الخضر واللحوم، اختصارات الكيبورد، صلاحيات الكاشير، شاشة الزبون، وتتبع الصلاحية',
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage()));
         },
       ),
     ]);

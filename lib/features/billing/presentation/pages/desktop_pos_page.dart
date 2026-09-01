@@ -17,7 +17,10 @@ import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../../core/utils/staff_permissions_service.dart';
 import '../../../../core/utils/adaptive_modal_helper.dart';
+import '../../../settings/presentation/pages/advanced_pos_settings_page.dart';
+import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import '../../../../core/utils/tpe_payment_service.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
@@ -250,7 +253,53 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       return;
     }
 
-    // 2. Find product in product catalog
+    // 2. Check for electronic scale barcode (Dibal, CAS, Bizerba, Aclas)
+    if (StaffPermissionsService.enableScaleBarcode) {
+      final scaleResult = BarcodeNormalizer.parseScaleBarcode(
+        barcodeToScan,
+        prefixes: StaffPermissionsService.scaleBarcodePrefixes,
+      );
+      if (scaleResult != null) {
+        final productBloc = context.read<ProductBloc>();
+        final products = productBloc.state.products;
+        final scaleProduct = BarcodeNormalizer.findScaleProduct(products, scaleResult);
+        if (scaleProduct != null) {
+          double effectiveUnitPrice = scaleProduct.price;
+          if (_activePriceTier == PosPriceTier.gros && scaleProduct.wholesalePrice > 0) {
+            effectiveUnitPrice = scaleProduct.wholesalePrice;
+          } else if (_activePriceTier == PosPriceTier.demiGros && scaleProduct.wholesalePrice > 0) {
+            effectiveUnitPrice = (scaleProduct.price + scaleProduct.wholesalePrice) / 2;
+          }
+
+          final double calculatedTotal = scaleResult.isWeightBased
+              ? (effectiveUnitPrice * scaleResult.weightKg)
+              : (scaleResult.totalPrice ?? effectiveUnitPrice);
+
+          final double finalPrice = _isReturnMode ? -calculatedTotal.abs() : calculatedTotal;
+          final weightDisplay = scaleResult.isWeightBased ? ' (${scaleResult.weightKg.toStringAsFixed(3)} كغ)' : '';
+
+          final scaleCartProduct = Product(
+            id: 'scale_${scaleProduct.id}_${DateTime.now().millisecondsSinceEpoch}',
+            name: _isReturnMode
+                ? '[${context.tr("return_mode")}] ${scaleProduct.name}$weightDisplay'
+                : '${scaleProduct.name}$weightDisplay',
+            barcode: barcodeToScan,
+            price: finalPrice,
+            costPrice: scaleProduct.costPrice * (scaleResult.isWeightBased ? scaleResult.weightKg : 1.0),
+            stock: scaleProduct.stock,
+            category: scaleProduct.category,
+            isWeighted: true,
+          );
+
+          context.read<BillingBloc>().add(AddProductToCartEvent(scaleCartProduct));
+          _onItemScanned();
+          _barcodeFocusNode.requestFocus();
+          return;
+        }
+      }
+    }
+
+    // 3. Find product in product catalog
     final productBloc = context.read<ProductBloc>();
     final products = productBloc.state.products;
     final product = products.where((p) => p.barcode == barcodeToScan).firstOrNull;
@@ -308,6 +357,21 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       return true;
     }
 
+    if (StaffPermissionsService.enableFastKeyboardShortcuts) {
+      if ((event.logicalKey == LogicalKeyboardKey.delete ||
+              (event.logicalKey == LogicalKeyboardKey.backspace && _barcodeController.text.isEmpty)) &&
+          !_barcodeFocusNode.hasFocus) {
+        _quickVoidLastItem();
+        return true;
+      } else if (event.logicalKey == LogicalKeyboardKey.add || event.logicalKey == LogicalKeyboardKey.numpadAdd) {
+        _adjustLastItemQuantity(1);
+        return true;
+      } else if (event.logicalKey == LogicalKeyboardKey.minus || event.logicalKey == LogicalKeyboardKey.numpadSubtract) {
+        _adjustLastItemQuantity(-1);
+        return true;
+      }
+    }
+
     if (event.logicalKey == LogicalKeyboardKey.f1) {
       _barcodeFocusNode.requestFocus();
       _barcodeController.selection = TextSelection(baseOffset: 0, extentOffset: _barcodeController.text.length);
@@ -357,6 +421,37 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     return false;
   }
 
+  Future<void> _quickVoidLastItem() async {
+    final billingBloc = context.read<BillingBloc>();
+    final items = billingBloc.state.cartItems;
+    if (items.isEmpty) return;
+
+    final lastItem = items.last;
+    if (StaffPermissionsService.requirePinForVoid) {
+      final auth = await SecurityPinHelper.authenticate(context, title: 'إلغاء سلعة: ${lastItem.product.name}');
+      if (!auth || !mounted) return;
+    }
+
+    billingBloc.add(RemoveProductFromCartEvent(lastItem.product.id));
+    SoundService.playDeleteSound();
+    SnackbarHelper.showInfo(context, 'تم حذف "${lastItem.product.name}" من السلة (Delete)');
+  }
+
+  void _adjustLastItemQuantity(int delta) {
+    final billingBloc = context.read<BillingBloc>();
+    final items = billingBloc.state.cartItems;
+    if (items.isEmpty) return;
+
+    final lastItem = items.last;
+    final newQty = lastItem.quantity + delta;
+    if (newQty <= 0) {
+      _quickVoidLastItem();
+    } else {
+      billingBloc.add(UpdateQuantityEvent(lastItem.product.id, newQty));
+      SoundService.playClick();
+    }
+  }
+
   void _cyclePriceTier() {
     SoundService.playTabSwitch();
     setState(() {
@@ -387,7 +482,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
   }
 
-  void _showDiscountModal() {
+  Future<void> _showDiscountModal() async {
+    if (StaffPermissionsService.requirePinForDiscount) {
+      final auth = await SecurityPinHelper.authenticate(context, title: 'إجراء تخفيض على الفاتورة');
+      if (!auth || !mounted) return;
+    }
     SoundService.playTabSwitch();
     final discountController = TextEditingController();
     bool isPercent = true;
@@ -1978,6 +2077,16 @@ $itemsSummary
             onPressed: () => context.push('/kiosk-settings'),
           ),
           IconButton(
+            tooltip: 'مراقبة الصلاحية والتوالف ⏳',
+            icon: const Icon(Icons.hourglass_bottom_rounded, color: Colors.amber),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpiryMonitorPage())),
+          ),
+          IconButton(
+            tooltip: 'إعدادات التشغيل المتقدمة والموازين 🎛️',
+            icon: const Icon(Icons.tune_rounded, color: Colors.blueGrey),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage())),
+          ),
+          IconButton(
             tooltip: context.tr('pos_settings'),
             icon: const Icon(Icons.settings_outlined, color: Colors.grey),
             onPressed: () => context.push('/settings'),
@@ -2317,9 +2426,29 @@ $itemsSummary
                               elevation: 2,
                             ),
                             icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
-                            label: Text(context.tr('btn_pay_checkout'),
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                            onPressed: _triggerCheckout,
+                            label: Text(
+                              StaffPermissionsService.enableFastKeyboardShortcuts
+                                  ? '${context.tr("btn_pay_checkout")} (F12)'
+                                  : context.tr('btn_pay_checkout'),
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            onPressed: () {
+                              if (StaffPermissionsService.enableCustomerDisplay) {
+                                LocalSyncServer.updateCustomerDisplay(
+                                  items: state.cartItems.map((i) => {
+                                    'name': i.product.name,
+                                    'qty': i.quantity,
+                                    'price': i.product.price,
+                                    'total': i.total,
+                                  }).toList(),
+                                  total: currentTotal,
+                                  subtotal: state.totalAmount,
+                                  discount: _cartDiscountValue,
+                                  customerName: _selectedCustomerName,
+                                );
+                              }
+                              _triggerCheckout();
+                            },
                           ),
                         ),
                       ],
