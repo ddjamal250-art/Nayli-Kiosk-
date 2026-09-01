@@ -6,6 +6,7 @@ import '../../../core/utils/security_pin_helper.dart';
 import '../../../core/utils/sound_service.dart';
 import '../../../core/utils/online_license_service.dart';
 import '../../backup/data/backup_service.dart';
+import '../../../core/utils/telegram_service.dart';
 
 class CashierShift {
   final String id;
@@ -171,8 +172,8 @@ class ShiftService {
     if (autoBackup) {
       try {
         final backupFile = await BackupService.createFullBackupZip(customNote: 'نسخة ختام الوردية: ${closedShift.id}');
-        final token = HiveDatabase.settingsBox.get('telegram_bot_token', defaultValue: '');
-        final chatId = HiveDatabase.settingsBox.get('telegram_chat_id', defaultValue: '');
+        final token = TelegramService.getBotToken();
+        final chatId = TelegramService.getChatId();
         if (token.isNotEmpty && chatId.isNotEmpty) {
           await BackupService.sendToTelegramBot(backupFile: backupFile, botToken: token, chatId: chatId);
         }

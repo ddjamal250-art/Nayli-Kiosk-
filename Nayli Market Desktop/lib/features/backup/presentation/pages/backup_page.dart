@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../../core/utils/telegram_service.dart';
 import '../../data/backup_service.dart';
 
 class BackupPage extends StatefulWidget {
@@ -19,10 +20,12 @@ class _BackupPageState extends State<BackupPage> {
   List<BackupSnapshotInfo> _backups = [];
   bool _isLoading = true;
 
-  // Settings
+  // Telegram & WhatsApp Settings
   final TextEditingController _telegramTokenController = TextEditingController();
   final TextEditingController _telegramChatIdController = TextEditingController();
+  final TextEditingController _whatsAppPhoneController = TextEditingController();
   bool _autoBackupOnShiftClose = true;
+  bool _isDiscoveringChatId = false;
 
   @override
   void initState() {
@@ -31,10 +34,19 @@ class _BackupPageState extends State<BackupPage> {
     _loadBackups();
   }
 
+  @override
+  void dispose() {
+    _telegramTokenController.dispose();
+    _telegramChatIdController.dispose();
+    _whatsAppPhoneController.dispose();
+    super.dispose();
+  }
+
   void _loadSettings() {
     final box = HiveDatabase.settingsBox;
     _telegramTokenController.text = box.get('telegram_bot_token', defaultValue: '');
     _telegramChatIdController.text = box.get('telegram_chat_id', defaultValue: '');
+    _whatsAppPhoneController.text = box.get('merchant_whatsapp_phone', defaultValue: '');
     _autoBackupOnShiftClose = box.get('auto_backup_on_shift_close', defaultValue: true);
   }
 
@@ -42,10 +54,119 @@ class _BackupPageState extends State<BackupPage> {
     final box = HiveDatabase.settingsBox;
     await box.put('telegram_bot_token', _telegramTokenController.text.trim());
     await box.put('telegram_chat_id', _telegramChatIdController.text.trim());
+    await box.put('merchant_whatsapp_phone', _whatsAppPhoneController.text.trim());
     await box.put('auto_backup_on_shift_close', _autoBackupOnShiftClose);
     SoundService.playSaveSuccess();
     if (mounted) {
-      SnackbarHelper.showSuccess(context, 'تم حفظ إعدادات النسخ الاحتياطي السحابي بنجاح');
+      SnackbarHelper.showSuccess(context, '✅ تم حفظ إعدادات التيليجرام والواتساب بنجاح');
+    }
+  }
+
+  Future<void> _autoDiscoverTelegramChatId() async {
+    setState(() => _isDiscoveringChatId = true);
+    SoundService.playTabSwitch();
+
+    // 1. فتح رابط البوت للتاجر
+    await TelegramService.launchBotChat();
+
+    if (mounted) {
+      SnackbarHelper.showInfo(
+        context,
+        '⏳ جاري كشف معرفك... يرجى الضغط على Start أو إرسال أي رسالة للبوت في التلغرام الآن',
+      );
+    }
+
+    // 2. محاولة جلب التحديثات لعدة ثوانٍ
+    Map<String, dynamic>? discovered;
+    for (int attempt = 0; attempt < 5; attempt++) {
+      await Future.delayed(const Duration(seconds: 2));
+      discovered = await TelegramService.autoDiscoverChatId(
+        customToken: _telegramTokenController.text.trim(),
+      );
+      if (discovered != null) break;
+    }
+
+    if (mounted) {
+      setState(() => _isDiscoveringChatId = false);
+      if (discovered != null) {
+        _telegramChatIdController.text = discovered['chatId']?.toString() ?? '';
+        await _saveSettings();
+        SoundService.playCheckoutSuccess();
+        SnackbarHelper.showSuccess(
+          context,
+          '🎉 رائع! تم كشف وربط التيليجرام بنجاح: ' +
+              (discovered['name']?.toString() ?? '') +
+              ' (ID: ' +
+              (discovered['chatId']?.toString() ?? '') +
+              ')',
+        );
+      } else {
+        SoundService.playWarning();
+        SnackbarHelper.showWarning(
+          context,
+          '⚠️ لم نتمكن من كشف الرسالة بعد. تأكد من فتح البوت والضغط على Start ثم حاول مجدداً',
+        );
+      }
+    }
+  }
+
+  Future<void> _sendTestTelegramMessage() async {
+    final chatId = _telegramChatIdController.text.trim();
+    if (chatId.isEmpty) {
+      SnackbarHelper.showWarning(context, 'يرجى تحديد أو كشف Chat ID أولاً');
+      return;
+    }
+
+    final sent = await TelegramService.sendTextMessage(
+      text: '🔔 <b>نايل ماركت POS</b>\n\n'
+          '✅ تهانينا! تم ربط برنامج المحل بحسابك على تلغرام بنجاح.\n'
+          '📅 التاريخ: ' +
+          DateFormat('yyyy/MM/dd HH:mm').format(DateTime.now()),
+      customToken: _telegramTokenController.text.trim(),
+      customChatId: chatId,
+    );
+
+    if (mounted) {
+      if (sent) {
+        SoundService.playCheckoutSuccess();
+        SnackbarHelper.showSuccess(context, '✅ تم إرسال الرسالة التجريبية إلى تلغرامك بنجاح!');
+      } else {
+        SoundService.playVoidWarning();
+        SnackbarHelper.showError(context, '❌ تعذر الإرسال. تأكد من اتصال الإنترنت وصحة المعرف');
+      }
+    }
+  }
+
+  Future<void> _sendTestWhatsAppMessage() async {
+    final phone = _whatsAppPhoneController.text.trim();
+    if (phone.isEmpty) {
+      SnackbarHelper.showWarning(context, 'يرجى إدخال رقم هاتف الواتساب أولاً (مثال: 0661xxxxxx)');
+      return;
+    }
+
+    final now = DateTime.now();
+    final sampleMessage = '🏪 *نايل ماركت - تقرير تجريبي مباشر* 📊\n\n'
+        '📅 التاريخ: ' +
+        DateFormat('yyyy/MM/dd HH:mm').format(now) +
+        '\n'
+        '💵 إجمالي مبيعات اليوم: 45,800.00 دج\n'
+        '🧾 عدد الزبائن: 34 زبون\n'
+        '💳 مدفوعات TPE: 12,000.00 دج\n'
+        '💾 تم أخذ نسخة احتياطية سحابية بنجاح ✅\n\n'
+        'Nayli Market POS 🇩🇿';
+
+    final launched = await TelegramService.sendWhatsAppReport(
+      phone: phone,
+      message: sampleMessage,
+    );
+
+    if (mounted) {
+      if (launched) {
+        SoundService.playSaveSuccess();
+        SnackbarHelper.showSuccess(context, '✅ تم فتح واتساب لإرسال التقرير');
+      } else {
+        SnackbarHelper.showError(context, 'تعذر فتح واتساب، تأكد من تثبيته على الجهاز');
+      }
     }
   }
 
@@ -60,315 +181,346 @@ class _BackupPageState extends State<BackupPage> {
     }
   }
 
-  Future<void> _createBackupNow() async {
+  Future<void> _handleCreateBackup() async {
+    SoundService.playTabSwitch();
     setState(() => _isLoading = true);
     try {
-      final file = await BackupService.createFullBackupZip(customNote: 'نسخة يدوية فورية');
-      
-      // If Telegram is configured, send
-      final token = _telegramTokenController.text.trim();
-      final chatId = _telegramChatIdController.text.trim();
+      final file = await BackupService.createFullBackupZip();
+      SoundService.playSaveSuccess();
+
+      // Check telegram sending if enabled
+      final token = TelegramService.getBotToken();
+      final chatId = TelegramService.getChatId();
       if (token.isNotEmpty && chatId.isNotEmpty) {
-        await BackupService.sendToTelegramBot(backupFile: file, botToken: token, chatId: chatId);
+        await BackupService.sendToTelegramBot(
+          backupFile: file,
+          botToken: token,
+          chatId: chatId,
+        );
       }
 
       await _loadBackups();
-      SoundService.playSaveSuccess();
       if (mounted) {
-        SnackbarHelper.showSuccess(context, 'تم إنشاء وتأمين النسخة الاحتياطية بنجاح!');
+        SnackbarHelper.showSuccess(context, '✅ تم إنشاء وحفظ النسخة الاحتياطية بنجاح!');
       }
     } catch (e) {
       if (mounted) {
-        SnackbarHelper.showError(context, 'فشل النسخ الاحتياطي: $e');
+        SnackbarHelper.showError(context, 'فشل إنشاء النسخة الاحتياطية: ' + e.toString());
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _confirmRestore(BackupSnapshotInfo backup) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 8),
-            Text('استرجاع قاعدة البيانات'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('أنت على وشك استرجاع النسخة المؤرخة في: ${DateFormat('yyyy/MM/dd HH:mm').format(backup.createdAt)}'),
-            const SizedBox(height: 8),
-            Text('المحتويات: ${backup.productsCount} سلعة • ${backup.invoicesCount} فاتورة • ${backup.customersCount} عميل'),
-            const SizedBox(height: 12),
-            const Text('⚠️ تحذير: سيتم استبدال البيانات الحالية بالكامل بالبيانات المسترجعة من هذه النسخة.',
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              setState(() => _isLoading = true);
-              final success = await BackupService.restoreDatabaseFromFile(File(backup.filePath));
-              setState(() => _isLoading = false);
-              if (success) {
-                SoundService.playCheckoutSuccess();
-                if (mounted) {
-                  SnackbarHelper.showSuccess(context, 'تم استرجاع قاعدة البيانات بنجاح 100%!');
-                }
-              } else {
-                if (mounted) {
-                  SnackbarHelper.showError(context, 'فشل استرجاع قاعدة البيانات، الملف تالف.');
-                }
-              }
-            },
-            child: const Text('نعم، استرجاع الكل', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: const Row(
-          children: [
-            Icon(Icons.cloud_sync_rounded, color: Colors.teal),
-            SizedBox(width: 8),
-            Text('النسخ الاحتياطي والمزامنة السحابية (3-2-1 Backup Engine)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
+        title: const Text('النسخ الاحتياطي والمزامنة السحابية (Telegram & WhatsApp) ☁️'),
         actions: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, padding: const EdgeInsets.symmetric(horizontal: 16)),
-            icon: const Icon(Icons.backup_rounded, color: Colors.white),
-            label: const Text('إنشاء نسخة احتياطية الآن (+)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            onPressed: _createBackupNow,
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadBackups,
+            tooltip: 'تحديث',
           ),
-          const SizedBox(width: 16),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          : ListView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Overview Card
-                  Card(
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(10)),
-                                child: const Icon(Icons.security_rounded, color: Colors.teal, size: 32),
-                              ),
-                              const SizedBox(width: 14),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('نظام الحماية والمزامنة الهجين (Nayli Vault 3-2-1)',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text(
-                                    _backups.isEmpty
-                                        ? 'لم يتم إنشاء أي نسخة احتياطية بعد'
-                                        : 'آخر نسخة محفوظة: ${DateFormat('yyyy/MM/dd HH:mm').format(_backups.first.createdAt)} • إجمالي النسخ: ${_backups.length}',
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.green),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.check_circle, color: Colors.green, size: 16),
-                                SizedBox(width: 6),
-                                Text('النسخ التلقائي للـ USB مفعل', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+              children: [
+                // Quick Action Button
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF0F766E), Color(0xFF14B8A6)]),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Cloud Telegram Vault Configuration Card
-                  Card(
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.send_rounded, color: Colors.blueAccent),
-                              SizedBox(width: 8),
-                              Text('النسخ السحابي التلقائي إلى Telegram (Cloud Vault)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          const Text('عند تفعيل هذا الخيار، سيتم إرسال نسخة احتياطية مشفرة تلقائياً إلى حساب المدير على تيليجرام عند نهاية كل وردية.',
-                              style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextField(
-                                  controller: _telegramTokenController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Telegram Bot Token (توكن بوت المدير)',
-                                    hintText: '123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ',
-                                    border: OutlineInputBorder(),
-                                    isDense: true,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _telegramChatIdController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Chat ID (معرف المحادثة)',
-                                    hintText: '987654321',
-                                    border: OutlineInputBorder(),
-                                    isDense: true,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)),
-                                icon: const Icon(Icons.save, color: Colors.white),
-                                label: const Text('حفظ الإعدادات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                onPressed: _saveSettings,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('نسخ احتياطي تلقائي عند ختام الصندوق ونهاية الوردية (Z-Report)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            subtitle: const Text('يقوم بحفظ قاعدة البيانات وإرسال التقرير للمدير فور إغلاق اليومية'),
-                            value: _autoBackupOnShiftClose,
-                            onChanged: (val) {
-                              setState(() => _autoBackupOnShiftClose = val);
-                              _saveSettings();
-                            },
-                          ),
+                          Text('إنشاء نسخة احتياطية محلية وسحابية فورية',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          SizedBox(height: 4),
+                          Text('تجميع كافة المنتجات، الفواتير، ديون الزبائن وسندات الموردين في ملف واحد مضغوط',
+                              style: TextStyle(color: Colors.white70, fontSize: 12)),
                         ],
                       ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // History of Local Backups
-                  const Row(
-                    children: [
-                      Icon(Icons.history_rounded, color: Colors.teal),
-                      SizedBox(width: 8),
-                      Text('سجل النسخ الاحتياطية المحفوظة محلياً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0F766E),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.save_rounded),
+                        label: const Text('أخذ نسخة الآن', style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: _handleCreateBackup,
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                ),
 
-                  if (_backups.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(32),
-                      alignment: Alignment.center,
-                      child: const Text('لا توجد نسخ احتياطية مسجلة بعد. اضغط على "إنشاء نسخة احتياطية الآن" لحفظ بياناتك.', style: TextStyle(color: Colors.grey)),
-                    )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _backups.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final b = _backups[index];
-                        final sizeKb = (b.fileSize / 1024).toStringAsFixed(1);
+                const SizedBox(height: 20),
 
-                        return Card(
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(8)),
-                              child: const Icon(Icons.archive_outlined, color: Colors.teal),
-                            ),
-                            title: Text(b.fileName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                            subtitle: Text(
-                              '📅 ${DateFormat('yyyy/MM/dd HH:mm').format(b.createdAt)} • الحجم: $sizeKb KB • المحتوى: ${b.productsCount} سلعة، ${b.invoicesCount} مبيعات، ${b.documentsCount} وثيقة',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
+                // بطاقة ربط التلغرام الذكية بكشف تلقائي بنقرة واحدة
+                Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
                               children: [
-                                IconButton(
-                                  tooltip: 'مشاركة أو نقل الملف (Share / USB)',
-                                  icon: const Icon(Icons.share_rounded, color: Colors.blueAccent),
-                                  onPressed: () {
-                                    Share.shareXFiles([XFile(b.filePath)], text: 'نسخة احتياطية نايل ماركت: ${b.fileName}');
-                                  },
-                                ),
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade700),
-                                  icon: const Icon(Icons.restore_rounded, color: Colors.white, size: 16),
-                                  label: const Text('استرجاع (Restore)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                                  onPressed: () => _confirmRestore(b),
-                                ),
-                                IconButton(
-                                  tooltip: 'حذف النسخة',
-                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                  onPressed: () {
-                                    try {
-                                      File(b.filePath).deleteSync();
-                                      _loadBackups();
-                                      SoundService.playDeleteSound();
-                                    } catch (_) {}
-                                  },
-                                ),
+                                Icon(Icons.send_rounded, color: Colors.blueAccent, size: 24),
+                                SizedBox(width: 8),
+                                Text('1. النسخ السحابي والتقارير عبر Telegram 🤖',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                               ],
                             ),
-                          ),
-                        );
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
+                              icon: _isDiscoveringChatId
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.auto_awesome, size: 16),
+                              label: Text(
+                                _isDiscoveringChatId ? 'جاري الكشف...' : 'كشف معرفي تلقائياً 🔍',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              onPressed: _isDiscoveringChatId ? null : _autoDiscoverTelegramChatId,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          '💡 لا تحتاج لإنشاء بوت بنفسك! فقط اضغط زر (كشف معرفي تلقائياً) وافتح البوت واضغط Start ليرتبط البرنامج بهاتفك في ثانية واحدة:',
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                        ),
+                        const SizedBox(height: 14),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextField(
+                                controller: _telegramTokenController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Bot Token (اتركه فارغاً للبوت الافتراضي الجاهز)',
+                                  hintText: 'افتراضي: Nayli Market Master Bot',
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _telegramChatIdController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Chat ID (معرف المحادثة)',
+                                  hintText: 'يكتشف تلقائياً',
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            IconButton(
+                              tooltip: 'إرسال رسالة تجريبية للتحقق',
+                              icon: const Icon(Icons.mark_email_read_rounded, color: Colors.indigo),
+                              onPressed: _sendTestTelegramMessage,
+                            ),
+                            IconButton(
+                              tooltip: 'فتح البوت في التلغرام',
+                              icon: const Icon(Icons.open_in_new_rounded, color: Colors.blueAccent),
+                              onPressed: () => TelegramService.launchBotChat(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // بطاقة ربط الواتساب للتقارير وفواتير المبيعات
+                Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.chat_bubble_rounded, color: Colors.green, size: 24),
+                            SizedBox(width: 8),
+                            Text('2. التقارير وفواتير اليومية عبر WhatsApp 💬',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'أدخل رقم هاتفك لتصلك تقارير المبيعات اليومية وتنبيهات الأرباح مباشرة في محادثة الواتساب العادية دون أي تعقيد:',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 14),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _whatsAppPhoneController,
+                                keyboardType: TextInputType.phone,
+                                decoration: const InputDecoration(
+                                  labelText: 'رقم هاتف صاحب المحل (WhatsApp)',
+                                  hintText: 'مثال: 0661234567 أو 0550123456',
+                                  prefixIcon: Icon(Icons.phone_iphone_rounded, color: Colors.green),
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green.shade700,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              ),
+                              icon: const Icon(Icons.send_rounded, size: 16),
+                              label: const Text('تجربة إرسال للواتساب', style: TextStyle(fontWeight: FontWeight.bold)),
+                              onPressed: _sendTestWhatsAppMessage,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // بطاقة خيارات الحفظ التلقائي عند ختام الصندوق
+                Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('نسخ احتياطي تلقائي عند ختام الصندوق ونهاية الوردية (Z-Report)',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                      subtitle: const Text('يقوم بحفظ قاعدة البيانات وإرسال التقرير السحابي للمدير فور إغلاق اليومية'),
+                      value: _autoBackupOnShiftClose,
+                      activeColor: Colors.teal,
+                      onChanged: (val) {
+                        setState(() => _autoBackupOnShiftClose = val);
+                        _saveSettings();
                       },
                     ),
-                ],
-              ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // History of Local Backups
+                const Row(
+                  children: [
+                    Icon(Icons.history_rounded, color: Colors.teal),
+                    SizedBox(width: 8),
+                    Text('سجل النسخ الاحتياطية المحفوظة محلياً',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                if (_backups.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    alignment: Alignment.center,
+                    child: const Text('لا توجد نسخ احتياطية محفوظة حالياً.', style: TextStyle(color: Colors.grey)),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _backups.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final item = _backups[index];
+                      return ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: Colors.teal.shade50, shape: BoxShape.circle),
+                          child: const Icon(Icons.archive_rounded, color: Colors.teal),
+                        ),
+                        title: Text(item.fileName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                        subtitle: Text(
+                          DateFormat('yyyy/MM/dd HH:mm').format(item.createdAt) +
+                              ' • ' +
+                              item.readableSize +
+                              ' • ' +
+                              item.productsCount.toString() +
+                              ' منتج',
+                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.share_rounded, color: Colors.blueAccent, size: 20),
+                              tooltip: 'مشاركة الملف',
+                              onPressed: () => Share.shareXFiles([XFile(item.filePath)]),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                              tooltip: 'حذف',
+                              onPressed: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('تأكيد الحذف'),
+                                    content: const Text('هل أنت متأكد من رغبتك في حذف هذه النسخة الاحتياطية؟'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        child: const Text('حذف', style: TextStyle(color: Colors.white)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed == true) {
+                                  await BackupService.deleteBackup(item.filePath);
+                                  _loadBackups();
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+              ],
             ),
     );
   }
 }
-
