@@ -214,9 +214,15 @@ class _BackupPageState extends State<BackupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width >= 700;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('النسخ الاحتياطي والمزامنة السحابية (Telegram & WhatsApp) ☁️'),
+        title: Text(
+          isWide ? 'النسخ الاحتياطي والمزامنة السحابية ☁️' : 'النسخ الاحتياطي ☁️',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -237,32 +243,55 @@ class _BackupPageState extends State<BackupPage> {
                     gradient: const LinearGradient(colors: [Color(0xFF0F766E), Color(0xFF14B8A6)]),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('إنشاء نسخة احتياطية محلية وسحابية فورية',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                          SizedBox(height: 4),
-                          Text('تجميع كافة المنتجات، الفواتير، ديون الزبائن وسندات الموردين في ملف واحد مضغوط',
-                              style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        ],
-                      ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF0F766E),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  child: isWide
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('إنشاء نسخة احتياطية محلية وسحابية فورية',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                SizedBox(height: 4),
+                                Text('تجميع كافة المنتجات، الفواتير، ديون الزبائن وسندات الموردين في ملف واحد مضغوط',
+                                    style: TextStyle(color: Colors.white70, fontSize: 12)),
+                              ],
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF0F766E),
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.save_rounded),
+                              label: const Text('أخذ نسخة الآن', style: TextStyle(fontWeight: FontWeight.bold)),
+                              onPressed: _handleCreateBackup,
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text('إنشاء نسخة احتياطية محلية وسحابية',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                            const SizedBox(height: 4),
+                            const Text('تجميع كافة المنتجات، الفواتير، ديون الزبائن وسندات الموردين في ملف واحد',
+                                style: TextStyle(color: Colors.white70, fontSize: 11.5)),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF0F766E),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.save_rounded),
+                              label: const Text('أخذ نسخة الآن', style: TextStyle(fontWeight: FontWeight.bold)),
+                              onPressed: _handleCreateBackup,
+                            ),
+                          ],
                         ),
-                        icon: const Icon(Icons.save_rounded),
-                        label: const Text('أخذ نسخة الآن', style: TextStyle(fontWeight: FontWeight.bold)),
-                        onPressed: _handleCreateBackup,
-                      ),
-                    ],
-                  ),
                 ),
 
                 const SizedBox(height: 20),
@@ -276,34 +305,65 @@ class _BackupPageState extends State<BackupPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(Icons.send_rounded, color: Colors.blueAccent, size: 24),
-                                SizedBox(width: 8),
-                                Text('1. النسخ السحابي والتقارير عبر Telegram 🤖',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                              ],
-                            ),
-                            OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
-                              icon: _isDiscoveringChatId
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.auto_awesome, size: 16),
-                              label: Text(
-                                _isDiscoveringChatId ? 'جاري الكشف...' : 'كشف معرفي تلقائياً 🔍',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        if (isWide)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.send_rounded, color: Colors.blueAccent, size: 24),
+                                  SizedBox(width: 8),
+                                  Text('1. النسخ السحابي والتقارير عبر Telegram 🤖',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                ],
                               ),
-                              onPressed: _isDiscoveringChatId ? null : _autoDiscoverTelegramChatId,
-                            ),
-                          ],
-                        ),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
+                                icon: _isDiscoveringChatId
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.auto_awesome, size: 16),
+                                label: Text(
+                                  _isDiscoveringChatId ? 'جاري الكشف...' : 'كشف معرفي تلقائياً 🔍',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                onPressed: _isDiscoveringChatId ? null : _autoDiscoverTelegramChatId,
+                              ),
+                            ],
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.send_rounded, color: Colors.blueAccent, size: 22),
+                                  SizedBox(width: 8),
+                                  Text('1. النسخ عبر Telegram 🤖',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
+                                icon: _isDiscoveringChatId
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.auto_awesome, size: 16),
+                                label: Text(
+                                  _isDiscoveringChatId ? 'جاري الكشف...' : 'كشف معرفي تلقائياً 🔍',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                onPressed: _isDiscoveringChatId ? null : _autoDiscoverTelegramChatId,
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 6),
                         const Text(
                           '💡 لا تحتاج لإنشاء بوت بنفسك! فقط اضغط زر (كشف معرفي تلقائياً) وافتح البوت واضغط Start ليرتبط البرنامج بهاتفك في ثانية واحدة:',
@@ -311,45 +371,88 @@ class _BackupPageState extends State<BackupPage> {
                         ),
                         const SizedBox(height: 14),
 
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: TextField(
+                        if (isWide)
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: _telegramTokenController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Bot Token (اتركه فارغاً للبوت الافتراضي الجاهز)',
+                                    hintText: 'افتراضي: Nayli Market Master Bot',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _telegramChatIdController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Chat ID (معرف المحادثة)',
+                                    hintText: 'يكتشف تلقائياً',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              IconButton(
+                                tooltip: 'إرسال رسالة تجريبية للتحقق',
+                                icon: const Icon(Icons.mark_email_read_rounded, color: Colors.indigo),
+                                onPressed: _sendTestTelegramMessage,
+                              ),
+                              IconButton(
+                                tooltip: 'فتح البوت في التلغرام',
+                                icon: const Icon(Icons.open_in_new_rounded, color: Colors.blueAccent),
+                                onPressed: () => TelegramService.launchBotChat(),
+                              ),
+                            ],
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              TextField(
                                 controller: _telegramTokenController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Bot Token (اتركه فارغاً للبوت الافتراضي الجاهز)',
+                                  labelText: 'Bot Token (اتركه فارغاً للبوت الافتراضي)',
                                   hintText: 'افتراضي: Nayli Market Master Bot',
                                   border: OutlineInputBorder(),
                                   isDense: true,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextField(
-                                controller: _telegramChatIdController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Chat ID (معرف المحادثة)',
-                                  hintText: 'يكتشف تلقائياً',
-                                  border: OutlineInputBorder(),
-                                  isDense: true,
-                                ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _telegramChatIdController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Chat ID (معرف المحادثة)',
+                                        hintText: 'يكتشف تلقائياً',
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  IconButton(
+                                    tooltip: 'إرسال تجريبي',
+                                    icon: const Icon(Icons.mark_email_read_rounded, color: Colors.indigo),
+                                    onPressed: _sendTestTelegramMessage,
+                                  ),
+                                  IconButton(
+                                    tooltip: 'فتح البوت',
+                                    icon: const Icon(Icons.open_in_new_rounded, color: Colors.blueAccent),
+                                    onPressed: () => TelegramService.launchBotChat(),
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            IconButton(
-                              tooltip: 'إرسال رسالة تجريبية للتحقق',
-                              icon: const Icon(Icons.mark_email_read_rounded, color: Colors.indigo),
-                              onPressed: _sendTestTelegramMessage,
-                            ),
-                            IconButton(
-                              tooltip: 'فتح البوت في التلغرام',
-                              icon: const Icon(Icons.open_in_new_rounded, color: Colors.blueAccent),
-                              onPressed: () => TelegramService.launchBotChat(),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -381,10 +484,40 @@ class _BackupPageState extends State<BackupPage> {
                         ),
                         const SizedBox(height: 14),
 
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
+                        if (isWide)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _whatsAppPhoneController,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: const InputDecoration(
+                                    labelText: 'رقم هاتف صاحب المحل (WhatsApp)',
+                                    hintText: 'مثال: 0661234567 أو 0550123456',
+                                    prefixIcon: Icon(Icons.phone_iphone_rounded, color: Colors.green),
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade700,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                ),
+                                icon: const Icon(Icons.send_rounded, size: 16),
+                                label: const Text('تجربة إرسال للواتساب', style: TextStyle(fontWeight: FontWeight.bold)),
+                                onPressed: _sendTestWhatsAppMessage,
+                              ),
+                            ],
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              TextField(
                                 controller: _whatsAppPhoneController,
                                 keyboardType: TextInputType.phone,
                                 decoration: const InputDecoration(
@@ -395,20 +528,20 @@ class _BackupPageState extends State<BackupPage> {
                                   isDense: true,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green.shade700,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              const SizedBox(height: 10),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade700,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                icon: const Icon(Icons.send_rounded, size: 16),
+                                label: const Text('تجربة إرسال للواتساب', style: TextStyle(fontWeight: FontWeight.bold)),
+                                onPressed: _sendTestWhatsAppMessage,
                               ),
-                              icon: const Icon(Icons.send_rounded, size: 16),
-                              label: const Text('تجربة إرسال للواتساب', style: TextStyle(fontWeight: FontWeight.bold)),
-                              onPressed: _sendTestWhatsAppMessage,
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
                   ),

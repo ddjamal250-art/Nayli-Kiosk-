@@ -52,7 +52,7 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('إعدادات نمط التشغيل المتقدم (اختياري 100%) 🎛️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('إعدادات التشغيل المتقدمة 🎛️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(

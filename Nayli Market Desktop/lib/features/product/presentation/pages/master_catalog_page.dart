@@ -309,12 +309,14 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'مكتبة السلع الجزائرية (${allItems.length} منتج)',
+                  'مكتبة السلع الجزائرية (${allItems.length})',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 Text(
-                  'حدد السلع بـ (Checkboxes) واضغط إضافة جماعية للمحل',
+                  'حدد السلع واضغط إضافة جماعية للمحل',
                   style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

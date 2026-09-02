@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../../core/data/hive_database.dart';
 import '../../data/kiosk_service.dart';
 
 enum _KioskState { idle, found, notFound }
@@ -56,10 +57,15 @@ class _KioskPriceCheckerPageState extends State<KioskPriceCheckerPage>
 
     // تسجيل المستمع العتادي العام (Global Hardware Listener)
     HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
+
+    // فرض ملء الشاشة التام للكشك وإخفاء أشرطة النظام (Immersive Sticky Fullscreen)
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
   void dispose() {
+    // استعادة وضع الشاشة العادي عند الخروج
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     HardwareKeyboard.instance.removeHandler(_handleGlobalHardwareKey);
     _arrowAnimCtrl.dispose();
     _dismissTimer?.cancel();
@@ -168,11 +174,43 @@ class _KioskPriceCheckerPageState extends State<KioskPriceCheckerPage>
       _secretTapCount = 0;
       final auth = await SecurityPinHelper.authenticate(
         context,
-        title: '🔐 إغلاق شاشة الكشك للمدير',
-        message: 'أدخل رمز المشرف للخروج من وضع الكشك والعودة للبرنامج الرئيسي',
+        title: '🔐 خروج المشرف من وضع الكشك',
+        message: 'أدخل رمز المشرف العام للتحكم في هذا الجهاز أو تغيير دوره',
       );
       if (auth && mounted) {
-        context.pop();
+        final isKioskRole = HiveDatabase.settingsBox.get('device_role') == 'customer_kiosk';
+        if (isKioskRole) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('خيارات خروج المشرف من الكشك'),
+              content: const Text(
+                'هل تريد الخروج مؤقتاً، أم إلغاء وضع الكشك لهذا الجهاز وتحويله إلى كاشير عادي؟',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    context.go('/');
+                  },
+                  child: const Text('خروج مؤقت للرئيسية'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                  onPressed: () async {
+                    await HiveDatabase.settingsBox.put('device_role', 'cashier');
+                    Navigator.pop(ctx);
+                    SoundService.playSaveSuccess();
+                    context.go('/activation');
+                  },
+                  child: const Text('إلغاء وضع الكشك (تحويل لكاشير)', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          );
+        } else {
+          context.pop();
+        }
       }
     }
   }

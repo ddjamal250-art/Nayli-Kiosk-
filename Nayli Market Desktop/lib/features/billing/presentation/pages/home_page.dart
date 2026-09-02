@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/data/hive_database.dart';
+import '../../../../core/data/local_sync_client.dart';
+import '../../../../core/utils/license_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -265,27 +267,97 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     }
   }
 
-  void _handleLanPairingQr(String jsonStr) async {
+  bool _isLanPairingCode(String raw) {
+    final s = raw.trim();
+    // 1. JSON payload with pairing identifiers
+    if (s.startsWith('{' /*}*/) && (s.contains('nayli_pos') || s.contains('nayli_lan_pair') || s.contains('"action"') || s.contains('"ip"') || s.contains('pair'))) {
+      return true;
+    }
+    // 2. Direct keywords
+    if (s.contains('nayli_lan_pair') || s.contains('nayli_pos_pair') || s.contains('nayli_pos')) {
+      return true;
+    }
+    // 3. HTTP URL to LAN server with port 8080 or /api/
+    if ((s.startsWith('http://') || s.startsWith('https://')) && (s.contains(':8080') || s.contains('/api/status') || s.contains('/api/remote-cart'))) {
+      return true;
+    }
+    return false;
+  }
+
+  void _handleLanPairingQr(String rawCode) async {
     try {
-      final data = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final ip = data['ip']?.toString() ?? '';
-      final port = data['port']?.toString() ?? '8080';
-      final shopName = data['shopName']?.toString() ?? 'Nayli Market';
+      String ip = '';
+      String port = '8080';
+      String shopName = 'كاشير الكمبيوتر الرئيسي';
 
-      await HiveDatabase.settingsBox.put('master_pos_ip', ip);
-      await HiveDatabase.settingsBox.put('master_pos_port', port);
-      await HiveDatabase.settingsBox.put('shop_name', shopName);
+      final trimmed = rawCode.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        final data = jsonDecode(trimmed) as Map<String, dynamic>;
+        ip = data['ip']?.toString() ?? '';
+        port = data['port']?.toString() ?? '8080';
+        shopName = data['name']?.toString() ?? data['shopName']?.toString() ?? 'Nayli POS Master';
+      } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        final uri = Uri.tryParse(trimmed);
+        if (uri != null) {
+          ip = uri.host;
+          if (uri.port > 0) port = uri.port.toString();
+        }
+      } else if (trimmed.contains(':')) {
+        final parts = trimmed.replaceAll('nayli_lan_pair:', '').trim().split(':');
+        if (parts.isNotEmpty) ip = parts[0];
+        if (parts.length > 1) port = parts[1];
+      }
 
-      SoundService.playMemberCardScan();
-      if (mounted) {
-        context.showAppSnackBar(
-          '✅ تم ربط الهاتف بنجاح مع كاشير: $shopName ($ip:$port)',
-          icon: Icons.wifi_tethering_rounded,
-        );
+      ip = ip.trim();
+      port = port.trim();
+
+      if (ip.isNotEmpty && ip != '127.0.0.1') {
+        await HiveDatabase.settingsBox.put('master_pos_ip', ip);
+        await HiveDatabase.settingsBox.put('master_pos_port', port);
+        await HiveDatabase.settingsBox.put('sync_server_ip', '$ip:$port');
+        await HiveDatabase.settingsBox.put('shop_name', shopName);
+        await LocalSyncClient.setServerIp('$ip:$port');
+        await LicenseService.grantCompanionLicense(storeName: shopName, masterIp: ip);
+
+        SoundService.playSaveSuccess();
+        HapticFeedback.heavyImpact();
+
+        if (mounted) {
+          context.showAppSnackBar(
+            '🎉 تم التعرف على كود الربط بنجاح! متصل مع: $shopName ($ip:$port)',
+            icon: Icons.wifi_tethering_rounded,
+            backgroundColor: Colors.green.shade800,
+          );
+        }
+
+        // Test connection live in background and pull latest products automatically
+        try {
+          final isLive = await LocalSyncClient.testConnection('$ip:$port');
+          if (isLive && mounted) {
+            final count = await LocalSyncClient.pullProductsFromMaster();
+            if (count > 0 && mounted) {
+              context.read<ProductBloc>().add(LoadProducts());
+              context.showAppSnackBar(
+                '🔄 تم جلب وتحديث $count منتج من الكمبيوتر تلقائياً!',
+                icon: Icons.sync_rounded,
+                backgroundColor: Colors.teal.shade800,
+              );
+            }
+          }
+        } catch (_) {}
+      } else {
+        SoundService.playVoidWarning();
+        if (mounted) {
+          context.showAppSnackBar(
+            '⚠️ تعذر استخراج عنوان IP صحيح من كود الربط. يرجى مسح الكود من شاشة الكمبيوتر.',
+            isError: true,
+          );
+        }
       }
     } catch (e) {
+      SoundService.playVoidWarning();
       if (mounted) {
-        context.showAppSnackBar('❌ خطأ في قراءة رمز الاقتران', isError: true);
+        context.showAppSnackBar('❌ خطأ أثناء معالجة رمز الربط: $e', isError: true);
       }
     }
   }
@@ -346,7 +418,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
   }
 
   void _handleScannedBarcode(String code) {
-    if (code.contains('nayli_lan_pair')) {
+    if (_isLanPairingCode(code)) {
       _handleLanPairingQr(code);
       return;
     }
@@ -2203,7 +2275,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                             ),
                             icon: const Icon(Icons.send_rounded, size: 20),
                             label: const Text(
-                              'إرسال السلة للكاشير الرئيسي (F9) 📤',
+                              'إرسال السلة للكاشير الرئيسي 📤',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             onPressed: () => _sendCartToMasterPos(state),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/data/hive_database.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/utils/audit_log_service.dart';
+import '../../../../core/utils/sound_service.dart';
 import '../../../settings/presentation/pages/advanced_pos_settings_page.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import 'printer_selection_dialog.dart';
@@ -170,6 +174,30 @@ class PosHeaderToolbar extends StatelessWidget {
             onPressed: () => context.push('/shifts'),
           ),
           IconButton(
+            tooltip: 'إدارة الموارد البشرية والرواتب (HR & Paie)',
+            icon: const Icon(Icons.people_alt_rounded, color: Colors.teal),
+            onPressed: () => context.push('/staff-management'),
+          ),
+          IconButton(
+            tooltip: 'نداء المشرف العام للمساعدة 🔔',
+            icon: const Icon(Icons.notifications_active_rounded, color: Colors.redAccent),
+            onPressed: () {
+              AuditLogService.logEvent(
+                action: 'supervisor_call',
+                station: 'كاشير 01',
+                staffName: 'الكاشير',
+                details: 'طلب المشرف العام للمساعدة عند الصندوق',
+              );
+              SoundService.playSupervisorOverride();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('🔔 تم إرسال نداء المشرف العام! سيصلك الدعم فوراً.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            },
+          ),
+          IconButton(
             tooltip: context.tr('pos_master_catalog'),
             icon: const Icon(Icons.library_books_rounded, color: Colors.deepOrange),
             onPressed: () => context.push('/master-catalog'),
@@ -213,6 +241,21 @@ class PosHeaderToolbar extends StatelessWidget {
             tooltip: 'إعدادات التشغيل المتقدمة والموازين 🎛️',
             icon: const Icon(Icons.tune_rounded, color: Colors.blueGrey),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage())),
+          ),
+          IconButton(
+            tooltip: 'ملء الشاشة التام (Plein Écran) ⛶',
+            icon: const Icon(Icons.fullscreen_rounded, color: Colors.cyanAccent, size: 24),
+            onPressed: () {
+              final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
+              if (isFull) {
+                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                HiveDatabase.settingsBox.put('is_app_fullscreen', false);
+              } else {
+                SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                HiveDatabase.settingsBox.put('is_app_fullscreen', true);
+              }
+              SoundService.playKeyTap();
+            },
           ),
           IconButton(
             tooltip: context.tr('pos_settings'),

@@ -453,8 +453,8 @@ class _StockInPageState extends State<StockInPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('استلام السلع / أريفاج متقدم متعدد الوحدات 📦',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        title: const Text('استلام السلع (أريفاج) 📦',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -463,24 +463,18 @@ class _StockInPageState extends State<StockInPage> {
           onPressed: () => context.pop(),
         ),
         actions: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo.shade700,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            icon: const Icon(Icons.document_scanner_rounded, size: 16),
-            label: const Text('مسح وصل المورد (OCR) 📸', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+          IconButton(
+            tooltip: 'مسح وصل المورد (OCR) 📸',
+            icon: const Icon(Icons.document_scanner_rounded, color: Colors.indigo),
             onPressed: _scanSupplierPaperInvoice,
           ),
-          const SizedBox(width: 6),
           IconButton(
             tooltip: 'توليد باركود داخلي للسلع الرمادية',
             icon: const Icon(Icons.qr_code_2_rounded, color: Colors.teal),
             onPressed: _generateGreyProductBarcode,
           ),
           IconButton(
+            tooltip: _isCameraOn ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا',
             icon: Icon(_isCameraOn ? Icons.videocam : Icons.videocam_off, color: Colors.indigo),
             onPressed: () => setState(() => _isCameraOn = !_isCameraOn),
           ),

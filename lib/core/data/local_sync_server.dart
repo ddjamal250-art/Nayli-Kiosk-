@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'hive_database.dart';
 import '../../features/product/data/models/product_model.dart';
-import '../../features/billing/data/kiosk_service.dart';
 import '../utils/barcode_normalizer.dart';
+import '../utils/license_service.dart';
 
 class RemoteCartItem {
   final String barcode;
@@ -237,12 +237,23 @@ class LocalSyncServer {
 
   static Future<void> _handleStatus(HttpRequest request) async {
     final ip = await getLocalIp();
+    final isActivated = LicenseService.isActivated();
+    final licenseType = HiveDatabase.settingsBox.get('app_license_type', defaultValue: 'unlicensed') as String;
+    String shopName = 'Nayli Market';
+    if (HiveDatabase.shopBox.isNotEmpty) {
+      final shop = HiveDatabase.shopBox.getAt(0);
+      if (shop != null && shop.name.isNotEmpty) shopName = shop.name;
+    }
+
     final data = {
       'status': 'online',
       'server': 'Nayli Market Master Server',
       'version': '2.0.0',
       'ip': ip,
       'port': port,
+      'isActivated': isActivated,
+      'licenseType': licenseType,
+      'shopName': shopName,
       'pendingCartsCount': pendingRemoteCarts.length,
       'timestamp': DateTime.now().toIso8601String(),
     };
@@ -410,8 +421,27 @@ class LocalSyncServer {
     await request.response.close();
   }
 
+  // Active Kiosk Terminals Tracking (Separate from Cashiers)
+  static final Map<String, Map<String, dynamic>> activeKiosks = {};
+
   static Future<void> _handleKioskLookup(HttpRequest request) async {
     final barcode = request.uri.queryParameters['barcode'] ?? '';
+    final clientIp = request.connectionInfo?.remoteAddress.address ?? '127.0.0.1';
+    final kioskId = request.uri.queryParameters['kioskId'] ?? 'kiosk_${clientIp.replaceAll(".", "_")}';
+    final kioskName = request.uri.queryParameters['kioskName'] ?? 'كشك فاحص الأسعار';
+
+    // Register active kiosk without consuming cashier quotas
+    final existing = activeKiosks[kioskId];
+    final totalScans = (existing?['totalScans'] as int? ?? 0) + (barcode.isNotEmpty ? 1 : 0);
+    activeKiosks[kioskId] = {
+      'id': kioskId,
+      'name': kioskName,
+      'ip': clientIp,
+      'lastSeen': DateTime.now(),
+      'totalScans': totalScans,
+      'status': 'online',
+    };
+
     final result = KioskService.lookupBarcode(barcode);
     request.response.headers.contentType = ContentType.json;
     request.response.write(jsonEncode(result.toJson()));
@@ -480,7 +510,12 @@ class LocalSyncServer {
 <body>
   <header>
     <div class="logo">🛍️ <span>Nayli Price Checker</span></div>
-    <div class="status-badge">● متصل بالسيرفر المحلي</div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="toggleFullscreen()" style="background:#4F46E5; color:white; border:none; padding:7px 14px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
+        ⛶ ملء الشاشة
+      </button>
+      <div class="status-badge">● متصل بالسيرفر المحلي</div>
+    </div>
   </header>
 
   <main>
@@ -520,6 +555,20 @@ class LocalSyncServer {
     let intervalId = null;
     let buffer = "";
     let lastKeyTime = Date.now();
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    document.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    }, { once: true });
 
     function playChime(freq = 600, duration = 0.15) {
       try {

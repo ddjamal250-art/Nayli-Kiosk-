@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_server.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
@@ -95,9 +96,74 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
     }
   }
 
+  void _showEditKioskUrlDialog() {
+    final customUrl = HiveDatabase.settingsBox.get('kiosk_custom_url', defaultValue: '') as String;
+    final defaultUrl = 'http://$_serverIp:$_serverPort/kiosk';
+    final ctrl = TextEditingController(text: customUrl.isNotEmpty ? customUrl : defaultUrl);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.edit_link_rounded, color: Colors.indigo),
+            SizedBox(width: 8),
+            Text('تعديل وتخصيص رابط الكشك 🌐', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'يمكنك تخصيص عنوان IP أو اسم النطاق أو المنفذ ليتطابق مع شبكة السوبرماركت لديك:',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: ctrl,
+              decoration: const InputDecoration(
+                labelText: 'رابط الكشك (Kiosk URL)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.language_rounded),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await HiveDatabase.settingsBox.delete('kiosk_custom_url');
+              Navigator.pop(ctx);
+              setState(() {});
+              SnackbarHelper.showSuccess(context, 'تمت استعادة الرابط الافتراضي التلقائي');
+            },
+            child: const Text('استعادة الافتراضي', style: TextStyle(color: Colors.red)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5)),
+            onPressed: () async {
+              final newUrl = ctrl.text.trim();
+              if (newUrl.isNotEmpty) {
+                await HiveDatabase.settingsBox.put('kiosk_custom_url', newUrl);
+                setState(() {});
+                Navigator.pop(ctx);
+                SoundService.playSaveSuccess();
+                SnackbarHelper.showSuccess(context, '✅ تم تحديث رابط الكشك وكود QR بنجاح!');
+              }
+            },
+            child: const Text('حفظ الرابط 💾', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final kioskWebUrl = 'http://' + _serverIp + ':' + _serverPort.toString() + '/kiosk';
+    final customUrl = HiveDatabase.settingsBox.get('kiosk_custom_url', defaultValue: '') as String;
+    final kioskWebUrl = customUrl.isNotEmpty ? customUrl : ('http://' + _serverIp + ':' + _serverPort.toString() + '/kiosk');
 
     return Scaffold(
       appBar: AppBar(
@@ -194,6 +260,11 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
                                   ),
                                 ),
                                 IconButton(
+                                  icon: const Icon(Icons.edit_rounded, color: Color(0xFF38BDF8), size: 18),
+                                  tooltip: 'تعديل الرابط يدوياً ✍️',
+                                  onPressed: _showEditKioskUrlDialog,
+                                ),
+                                IconButton(
                                   icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
                                   tooltip: 'نسخ الرابط',
                                   onPressed: () {
@@ -258,6 +329,11 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
                                           fontFamily: 'monospace',
                                         ),
                                       ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_rounded, color: Color(0xFF38BDF8), size: 20),
+                                      tooltip: 'تعديل الرابط يدوياً ✍️',
+                                      onPressed: _showEditKioskUrlDialog,
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 20),

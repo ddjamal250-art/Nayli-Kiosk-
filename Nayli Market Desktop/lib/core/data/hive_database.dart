@@ -16,6 +16,9 @@ class HiveDatabase {
   static const String shiftsBoxName = 'cashier_shifts';
   static const String lossesBoxName = 'product_losses';
   static const String commercialDocsBoxName = 'commercial_documents_box';
+  static const String staffBoxName = 'staff_members_box';
+  static const String payrollBoxName = 'payroll_records_box';
+  static const String attendanceBoxName = 'attendance_records_box';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -38,6 +41,9 @@ class HiveDatabase {
     await Hive.openBox(shiftsBoxName); // Box for cashier shifts / fond de caisse
     await Hive.openBox(lossesBoxName); // Box for spoiled, expired & broken product losses
     await Hive.openBox(commercialDocsBoxName); // Box for universal commercial documents (Devis, BL, Factures, Versements, Bons de Route)
+    await Hive.openBox(staffBoxName); // Enterprise staff & employee profiles
+    await Hive.openBox(payrollBoxName); // Staff payroll, salary advances & bonuses
+    await Hive.openBox(attendanceBoxName); // Staff attendance & pointage
   }
 
   static Box<ProductModel> get productBox =>
@@ -54,4 +60,7 @@ class HiveDatabase {
   static Box get shiftsBox => Hive.box(shiftsBoxName);
   static Box get lossesBox => Hive.box(lossesBoxName);
   static Box get commercialDocsBox => Hive.box(commercialDocsBoxName);
+  static Box get staffBox => Hive.box(staffBoxName);
+  static Box get payrollBox => Hive.box(payrollBoxName);
+  static Box get attendanceBox => Hive.box(attendanceBoxName);
 }

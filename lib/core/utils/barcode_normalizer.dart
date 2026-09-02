@@ -8,6 +8,30 @@ class BarcodeNormalizer {
     return barcode.trim().replaceAll(RegExp(r'\s+'), '');
   }
 
+  /// يقوم بتحويل رموز لوحة المفاتيح الفرنسية (AZERTY) إلى أرقامها الحقيقية
+  /// عند استخدام ماسح باركود في نظام ويندوز مضبوط على لغة فرنسية
+  static String normalizeAzertyInput(String raw) {
+    if (raw.isEmpty) return raw;
+    const azertyMap = {
+      '&': '1',
+      'é': '2',
+      '"': '3',
+      '\'': '4',
+      '(': '5',
+      '-': '6',
+      'è': '7',
+      '_': '8',
+      'ç': '9',
+      'à': '0',
+    };
+    final buffer = StringBuffer();
+    for (int i = 0; i < raw.length; i++) {
+      final char = raw[i];
+      buffer.write(azertyMap[char] ?? char);
+    }
+    return buffer.toString();
+  }
+
   /// إزالة الأصفار البادئة من الباركود
   static String stripLeadingZeros(String code) {
     final cleaned = clean(code);

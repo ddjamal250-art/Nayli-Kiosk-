@@ -24,6 +24,7 @@ import '../bloc/printer_event.dart';
 import '../bloc/printer_state.dart';
 import 'advanced_pos_settings_page.dart';
 import '../widgets/activation_modal.dart';
+import '../widgets/pc_douchette_activation_modal.dart';
 import '../widgets/device_pairing_modal.dart';
 import '../../../billing/presentation/widgets/printer_selection_dialog.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
@@ -661,6 +662,21 @@ class _SettingsPageState extends State<SettingsPage> {
           );
         },
       ),
+      if (isActivated) ...[
+        _buildDivider(),
+        _buildTile(
+          icon: Icons.qr_code_scanner_rounded,
+          iconColor: const Color(0xFF0284C7),
+          title: 'تفعيل برنامج الحاسوب بقارئ الباركود (Douchette) 🔫 📲',
+          subtitle: 'عرض رمز الاستجابة السريعة لتفعيل حاسوب الكاشير فوراً عبر الماسح',
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: const Color(0xFF0284C7).withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+            child: const Text('كاشير 🖥️', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 11)),
+          ),
+          onTap: () => PcDouchetteActivationModal.show(context),
+        ),
+      ],
       _buildDivider(),
       _buildTile(
         icon: Icons.info_outline_rounded,

@@ -231,6 +231,19 @@ class AppLocalizations {
       'edit_product': 'تعديل المنتج',
       'export_excel': 'تصدير كملف Excel (CSV)',
       'exported_success': 'تم تصدير الملف بنجاح!',
+
+      // HR, Staff & Payroll
+      'hr_staff_management': 'إدارة الموظفين والموارد البشرية',
+      'hr_payroll': 'كشوف الرواتب والأجور',
+      'hr_advances': 'السلفيات والتسبيقات',
+      'hr_base_salary': 'الراتب الأساسي',
+      'hr_attendance_pointage': 'سجل الحضور والانصراف',
+      'hr_department': 'القسم / الوظيفة',
+      'pos_station_radar': 'رادار الكاشيرات الحية',
+      'call_supervisor': 'نداء المشرف العام للمساعدة 🔔',
+      'blind_shift_close': 'إغلاق الصندوق الأعمى',
+      'cash_denominations': 'حاسبة الفئات النقدية الجزائرية 🇩🇿',
+      'unique_pin_error': 'هذا الرمز السري مستخدم مسبقاً لعامل آخر!',
     },
     'fr': {
       // General & Navigation
@@ -450,6 +463,19 @@ class AppLocalizations {
       'edit_product': 'Modifier le Produit',
       'export_excel': 'Exporter vers Excel (CSV)',
       'exported_success': 'Exportation réussie !',
+
+      // HR, Staff & Payroll
+      'hr_staff_management': 'Gestion du Personnel & RH',
+      'hr_payroll': 'Gestion de la Paie & Salaires',
+      'hr_advances': 'Avances sur Salaire',
+      'hr_base_salary': 'Salaire de Base',
+      'hr_attendance_pointage': 'Pointage & Présence',
+      'hr_department': 'Département / Poste',
+      'pos_station_radar': 'Radar des Caisses en Direct',
+      'call_supervisor': 'Appel Superviseur 🔔',
+      'blind_shift_close': 'Clôture de Caisse à l\'Aveugle',
+      'cash_denominations': 'Calculateur de Billets DZD',
+      'unique_pin_error': 'Ce code PIN est déjà utilisé par un autre employé !',
     },
     'en': {
       // General & Navigation
@@ -669,6 +695,19 @@ class AppLocalizations {
       'edit_product': 'Edit Product',
       'export_excel': 'Export to Excel (CSV)',
       'exported_success': 'Exported successfully!',
+
+      // HR, Staff & Payroll
+      'hr_staff_management': 'Staff & HR Management',
+      'hr_payroll': 'Payroll & Compensation',
+      'hr_advances': 'Salary Advances',
+      'hr_base_salary': 'Base Salary',
+      'hr_attendance_pointage': 'Attendance Tracking',
+      'hr_department': 'Department / Role',
+      'pos_station_radar': 'Live Registers Radar',
+      'call_supervisor': 'Call Supervisor 🔔',
+      'blind_shift_close': 'Blind Shift Close',
+      'cash_denominations': 'Cash Denomination Calculator',
+      'unique_pin_error': 'This PIN is already used by another employee!',
     },
   };
 

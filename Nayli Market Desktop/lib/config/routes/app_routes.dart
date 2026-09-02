@@ -21,6 +21,7 @@ import '../../features/product/presentation/pages/new_supplier_invoice_page.dart
 import '../../features/customer/presentation/pages/customers_page.dart';
 import '../../features/product/domain/entities/product.dart';
 import '../../core/utils/license_service.dart';
+import '../../core/data/hive_database.dart';
 
 import '../../features/product/presentation/pages/shelf_labels_page.dart';
 import '../../features/product/presentation/pages/inventory_audit_page.dart';
@@ -31,6 +32,7 @@ import '../../features/billing/presentation/pages/desktop_pos_page.dart';
 import '../../features/documents/presentation/pages/documents_hub_page.dart';
 import '../../features/backup/presentation/pages/backup_page.dart';
 import '../../features/shifts/presentation/pages/shifts_page.dart';
+import '../../features/shifts/presentation/pages/staff_management_page.dart';
 import '../../features/settings/presentation/pages/lan_sync_settings_page.dart';
 import '../../features/billing/presentation/pages/kiosk_price_checker_page.dart';
 import '../../features/settings/presentation/pages/kiosk_settings_page.dart';
@@ -42,8 +44,26 @@ final router = GoRouter(
   redirect: (context, state) {
     final isActivated = LicenseService.isActivated();
     final isGoingToActivation = state.matchedLocation == '/activation';
+    final isGoingToScanner = state.matchedLocation == '/scanner';
+    final isKioskRoute = state.matchedLocation == '/kiosk' || state.matchedLocation == '/kiosk-settings';
+    
+    // Check if device is configured as a dedicated Customer Price-Checker Kiosk terminal
+    final isKioskDevice = HiveDatabase.settingsBox.get('device_role', defaultValue: 'cashier') == 'customer_kiosk';
 
-    if (!isActivated && !isGoingToActivation) {
+    // Dedicated Kiosk terminals are free and unlimited; boot straight into /kiosk
+    if (isKioskDevice) {
+      if (!isKioskRoute && !isGoingToActivation) {
+        return '/kiosk';
+      }
+      return null;
+    }
+
+    // Direct access to /kiosk is always permitted without consuming cashier quota
+    if (isKioskRoute) {
+      return null;
+    }
+
+    if (!isActivated && !isGoingToActivation && !isGoingToScanner) {
       return '/activation';
     }
     if (isActivated && isGoingToActivation) {
@@ -126,6 +146,10 @@ final router = GoRouter(
     GoRoute(
       path: '/shifts',
       builder: (context, state) => const ShiftsPage(),
+    ),
+    GoRoute(
+      path: '/staff-management',
+      builder: (context, state) => const StaffManagementPage(),
     ),
     GoRoute(
       path: '/products',

@@ -247,17 +247,20 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
     final isDesktop = MediaQuery.of(context).size.width >= 800;
     final dateFormat = DateFormat('yyyy/MM/dd');
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth >= 768;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_stories_rounded, color: Colors.indigo, size: 24),
-            SizedBox(width: 8),
+            const Icon(Icons.auto_stories_rounded, color: Colors.indigo, size: 22),
+            const SizedBox(width: 6),
             Text(
-              'مركز الوثائق والفواتير التجارية الشامل 📑',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              isWide ? 'مركز الوثائق والفواتير التجارية الشامل 📑' : 'الوثائق والفواتير 📑',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
         ),
@@ -274,8 +277,11 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
             style: TextButton.styleFrom(
               foregroundColor: _isArchivedView ? Colors.deepOrange : Colors.grey.shade700,
             ),
-            icon: Icon(_isArchivedView ? Icons.inventory_2 : Icons.archive_outlined, size: 20),
-            label: Text(_isArchivedView ? 'العودة للوثائق النشطة' : 'الأرشيف 📦', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            icon: Icon(_isArchivedView ? Icons.inventory_2 : Icons.archive_outlined, size: 18),
+            label: Text(
+              _isArchivedView ? (isWide ? 'العودة للوثائق النشطة' : 'النشطة') : (isWide ? 'الأرشيف 📦' : 'الأرشيف'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
             onPressed: () {
               setState(() {
                 _isArchivedView = !_isArchivedView;
@@ -284,7 +290,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
               SoundService.playTabSwitch();
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: Column(
@@ -292,17 +298,96 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
           // Top Filter Ribbon
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               children: [
-                // Search Bar & Create Button
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
+                // Search Bar & Action Buttons (Responsive)
+                if (isWide)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchCtrl,
+                          decoration: InputDecoration(
+                            hintText: 'بحث برقم الوثيقة، اسم الزبون، أو رقم الهاتف...',
+                            prefixIcon: const Icon(Icons.search, size: 20),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 18),
+                                    onPressed: () {
+                                      _searchCtrl.clear();
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _loadDocuments();
+                                      });
+                                    },
+                                  )
+                                : null,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            isDense: true,
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                          ),
+                          onChanged: (val) {
+                            setState(() {
+                              _searchQuery = val.trim();
+                              _loadDocuments();
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal.shade700,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 18),
+                        label: const Text(
+                          'مسح وصل ورقي (OCR) 📸',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        onPressed: _scanPaperReceipt,
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueGrey.shade800,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 18),
+                        label: const Text(
+                          'وصولات الكاشير (Duplicata) 🧾',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        onPressed: () => _showPosTicketsArchiveModal(context),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.add_circle, color: Colors.white, size: 20),
+                        label: const Text(
+                          'إنشاء وثيقة جديدة ➕',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        onPressed: () => _openEditor(),
+                      ),
+                    ],
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
                         controller: _searchCtrl,
                         decoration: InputDecoration(
-                          hintText: 'بحث برقم الوثيقة، اسم الزبون، أو رقم الهاتف...',
+                          hintText: 'بحث برقم الوثيقة، اسم الزبون...',
                           prefixIcon: const Icon(Icons.search, size: 20),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
@@ -320,6 +405,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                           isDense: true,
                           filled: true,
                           fillColor: Colors.grey.shade50,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         ),
                         onChanged: (val) {
                           setState(() {
@@ -328,51 +414,57 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                           });
                         },
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal.shade700,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      const SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.indigo,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.add_circle, color: Colors.white, size: 16),
+                              label: const Text(
+                                'إنشاء وثيقة ➕',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              onPressed: () => _openEditor(),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.teal.shade700,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 16),
+                              label: const Text(
+                                'مسح وصل (OCR) 📸',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              onPressed: _scanPaperReceipt,
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueGrey.shade800,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 16),
+                              label: const Text(
+                                'وصولات الكاشير 🧾',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              onPressed: () => _showPosTicketsArchiveModal(context),
+                            ),
+                          ],
+                        ),
                       ),
-                      icon: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 18),
-                      label: const Text(
-                        'مسح وصل ورقي (OCR) 📸',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      onPressed: _scanPaperReceipt,
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey.shade800,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      icon: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 18),
-                      label: const Text(
-                        'وصولات الكاشير (Duplicata) 🧾',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      onPressed: () => _showPosTicketsArchiveModal(context),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      icon: const Icon(Icons.add_circle, color: Colors.white, size: 20),
-                      label: const Text(
-                        'إنشاء وثيقة جديدة ➕',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      onPressed: () => _openEditor(),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
                 const SizedBox(height: 10),
 

@@ -131,8 +131,18 @@ class OnlineLicenseService {
     );
 
     try {
+      final cleanPhone = phone.trim();
+      final cleanStore = storeName.trim();
+      final deviceType = Platform.isWindows ? 'Desktop PC' : (Platform.isAndroid ? 'Android Phone' : 'Device');
+
       final scriptUrl = HiveDatabase.settingsBox.get('google_license_script_url', defaultValue: defaultScriptUrl) as String;
-      final uri = Uri.parse('$scriptUrl?deviceId=${Uri.encodeComponent(deviceId)}');
+      final uri = Uri.parse(
+        '$scriptUrl?deviceId=${Uri.encodeComponent(deviceId)}'
+        '&storeName=${Uri.encodeComponent(cleanStore)}'
+        '&phone=${Uri.encodeComponent(cleanPhone)}'
+        '&deviceType=${Uri.encodeComponent(deviceType)}'
+        '&action=check_or_join',
+      );
 
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
 
@@ -146,6 +156,7 @@ class OnlineLicenseService {
 
           await HiveDatabase.settingsBox.put('store_max_devices_quota', maxDevices);
           await HiveDatabase.settingsBox.put('licensed_store_name', serverStoreName);
+          await HiveDatabase.settingsBox.put('licensed_phone', cleanPhone);
 
           if (plan.startsWith('P')) {
             await LicenseService.grantPermanentLicense();
@@ -166,6 +177,11 @@ class OnlineLicenseService {
             plan: plan,
             storeName: serverStoreName,
             maxDevices: maxDevices,
+          );
+        } else if (data is Map && data['error'] == 'quota_exceeded') {
+          return OnlineActivationResult(
+            isSuccess: false,
+            message: '❌ تم استهلاك كامل حصة الأجهزة المسموح بها لهذا المتجر. يرجى التواصل مع المطور لترقية الباقة.',
           );
         } else {
           return OnlineActivationResult(

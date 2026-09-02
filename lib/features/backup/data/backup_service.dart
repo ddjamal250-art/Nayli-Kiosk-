@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../core/data/hive_database.dart';
 import '../../../core/data/local_sync_server.dart';
+import '../../../core/utils/telegram_service.dart';
 import '../../documents/data/commercial_document_service.dart';
 
 class BackupSnapshotInfo {
@@ -198,6 +199,25 @@ class BackupService {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Telegram backup failed: $e');
+      return false;
+    }
+  }
+
+  /// Performs an automatic cloud backup to Telegram if credentials are set
+  static Future<bool> performAutoCloudBackup({String? note}) async {
+    try {
+      final token = TelegramService.getBotToken();
+      final chatId = TelegramService.getChatId();
+      if (token.isEmpty || chatId.isEmpty) return false;
+
+      final file = await createFullBackupZip(customNote: note ?? 'نسخ سحابي آلي تلقائي');
+      return await sendToTelegramBot(
+        backupFile: file,
+        botToken: token,
+        chatId: chatId,
+      );
+    } catch (e) {
+      debugPrint('performAutoCloudBackup error: $e');
       return false;
     }
   }

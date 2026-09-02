@@ -410,7 +410,7 @@ class _LossesPageState extends State<LossesPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('سجل التلف والاهتلاك والتعويضات 🗑️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        title: const Text('سجل التوالف والكسر 🗑️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0.5,

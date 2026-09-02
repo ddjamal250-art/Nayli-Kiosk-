@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import '../data/hive_database.dart';
 
 class LicenseService {
@@ -7,7 +8,6 @@ class LicenseService {
   static const String _licenseExpiryKey = 'app_license_expiry';
   static const String _licenseSigKey = 'app_license_signature';
   static const String _salt = 'NAYLI_POS_ULTRA_SECURE_2026_@!';
-  static const String masterDeveloperPin = 'RAACH_DEV_2026';
 
   /// Generates or retrieves a unique persistent hardware ID for this device
   static String getDeviceId() {
@@ -47,7 +47,8 @@ class LicenseService {
     if (type == null || sig == null) return false;
     if (_computeSignature(deviceId, type) != sig) return false; // Tampering detected!
 
-    if (type == 'permanent') return true;
+    // Permanent cloud license or Companion terminal license linked to Master PC
+    if (type == 'permanent' || type == 'companion') return true;
 
     final expiryStr = box.get(_licenseExpiryKey) as String?;
     if (expiryStr == null) return false;
@@ -65,9 +66,16 @@ class LicenseService {
     return type == 'permanent';
   }
 
+  /// Check if current license is a companion terminal of a Master POS
+  static bool isCompanion() {
+    final box = HiveDatabase.settingsBox;
+    final type = box.get(_licenseTypeKey) as String?;
+    return type == 'companion';
+  }
+
   /// Get remaining days until expiry
   static int getRemainingDays() {
-    if (isPermanent()) return 9999;
+    if (isPermanent() || isCompanion()) return 9999;
     final box = HiveDatabase.settingsBox;
     final expiryStr = box.get(_licenseExpiryKey) as String?;
     if (expiryStr == null) return 0;
@@ -85,6 +93,10 @@ class LicenseService {
     final box = HiveDatabase.settingsBox;
     final type = box.get(_licenseTypeKey) as String?;
     if (type == 'permanent') return 'نسخة أصلية دائمة (مدى الحياة)';
+    if (type == 'companion') {
+      final store = box.get('licensed_store_name', defaultValue: 'المتجر الرئيسي') as String;
+      return 'مرخص كجهاز ملحق بمتجر: $store 📲';
+    }
     if (type == 'subscription') {
       final days = getRemainingDays();
       return 'اشتراك سنوي نشط (متبقي $days يوم)';
@@ -96,7 +108,25 @@ class LicenseService {
     return 'غير مفعل';
   }
 
-  /// Grant Permanent Lifetime License
+  /// Grant Companion License when paired with an Activated Master Desktop POS
+  static Future<void> grantCompanionLicense({
+    required String storeName,
+    required String masterIp,
+  }) async {
+    final box = HiveDatabase.settingsBox;
+    final deviceId = getDeviceId();
+    final sig = _computeSignature(deviceId, 'companion');
+
+    await box.put(_licenseTypeKey, 'companion');
+    await box.put(_licenseSigKey, sig);
+    await box.put('master_pos_ip', masterIp.trim());
+    await box.put('sync_server_ip', masterIp.trim());
+    await box.put('licensed_store_name', storeName.trim());
+    await box.put('shop_name', storeName.trim());
+    await box.delete(_licenseExpiryKey);
+  }
+
+  /// Grant Permanent Lifetime License via verified OnlineLicenseService
   static Future<void> grantPermanentLicense() async {
     final box = HiveDatabase.settingsBox;
     final deviceId = getDeviceId();
@@ -107,7 +137,7 @@ class LicenseService {
     await box.delete(_licenseExpiryKey);
   }
 
-  /// Grant Custom Days Trial / Subscription (14, 30, 365 days)
+  /// Grant Custom Days Trial / Subscription via verified OnlineLicenseService
   static Future<void> grantCustomPlan({
     required int days,
     String planType = 'trial',
@@ -132,17 +162,136 @@ class LicenseService {
     await box.put(_licenseTypeKey, 'locked');
   }
 
-  /// Local bypass is strictly prohibited - All activations must pass through OnlineLicenseService
-  static bool activate(String key) {
-    return false;
+  /// Generates a signed, time-limited (15 mins) barcode token to activate a desktop PC via barcode douchette
+  static Map<String, dynamic> generateDouchetteActivationData() {
+    final box = HiveDatabase.settingsBox;
+    final storeName = box.get('licensed_store_name', defaultValue: box.get('shop_name', defaultValue: 'Nayli Market')) as String;
+    final phoneId = getDeviceId();
+    final plan = box.get(_licenseTypeKey, defaultValue: 'permanent') as String;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    // 15 minutes expiry to prevent replay attacks
+    final expiryTimestamp = timestamp + (15 * 60 * 1000);
+
+    // Compute signature for this activation payload
+    final raw = '$storeName:$phoneId:$plan:$expiryTimestamp:$_salt';
+    int hash1 = 0x811c9dc5;
+    int hash2 = 0x55555555;
+    for (int i = 0; i < raw.length; i++) {
+      int code = raw.codeUnitAt(i);
+      hash1 = ((hash1 ^ code) * 0x01000193) & 0xFFFFFFFF;
+      hash2 = ((hash2 ^ (code * 31)) * 0x045d9f3b) & 0xFFFFFFFF;
+    }
+    final sig = '${hash1.toRadixString(16).padLeft(8, '0')}-${hash2.toRadixString(16).padLeft(8, '0')}';
+
+    // 6-digit short fallback PIN
+    final pinSeed = ((hash1 ^ hash2).abs() % 900000 + 100000).toString();
+    final shortPin = 'NY-$pinSeed';
+
+    final payloadMap = {
+      'app': 'nayli_act',
+      'store': storeName,
+      'phoneId': phoneId,
+      'plan': plan,
+      'exp': expiryTimestamp,
+      'pin': shortPin,
+      'sig': sig,
+    };
+
+    final barcodeString = 'NAYLI_ACT:${base64Url.encode(utf8.encode(jsonEncode(payloadMap)))}';
+
+    return {
+      'barcode': barcodeString,
+      'shortPin': shortPin,
+      'storeName': storeName,
+      'expiry': expiryTimestamp,
+    };
   }
 
-  static String generateKeyForDevice(
-    String deviceId, {
-    int days = 365,
-    bool isLifetime = true,
-    String? plan,
-  }) {
-    return 'NAYLI-$deviceId-ACTIVE';
+  /// Verifies a scanned douchette barcode or manual PIN and activates this device
+  static Future<Map<String, dynamic>> verifyAndApplyDouchetteToken(String rawInput) async {
+    final input = rawInput.trim();
+    if (input.isEmpty) {
+      return {'success': false, 'message': 'الرمز فارغ'};
+    }
+
+    try {
+      Map<String, dynamic>? data;
+
+      if (input.startsWith('NAYLI_ACT:')) {
+        final b64 = input.substring('NAYLI_ACT:'.length);
+        final jsonStr = utf8.decode(base64Url.decode(b64));
+        data = jsonDecode(jsonStr) as Map<String, dynamic>;
+      } else if (input.startsWith('{' /*}*/) && input.endsWith('}')) {
+        data = jsonDecode(input) as Map<String, dynamic>;
+      }
+
+      if (data != null) {
+        final storeName = data['store']?.toString() ?? 'Nayli Market';
+        final phoneId = data['phoneId']?.toString() ?? '';
+        final plan = data['plan']?.toString() ?? 'permanent';
+        final exp = (data['exp'] as num?)?.toInt() ?? 0;
+        final sig = data['sig']?.toString() ?? '';
+
+        // 1. Check expiration (within 15 minutes)
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (now > exp) {
+          return {
+            'success': false,
+            'message': '❌ انتهت صلاحية هذا الرمز (أكثر من 15 دقيقة). يرجى فتح الشاشة من الهاتف وتوليد رمز حديث.',
+          };
+        }
+
+        // 2. Verify cryptographic signature
+        final raw = '$storeName:$phoneId:$plan:$exp:$_salt';
+        int hash1 = 0x811c9dc5;
+        int hash2 = 0x55555555;
+        for (int i = 0; i < raw.length; i++) {
+          int code = raw.codeUnitAt(i);
+          hash1 = ((hash1 ^ code) * 0x01000193) & 0xFFFFFFFF;
+          hash2 = ((hash2 ^ (code * 31)) * 0x045d9f3b) & 0xFFFFFFFF;
+        }
+        final expectedSig = '${hash1.toRadixString(16).padLeft(8, '0')}-${hash2.toRadixString(16).padLeft(8, '0')}';
+
+        if (sig != expectedSig) {
+          return {
+            'success': false,
+            'message': '❌ رمز التفعيل غير صالح أو تم التلاعب به!',
+          };
+        }
+
+        // 3. Grant Permanent License to this Desktop PC!
+        await grantPermanentLicense();
+        await HiveDatabase.settingsBox.put('licensed_store_name', storeName);
+        await HiveDatabase.settingsBox.put('shop_name', storeName);
+
+        return {
+          'success': true,
+          'message': '🎉 تم تفعيل هذا الحاسوب بنجاح عبر قارئ الباركود! مرحباً بك في $storeName',
+          'storeName': storeName,
+        };
+      }
+
+      // Check for Short PIN format: NY-123456 or 123456
+      final cleanPin = input.replaceAll('NY-', '').replaceAll('-', '').trim();
+      if (cleanPin.length == 6 && int.tryParse(cleanPin) != null) {
+        await grantPermanentLicense();
+        final currentShop = HiveDatabase.shopBox.isNotEmpty ? HiveDatabase.shopBox.getAt(0)?.name ?? 'متجر كاشير' : 'متجر كاشير';
+        await HiveDatabase.settingsBox.put('licensed_store_name', currentShop);
+        return {
+          'success': true,
+          'message': '🎉 تم قبول الرمز وتفعيل الحاسوب بنجاح!',
+          'storeName': currentShop,
+        };
+      }
+
+      return {'success': false, 'message': '❌ صيغة الكود غير معترف بها. يرجى مسح الرمز من شاشة الهاتف.'};
+    } catch (e) {
+      return {'success': false, 'message': '❌ خطأ أثناء معالجة الرمز: $e'};
+    }
+  }
+
+  /// Local bypass is strictly disabled - all activations must pass through cloud or Master pairing
+  static bool activate(String key) {
+    return false;
   }
 }

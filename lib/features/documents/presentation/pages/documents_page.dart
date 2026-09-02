@@ -157,18 +157,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: const Row(
-          children: [
-            Icon(Icons.description_outlined, color: Colors.teal),
-            SizedBox(width: 8),
-            Text('الوثائق التجارية والفواتير (Devis, BC, BL, Factures)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
+        title: const Text('الوثائق والفواتير التجارية 📑', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        centerTitle: true,
         actions: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, padding: const EdgeInsets.symmetric(horizontal: 16)),
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('إنشاء مستند جديد (+)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          IconButton(
+            tooltip: 'إنشاء مستند جديد (+)',
+            icon: const Icon(Icons.add_circle, color: Colors.teal, size: 28),
             onPressed: () async {
               final result = await Navigator.push(
                 context,
@@ -179,64 +173,45 @@ class _DocumentsPageState extends State<DocumentsPage> {
               }
             },
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Top Statistics Row (Dolisoft Inspired)
+                // Top Statistics Row (Scrollable on mobile)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   color: Colors.white,
-                  child: Row(
-                    children: [
-                      _buildStatBadge('إجمالي الوثائق', _allDocuments.length.toString(), Colors.blue),
-                      const SizedBox(width: 12),
-                      _buildStatBadge('Devis (عروض أسعار)', devisCount.toString(), Colors.indigo),
-                      const SizedBox(width: 12),
-                      _buildStatBadge('BC (طلبيات)', bcCount.toString(), Colors.orange),
-                      const SizedBox(width: 12),
-                      _buildStatBadge('BL (تسليم)', blCount.toString(), Colors.teal),
-                      const SizedBox(width: 12),
-                      _buildStatBadge('Factures (فواتير)', facCount.toString(), Colors.green),
-                      const SizedBox(width: 12),
-                      _buildStatBadge('Brouillons (مسودات)', draftCount.toString(), Colors.grey),
-                    ],
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildStatBadge('إجمالي الوثائق', _allDocuments.length.toString(), Colors.blue),
+                        const SizedBox(width: 8),
+                        _buildStatBadge('Devis', devisCount.toString(), Colors.indigo),
+                        const SizedBox(width: 8),
+                        _buildStatBadge('BC', bcCount.toString(), Colors.orange),
+                        const SizedBox(width: 8),
+                        _buildStatBadge('BL', blCount.toString(), Colors.teal),
+                        const SizedBox(width: 8),
+                        _buildStatBadge('Factures', facCount.toString(), Colors.green),
+                        const SizedBox(width: 8),
+                        _buildStatBadge('Brouillons', draftCount.toString(), Colors.grey),
+                      ],
+                    ),
                   ),
                 ),
 
-                // Filter & Search Bar
+                // Filter & Search Bar (Mobile Adaptive)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   color: const Color(0xFFF9FAFB),
-                  child: Row(
+                  child: Column(
                     children: [
-                      // Filter Chips
-                      Wrap(
-                        spacing: 8,
-                        children: ['الكل', 'Devis', 'BC', 'BL', 'Factures', 'Brouillons', 'Achat'].map((tab) {
-                          final isSelected = _selectedFilter == tab;
-                          return ChoiceChip(
-                            label: Text(tab),
-                            selected: isSelected,
-                            selectedColor: Colors.teal,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                            onSelected: (val) {
-                              setState(() => _selectedFilter = tab);
-                              SoundService.playTabSwitch();
-                            },
-                          );
-                        }).toList(),
-                      ),
-                      const Spacer(),
                       // Search box
                       SizedBox(
-                        width: 320,
                         height: 42,
                         child: TextField(
                           controller: _searchController,
@@ -258,6 +233,32 @@ class _DocumentsPageState extends State<DocumentsPage> {
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
                           ),
                           onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Filter Chips
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: ['الكل', 'Devis', 'BC', 'BL', 'Factures', 'Brouillons', 'Achat'].map((tab) {
+                            final isSelected = _selectedFilter == tab;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: ChoiceChip(
+                                label: Text(tab),
+                                selected: isSelected,
+                                selectedColor: Colors.teal,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : Colors.black87,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                onSelected: (val) {
+                                  setState(() => _selectedFilter = tab);
+                                  SoundService.playTabSwitch();
+                                },
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
                     ],
