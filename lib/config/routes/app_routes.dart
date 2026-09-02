@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/billing/presentation/pages/home_page.dart';
 import '../../features/product/presentation/pages/product_list_page.dart';
@@ -56,8 +58,19 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/',
-      builder: (context, state) => const DesktopPosPage(),
+      builder: (context, state) {
+        // Desktop platforms (Windows, Linux, macOS) use the wide desktop POS interface
+        if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+          return const DesktopPosPage();
+        }
+        // Mobile platforms (Android, iOS) use the native mobile touch & camera interface
+        return const HomePage();
+      },
       routes: [
+        GoRoute(
+          path: 'desktop-pos',
+          builder: (context, state) => const DesktopPosPage(),
+        ),
         GoRoute(
           path: 'classic-mobile-pos',
           builder: (context, state) => const HomePage(),
