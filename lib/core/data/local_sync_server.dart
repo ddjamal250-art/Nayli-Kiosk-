@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'hive_database.dart';
+import '../../features/billing/data/kiosk_service.dart';
 import '../../features/product/data/models/product_model.dart';
 import '../utils/barcode_normalizer.dart';
 import '../utils/license_service.dart';
