@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -458,14 +459,16 @@ class _SettingsPageState extends State<SettingsPage> {
         subtitle: 'توليد وطباعة بطاقات الأسعار للرفوف مباشرة',
         onTap: () => context.push('/products/shelf-labels'),
       ),
-      _buildDivider(),
-      _buildTile(
-        icon: Icons.print_rounded,
-        iconColor: Colors.indigo,
-        title: 'طابعات ويندوز (التعرف التلقائي والفصل)',
-        subtitle: 'تحديد طابعة التوصيل الحرارية (80mm) وطابعة الفواتير (A4)',
-        onTap: () => PrinterSelectionDialog.show(context),
-      ),
+      if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) ...[
+        _buildDivider(),
+        _buildTile(
+          icon: Icons.print_rounded,
+          iconColor: Colors.indigo,
+          title: 'طابعات ويندوز (التعرف التلقائي والفصل)',
+          subtitle: 'تحديد طابعة التوصيل الحرارية (80mm) وطابعة الفواتير (A4)',
+          onTap: () => PrinterSelectionDialog.show(context),
+        ),
+      ],
       _buildDivider(),
       _buildTile(
         icon: Icons.wifi_tethering_rounded,

@@ -101,27 +101,22 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إعدادات كشك فاحص الأسعار وشاشات العروض 🛍️'),
+        title: const Text('إعدادات كشك فاحص الأسعار 🛍️', style: TextStyle(fontSize: 16)),
         actions: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            ),
-            icon: const Icon(Icons.fullscreen_rounded, size: 20),
-            label: const Text('تشغيل الكشك الآن 🚀', style: TextStyle(fontWeight: FontWeight.bold)),
+          IconButton(
+            tooltip: 'تشغيل الكشك الآن 🚀',
+            icon: const Icon(Icons.fullscreen_rounded, color: Color(0xFF4F46E5), size: 26),
             onPressed: () => context.push('/kiosk'),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         children: [
           // بطاقة رابط كشك الويب للشاشات الذكية مع QR Code
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
@@ -140,43 +135,46 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.tv_rounded, color: Color(0xFF818CF8), size: 28),
+                    Icon(Icons.tv_rounded, color: Color(0xFF818CF8), size: 26),
                     SizedBox(width: 10),
-                    Text(
-                      'ربط الشاشات الذكية وأجهزة Android TV Box بالشبكة 🌐',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    Expanded(
+                      child: Text(
+                        'ربط الشاشات الذكية وأجهزة Android TV Box 🌐',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'افتح متصفح الويب على أي شاشة ذكية أو جهاز TV Box في الرواق واكتب الرابط المباشر أو امسح كود QR أدناه:',
-                  style: TextStyle(color: Color(0xFFC7D2FE), fontSize: 13),
+                  'افتح متصفح الويب على أي شاشة ذكية واكتب الرابط أو امسح كود QR أدناه:',
+                  style: TextStyle(color: Color(0xFFC7D2FE), fontSize: 12.5),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: QrImageView(
-                        data: kioskWebUrl.isNotEmpty ? kioskWebUrl : 'http://127.0.0.1:8080/kiosk',
-                        version: QrVersions.auto,
-                        size: 90.0,
-                        errorStateBuilder: (cxt, err) => const Icon(Icons.qr_code, size: 80, color: Colors.indigo),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 14),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 460;
+                    if (isNarrow) {
+                      return Column(
                         children: [
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: QrImageView(
+                                data: kioskWebUrl.isNotEmpty ? kioskWebUrl : 'http://127.0.0.1:8080/kiosk',
+                                version: QrVersions.auto,
+                                size: 130.0,
+                                errorStateBuilder: (cxt, err) => const Icon(Icons.qr_code, size: 80, color: Colors.indigo),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.black38,
                               borderRadius: BorderRadius.circular(12),
@@ -190,13 +188,13 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
                                     style: const TextStyle(
                                       color: Color(0xFF38BDF8),
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       fontFamily: 'monospace',
                                     ),
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 20),
+                                  icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
                                   tooltip: 'نسخ الرابط',
                                   onPressed: () {
                                     Clipboard.setData(ClipboardData(text: kioskWebUrl));
@@ -204,22 +202,90 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
                                   },
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.open_in_browser_rounded, color: Colors.white, size: 20),
+                                  icon: const Icon(Icons.open_in_browser_rounded, color: Colors.white, size: 18),
                                   tooltip: 'تجربة في المتصفح',
                                   onPressed: () => launchUrlString(kioskWebUrl),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           const Text(
                             '📱 امسح كود QR من كاميرا الهاتف أو التابلت للفتح والتجربة الفورية بالشبكة',
                             style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11),
+                            textAlign: TextAlign.center,
                           ),
                         ],
-                      ),
-                    ),
-                  ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: QrImageView(
+                            data: kioskWebUrl.isNotEmpty ? kioskWebUrl : 'http://127.0.0.1:8080/kiosk',
+                            version: QrVersions.auto,
+                            size: 90.0,
+                            errorStateBuilder: (cxt, err) => const Icon(Icons.qr_code, size: 80, color: Colors.indigo),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.black38,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.indigo.shade300.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: SelectableText(
+                                        kioskWebUrl,
+                                        style: const TextStyle(
+                                          color: Color(0xFF38BDF8),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          fontFamily: 'monospace',
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 20),
+                                      tooltip: 'نسخ الرابط',
+                                      onPressed: () {
+                                        Clipboard.setData(ClipboardData(text: kioskWebUrl));
+                                        SnackbarHelper.showSuccess(context, '✅ تم نسخ الرابط');
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.open_in_browser_rounded, color: Colors.white, size: 20),
+                                      tooltip: 'تجربة في المتصفح',
+                                      onPressed: () => launchUrlString(kioskWebUrl),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                '📱 امسح كود QR من كاميرا الهاتف أو التابلت للفتح والتجربة الفورية بالشبكة',
+                                style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

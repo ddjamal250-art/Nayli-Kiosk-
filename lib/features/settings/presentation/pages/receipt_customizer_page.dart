@@ -284,7 +284,10 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('تخصيص وتصميم الوصل الحراري 🧾', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        title: Text(
+          isDesktop ? 'تخصيص وتصميم الوصل الحراري 🧾' : 'تخصيص الوصل 🧾',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         centerTitle: !isDesktop,
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -292,62 +295,84 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
           icon: const Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
           onPressed: () => context.pop(),
         ),
-        actions: [
-          // Thermal printer selector button
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal.shade800 : Colors.deepOrange,
-              side: BorderSide(
-                color: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal.shade400 : Colors.deepOrange,
-                width: 1.2,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            icon: Icon(
-              Icons.print,
-              size: 16,
-              color: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal : Colors.deepOrange,
-            ),
-            label: Text(
-              PrinterHelper.defaultThermalPrinter.isNotEmpty
-                  ? 'طابعة الوصل: ${PrinterHelper.defaultThermalPrinter}'
-                  : '⚠️ اختر طابعة الإيصالات',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-            onPressed: () async {
-              final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
-              if (chosen != null && mounted) {
-                setState(() {});
-              }
-            },
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal.shade700,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            icon: const Icon(Icons.print_outlined, size: 18),
-            label: const Text('طباعة تجريبية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            onPressed: _printTestReceipt,
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            icon: const Icon(Icons.save_rounded, size: 18),
-            label: const Text('حفظ التصميم', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            onPressed: _saveTemplate,
-          ),
-          const SizedBox(width: 14),
-        ],
+        actions: isDesktop
+            ? [
+                // Thermal printer selector button
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal.shade800 : Colors.deepOrange,
+                    side: BorderSide(
+                      color: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal.shade400 : Colors.deepOrange,
+                      width: 1.2,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: Icon(
+                    Icons.print,
+                    size: 16,
+                    color: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal : Colors.deepOrange,
+                  ),
+                  label: Text(
+                    PrinterHelper.defaultThermalPrinter.isNotEmpty
+                        ? 'طابعة الوصل: ${PrinterHelper.defaultThermalPrinter}'
+                        : '⚠️ اختر طابعة الإيصالات',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  onPressed: () async {
+                    final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
+                    if (chosen != null && mounted) {
+                      setState(() {});
+                    }
+                  },
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.print_outlined, size: 18),
+                  label: const Text('طباعة تجريبية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: _printTestReceipt,
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.save_rounded, size: 18),
+                  label: const Text('حفظ التصميم', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: _saveTemplate,
+                ),
+                const SizedBox(width: 14),
+              ]
+            : [
+                IconButton(
+                  tooltip: 'اختيار الطابعة',
+                  icon: const Icon(Icons.tune_rounded, color: Colors.teal),
+                  onPressed: () async {
+                    final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
+                    if (chosen != null && mounted) setState(() {});
+                  },
+                ),
+                IconButton(
+                  tooltip: 'طباعة تجريبية',
+                  icon: const Icon(Icons.print_outlined, color: Colors.teal),
+                  onPressed: _printTestReceipt,
+                ),
+                IconButton(
+                  tooltip: 'حفظ التصميم',
+                  icon: const Icon(Icons.save_rounded, color: Color(0xFF4F46E5)),
+                  onPressed: _saveTemplate,
+                ),
+                const SizedBox(width: 4),
+              ],
       ),
       body: isDesktop
           ? Row(

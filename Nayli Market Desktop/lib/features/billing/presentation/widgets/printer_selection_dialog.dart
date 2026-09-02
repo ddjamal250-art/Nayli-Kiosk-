@@ -125,7 +125,7 @@ class _PrinterSelectionDialogState extends State<PrinterSelectionDialog> {
         ],
       ),
       content: SizedBox(
-        width: 480,
+        width: MediaQuery.of(context).size.width.clamp(280.0, 480.0),
         child: _isLoading
             ? const Center(
                 child: Padding(

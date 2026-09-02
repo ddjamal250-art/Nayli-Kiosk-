@@ -256,24 +256,26 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Options Switches Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // Options Switches (Responsive Wrap)
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      alignment: WrapAlignment.spaceBetween,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 6,
                           children: [
                             FilterChip(
                               label: const Text('اسم المحل', style: TextStyle(fontSize: 11)),
                               selected: _includeShopName,
                               onSelected: (v) => setState(() => _includeShopName = v),
                             ),
-                            const SizedBox(width: 6),
                             FilterChip(
                               label: const Text('الباركود', style: TextStyle(fontSize: 11)),
                               selected: _includeBarcode,
                               onSelected: (v) => setState(() => _includeBarcode = v),
                             ),
-                            const SizedBox(width: 6),
                             FilterChip(
                               label: const Text('التاريخ', style: TextStyle(fontSize: 11)),
                               selected: _includeDate,
@@ -296,21 +298,20 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                     ),
                     if (_selectedProductIds.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          const Text('تعيين عدد النسخ للكل:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-                          const SizedBox(width: 6),
-                          Wrap(
-                            spacing: 6,
-                            children: [1, 2, 5, 10, 20].map((qty) {
-                              return ActionChip(
-                                label: Text('$qty', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
-                                backgroundColor: Colors.amber.withOpacity(0.15),
-                                side: BorderSide(color: Colors.amber.withOpacity(0.3)),
-                                onPressed: () => _setBatchQuantity(qty),
-                              );
-                            }).toList(),
-                          ),
+                          const Text('عدد النسخ:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          ...[1, 2, 5, 10, 20].map((qty) {
+                            return ActionChip(
+                              label: Text('$qty', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                              backgroundColor: Colors.amber.withOpacity(0.15),
+                              side: BorderSide(color: Colors.amber.withOpacity(0.3)),
+                              onPressed: () => _setBatchQuantity(qty),
+                            );
+                          }),
                         ],
                       ),
                     ],
