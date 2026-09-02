@@ -9,6 +9,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/app_validators.dart';
+import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/widgets/input_label.dart';
@@ -115,6 +116,11 @@ class _EditProductPageState extends State<EditProductPage> {
       );
 
       context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
+      CatalogCrowdsourceHelper.silentHarvest(
+        updatedProduct,
+        category: _selectedCategory,
+        unit: _isWeighted ? 'كغ' : 'حبة',
+      );
       SoundService.playCheckoutSuccess();
       context.showAppSnackBar('✅ تم تحديث وتعديل بيانات السلعة بنجاح!');
       await Future.delayed(const Duration(milliseconds: 150));

@@ -317,6 +317,11 @@ class _StockInPageState extends State<StockInPage> {
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
       );
       context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
+      CatalogCrowdsourceHelper.silentHarvest(
+        updatedProduct,
+        category: 'أريفاج ومخزن',
+        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : 'حبة'),
+      );
     } else {
       final newProduct = Product(
         id: const Uuid().v4(),

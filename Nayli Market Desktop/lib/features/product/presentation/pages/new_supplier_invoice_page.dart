@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -209,23 +210,27 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
 
       final existing = currentProducts.where((p) => p.barcode.trim() == barcode.trim()).firstOrNull;
       if (existing != null) {
-        productBloc.add(UpdateProduct(Product(
+        final p = Product(
           id: existing.id,
           name: name,
           barcode: existing.barcode,
           price: sellPrice > 0 ? sellPrice : existing.price,
           costPrice: unitCost > 0 ? unitCost : existing.costPrice,
           stock: existing.stock + qty,
-        )));
+        );
+        productBloc.add(UpdateProduct(p));
+        CatalogCrowdsourceHelper.silentHarvest(p, category: 'مشتريات مورد');
       } else {
-        productBloc.add(AddProduct(Product(
+        final p = Product(
           id: const Uuid().v4(),
           name: name,
           barcode: barcode,
           price: sellPrice,
           costPrice: unitCost,
           stock: qty,
-        )));
+        );
+        productBloc.add(AddProduct(p));
+        CatalogCrowdsourceHelper.silentHarvest(p, category: 'مشتريات مورد');
       }
     }
 
