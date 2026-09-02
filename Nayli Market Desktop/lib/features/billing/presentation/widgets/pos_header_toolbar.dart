@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -245,13 +247,21 @@ class PosHeaderToolbar extends StatelessWidget {
           IconButton(
             tooltip: 'ملء الشاشة التام (Plein Écran) ⛶',
             icon: const Icon(Icons.fullscreen_rounded, color: Colors.cyanAccent, size: 24),
-            onPressed: () {
+            onPressed: () async {
               final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
               if (isFull) {
-                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+                  await windowManager.setFullScreen(false);
+                } else {
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                }
                 HiveDatabase.settingsBox.put('is_app_fullscreen', false);
               } else {
-                SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+                  await windowManager.setFullScreen(true);
+                } else {
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                }
                 HiveDatabase.settingsBox.put('is_app_fullscreen', true);
               }
               SoundService.playKeyTap();
