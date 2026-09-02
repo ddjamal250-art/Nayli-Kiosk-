@@ -22,6 +22,11 @@ import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../domain/entities/cart_item.dart';
 
+import '../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
+import '../../documents/domain/entities/commercial_document.dart';
+import '../../documents/data/commercial_document_service.dart';
+import 'package:uuid/uuid.dart';
+
 import '../bloc/billing_bloc.dart';
 import '../widgets/quick_amount_modal.dart';
 import '../widgets/smart_scale_modal.dart';
@@ -1161,6 +1166,40 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     );
   }
 
+  Future<void> _scanInvoiceOCR() async {
+    setState(() => _isScanningPaused = true);
+    try { _scannerController.stop(); } catch (_) {}
+    
+    final result = await ReceiptOcrScannerDialog.show(context);
+    if (result != null && result.items.isNotEmpty) {
+      final newDoc = CommercialDocument(
+        id: const Uuid().v4(),
+        documentNumber: CommercialDocumentService.generateNextDocNumber(CommercialDocType.facture),
+        type: CommercialDocType.facture,
+        status: CommercialDocStatus.valide,
+        date: result.date ?? DateTime.now(),
+        entityName: result.entityName.isNotEmpty ? result.entityName : 'مورد عابر',
+        items: result.items,
+        amountPaid: 0.0,
+      );
+      await CommercialDocumentService.saveDocument(newDoc);
+      SoundService.playCheckoutSuccess();
+      if (mounted) {
+        context.showAppSnackBar('✅ تم استخراج الفاتورة وحفظها وإرسالها للحاسوب بنجاح!', icon: Icons.document_scanner);
+      }
+    }
+    
+    if (mounted) {
+      if (_isCameraOn) {
+        try { _scannerController.start(); } catch (_) {}
+      }
+      setState(() {
+        _isScanningPaused = false;
+        _lastScanTimes.clear();
+      });
+    }
+  }
+
   void _navigateToSettings() {
     setState(() => _isScanningPaused = true);
     try {
@@ -1288,20 +1327,41 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 ),
 
                 // Full-Screen Settings & Management Hamburger Button
-                InkWell(
-                  onTap: _navigateToSettings,
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white70),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTap: _scanInvoiceOCR,
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        margin: const EdgeInsets.only(left: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.tealAccent),
+                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                        ),
+                        child: const Icon(Icons.document_scanner_rounded, color: Colors.tealAccent, size: 22),
+                      ),
                     ),
-                    child: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-                  ),
+                    InkWell(
+                      onTap: _navigateToSettings,
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white70),
+                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                        ),
+                        child: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

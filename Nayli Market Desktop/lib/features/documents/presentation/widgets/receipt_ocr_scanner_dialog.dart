@@ -127,7 +127,9 @@ TOTAL TTC: 9256.90 DA''';
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width >= 800;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= 800;
+    final isWide = screenWidth >= 600;
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -144,11 +146,12 @@ TOTAL TTC: 9256.90 DA''';
               children: [
                 const Icon(Icons.document_scanner_rounded, color: Colors.indigo, size: 28),
                 const SizedBox(width: 10),
-                const Text(
-                  'قارئ ومسح الفواتير الورقية الذكي (AI / OCR) 📸',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                Expanded(
+                  child: Text(
+                    'قارئ ومسح الفواتير الورقية الذكي (AI / OCR) 📸',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: isWide ? 16 : 14),
+                  ),
                 ),
-                const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
@@ -164,11 +167,11 @@ TOTAL TTC: 9256.90 DA''';
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.indigo,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: isWide ? 12 : 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
-                    label: const Text('التقاط صورة للوصل الورقي 📸', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    icon: Icon(Icons.camera_alt, color: Colors.white, size: isWide ? 20 : 16),
+                    label: Text('التقاط صورة 📸', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: isWide ? 13 : 11)),
                     onPressed: () => _pickImage(ImageSource.camera),
                   ),
                 ),
@@ -176,11 +179,11 @@ TOTAL TTC: 9256.90 DA''';
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: isWide ? 12 : 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    icon: const Icon(Icons.image_outlined, size: 20),
-                    label: const Text('اختيار صورة من الجهاز 📁', style: TextStyle(fontWeight: FontWeight.bold)),
+                    icon: Icon(Icons.image_outlined, size: isWide ? 20 : 16),
+                    label: Text('اختيار صورة 📁', style: TextStyle(fontWeight: FontWeight.bold, fontSize: isWide ? 13 : 11)),
                     onPressed: () => _pickImage(ImageSource.gallery),
                   ),
                 ),
@@ -189,7 +192,7 @@ TOTAL TTC: 9256.90 DA''';
 
             const SizedBox(height: 12),
 
-            // Body Area (Split View on Desktop or Tabs on Mobile)
+            // Body Area (Split View on Desktop or Stacked on Mobile)
             Expanded(
               child: _isProcessing
                   ? const Center(
@@ -198,16 +201,17 @@ TOTAL TTC: 9256.90 DA''';
                         children: [
                           CircularProgressIndicator(color: Colors.indigo),
                           SizedBox(height: 16),
-                          Text('جاري قراءة واستخراج السلع والأسعار والكميات من الوصل الورقي... 🧠', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
+                          Text('جاري قراءة واستخراج السلع من الوصل... 🧠', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
                         ],
                       ),
                     )
-                  : Row(
+                  : Flex(
+                      direction: isWide ? Axis.horizontal : Axis.vertical,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Left: Raw Text / OCR Preview
+                        // Left/Top: Raw Text / OCR Preview
                         Expanded(
-                          flex: 2,
+                          flex: isWide ? 2 : 1,
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
@@ -221,7 +225,7 @@ TOTAL TTC: 9256.90 DA''';
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('النص المستخرج من الوصل:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                                    const Text('النص المستخرج:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
                                     TextButton.icon(
                                       style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
                                       icon: const Icon(Icons.refresh, size: 14),
@@ -238,7 +242,7 @@ TOTAL TTC: 9256.90 DA''';
                                     expands: true,
                                     style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
                                     decoration: const InputDecoration(
-                                      hintText: 'سيظهر هنا النص المقروء أو يمكنك لصقه مباشرة...',
+                                      hintText: 'سيظهر هنا النص المقروء...',
                                       border: InputBorder.none,
                                     ),
                                   ),
@@ -248,7 +252,7 @@ TOTAL TTC: 9256.90 DA''';
                           ),
                         ),
 
-                        const SizedBox(width: 12),
+                        SizedBox(width: isWide ? 12 : 0, height: isWide ? 0 : 12),
 
                         // Right: Parsed Structured Table
                         Expanded(
