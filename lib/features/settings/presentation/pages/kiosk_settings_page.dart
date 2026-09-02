@@ -107,7 +107,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.edit_link_rounded, color: Colors.indigo),
+            Icon(Icons.edit_rounded, color: Colors.indigo),
             SizedBox(width: 8),
             Text('تعديل وتخصيص رابط الكشك 🌐', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],

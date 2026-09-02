@@ -199,11 +199,10 @@ class _ShiftsPageState extends State<ShiftsPage> {
                 final summary = '📊 <b>تقرير ختام الوردية (Z-Report)</b> 🧾\n'
                     '━━━━━━━━━━━━━━━━━\n'
                     '👤 <b>العامل:</b> ${closed.workerName}\n'
-                    '⏰ <b>الوقت:</b> ${DateFormat('yyyy/MM/dd HH:mm').format(closed.closedAt)}\n'
+                    '⏰ <b>الوقت:</b> ${DateFormat('yyyy/MM/dd HH:mm').format(closed.closedAt ?? DateTime.now())}\n'
                     '💵 <b>إجمالي المبيعات:</b> ${closed.totalSales.toStringAsFixed(2)} د.ج\n'
-                    '💰 <b>المبلغ الفعلي في الدرج:</b> ${closed.actualCashInDrawer.toStringAsFixed(2)} د.ج\n'
-                    '⚖️ <b>الفارق:</b> ${(closed.actualCashInDrawer - closed.expectedCashInDrawer).toStringAsFixed(2)} د.ج\n'
-                    '🧾 <b>عدد العمليات:</b> ${closed.receiptsCount}\n'
+                    '💰 <b>المبلغ الفعلي في الدرج:</b> ${closed.actualCashAtClose.toStringAsFixed(2)} د.ج\n'
+                    '⚖️ <b>الفارق:</b> ${closed.cashDifference.toStringAsFixed(2)} د.ج\n'
                     '━━━━━━━━━━━━━━━━━\n'
                     '✅ تم حفظ نسخة احتياطية سحابية كاملة تلقائياً!';
                 TelegramService.sendTextMessage(

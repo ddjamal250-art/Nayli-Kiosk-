@@ -10,7 +10,7 @@ class StaffService {
     try {
       final box = HiveDatabase.staffBox;
       if (box.isEmpty) {
-        final existingManagerPin = SecurityPinHelper.currentPin.isNotEmpty ? SecurityPinHelper.currentPin : '9999';
+        const existingManagerPin = '9999';
         final admin = StaffMember(
           id: 'staff_admin_master',
           name: 'المدير العام (المشرف الرئيسي)',
@@ -68,7 +68,7 @@ class StaffService {
     if (clean.isEmpty) return false;
 
     // Check manager master pin
-    if (SecurityPinHelper.currentPin == clean && excludeId != 'staff_admin_master') {
+    if (SecurityPinHelper.isPinEnabled() && SecurityPinHelper.verifyPin(clean) && excludeId != 'staff_admin_master') {
       return false;
     }
 

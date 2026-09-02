@@ -184,7 +184,7 @@ class LivePosRadarWidget extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.dashed(color: Colors.grey.shade300),
+                  border: Border.all(color: Colors.grey.shade300, width: 1.2),
                 ),
                 child: const Row(
                   children: [

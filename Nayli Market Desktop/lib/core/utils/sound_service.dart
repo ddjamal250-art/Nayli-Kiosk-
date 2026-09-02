@@ -464,5 +464,8 @@ class SoundService {
 
   /// Play click sound
   static Future<void> playClick() => playTabSwitch();
+
+  /// Play key / button tap sound
+  static Future<void> playKeyTap() => playTabSwitch();
 }
 
