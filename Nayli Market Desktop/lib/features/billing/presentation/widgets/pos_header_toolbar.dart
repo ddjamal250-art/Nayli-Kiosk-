@@ -249,22 +249,36 @@ class PosHeaderToolbar extends StatelessWidget {
             icon: const Icon(Icons.fullscreen_rounded, color: Colors.cyanAccent, size: 24),
             onPressed: () async {
               bool isFull = false;
+              final mode = HiveDatabase.settingsBox.get('windows_fullscreen_mode', defaultValue: 'maximize_mode') as String;
+              
               if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                isFull = await windowManager.isMaximized();
+                if (mode == 'game_mode') {
+                  isFull = await windowManager.isFullScreen();
+                } else {
+                  isFull = await windowManager.isMaximized();
+                }
               } else {
                 isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
               }
 
               if (isFull) {
                 if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                  await windowManager.unmaximize();
+                  if (mode == 'game_mode') {
+                    await windowManager.setFullScreen(false);
+                  } else {
+                    await windowManager.unmaximize();
+                  }
                 } else {
                   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                 }
                 HiveDatabase.settingsBox.put('is_app_fullscreen', false);
               } else {
                 if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                  await windowManager.maximize();
+                  if (mode == 'game_mode') {
+                    await windowManager.setFullScreen(true);
+                  } else {
+                    await windowManager.maximize();
+                  }
                 } else {
                   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
                 }

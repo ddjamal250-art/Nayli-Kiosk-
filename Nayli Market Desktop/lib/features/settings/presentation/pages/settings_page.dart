@@ -469,6 +469,33 @@ class _SettingsPageState extends State<SettingsPage> {
           subtitle: 'تحديد طابعة التوصيل الحرارية (80mm) وطابعة الفواتير (A4)',
           onTap: () => PrinterSelectionDialog.show(context),
         ),
+        _buildDivider(),
+        StatefulBuilder(
+          builder: (context, setState) {
+            final mode = HiveDatabase.settingsBox.get('windows_fullscreen_mode', defaultValue: 'maximize_mode') as String;
+            return _buildTile(
+              icon: Icons.fullscreen_rounded,
+              iconColor: Colors.cyan[700]!,
+              title: 'نمط ملء الشاشة (Plein Écran)',
+              subtitle: mode == 'game_mode' ? 'ملء الشاشة التام (يخفي شريط المهام)' : 'تكبير النافذة (مع بقاء شريط المهام)',
+              trailing: DropdownButton<String>(
+                value: mode,
+                underline: const SizedBox(),
+                items: const [
+                  DropdownMenuItem(value: 'maximize_mode', child: Text('تكبير عادي', style: TextStyle(fontSize: 12))),
+                  DropdownMenuItem(value: 'game_mode', child: Text('كالألعاب (تام)', style: TextStyle(fontSize: 12))),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    HiveDatabase.settingsBox.put('windows_fullscreen_mode', val);
+                    setState(() {});
+                  }
+                },
+              ),
+              onTap: () {},
+            );
+          },
+        ),
       ],
       _buildDivider(),
       _buildTile(
