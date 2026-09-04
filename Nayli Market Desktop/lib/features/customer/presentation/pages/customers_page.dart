@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/utils/printer_helper.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/entities/debt_record.dart';
 import '../cubit/customer_cubit.dart';
@@ -235,11 +237,34 @@ class _CustomersPageState extends State<CustomersPage> {
                 final amount = double.parse(amountController.text.trim());
                 final note = noteController.text.trim();
 
-                await context.read<CustomerCubit>().recordPayment(
+                final updatedCustomer = await context.read<CustomerCubit>().recordPayment(
                       customerId: customer.id,
                       paymentAmount: amount,
                       note: note,
                     );
+
+                // Print the payment receipt automatically
+                try {
+                  final printer = PrinterHelper();
+                  if (Platform.isWindows || printer.isConnected) {
+                     printer.printReceipt(
+                       shopName: 'تسديد دين (كريدي)',
+                       phone: customer.phoneNumber,
+                       items: [
+                         {'name': note.isEmpty ? 'دفعة نقدية لحساب الدين' : note, 'qty': 1, 'price': amount, 'total': amount}
+                       ],
+                       total: amount,
+                       isCredit: true,
+                       customerName: customer.name,
+                       previousDebt: customer.currentDebt,
+                       paidAmount: amount,
+                       newDebtTotal: updatedCustomer.currentDebt,
+                       footer: 'شكراً لكم. تم خصم المبلغ بنجاح.',
+                     );
+                  }
+                } catch (e) {
+                  debugPrint('Failed to print payment receipt: $e');
+                }
 
                 if (mounted) {
                   Navigator.pop(ctx);
