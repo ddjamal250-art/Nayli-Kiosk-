@@ -60,10 +60,11 @@ class CommercialDocumentService {
     // Auto-sync to desktop if mobile paired
     if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
       final ip = HiveDatabase.settingsBox.get('sync_server_ip', defaultValue: '') as String;
-      final port = HiveDatabase.settingsBox.get('sync_server_port', defaultValue: 8080) as int;
+      final port = HiveDatabase.settingsBox.get('sync_server_port', defaultValue: 8080);
       if (ip.isNotEmpty) {
         try {
-          final url = Uri.parse('http://$ip:$port/api/documents');
+          final urlStr = ip.contains(':') ? 'http://$ip/api/documents' : 'http://$ip:$port/api/documents';
+          final url = Uri.parse(urlStr);
           await http.post(
             url,
             headers: {'Content-Type': 'application/json'},

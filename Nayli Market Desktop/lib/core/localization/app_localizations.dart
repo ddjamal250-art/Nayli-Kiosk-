@@ -187,7 +187,7 @@ class AppLocalizations {
 
       // Quick Add Bottom Sheet
       'quick_add_title': 'منتج غير مسجل - إضافة سريعة',
-      'master_recognized': 'تم التعرف على المنتج في الكتالوج الجزائري! 🇩🇿',
+      'master_recognized': 'تم التعرف على المنتج في الكتالوج الجزائري! ',
       'barcode_label': 'باركود',
       'product_name': 'اسم المنتج',
       'initial_stock': 'الكمية الأولية',
@@ -242,7 +242,7 @@ class AppLocalizations {
       'pos_station_radar': 'رادار الكاشيرات الحية',
       'call_supervisor': 'نداء المشرف العام للمساعدة 🔔',
       'blind_shift_close': 'إغلاق الصندوق الأعمى',
-      'cash_denominations': 'حاسبة الفئات النقدية الجزائرية 🇩🇿',
+      'cash_denominations': 'حاسبة الفئات النقدية الجزائرية ',
       'unique_pin_error': 'هذا الرمز السري مستخدم مسبقاً لعامل آخر!',
     },
     'fr': {
@@ -419,7 +419,7 @@ class AppLocalizations {
 
       // Quick Add Bottom Sheet
       'quick_add_title': 'Produit non enregistré - Ajout rapide',
-      'master_recognized': 'Reconnu dans le catalogue algérien ! 🇩🇿',
+      'master_recognized': 'Reconnu dans le catalogue algérien ! ',
       'barcode_label': 'Code-barres',
       'product_name': 'Nom du produit',
       'initial_stock': 'Quantité initiale',
@@ -651,7 +651,7 @@ class AppLocalizations {
 
       // Quick Add Bottom Sheet
       'quick_add_title': 'Unregistered Product - Quick Add',
-      'master_recognized': 'Recognized from Algerian Master Catalog! 🇩🇿',
+      'master_recognized': 'Recognized from Algerian Master Catalog! ',
       'barcode_label': 'Barcode',
       'product_name': 'Product Name',
       'initial_stock': 'Initial Stock',

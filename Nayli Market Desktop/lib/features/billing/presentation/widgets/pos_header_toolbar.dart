@@ -78,7 +78,7 @@ class PosHeaderToolbar extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5, color: Color(0xFF0F172A), letterSpacing: 0.3),
                   ),
                   SizedBox(width: 6),
-                  Text('🇩🇿', style: TextStyle(fontSize: 14)),
+                  Text('', style: TextStyle(fontSize: 14)),
                 ],
               ),
               Text(
@@ -250,21 +250,21 @@ class PosHeaderToolbar extends StatelessWidget {
             onPressed: () async {
               bool isFull = false;
               if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                isFull = await windowManager.isFullScreen();
+                isFull = await windowManager.isMaximized();
               } else {
                 isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
               }
 
               if (isFull) {
                 if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                  await windowManager.setFullScreen(false);
+                  await windowManager.unmaximize();
                 } else {
                   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                 }
                 HiveDatabase.settingsBox.put('is_app_fullscreen', false);
               } else {
                 if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                  await windowManager.setFullScreen(true);
+                  await windowManager.maximize();
                 } else {
                   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
                 }

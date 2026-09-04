@@ -627,7 +627,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return _buildCardGroup([
       BlocBuilder<LanguageCubit, Locale>(
         builder: (context, currentLocale) {
-          String langName = 'العربية 🇩🇿';
+          String langName = 'العربية ';
           if (currentLocale.languageCode == 'fr') langName = 'Français 🇫🇷';
           if (currentLocale.languageCode == 'en') langName = 'English 🇬🇧';
 
@@ -1021,7 +1021,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             const Text('اختر لغة التطبيق (Language)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 14),
-            _buildLangChoice(ctx, 'العربية (Arabic)', '🇩🇿', 'ar', currentLocale.languageCode == 'ar'),
+            _buildLangChoice(ctx, 'العربية (Arabic)', '', 'ar', currentLocale.languageCode == 'ar'),
             const Divider(height: 1),
             _buildLangChoice(ctx, 'Français (French)', '🇫🇷', 'fr', currentLocale.languageCode == 'fr'),
             const Divider(height: 1),

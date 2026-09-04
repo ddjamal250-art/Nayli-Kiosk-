@@ -109,7 +109,7 @@ class PrinterHelper {
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Text('Nayli Market POS 🇩🇿', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+                  pw.Text('Nayli Market POS ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
                   pw.Text('طابعة التوصيل الحرارية (80mm)', style: const pw.TextStyle(fontSize: 9)),
                   pw.Divider(thickness: 0.5),
                   pw.Text('الطابعة: ${printer.name}', style: const pw.TextStyle(fontSize: 8)),
@@ -380,8 +380,26 @@ class PrinterHelper {
     final int lineWidth = paperSize == '58mm' ? 32 : 48;
     final String sepLine = '-' * lineWidth;
 
-    final actualFooter = box.get('receipt_footer', defaultValue: '') as String;
-    final actualThankYou = box.get('receipt_thank_you', defaultValue: 'شكراً لزيارتكم • Merci pour votre visite') as String;
+    final tmpl = box.get('receipt_template');
+    String finalShopName = shopName;
+    String? finalAddress1 = address1;
+    String? finalAddress2 = address2;
+    String? finalPhone = phone;
+    String? finalFooter = footer;
+    String finalThankYou = 'شكراً لزيارتكم • Merci pour votre visite';
+    List<String> extraLines = [];
+
+    if (tmpl is Map) {
+      if (tmpl['shopName'] != null && tmpl['shopName'].toString().isNotEmpty) finalShopName = tmpl['shopName'];
+      if (tmpl['address'] != null && tmpl['address'].toString().isNotEmpty) finalAddress1 = tmpl['address'];
+      if (tmpl['slogan'] != null && tmpl['slogan'].toString().isNotEmpty) finalAddress2 = tmpl['slogan'];
+      if (tmpl['phone'] != null && tmpl['phone'].toString().isNotEmpty) finalPhone = tmpl['phone'];
+      if (tmpl['footerNote'] != null && tmpl['footerNote'].toString().isNotEmpty) finalFooter = tmpl['footerNote'];
+      if (tmpl['thankYou'] != null && tmpl['thankYou'].toString().isNotEmpty) finalThankYou = tmpl['thankYou'];
+      if (tmpl['customExtraLines'] != null) {
+        extraLines = (tmpl['customExtraLines'] as List).map((e) => e.toString()).toList();
+      }
+    }
 
     List<int> bytes = [];
     bytes += EscPos.init;
@@ -390,13 +408,23 @@ class PrinterHelper {
     bytes += EscPos.alignCenter;
     bytes += EscPos.boldOn;
     bytes += EscPos.textLarge;
-    bytes += _textToBytes(shopName);
+    bytes += _textToBytes(finalShopName);
     bytes += EscPos.lineFeed;
     bytes += EscPos.textNormal;
     bytes += EscPos.boldOff;
 
-    if (phone.isNotEmpty) {
-      bytes += _textToBytes('Tel: $phone');
+    if (finalAddress1 != null && finalAddress1.isNotEmpty) {
+      bytes += _textToBytes(finalAddress1);
+      bytes += EscPos.lineFeed;
+    }
+    
+    if (finalAddress2 != null && finalAddress2.isNotEmpty) {
+      bytes += _textToBytes(finalAddress2);
+      bytes += EscPos.lineFeed;
+    }
+
+    if (finalPhone != null && finalPhone.isNotEmpty) {
+      bytes += _textToBytes('Tel: $finalPhone');
       bytes += EscPos.lineFeed;
     }
 
@@ -454,32 +482,36 @@ class PrinterHelper {
         bytes += EscPos.lineFeed;
       }
       bytes += EscPos.boldOn;
-      bytes += _textToBytes('SOLDE TOTAL RESTE: ${newDebtTotal.toStringAsFixed(2)} DA');
+      bytes += _textToBytes('Total du: ${newDebtTotal.toStringAsFixed(2)} DA');
+      bytes += EscPos.lineFeed;
       bytes += EscPos.boldOff;
+    }
+
+    bytes += EscPos.lineFeed;
+    bytes += EscPos.alignCenter;
+    
+    if (finalFooter != null && finalFooter.isNotEmpty) {
+      bytes += _textToBytes(finalFooter);
       bytes += EscPos.lineFeed;
-      bytes += _textToBytes(sepLine);
+    }
+    
+    bytes += _textToBytes(finalThankYou);
+    bytes += EscPos.lineFeed;
+
+    for (String line in extraLines) {
+      bytes += _textToBytes(line);
       bytes += EscPos.lineFeed;
     }
 
-    // Footer
-    if (actualFooter.isNotEmpty) {
-      bytes += EscPos.alignCenter;
-      bytes += _textToBytes(actualFooter);
-      bytes += EscPos.lineFeed;
-    }
-    if (actualThankYou.isNotEmpty) {
-      bytes += EscPos.alignCenter;
-      bytes += _textToBytes(actualThankYou);
-      bytes += EscPos.lineFeed;
-    }
     bytes += EscPos.lineFeed;
     bytes += EscPos.lineFeed;
 
-    await PrintBluetoothThermal.writeBytes(bytes);
+    try {
+      await PrintBluetoothThermal.writeBytes(bytes);
+    } catch (_) {}
   }
 
   List<int> _textToBytes(String text) {
     return List.from(text.codeUnits);
   }
 }
-

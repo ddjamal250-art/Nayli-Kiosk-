@@ -451,7 +451,7 @@ class _ActivationPageState extends State<ActivationPage> {
                     const SizedBox(height: 12),
 
                     const Text(
-                      'Nayli Market DZ 🇩🇿',
+                      'Nayli Market DZ ',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,

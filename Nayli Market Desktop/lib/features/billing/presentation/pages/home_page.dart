@@ -1166,39 +1166,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     );
   }
 
-  Future<void> _scanInvoiceOCR() async {
-    setState(() => _isScanningPaused = true);
-    try { _scannerController.stop(); } catch (_) {}
-    
-    final result = await ReceiptOcrScannerDialog.show(context);
-    if (result != null && result.items.isNotEmpty) {
-      final newDoc = CommercialDocument(
-        id: const Uuid().v4(),
-        documentNumber: CommercialDocumentService.generateNextDocNumber(CommercialDocType.facture),
-        type: CommercialDocType.facture,
-        status: CommercialDocStatus.valide,
-        date: result.date ?? DateTime.now(),
-        entityName: result.entityName.isNotEmpty ? result.entityName : 'مورد عابر',
-        items: result.items,
-        amountPaid: 0.0,
-      );
-      await CommercialDocumentService.saveDocument(newDoc);
-      SoundService.playCheckoutSuccess();
-      if (mounted) {
-        context.showAppSnackBar('✅ تم استخراج الفاتورة وحفظها وإرسالها للحاسوب بنجاح!', icon: Icons.document_scanner);
-      }
-    }
-    
-    if (mounted) {
-      if (_isCameraOn) {
-        try { _scannerController.start(); } catch (_) {}
-      }
-      setState(() {
-        _isScanningPaused = false;
-        _lastScanTimes.clear();
-      });
-    }
-  }
+
 
   void _navigateToSettings() {
     setState(() => _isScanningPaused = true);
@@ -1331,7 +1299,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     InkWell(
-                      onTap: _scanInvoiceOCR,
+                      onTap: () => context.push('/documents'),
                       borderRadius: BorderRadius.circular(24),
                       child: Container(
                         width: 44,
@@ -1343,7 +1311,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                           border: Border.all(color: Colors.tealAccent),
                           boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
                         ),
-                        child: const Icon(Icons.document_scanner_rounded, color: Colors.tealAccent, size: 22),
+                        child: const Icon(Icons.auto_stories_rounded, color: Colors.tealAccent, size: 22),
                       ),
                     ),
                     InkWell(

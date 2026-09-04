@@ -8,7 +8,7 @@ class AlgerianDenominationDialog extends StatefulWidget {
   const AlgerianDenominationDialog({
     super.key,
     this.initialTotal = 0.0,
-    this.title = 'حاسبة الفئات النقدية الجزائرية 🇩🇿 (Fond & Caisse)',
+    this.title = 'حاسبة الفئات النقدية الجزائرية  (Fond & Caisse)',
   });
 
   static Future<double?> show(BuildContext context, {double initialTotal = 0.0, String? title}) {
@@ -17,7 +17,7 @@ class AlgerianDenominationDialog extends StatefulWidget {
       barrierDismissible: false,
       builder: (_) => AlgerianDenominationDialog(
         initialTotal: initialTotal,
-        title: title ?? 'حاسبة الفئات النقدية الجزائرية 🇩🇿 (Fond & Caisse)',
+        title: title ?? 'حاسبة الفئات النقدية الجزائرية  (Fond & Caisse)',
       ),
     );
   }
