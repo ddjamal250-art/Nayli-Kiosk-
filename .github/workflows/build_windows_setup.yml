@@ -39,7 +39,7 @@ jobs:
           (Get-Content "windows\CMakeLists.txt") -replace 'set\(BINARY_NAME "billing_app"\)', 'set(BINARY_NAME "Nayli-Market")' | Set-Content "windows\CMakeLists.txt"
 
           # 3. Set Windows native Title Bar text to "Nayli Market POS"
-          (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Market POS 🇩🇿"' | Set-Content "windows\runner\main.cpp"
+          (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Market POS"' | Set-Content "windows\runner\main.cpp"
 
           # 4. Set Windows File Description and Product Name metadata
           (Get-Content "windows\runner\Runner.rc") `

@@ -248,7 +248,13 @@ class PosHeaderToolbar extends StatelessWidget {
             tooltip: 'ملء الشاشة التام (Plein Écran) ⛶',
             icon: const Icon(Icons.fullscreen_rounded, color: Colors.cyanAccent, size: 24),
             onPressed: () async {
-              final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
+              bool isFull = false;
+              if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+                isFull = await windowManager.isFullScreen();
+              } else {
+                isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
+              }
+
               if (isFull) {
                 if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
                   await windowManager.setFullScreen(false);
