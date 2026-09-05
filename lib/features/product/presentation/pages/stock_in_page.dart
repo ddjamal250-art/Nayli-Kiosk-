@@ -108,6 +108,7 @@ class _StockInPageState extends State<StockInPage> {
     _sacCostController.addListener(_onSacCostChanged);
     _costPerKgController.addListener(_onKgCostChanged);
 
+    _costPriceController.addListener(_onUnitCostChanged);
     _priceController.addListener(() => setState(() {}));
 
     if (widget.initialReceiptResult != null && widget.initialReceiptResult!.items.isNotEmpty) {
@@ -209,6 +210,28 @@ class _StockInPageState extends State<StockInPage> {
       _sacCostController.text = sacCost.toStringAsFixed(2);
       _costPriceController.text = costPerKg.toStringAsFixed(2);
       _isUpdatingFromCalculation = false;
+    }
+    setState(() {});
+  }
+
+  void _onUnitCostChanged() {
+    if (_isUpdatingFromCalculation) return;
+    final unitCost = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
+    if (_unitMode == ArrivageUnitMode.cartons) {
+      final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+      if (perCarton > 0 && unitCost > 0) {
+        _isUpdatingFromCalculation = true;
+        _cartonCostController.text = (unitCost * perCarton).toStringAsFixed(2);
+        _isUpdatingFromCalculation = false;
+      }
+    } else if (_unitMode == ArrivageUnitMode.vracSacs) {
+      final kgPerSac = double.tryParse(_kgPerSacController.text.trim()) ?? 0.0;
+      if (kgPerSac > 0 && unitCost > 0) {
+        _isUpdatingFromCalculation = true;
+        _costPerKgController.text = unitCost.toStringAsFixed(2);
+        _sacCostController.text = (unitCost * kgPerSac).toStringAsFixed(2);
+        _isUpdatingFromCalculation = false;
+      }
     }
     setState(() {});
   }
@@ -1039,6 +1062,78 @@ class _StockInPageState extends State<StockInPage> {
                         ),
                       ),
                     ],
+                  ),
+                  // Live Profit & Expected Margin Card
+                  Builder(
+                    builder: (context) {
+                      final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+                      final cost = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
+                      final qty = int.tryParse(_qtyController.text.trim()) ?? 0;
+                      if (price <= 0 || cost <= 0) return const SizedBox.shrink();
+
+                      final unitProfit = price - cost;
+                      final marginPct = cost > 0 ? ((unitProfit / cost) * 100).toStringAsFixed(1) : '0';
+                      final totalProfit = unitProfit * qty;
+                      final isPos = unitProfit > 0;
+
+                      // Cartons extra info
+                      double? cartonProfit;
+                      if (_unitMode == ArrivageUnitMode.cartons) {
+                        final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+                        final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
+                        if (perCarton > 0 && cartonCost > 0) {
+                          cartonProfit = (price * perCarton) - cartonCost;
+                        }
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.only(top: 8, bottom: 6),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isPos ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: isPos ? const Color(0xFF86EFAC) : const Color(0xFFFECACA)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(isPos ? Icons.insights_rounded : Icons.trending_down,
+                                    size: 16, color: isPos ? const Color(0xFF16A34A) : Colors.red),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'أرباح متوقعة: ${unitProfit >= 0 ? "+" : ""}${unitProfit.toStringAsFixed(2)} DA / وحدة (هامش $marginPct%)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: isPos ? const Color(0xFF166534) : Colors.red.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (qty > 0) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '💰 إجمالي صافي أرباح هذه الشحنة بالكامل ($qty وحدة): ${totalProfit >= 0 ? "+" : ""}${totalProfit.toStringAsFixed(2)} DA',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.5,
+                                  color: isPos ? const Color(0xFF0F766E) : Colors.red.shade700,
+                                ),
+                              ),
+                            ],
+                            if (cartonProfit != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                '📦 صافي ربح الكرتونة الواحدة: ${cartonProfit >= 0 ? "+" : ""}${cartonProfit.toStringAsFixed(2)} DA',
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Color(0xFF0D9488)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 14),
 

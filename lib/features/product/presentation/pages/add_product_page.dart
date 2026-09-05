@@ -103,6 +103,234 @@ class _AddProductPageState extends State<AddProductPage> {
     SoundService.playScanBeep();
   }
 
+  bool _isAutoCalculating = false;
+
+  void _onCartonPriceChanged(String val) {
+    if (_isAutoCalculating) return;
+    final carton = double.tryParse(val.trim()) ?? 0.0;
+    final packs = int.tryParse(_packsPerCartonCtrl.text.trim()) ?? 10;
+    final pieces = int.tryParse(_piecesPerPackCtrl.text.trim()) ?? 20;
+    if (carton > 0 && packs > 0) {
+      _isAutoCalculating = true;
+      final packPrice = carton / packs;
+      _priceCtrl.text = packPrice % 1 == 0 ? packPrice.toInt().toString() : packPrice.toStringAsFixed(2);
+      if (pieces > 0) {
+        final piecePrice = (packPrice / pieces).ceilToDouble();
+        _singlePiecePriceCtrl.text = piecePrice % 1 == 0 ? piecePrice.toInt().toString() : piecePrice.toStringAsFixed(2);
+      }
+      _isAutoCalculating = false;
+      setState(() {});
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _onPackPriceChanged(String val) {
+    if (_isAutoCalculating) return;
+    final pack = double.tryParse(val.trim()) ?? 0.0;
+    final packs = int.tryParse(_packsPerCartonCtrl.text.trim()) ?? 10;
+    final pieces = int.tryParse(_piecesPerPackCtrl.text.trim()) ?? 20;
+    if (pack > 0 && packs > 0) {
+      _isAutoCalculating = true;
+      final carton = pack * packs;
+      _cartonPriceCtrl.text = carton % 1 == 0 ? carton.toInt().toString() : carton.toStringAsFixed(2);
+      if (pieces > 0) {
+        final piecePrice = (pack / pieces).ceilToDouble();
+        _singlePiecePriceCtrl.text = piecePrice % 1 == 0 ? piecePrice.toInt().toString() : piecePrice.toStringAsFixed(2);
+      }
+      _isAutoCalculating = false;
+      setState(() {});
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _onWholesaleCartonPriceChanged(String val) {
+    if (_isAutoCalculating) return;
+    final wCarton = double.tryParse(val.trim()) ?? 0.0;
+    final packs = int.tryParse(_packsPerCartonCtrl.text.trim()) ?? 10;
+    if (wCarton > 0 && packs > 0) {
+      _isAutoCalculating = true;
+      final wPack = wCarton / packs;
+      final text = wPack % 1 == 0 ? wPack.toInt().toString() : wPack.toStringAsFixed(2);
+      _wholesalePackPriceCtrl.text = text;
+      _wholesalePriceCtrl.text = text;
+      _isAutoCalculating = false;
+      setState(() {});
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _onWholesalePackPriceChanged(String val) {
+    if (_isAutoCalculating) return;
+    final wPack = double.tryParse(val.trim()) ?? 0.0;
+    final packs = int.tryParse(_packsPerCartonCtrl.text.trim()) ?? 10;
+    if (wPack > 0 && packs > 0) {
+      _isAutoCalculating = true;
+      final wCarton = wPack * packs;
+      _wholesaleCartonPriceCtrl.text = wCarton % 1 == 0 ? wCarton.toInt().toString() : wCarton.toStringAsFixed(2);
+      _wholesalePriceCtrl.text = val.trim();
+      _isAutoCalculating = false;
+      setState(() {});
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _onSinglePiecePriceChanged(String val) {
+    if (_isAutoCalculating) return;
+    final piece = double.tryParse(val.trim()) ?? 0.0;
+    final packs = int.tryParse(_packsPerCartonCtrl.text.trim()) ?? 10;
+    final pieces = int.tryParse(_piecesPerPackCtrl.text.trim()) ?? 20;
+    if (piece > 0 && pieces > 0) {
+      _isAutoCalculating = true;
+      final pack = piece * pieces;
+      final carton = pack * (packs > 0 ? packs : 10);
+      _priceCtrl.text = pack % 1 == 0 ? pack.toInt().toString() : pack.toStringAsFixed(2);
+      _cartonPriceCtrl.text = carton % 1 == 0 ? carton.toInt().toString() : carton.toStringAsFixed(2);
+      _isAutoCalculating = false;
+      setState(() {});
+    } else {
+      setState(() {});
+    }
+  }
+
+  Widget _buildTobaccoProfitCard() {
+    final cartonPrice = double.tryParse(_cartonPriceCtrl.text.trim()) ?? 0.0;
+    final packPrice = double.tryParse(_priceCtrl.text.trim()) ?? 0.0;
+    final piecePrice = double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? 0.0;
+    final costPrice = double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0;
+    final packs = int.tryParse(_packsPerCartonCtrl.text.trim()) ?? 10;
+    final pieces = int.tryParse(_piecesPerPackCtrl.text.trim()) ?? 20;
+
+    final packCost = costPrice;
+    final cartonCost = packCost * packs;
+    final pieceCost = (pieces > 0 && packCost > 0) ? (packCost / pieces) : 0.0;
+
+    final cartonProfit = (cartonPrice > 0 && cartonCost > 0) ? (cartonPrice - cartonCost) : 0.0;
+    final packProfit = (packPrice > 0 && packCost > 0) ? (packPrice - packCost) : 0.0;
+    final pieceProfit = (piecePrice > 0 && pieceCost > 0) ? (piecePrice - pieceCost) : 0.0;
+
+    final cartonProfitPercent = cartonCost > 0 ? ((cartonProfit / cartonCost) * 100).toStringAsFixed(1) : '0';
+    final packProfitPercent = packCost > 0 ? ((packProfit / packCost) * 100).toStringAsFixed(1) : '0';
+    final pieceProfitPercent = pieceCost > 0 ? ((pieceProfit / pieceCost) * 100).toStringAsFixed(1) : '0';
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14, bottom: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF86EFAC)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.query_stats_rounded, color: Color(0xFF16A34A), size: 18),
+              SizedBox(width: 6),
+              Text(
+                'حساب دقيق للأرباح الصافية المتوقعة 📊',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF166534)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildProfitPill(
+                  title: 'ربح الكرطوشة',
+                  profit: cartonProfit,
+                  percent: cartonProfitPercent,
+                  color: const Color(0xFF0D9488),
+                  icon: Icons.inventory_2_outlined,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildProfitPill(
+                  title: 'ربح العلبة',
+                  profit: packProfit,
+                  percent: packProfitPercent,
+                  color: const Color(0xFF2563EB),
+                  icon: Icons.crop_portrait_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildProfitPill(
+                  title: 'ربح السيجارة (الحبة)',
+                  profit: pieceProfit,
+                  percent: pieceProfitPercent,
+                  color: const Color(0xFFD97706),
+                  icon: Icons.smoking_rooms_rounded,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfitPill({
+    required String title,
+    required double profit,
+    required String percent,
+    required Color color,
+    required IconData icon,
+  }) {
+    final isPos = profit > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${profit >= 0 ? "+" : ""}${profit.toStringAsFixed(1)} دج',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: isPos ? color : Colors.red,
+            ),
+          ),
+          Text(
+            '($percent%)',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: isPos ? Colors.green[800] : Colors.red[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _submit() async {
     if (_isSaving) return;
     if (_formKey.currentState!.validate()) {
@@ -323,6 +551,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                     controller: _cartonPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: const InputDecoration(hintText: '4100', suffixText: 'دج'),
+                                    onChanged: _onCartonPriceChanged,
                                   ),
                                 ],
                               ),
@@ -337,6 +566,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                     controller: _wholesaleCartonPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: const InputDecoration(hintText: '3950', suffixText: 'دج'),
+                                    onChanged: _onWholesaleCartonPriceChanged,
                                   ),
                                 ],
                               ),
@@ -355,6 +585,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                     controller: _wholesalePackPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: const InputDecoration(hintText: '400', suffixText: 'دج'),
+                                    onChanged: _onWholesalePackPriceChanged,
                                   ),
                                 ],
                               ),
@@ -369,6 +600,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                     controller: _singlePiecePriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: const InputDecoration(hintText: '25', suffixText: 'دج'),
+                                    onChanged: _onSinglePiecePriceChanged,
                                   ),
                                 ],
                               ),
@@ -387,6 +619,13 @@ class _AddProductPageState extends State<AddProductPage> {
                                     controller: _piecesPerPackCtrl,
                                     keyboardType: TextInputType.number,
                                     decoration: const InputDecoration(hintText: '20'),
+                                    onChanged: (v) {
+                                      if (_cartonPriceCtrl.text.isNotEmpty) {
+                                        _onCartonPriceChanged(_cartonPriceCtrl.text);
+                                      } else if (_priceCtrl.text.isNotEmpty) {
+                                        _onPackPriceChanged(_priceCtrl.text);
+                                      }
+                                    },
                                   ),
                                 ],
                               ),
@@ -401,12 +640,20 @@ class _AddProductPageState extends State<AddProductPage> {
                                     controller: _packsPerCartonCtrl,
                                     keyboardType: TextInputType.number,
                                     decoration: const InputDecoration(hintText: '10'),
+                                    onChanged: (v) {
+                                      if (_cartonPriceCtrl.text.isNotEmpty) {
+                                        _onCartonPriceChanged(_cartonPriceCtrl.text);
+                                      } else if (_priceCtrl.text.isNotEmpty) {
+                                        _onPackPriceChanged(_priceCtrl.text);
+                                      }
+                                    },
                                   ),
                                 ],
                               ),
                             ),
                           ],
                         ),
+                        _buildTobaccoProfitCard(),
                       ],
                     ],
                   ),
@@ -460,6 +707,7 @@ class _AddProductPageState extends State<AddProductPage> {
                             controller: _costPriceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(hintText: '0', suffixText: 'دج'),
+                            onChanged: (_) => setState(() {}),
                           ),
                         ],
                       ),
@@ -475,6 +723,13 @@ class _AddProductPageState extends State<AddProductPage> {
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(hintText: '0', suffixText: 'دج'),
                             validator: AppValidators.price,
+                            onChanged: (v) {
+                              if (_isTobacco) {
+                                _onPackPriceChanged(v);
+                              } else {
+                                setState(() {});
+                              }
+                            },
                           ),
                         ],
                       ),
@@ -489,12 +744,56 @@ class _AddProductPageState extends State<AddProductPage> {
                             controller: _wholesalePriceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(hintText: '0', suffixText: 'دج'),
+                            onChanged: (v) {
+                              if (_isTobacco) {
+                                _onWholesalePackPriceChanged(v);
+                              } else {
+                                setState(() {});
+                              }
+                            },
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
+                if (!_isTobacco &&
+                    (double.tryParse(_priceCtrl.text) ?? 0) > 0 &&
+                    (double.tryParse(_costPriceCtrl.text) ?? 0) > 0) ...[
+                  const SizedBox(height: 6),
+                  Builder(
+                    builder: (context) {
+                      final p = double.tryParse(_priceCtrl.text) ?? 0;
+                      final c = double.tryParse(_costPriceCtrl.text) ?? 0;
+                      final diff = p - c;
+                      final pct = c > 0 ? ((diff / c) * 100).toStringAsFixed(1) : '0';
+                      final isPos = diff > 0;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isPos ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: isPos ? const Color(0xFF86EFAC) : const Color(0xFFFECACA)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(isPos ? Icons.trending_up : Icons.trending_down,
+                                size: 16, color: isPos ? const Color(0xFF16A34A) : Colors.red),
+                            const SizedBox(width: 6),
+                            Text(
+                              'صافي الربح للقطعة: ${diff >= 0 ? "+" : ""}${diff.toStringAsFixed(2)} دج (نسبة الربح: $pct%)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isPos ? const Color(0xFF166534) : Colors.red.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: 16),
 
                 // Stock Quantity & Quick Batch Arrivage Addition Chips

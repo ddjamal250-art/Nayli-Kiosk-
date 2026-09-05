@@ -625,6 +625,19 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       _buildDivider(),
       _buildTile(
+        icon: Icons.settings_backup_restore_rounded,
+        iconColor: Colors.deepOrange,
+        title: 'استرجاع واستيراد قاعدة البيانات (Restore Data) 📥',
+        subtitle: 'استرجاع المنتجات والزبائن والفواتير من ملف خارجي (.nbak / ZIP / فلاش ديسك)',
+        onTap: () async {
+          final auth = await SecurityPinHelper.authenticate(context, title: 'استرجاع قاعدة البيانات');
+          if (auth && context.mounted) {
+            context.push('/backups');
+          }
+        },
+      ),
+      _buildDivider(),
+      _buildTile(
         icon: Icons.table_chart_outlined,
         iconColor: Colors.green[700]!,
         title: 'النسخ الاحتياطي وتصدير البيانات (Excel & Backup)',
@@ -1389,6 +1402,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   '💾 تم إنشاء ونسخ النسخة الاحتياطية الكاملة للمحل بنجاح!',
                   backgroundColor: Colors.blue[800]!,
                 );
+              },
+            ),
+            const Divider(height: 8),
+            ListTile(
+              leading: const CircleAvatar(backgroundColor: Color(0xFFFFEBEE), child: Icon(Icons.settings_backup_restore_rounded, color: Colors.deepOrange)),
+              title: const Text('استرجاع قاعدة البيانات من ملف خارجي (.nbak / ZIP) 📥'),
+              subtitle: const Text('استيراد المنتجات والبيانات من فلاش ديسك أو قرص صلب (مثل G:\\data\\graviola_migration_to_nayli.nbak)'),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/backups');
               },
             ),
             const Divider(height: 8),

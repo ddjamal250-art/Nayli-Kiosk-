@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/product_image_search_service.dart';
 
@@ -132,6 +133,66 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                         child: const Text('بحث'),
                       ),
                     ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ActionChip(
+                          avatar: const Icon(Icons.open_in_browser, size: 16, color: Colors.blue),
+                          label: const Text('فتح بحث صور Google 🌐', style: TextStyle(fontSize: 11)),
+                          onPressed: () {
+                            final q = queryCtrl.text.trim().isNotEmpty ? queryCtrl.text.trim() : widget.barcode;
+                            if (q.isNotEmpty) {
+                              final uri = Uri.parse('https://www.google.com/search?tbm=isch&q=${Uri.encodeComponent(q)}');
+                              launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ActionChip(
+                          avatar: const Icon(Icons.link, size: 16, color: Colors.teal),
+                          label: const Text('لصق رابط صورة 🔗', style: TextStyle(fontSize: 11)),
+                          onPressed: () async {
+                            final urlCtrl = TextEditingController();
+                            final pasted = await showDialog<String>(
+                              context: context,
+                              builder: (dialogCtx) => AlertDialog(
+                                title: const Text('لصق رابط صورة مباشرة 🔗', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                                content: TextField(
+                                  controller: urlCtrl,
+                                  decoration: const InputDecoration(
+                                    hintText: 'https://example.com/image.jpg',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('إلغاء')),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(dialogCtx, urlCtrl.text.trim()),
+                                    child: const Text('استخدام الصورة'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (pasted != null && pasted.startsWith('http')) {
+                              Navigator.pop(ctx);
+                              setState(() => _isLoading = true);
+                              try {
+                                final localPath = await ProductImageSearchService.instance
+                                    .downloadAndSaveImageLocally(pasted);
+                                _setImage(localPath ?? pasted);
+                              } finally {
+                                if (mounted) setState(() => _isLoading = false);
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const Divider(height: 1),

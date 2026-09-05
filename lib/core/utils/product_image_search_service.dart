@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import '../data/master_catalog_service.dart';
 
 class ProductImageSearchResult {
   final String url;
@@ -23,18 +24,54 @@ class ProductImageSearchService {
   final HttpClient _httpClient = HttpClient()
     ..connectionTimeout = const Duration(seconds: 5);
 
-  /// Search images by barcode first (Open Food Facts), then fallback to text query
+  /// Search images across:
+  /// 1. Master Catalog (Algerian local products catalog - instant & offline)
+  /// 2. Open Food Facts by Barcode
+  /// 3. Open Food Facts by Keywords
+  /// 4. Web & Bing Images Search
+  /// 5. Wikimedia Commons & Wikipedia
   Future<List<ProductImageSearchResult>> searchImages({
     String? barcode,
     String? query,
-    int maxResults = 8,
+    int maxResults = 12,
   }) async {
     final List<ProductImageSearchResult> results = [];
     final cleanBarcode = barcode?.trim() ?? '';
     final cleanQuery = query?.trim() ?? '';
 
-    // 1. Try exact barcode match from Open Food Facts
-    if (cleanBarcode.isNotEmpty) {
+    // 1. Master Catalog (instant match from verified Algerian goods)
+    try {
+      if (cleanBarcode.isNotEmpty) {
+        final m = MasterCatalogService.searchByBarcode(cleanBarcode);
+        if (m != null && m.imageUrl != null && m.imageUrl!.isNotEmpty) {
+          results.add(ProductImageSearchResult(
+            url: m.imageUrl!,
+            title: m.name,
+            source: 'الكتالوج الجزائري الشامل 🇩🇿',
+          ));
+        }
+      }
+      if (cleanQuery.isNotEmpty && results.length < maxResults) {
+        final matches = MasterCatalogService.instance.search(cleanQuery);
+        for (final m in matches) {
+          if (m.imageUrl != null &&
+              m.imageUrl!.isNotEmpty &&
+              !results.any((r) => r.url == m.imageUrl)) {
+            results.add(ProductImageSearchResult(
+              url: m.imageUrl!,
+              title: m.name,
+              source: 'الكتالوج الجزائري الشامل 🇩🇿',
+            ));
+            if (results.length >= 4) break;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Master Catalog search error: $e');
+    }
+
+    // 2. Open Food Facts (Barcode)
+    if (results.length < maxResults && cleanBarcode.isNotEmpty) {
       try {
         final barcodeResults = await _searchOpenFoodFactsByBarcode(cleanBarcode);
         results.addAll(barcodeResults);
@@ -43,7 +80,7 @@ class ProductImageSearchService {
       }
     }
 
-    // 2. Try Open Food Facts search by name/keywords
+    // 3. Open Food Facts (Text)
     if (results.length < maxResults && (cleanQuery.isNotEmpty || cleanBarcode.isNotEmpty)) {
       final term = cleanQuery.isNotEmpty ? cleanQuery : cleanBarcode;
       try {
@@ -59,7 +96,37 @@ class ProductImageSearchService {
       }
     }
 
-    // 3. Fallback: Wikimedia / Wikipedia Commons image search
+    // 4. Web & Bing Image Search (Real web images)
+    if (results.length < maxResults && cleanQuery.isNotEmpty) {
+      try {
+        final bingResults = await _searchBingImages(cleanQuery);
+        for (final r in bingResults) {
+          if (!results.any((existing) => existing.url == r.url)) {
+            results.add(r);
+          }
+          if (results.length >= maxResults) break;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Bing search error: $e');
+      }
+    }
+
+    // 5. Wikimedia Commons Image search
+    if (results.length < maxResults && cleanQuery.isNotEmpty) {
+      try {
+        final commonsResults = await _searchWikimediaCommonsImages(cleanQuery);
+        for (final r in commonsResults) {
+          if (!results.any((existing) => existing.url == r.url)) {
+            results.add(r);
+          }
+          if (results.length >= maxResults) break;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Wikimedia Commons search error: $e');
+      }
+    }
+
+    // 6. Wikipedia Fallback
     if (results.length < maxResults && cleanQuery.isNotEmpty) {
       try {
         final wikiResults = await _searchWikimediaImages(cleanQuery);
@@ -151,6 +218,91 @@ class ProductImageSearchService {
         }
       }
     } catch (_) {}
+    return results;
+  }
+
+  Future<List<ProductImageSearchResult>> _searchBingImages(String query) async {
+    final List<ProductImageSearchResult> results = [];
+    try {
+      final uri = Uri.parse(
+        'https://www.bing.com/images/search?q=${Uri.encodeComponent(query)}&form=HDRSC2&first=1',
+      );
+      final request = await _httpClient.getUrl(uri);
+      request.headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+      request.headers.set('Accept-Language', 'fr-FR,fr;q=0.9,ar;q=0.8,en;q=0.7');
+      final response = await request.close().timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final body = await response.transform(utf8.decoder).join();
+        final matches = RegExp(r'class="iusc"[^>]*?m="([^"]+)"').allMatches(body);
+        for (final m in matches) {
+          final rawJson = m.group(1);
+          if (rawJson != null) {
+            final unescaped = rawJson
+                .replaceAll('&quot;', '"')
+                .replaceAll('&amp;', '&')
+                .replaceAll('&lt;', '<')
+                .replaceAll('&gt;', '>');
+            try {
+              final parsed = jsonDecode(unescaped) as Map<String, dynamic>;
+              final murl = parsed['murl']?.toString();
+              final turl = parsed['turl']?.toString();
+              final title = parsed['t']?.toString() ?? query;
+              final chosenUrl = (murl != null && murl.startsWith('http')) ? murl : turl;
+              if (chosenUrl != null && chosenUrl.startsWith('http')) {
+                results.add(ProductImageSearchResult(
+                  url: chosenUrl,
+                  title: title,
+                  source: 'محرك بحث الصور (Bing)',
+                ));
+              }
+            } catch (_) {}
+          }
+          if (results.length >= 8) break;
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Bing search error: $e');
+    }
+    return results;
+  }
+
+  Future<List<ProductImageSearchResult>> _searchWikimediaCommonsImages(String query) async {
+    final List<ProductImageSearchResult> results = [];
+    try {
+      final uri = Uri.parse(
+        'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${Uri.encodeComponent(query)}&gsrnamespace=6&prop=imageinfo&iiprop=url|size&format=json&gsrlimit=8',
+      );
+      final request = await _httpClient.getUrl(uri);
+      request.headers.set('User-Agent', 'NayliPOS/2.0 (contact@naylipos.dz)');
+      final response = await request.close().timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final body = await response.transform(utf8.decoder).join();
+        final data = jsonDecode(body);
+        if (data is Map && data['query'] is Map && data['query']['pages'] is Map) {
+          final pages = data['query']['pages'] as Map;
+          for (final p in pages.values) {
+            if (p is Map && p['imageinfo'] is List && (p['imageinfo'] as List).isNotEmpty) {
+              final info = (p['imageinfo'] as List).first as Map;
+              final url = info['url']?.toString();
+              final title = (p['title']?.toString() ?? query).replaceFirst('File:', '');
+              if (url != null &&
+                  (url.endsWith('.jpg') ||
+                      url.endsWith('.png') ||
+                      url.endsWith('.jpeg') ||
+                      url.endsWith('.webp'))) {
+                results.add(ProductImageSearchResult(
+                  url: url,
+                  title: title,
+                  source: 'ويكيميديا كومونز العالمية',
+                ));
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Wikimedia Commons search error: $e');
+    }
     return results;
   }
 
