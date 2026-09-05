@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../data/hive_database.dart';
 import 'online_license_service.dart';
+import 'whatsapp_helper.dart';
 
 class TelegramService {
   static const String defaultBotUsername = 'nayli_pos_dz_bot';
@@ -124,25 +125,14 @@ class TelegramService {
     return false;
   }
 
-  /// إرسال تقرير إلى رقم هاتف التاجر عبر WhatsApp مباشرة
+  /// إرسال تقرير إلى رقم هاتف التاجر عبر WhatsApp مباشرة (محاولة فتح التطبيق المكتبي مباشرة)
   static Future<bool> sendWhatsAppReport({
     required String phone,
     required String message,
   }) async {
-    var cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = '213' + cleanPhone.substring(1);
-    } else if (cleanPhone.startsWith('+')) {
-      cleanPhone = cleanPhone.substring(1);
-    }
-
-    final encodedMsg = Uri.encodeComponent(message);
-    final whatsappUrl = 'https://wa.me/' + cleanPhone + '?text=' + encodedMsg;
-    final uri = Uri.parse(whatsappUrl);
-
-    if (await canLaunchUrl(uri)) {
-      return await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-    return false;
+    return WhatsAppReceiptHelper.sendDirectWhatsAppMessage(
+      phone: phone,
+      message: message,
+    );
   }
 }

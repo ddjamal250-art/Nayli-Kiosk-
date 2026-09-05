@@ -1,10 +1,39 @@
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/data/hive_database.dart';
 import '../../core/utils/app_constants.dart';
 import '../../features/billing/domain/entities/cart_item.dart';
 import '../../features/shop/data/models/shop_model.dart';
 
 class WhatsAppReceiptHelper {
+  /// Attempts to launch WhatsApp native app directly (without passing through web browser)
+  /// using the `whatsapp://send` URI scheme, falling back to `https://wa.me/` if not installed.
+  static Future<bool> sendDirectWhatsAppMessage({
+    required String phone,
+    required String message,
+  }) async {
+    final cleanPhone = formatAlgerianPhone(phone);
+    final encodedMsg = Uri.encodeComponent(message);
+
+    // 1. First priority: native desktop / mobile app protocol (bypasses browser)
+    final nativeUri = Uri.parse('whatsapp://send?phone=$cleanPhone&text=$encodedMsg');
+    try {
+      if (await canLaunchUrl(nativeUri)) {
+        final launched = await launchUrl(nativeUri, mode: LaunchMode.externalNonBrowserApplication);
+        if (launched) return true;
+      }
+    } catch (_) {}
+
+    // 2. Fallback: web universal link (if native app protocol not recognized)
+    final webUri = Uri.parse('https://wa.me/$cleanPhone?text=$encodedMsg');
+    try {
+      if (await canLaunchUrl(webUri)) {
+        return await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+
+    return false;
+  }
   /// Generate a clean, beautifully formatted WhatsApp text receipt for sales & credit
   static String generateReceiptMessage({
     required List<CartItem> items,
