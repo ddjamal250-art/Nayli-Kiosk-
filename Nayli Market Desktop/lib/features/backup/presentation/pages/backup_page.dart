@@ -9,7 +9,6 @@ import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/telegram_service.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
-import '../../../product/presentation/bloc/product_event.dart';
 import '../../data/backup_service.dart';
 
 class BackupPage extends StatefulWidget {
@@ -455,7 +454,7 @@ class _BackupPageState extends State<BackupPage> {
       final ok = await BackupService.restoreDatabaseFromFile(file);
       if (ok) {
         if (mounted) {
-          context.read<ProductBloc>().add(const LoadProducts());
+          context.read<ProductBloc>().add(LoadProducts());
         }
         await _loadBackups();
         SoundService.playCheckoutSuccess();

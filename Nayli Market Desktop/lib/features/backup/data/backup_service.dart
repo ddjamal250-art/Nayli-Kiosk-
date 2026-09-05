@@ -11,6 +11,7 @@ import '../../../core/data/hive_database.dart';
 import '../../../core/data/local_sync_server.dart';
 import '../../../core/utils/telegram_service.dart';
 import '../../documents/data/commercial_document_service.dart';
+import '../../product/data/models/product_model.dart';
 
 class BackupSnapshotInfo {
   final String filePath;
