@@ -29,17 +29,17 @@ jobs:
       - name: Scaffold Windows Platform Files
         run: flutter create --platforms=windows --project-name billing_app .
 
-      - name: Apply Custom Nayli Market Branding, Icon & Executable Name
+      - name: Apply Custom Nayli Kiosk Branding, Icon & Executable Name
         shell: powershell
         run: |
-          # 1. Replace default Flutter icon with official Nayli Market multi-res icon
+          # 1. Replace default Flutter icon with official Nayli Kiosk multi-res icon
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
           # 2. Rename executable binary from billing_app.exe to Nayli-Kiosk.exe
           (Get-Content "windows\CMakeLists.txt") -replace 'set\(BINARY_NAME "billing_app"\)', 'set(BINARY_NAME "Nayli-Kiosk")' | Set-Content "windows\CMakeLists.txt"
 
           # 3. Set Windows native Title Bar text to "Nayli Kiosk POS"
-          (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Kiosk POS 🇩🇿"' | Set-Content "windows\runner\main.cpp"
+          (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Kiosk POS"' | Set-Content "windows\runner\main.cpp"
 
           # 4. Set Windows File Description and Product Name metadata
           (Get-Content "windows\runner\Runner.rc") `

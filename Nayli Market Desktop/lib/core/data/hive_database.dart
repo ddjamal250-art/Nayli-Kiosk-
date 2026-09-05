@@ -22,7 +22,7 @@ class HiveDatabase {
   static const String shoppingListBoxName = 'shopping_list_box';
 
   static Future<void> init() async {
-    await Hive.initFlutter();
+    await Hive.initFlutter('nayli_kiosk_data');
 
     // Register Adapters
     Hive.registerAdapter(ProductModelAdapter());

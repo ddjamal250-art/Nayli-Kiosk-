@@ -201,7 +201,7 @@ class ProductImageSearchService {
       if (pickedFile == null) return null;
 
       final appDir = await getApplicationDocumentsDirectory();
-      final imagesDir = Directory('${appDir.path}/product_images');
+      final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
       if (!await imagesDir.exists()) {
         await imagesDir.create(recursive: true);
       }
@@ -226,7 +226,7 @@ class ProductImageSearchService {
       if (response.statusCode == 200) {
         final bytes = await consolidateHttpClientResponseBytes(response);
         final appDir = await getApplicationDocumentsDirectory();
-        final imagesDir = Directory('${appDir.path}/product_images');
+        final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
         if (!await imagesDir.exists()) {
           await imagesDir.create(recursive: true);
         }

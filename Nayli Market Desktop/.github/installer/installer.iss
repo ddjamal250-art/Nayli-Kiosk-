@@ -4,7 +4,7 @@
 #define MyAppExeName "Nayli-Kiosk.exe"
 
 [Setup]
-AppId={{D821F244-6C0D-4C92-9F9C-A63E0124B8A1}
+AppId={{971D42B5-5B47-4410-A762-A0328D616C12}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}

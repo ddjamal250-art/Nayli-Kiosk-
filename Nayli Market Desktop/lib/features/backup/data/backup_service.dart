@@ -61,7 +61,7 @@ class BackupService {
     } catch (_) {
       baseDir = Directory.current;
     }
-    final backupDir = Directory('${baseDir.path}/NayliMarket_Backups');
+    final backupDir = Directory('${baseDir.path}/NayliKiosk_Backups');
     if (!await backupDir.exists()) {
       await backupDir.create(recursive: true);
     }
@@ -235,7 +235,7 @@ class BackupService {
 
       // Setup images directory
       final appDir = await getApplicationDocumentsDirectory();
-      final imagesDir = Directory('${appDir.path}/product_images');
+      final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
       if (!await imagesDir.exists()) await imagesDir.create(recursive: true);
 
       // Extract images if present in the backup zip
