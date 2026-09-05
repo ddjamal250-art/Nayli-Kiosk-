@@ -482,9 +482,25 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildTile(
         icon: Icons.tv_rounded,
         iconColor: const Color(0xFF4F46E5),
-        title: 'كشك فاحص الأسعار وشاشات العروض الترويجية 🛍️',
+        title: 'إعدادات كشك الأسعار وشاشات العروض الترويجية ⚙️',
         subtitle: 'تخصيص مدة العرض، سهم الماسح، ورابط الشاشات الذكية (LAN Kiosk)',
         onTap: () => context.push('/kiosk-settings'),
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.qr_code_scanner_rounded,
+        iconColor: const Color(0xFF4F46E5),
+        title: 'تشغيل كشك فاحص الأسعار للزبائن (Kiosk Mode) 🛍️',
+        subtitle: 'فتح واجهة الفحص الفوري التفاعلية للزبائن على هذا الجهاز',
+        onTap: () => context.push('/kiosk'),
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.tune_rounded,
+        iconColor: Colors.blueGrey,
+        title: 'إعدادات التشغيل المتقدمة والموازين الإلكترونية 🎛️',
+        subtitle: 'تخصيص اختصارات لوحة المفاتيح والموازين الرقمية ودرج النقود',
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage())),
       ),
     ]);
   }
@@ -863,6 +879,28 @@ class _SettingsPageState extends State<SettingsPage> {
                   Navigator.pop(ctx);
                   final auth = await SecurityPinHelper.authenticate(context, title: 'سجل التوالف والاهتلاك');
                   if (auth && context.mounted) context.push('/products/losses');
+                },
+              ),
+              const Divider(height: 8),
+              _buildHubActionTile(
+                icon: Icons.hourglass_bottom_rounded,
+                iconColor: Colors.amber[900]!,
+                title: 'مراقبة الصلاحية والتواريخ ⏳🚨',
+                subtitle: 'تتبع السلع القريبة من نهاية الصلاحية وتجنب الخسائر',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/products/expiry-monitor');
+                },
+              ),
+              const Divider(height: 8),
+              _buildHubActionTile(
+                icon: Icons.shopping_cart_checkout,
+                iconColor: Colors.orange[800]!,
+                title: 'قائمة النواقص والتسوق (Shopping List) 🛒📝',
+                subtitle: 'سجل النواقص للشراء من سوق الجملة وتصديره ومشاركته',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/products/shopping-list');
                 },
               ),
               const SizedBox(height: 10),

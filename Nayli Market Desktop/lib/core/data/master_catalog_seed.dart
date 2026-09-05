@@ -36,6 +36,7 @@ class MasterCatalogItem {
   });
 
   String get categoryIcon {
+    if (category.contains('مدرس') || category.contains('مكتب') || category.contains('قرطاس') || category.contains('قلم') || category.contains('كراس') || category.contains('سيالة') || category.contains('ورق')) return '📚';
     if (category.contains('تبغ') || category.contains('سجائر') || isTobacco) return '🚬';
     if (category.contains('شمة')) return '🌿';
     if (category.contains('معسل') || category.contains('شيشة')) return '💨';
@@ -58,6 +59,7 @@ class MasterCatalogItem {
 class MasterCatalogSeed {
   static const List<String> categories = [
     'الكل',
+    'أدوات مدرسية ومكتبية',
     'تبغ وسجائر',
     'شمة وتمباك',
     'معسل وشيشة',
@@ -1724,6 +1726,28 @@ class MasterCatalogSeed {
     MasterCatalogItem(barcode: 'SCALE_CHICKEN', name: 'دجاج طازج بالميزان 1kg', category: 'بضاعة الميزان والتجزئة (Vrac)', defaultPrice: 480.0, defaultCost: 420.0),
     MasterCatalogItem(barcode: 'SCALE_ESCALOPE', name: 'إسكالوب دجاج/داند بدون عظم 1kg', category: 'بضاعة الميزان والتجزئة (Vrac)', defaultPrice: 950.0, defaultCost: 820.0),
     MasterCatalogItem(barcode: 'SCALE_MEAT_MINCED', name: 'لحم مفروم فاشي طازج 1kg', category: 'بضاعة الميزان والتجزئة (Vrac)', defaultPrice: 2200.0, defaultCost: 1900.0),
+
+    // 📚 أدوات مدرسية ومكتبية وقرطاسية في الجزائر
+    MasterCatalogItem(barcode: '070330129668', name: 'قلم جاف بيك أزرق (Stylo Bic Cristal Bleu)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 25.0, defaultCost: 18.0, wholesalePrice: 20.0, cartonPrice: 1000.0, piecesPerPack: 50),
+    MasterCatalogItem(barcode: '070330129675', name: 'قلم جاف بيك أحمر (Stylo Bic Cristal Rouge)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 25.0, defaultCost: 18.0, wholesalePrice: 20.0, cartonPrice: 1000.0, piecesPerPack: 50),
+    MasterCatalogItem(barcode: '070330129682', name: 'قلم جاف بيك أسود (Stylo Bic Cristal Noir)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 25.0, defaultCost: 18.0, wholesalePrice: 20.0, cartonPrice: 1000.0, piecesPerPack: 50),
+    MasterCatalogItem(barcode: '070330129699', name: 'قلم جاف بيك أخضر (Stylo Bic Cristal Vert)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 25.0, defaultCost: 18.0, wholesalePrice: 20.0, cartonPrice: 1000.0, piecesPerPack: 50),
+    MasterCatalogItem(barcode: '6131101000641', name: 'كراس مدرسي 64 صفحة مسطر (Cahier 64p)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 45.0, defaultCost: 35.0, wholesalePrice: 38.0, cartonPrice: 450.0, piecesPerPack: 10),
+    MasterCatalogItem(barcode: '6131101000962', name: 'كراس مدرسي 96 صفحة مسطر (Cahier 96p)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 65.0, defaultCost: 50.0, wholesalePrice: 55.0, cartonPrice: 650.0, piecesPerPack: 10),
+    MasterCatalogItem(barcode: '6131101001204', name: 'كراس مدرسي 120 صفحة مسطر (Cahier 120p)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 90.0, defaultCost: 72.0, wholesalePrice: 78.0, cartonPrice: 900.0, piecesPerPack: 10),
+    MasterCatalogItem(barcode: '6131101002881', name: 'كراس سجل 288 صفحة كبير (Cahier 288p Registre)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 250.0, defaultCost: 195.0, wholesalePrice: 215.0),
+    MasterCatalogItem(barcode: '6131101000320', name: 'كراس رسم وتلوين مدرسي (Cahier de dessin)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 60.0, defaultCost: 45.0, wholesalePrice: 50.0),
+    MasterCatalogItem(barcode: '6131102000101', name: 'ممحاة مدرسية بيضاء كلاسيك (Gomme blanche)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 20.0, defaultCost: 12.0, wholesalePrice: 15.0, cartonPrice: 400.0, piecesPerPack: 30),
+    MasterCatalogItem(barcode: '6131102000200', name: 'مبراة أقلام بحاوية نفايات (Taille-crayon)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 35.0, defaultCost: 22.0, wholesalePrice: 28.0),
+    MasterCatalogItem(barcode: '6131103000309', name: 'مسطرة بلاستيكية شفافة 30 سم (Règle 30cm)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 30.0, defaultCost: 18.0, wholesalePrice: 22.0),
+    MasterCatalogItem(barcode: '6131104000124', name: 'علبة أقلام خشبية ملونة 12 لون (Crayons 12)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 120.0, defaultCost: 85.0, wholesalePrice: 95.0),
+    MasterCatalogItem(barcode: '6131104000247', name: 'قلم رصاص خشب أسود HB (Crayon HB)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 20.0, defaultCost: 12.0, wholesalePrice: 15.0),
+    MasterCatalogItem(barcode: '6131105000012', name: 'مصحح سائل أبيض بلانكو (Correcteur Bloco)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 70.0, defaultCost: 48.0, wholesalePrice: 55.0),
+    MasterCatalogItem(barcode: '6131105000029', name: 'أنبوب غراء مدرسي لاصق (Tube de colle)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 50.0, defaultCost: 32.0, wholesalePrice: 38.0),
+    MasterCatalogItem(barcode: '6131105000036', name: 'شريط لاصق شفاف سكوتش عريض/صغير (Scotch)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 40.0, defaultCost: 25.0, wholesalePrice: 30.0),
+    MasterCatalogItem(barcode: '6131106000019', name: 'غلاف كراس بلاستيكي ملون (Protège-cahier)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 20.0, defaultCost: 12.0, wholesalePrice: 15.0),
+    MasterCatalogItem(barcode: '6131107000016', name: 'أوراق مزدوجة مسطرة حزمة 50 ورقة (Feuilles doubles)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 150.0, defaultCost: 110.0, wholesalePrice: 125.0),
+    MasterCatalogItem(barcode: '6131108000500', name: 'رزمة ورق طباعة أبيض A4 80g (Ramette 500f)', category: 'أدوات مدرسية ومكتبية', defaultPrice: 850.0, defaultCost: 720.0, wholesalePrice: 760.0),
   ];
 
   static MasterCatalogItem? lookup(String barcode) {

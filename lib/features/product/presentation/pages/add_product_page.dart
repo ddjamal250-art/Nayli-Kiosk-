@@ -11,6 +11,7 @@ import '../../../../core/utils/app_validators.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/catalog_crowdsource_helper.dart';
+import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
@@ -42,6 +43,7 @@ class _AddProductPageState extends State<AddProductPage> {
   final TextEditingController _piecesPerPackCtrl = TextEditingController(text: '20');
 
   String _selectedCategory = 'عام';
+  bool _isCategoryUserSelected = false;
   String? _imageUrl;
   bool _isTobacco = false;
   String _unitType = 'piece'; // 'piece', 'meter', 'ml'
@@ -51,6 +53,7 @@ class _AddProductPageState extends State<AddProductPage> {
 
   static const List<String> categories = [
     'عام',
+    'أدوات مدرسية ومكتبية',
     'تبغ وسجائر',
     'شمة وتبغ تقليدي',
     'ورق لف وفلاتر',
@@ -66,6 +69,24 @@ class _AddProductPageState extends State<AddProductPage> {
     'خضر وفواكه',
     'أخرى',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl.addListener(() {
+      if (!_isCategoryUserSelected && _nameCtrl.text.trim().isNotEmpty) {
+        final detected = CategoryTaxonomy.smartDetect(_nameCtrl.text.trim());
+        if (mounted && _selectedCategory != detected.titleAr) {
+          setState(() {
+            _selectedCategory = categories.contains(detected.titleAr) ? detected.titleAr : 'عام';
+            if (_selectedCategory.contains('تبغ') || _selectedCategory.contains('شمة') || _selectedCategory.contains('معسل')) {
+              _isTobacco = true;
+            }
+          });
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -466,6 +487,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     if (val != null) {
                       setState(() {
                         _selectedCategory = val;
+                        _isCategoryUserSelected = true;
                         if (val.contains('تبغ') || val.contains('شمة') || val.contains('معسل') || val.contains('ولاع') || val.contains('ورق لف')) {
                           _isTobacco = true;
                         }

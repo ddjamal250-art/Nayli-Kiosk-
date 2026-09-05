@@ -103,6 +103,7 @@ class AppLocalizations {
 
       // Categories
       'cat_all': 'الكل',
+      'cat_stationery': 'أدوات مدرسية ومكتبية',
       'cat_beverages': 'المشروبات',
       'cat_pulses': 'البقوليات',
       'cat_cleaning': 'المنظفات',
@@ -110,6 +111,7 @@ class AppLocalizations {
       'cat_scale': 'الميزان',
       'cat_dairy': 'الألبان',
       'cat_spices': 'التوابل',
+      'cat_tobacco': 'تبغ وسجائر',
 
       // Payment & Credit Modes
       'payment_mode': 'طريقة الدفع',
@@ -187,7 +189,7 @@ class AppLocalizations {
 
       // Quick Add Bottom Sheet
       'quick_add_title': 'منتج غير مسجل - إضافة سريعة',
-      'master_recognized': 'تم التعرف على المنتج في الكتالوج الجزائري! ',
+      'master_recognized': 'تم التعرف على المنتج في الكتالوج الجزائري! 🇩🇿',
       'barcode_label': 'باركود',
       'product_name': 'اسم المنتج',
       'initial_stock': 'الكمية الأولية',
@@ -242,7 +244,7 @@ class AppLocalizations {
       'pos_station_radar': 'رادار الكاشيرات الحية',
       'call_supervisor': 'نداء المشرف العام للمساعدة 🔔',
       'blind_shift_close': 'إغلاق الصندوق الأعمى',
-      'cash_denominations': 'حاسبة الفئات النقدية الجزائرية ',
+      'cash_denominations': 'حاسبة الفئات النقدية الجزائرية 🇩🇿',
       'unique_pin_error': 'هذا الرمز السري مستخدم مسبقاً لعامل آخر!',
     },
     'fr': {
@@ -335,6 +337,7 @@ class AppLocalizations {
 
       // Categories
       'cat_all': 'Tous',
+      'cat_stationery': 'Fournitures Scolaires',
       'cat_beverages': 'Boissons',
       'cat_pulses': 'Épicerie',
       'cat_cleaning': 'Entretien',
@@ -342,6 +345,7 @@ class AppLocalizations {
       'cat_scale': 'Vrac & Poids',
       'cat_dairy': 'Laitiers',
       'cat_spices': 'Épices',
+      'cat_tobacco': 'Tabac & Cigarettes',
 
       // Payment & Credit Modes
       'payment_mode': 'Mode de Paiement',
@@ -419,7 +423,7 @@ class AppLocalizations {
 
       // Quick Add Bottom Sheet
       'quick_add_title': 'Produit non enregistré - Ajout rapide',
-      'master_recognized': 'Reconnu dans le catalogue algérien ! ',
+      'master_recognized': 'Reconnu dans le catalogue algérien ! 🇩🇿',
       'barcode_label': 'Code-barres',
       'product_name': 'Nom du produit',
       'initial_stock': 'Quantité initiale',
@@ -567,6 +571,7 @@ class AppLocalizations {
 
       // Categories
       'cat_all': 'All',
+      'cat_stationery': 'Stationery',
       'cat_beverages': 'Beverages',
       'cat_pulses': 'Grocery',
       'cat_cleaning': 'Cleaning',
@@ -574,6 +579,7 @@ class AppLocalizations {
       'cat_scale': 'Scale & Bulk',
       'cat_dairy': 'Dairy',
       'cat_spices': 'Spices',
+      'cat_tobacco': 'Tobacco & Cigarettes',
 
       // Payment & Credit Modes
       'payment_mode': 'Payment Method',
@@ -651,7 +657,7 @@ class AppLocalizations {
 
       // Quick Add Bottom Sheet
       'quick_add_title': 'Unregistered Product - Quick Add',
-      'master_recognized': 'Recognized from Algerian Master Catalog! ',
+      'master_recognized': 'Recognized from Algerian Master Catalog! 🇩🇿',
       'barcode_label': 'Barcode',
       'product_name': 'Product Name',
       'initial_stock': 'Initial Stock',

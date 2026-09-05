@@ -469,33 +469,6 @@ class _SettingsPageState extends State<SettingsPage> {
           subtitle: 'تحديد طابعة التوصيل الحرارية (80mm) وطابعة الفواتير (A4)',
           onTap: () => PrinterSelectionDialog.show(context),
         ),
-        _buildDivider(),
-        StatefulBuilder(
-          builder: (context, setState) {
-            final mode = HiveDatabase.settingsBox.get('windows_fullscreen_mode', defaultValue: 'maximize_mode') as String;
-            return _buildTile(
-              icon: Icons.fullscreen_rounded,
-              iconColor: Colors.cyan[700]!,
-              title: 'نمط ملء الشاشة (Plein Écran)',
-              subtitle: mode == 'game_mode' ? 'ملء الشاشة التام (يخفي شريط المهام)' : 'تكبير النافذة (مع بقاء شريط المهام)',
-              trailing: DropdownButton<String>(
-                value: mode,
-                underline: const SizedBox(),
-                items: const [
-                  DropdownMenuItem(value: 'maximize_mode', child: Text('تكبير عادي', style: TextStyle(fontSize: 12))),
-                  DropdownMenuItem(value: 'game_mode', child: Text('كالألعاب (تام)', style: TextStyle(fontSize: 12))),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    HiveDatabase.settingsBox.put('windows_fullscreen_mode', val);
-                    setState(() {});
-                  }
-                },
-              ),
-              onTap: () {},
-            );
-          },
-        ),
       ],
       _buildDivider(),
       _buildTile(
@@ -509,9 +482,25 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildTile(
         icon: Icons.tv_rounded,
         iconColor: const Color(0xFF4F46E5),
-        title: 'كشك فاحص الأسعار وشاشات العروض الترويجية 🛍️',
+        title: 'إعدادات كشك الأسعار وشاشات العروض الترويجية ⚙️',
         subtitle: 'تخصيص مدة العرض، سهم الماسح، ورابط الشاشات الذكية (LAN Kiosk)',
         onTap: () => context.push('/kiosk-settings'),
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.qr_code_scanner_rounded,
+        iconColor: const Color(0xFF4F46E5),
+        title: 'تشغيل كشك فاحص الأسعار للزبائن (Kiosk Mode) 🛍️',
+        subtitle: 'فتح واجهة الفحص الفوري التفاعلية للزبائن على هذا الجهاز',
+        onTap: () => context.push('/kiosk'),
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.tune_rounded,
+        iconColor: Colors.blueGrey,
+        title: 'إعدادات التشغيل المتقدمة والموازين الإلكترونية 🎛️',
+        subtitle: 'تخصيص اختصارات لوحة المفاتيح والموازين الرقمية ودرج النقود',
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage())),
       ),
     ]);
   }
@@ -667,7 +656,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return _buildCardGroup([
       BlocBuilder<LanguageCubit, Locale>(
         builder: (context, currentLocale) {
-          String langName = 'العربية ';
+          String langName = 'العربية 🇩🇿';
           if (currentLocale.languageCode == 'fr') langName = 'Français 🇫🇷';
           if (currentLocale.languageCode == 'en') langName = 'English 🇬🇧';
 
@@ -892,6 +881,28 @@ class _SettingsPageState extends State<SettingsPage> {
                   if (auth && context.mounted) context.push('/products/losses');
                 },
               ),
+              const Divider(height: 8),
+              _buildHubActionTile(
+                icon: Icons.hourglass_bottom_rounded,
+                iconColor: Colors.amber[900]!,
+                title: 'مراقبة الصلاحية والتواريخ ⏳🚨',
+                subtitle: 'تتبع السلع القريبة من نهاية الصلاحية وتجنب الخسائر',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/products/expiry-monitor');
+                },
+              ),
+              const Divider(height: 8),
+              _buildHubActionTile(
+                icon: Icons.shopping_cart_checkout,
+                iconColor: Colors.orange[800]!,
+                title: 'قائمة النواقص والتسوق (Shopping List) 🛒📝',
+                subtitle: 'سجل النواقص للشراء من سوق الجملة وتصديره ومشاركته',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/products/shopping-list');
+                },
+              ),
               const SizedBox(height: 10),
             ],
           ),
@@ -1061,7 +1072,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             const Text('اختر لغة التطبيق (Language)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 14),
-            _buildLangChoice(ctx, 'العربية (Arabic)', '', 'ar', currentLocale.languageCode == 'ar'),
+            _buildLangChoice(ctx, 'العربية (Arabic)', '🇩🇿', 'ar', currentLocale.languageCode == 'ar'),
             const Divider(height: 1),
             _buildLangChoice(ctx, 'Français (French)', '🇫🇷', 'fr', currentLocale.languageCode == 'fr'),
             const Divider(height: 1),

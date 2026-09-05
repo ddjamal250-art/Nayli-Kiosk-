@@ -8,6 +8,7 @@ import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/catalog_crowdsource_helper.dart';
+import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -42,6 +43,8 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
   final _unitQtyController = TextEditingController(text: '24');
 
   bool _isCartonMode = true;
+  String _activeCategory = 'مشروبات ومياه وعصائر';
+  bool _isCategoryUserSelected = false;
 
   @override
   void initState() {
@@ -49,6 +52,16 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
     _cartonCostController.addListener(_onCartonCostChanged);
     _unitsPerCartonController.addListener(_onCartonUnitsChanged);
     _cartonCountController.addListener(_onCartonCountChanged);
+    _nameController.addListener(() {
+      if (!_isCategoryUserSelected && _nameController.text.trim().isNotEmpty) {
+        final detected = CategoryTaxonomy.smartDetect(_nameController.text.trim());
+        if (mounted && _activeCategory != detected.titleAr) {
+          setState(() {
+            _activeCategory = detected.titleAr;
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -102,6 +115,9 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       _unitCostController.text = existing.costPrice.toStringAsFixed(2);
       _sellPriceController.text = existing.price.toStringAsFixed(2);
       _cartonCostController.text = (existing.costPrice * (int.tryParse(_unitsPerCartonController.text) ?? 24)).toStringAsFixed(0);
+      _activeCategory = existing.category.isNotEmpty ? existing.category : 'عام';
+      _isCategoryUserSelected = true;
+      setState(() {});
       return;
     }
 
@@ -111,6 +127,9 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       _unitCostController.text = master.defaultCost.toStringAsFixed(2);
       _sellPriceController.text = master.defaultPrice.toStringAsFixed(2);
       _cartonCostController.text = (master.defaultCost * (int.tryParse(_unitsPerCartonController.text) ?? 24)).toStringAsFixed(0);
+      _activeCategory = master.category.isNotEmpty ? master.category : CategoryTaxonomy.smartDetect(master.name).titleAr;
+      _isCategoryUserSelected = true;
+      setState(() {});
     }
   }
 
@@ -133,10 +152,13 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
         ? (cartons * (double.tryParse(_cartonCostController.text.trim()) ?? (unitCost * perCarton)))
         : (totalUnits * unitCost);
 
+    final itemCategory = _activeCategory.isNotEmpty ? _activeCategory : CategoryTaxonomy.smartDetect(name).titleAr;
+
     setState(() {
       _invoiceItems.add({
         'barcode': barcode.isNotEmpty ? barcode : 'GEN_${DateTime.now().millisecondsSinceEpoch}',
         'name': name,
+        'category': itemCategory,
         'isCarton': _isCartonMode,
         'cartons': cartons,
         'perCarton': perCarton,
@@ -152,6 +174,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       _cartonCostController.clear();
       _unitCostController.clear();
       _sellPriceController.clear();
+      _isCategoryUserSelected = false;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -208,29 +231,36 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       final unitCost = item['unitCost'] as double;
       final sellPrice = item['sellPrice'] as double;
 
+      final rawCat = item['category'] as String?;
+      final category = (rawCat != null && rawCat.isNotEmpty)
+          ? rawCat
+          : CategoryTaxonomy.smartDetect(name).titleAr;
+
       final existing = currentProducts.where((p) => p.barcode.trim() == barcode.trim()).firstOrNull;
       if (existing != null) {
         final p = Product(
           id: existing.id,
           name: name,
           barcode: existing.barcode,
+          category: existing.category.isNotEmpty && existing.category != 'عام' ? existing.category : category,
           price: sellPrice > 0 ? sellPrice : existing.price,
           costPrice: unitCost > 0 ? unitCost : existing.costPrice,
           stock: existing.stock + qty,
         );
         productBloc.add(UpdateProduct(p));
-        CatalogCrowdsourceHelper.silentHarvest(p, category: 'مشتريات مورد');
+        CatalogCrowdsourceHelper.silentHarvest(p, category: p.category);
       } else {
         final p = Product(
           id: const Uuid().v4(),
           name: name,
           barcode: barcode,
+          category: category,
           price: sellPrice,
           costPrice: unitCost,
           stock: qty,
         );
         productBloc.add(AddProduct(p));
-        CatalogCrowdsourceHelper.silentHarvest(p, category: 'مشتريات مورد');
+        CatalogCrowdsourceHelper.silentHarvest(p, category: category);
       }
     }
 
@@ -432,6 +462,60 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Category Badge & Selector
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              CategoryTaxonomy.resolveDomain(_activeCategory).icon,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _activeCategory,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                            if (!_isCategoryUserSelected) ...[
+                              const SizedBox(width: 4),
+                              Text('(ذكي)', style: TextStyle(fontSize: 9, color: Colors.blue.shade700)),
+                            ],
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        tooltip: 'تغيير تصنيف السلعة',
+                        icon: const Icon(Icons.arrow_drop_down_circle_outlined, size: 20, color: AppTheme.primaryColor),
+                        padding: EdgeInsets.zero,
+                        onSelected: (cat) {
+                          setState(() {
+                            _activeCategory = cat;
+                            _isCategoryUserSelected = true;
+                          });
+                        },
+                        itemBuilder: (context) => CategoryTaxonomy.allDomains.map((d) => PopupMenuItem(
+                          value: d.titleAr,
+                          child: Row(
+                            children: [
+                              Text(d.icon),
+                              const SizedBox(width: 8),
+                              Text(d.titleAr, style: const TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        )).toList(),
                       ),
                     ],
                   ),

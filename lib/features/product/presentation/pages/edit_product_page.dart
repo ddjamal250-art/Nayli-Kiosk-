@@ -53,6 +53,7 @@ class _EditProductPageState extends State<EditProductPage> {
 
   static const List<String> categories = [
     'عام',
+    'أدوات مدرسية ومكتبية',
     'تبغ وسجائر',
     'شمة وتبغ تقليدي',
     'ورق لف وفلاتر',

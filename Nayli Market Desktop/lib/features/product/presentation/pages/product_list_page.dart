@@ -40,6 +40,8 @@ class _ProductListPageState extends State<ProductListPage> {
   static const List<Map<String, String>> _categoryTabsDef = [
     {'key': 'all', 'ar': 'الكل', 'fr': 'Tous', 'en': 'All'},
     {'key': 'scale', 'ar': '⚖️ مواد الميزان', 'fr': '⚖️ Vrac & Balance', 'en': '⚖️ Scale & Bulk'},
+    {'key': 'stationery', 'ar': '📚 أدوات مدرسية', 'fr': '📚 Papeterie', 'en': '📚 Stationery'},
+    {'key': 'tobacco', 'ar': '🚬 تبغ وسجائر', 'fr': '🚬 Tabac', 'en': '🚬 Tobacco'},
     {'key': 'food', 'ar': 'مواد غذائية', 'fr': 'Alimentation', 'en': 'Groceries'},
     {'key': 'dairy', 'ar': 'حليب ومشتقاته', 'fr': 'Produits Laitiers', 'en': 'Dairy'},
     {'key': 'bakery', 'ar': 'مخبوزات وعجائن', 'fr': 'Boulangerie & Pâtes', 'en': 'Bakery & Pasta'},
@@ -988,6 +990,13 @@ class _ProductListPageState extends State<ProductListPage> {
                       count = state.products.length;
                     } else if (idx == 1) {
                       count = state.products.where((p) => p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')).length;
+                    } else if (catDef['key'] == 'stationery') {
+                      count = state.products.where((p) {
+                        final pCat = p.category.toLowerCase();
+                        return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
+                      }).length;
+                    } else if (catDef['key'] == 'tobacco') {
+                      count = state.products.where((p) => p.isTobacco || p.category.contains('تبغ') || p.category.contains('سجائر') || p.category.contains('شمة') || p.category.contains('معسل')).length;
                     } else {
                       final arName = (catDef['ar'] ?? '').toLowerCase();
                       final frName = (catDef['fr'] ?? '').toLowerCase();
@@ -1071,6 +1080,12 @@ class _ProductListPageState extends State<ProductListPage> {
                   }
                   final catDef = _categoryTabsDef[_selectedCategoryIndex];
                   final pCat = product.category.toLowerCase();
+                  if (catDef['key'] == 'stationery') {
+                    return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
+                  }
+                  if (catDef['key'] == 'tobacco') {
+                    return product.isTobacco || pCat.contains('تبغ') || pCat.contains('سجائر') || pCat.contains('شمة') || pCat.contains('معسل');
+                  }
                   return pCat.contains((catDef['ar'] ?? '').toLowerCase()) || pCat.contains((catDef['fr'] ?? '').toLowerCase());
                 }).toList();
 

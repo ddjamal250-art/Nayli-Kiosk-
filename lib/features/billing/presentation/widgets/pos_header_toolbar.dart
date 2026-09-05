@@ -150,37 +150,24 @@ class PosHeaderToolbar extends StatelessWidget {
 
           const Spacer(),
 
-          // Cash Drawer Quick Kick (F10)
+          // 1. Direct Cash Drawer Quick Kick (F10)
           IconButton(
-            tooltip: context.tr('pos_open_drawer'),
+            tooltip: '${context.tr("pos_open_drawer")} (F10)',
             icon: const Icon(Icons.account_balance_rounded, color: Colors.amber, size: 22),
             onPressed: onOpenDrawer,
           ),
 
-          // Navigation Shortcuts
+          // 2. Direct Inventory Access (F4)
           IconButton(
-            tooltip: context.tr('pos_commercial_docs'),
-            icon: const Icon(Icons.description_outlined, color: Colors.teal),
-            onPressed: () => context.push('/documents'),
+            tooltip: '${context.tr("pos_inventory")} (F4)',
+            icon: const Icon(Icons.inventory_2_outlined, color: Colors.green, size: 22),
+            onPressed: () => context.push('/products'),
           ),
-          IconButton(
-            tooltip: context.tr('pos_backup_sync'),
-            icon: const Icon(Icons.cloud_sync_rounded, color: Colors.blueAccent),
-            onPressed: () => context.push('/backups'),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_shifts_zreport'),
-            icon: const Icon(Icons.badge_rounded, color: Colors.indigo),
-            onPressed: () => context.push('/shifts'),
-          ),
-          IconButton(
-            tooltip: 'إدارة الموارد البشرية والرواتب (HR & Paie)',
-            icon: const Icon(Icons.people_alt_rounded, color: Colors.teal),
-            onPressed: () => context.push('/staff-management'),
-          ),
+
+          // 3. Direct Supervisor Alert
           IconButton(
             tooltip: 'نداء المشرف العام للمساعدة 🔔',
-            icon: const Icon(Icons.notifications_active_rounded, color: Colors.redAccent),
+            icon: const Icon(Icons.notifications_active_rounded, color: Colors.redAccent, size: 22),
             onPressed: () {
               AuditLogService.logEvent(
                 action: 'supervisor_call',
@@ -197,54 +184,11 @@ class PosHeaderToolbar extends StatelessWidget {
               );
             },
           ),
+
+          // 4. Direct Fullscreen Toggle
           IconButton(
-            tooltip: context.tr('pos_master_catalog'),
-            icon: const Icon(Icons.library_books_rounded, color: Colors.deepOrange),
-            onPressed: () => context.push('/master-catalog'),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_inventory'),
-            icon: const Icon(Icons.inventory_2_outlined, color: Colors.green),
-            onPressed: () => context.push('/products'),
-          ),
-          IconButton(
-            tooltip: context.tr('pos_reports'),
-            icon: const Icon(Icons.analytics_outlined, color: Colors.purple),
-            onPressed: () => context.push('/reports'),
-          ),
-          IconButton(
-            tooltip: 'طابعات ويندوز (الوصولات والمستندات)',
-            icon: const Icon(Icons.print_outlined, color: Colors.teal),
-            onPressed: () => PrinterSelectionDialog.show(context),
-          ),
-          IconButton(
-            tooltip: 'إدارة الشبكة والمزامنة المحلية (LAN & Wi-Fi)',
-            icon: const Icon(Icons.wifi_tethering_rounded, color: Colors.indigo),
-            onPressed: () => context.push('/lan-sync'),
-          ),
-          IconButton(
-            tooltip: 'كشك فاحص الأسعار للزبائن 🛍️',
-            icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF4F46E5)),
-            onPressed: () => context.push('/kiosk'),
-          ),
-          IconButton(
-            tooltip: 'إعدادات كشك الأسعار والعروض ⚙️',
-            icon: const Icon(Icons.tv_rounded, color: Colors.blueGrey),
-            onPressed: () => context.push('/kiosk-settings'),
-          ),
-          IconButton(
-            tooltip: 'مراقبة الصلاحية والتوالف ⏳',
-            icon: const Icon(Icons.hourglass_bottom_rounded, color: Colors.amber),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpiryMonitorPage())),
-          ),
-          IconButton(
-            tooltip: 'إعدادات التشغيل المتقدمة والموازين 🎛️',
-            icon: const Icon(Icons.tune_rounded, color: Colors.blueGrey),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage())),
-          ),
-          IconButton(
-            tooltip: 'ملء الشاشة التام (Plein Écran) ⛶',
-            icon: const Icon(Icons.fullscreen_rounded, color: Colors.cyanAccent, size: 24),
+            tooltip: 'ملء الشاشة التام ⛶',
+            icon: const Icon(Icons.fullscreen_rounded, color: Colors.indigo, size: 23),
             onPressed: () {
               final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
               if (isFull) {
@@ -257,15 +201,263 @@ class PosHeaderToolbar extends StatelessWidget {
               SoundService.playKeyTap();
             },
           ),
-          IconButton(
-            tooltip: 'قائمة النواقص (التسوق) 📝',
-            icon: const Icon(Icons.shopping_cart_checkout, color: Colors.orange),
-            onPressed: () => context.push('/products/shopping-list'),
+
+          const SizedBox(width: 4),
+          const VerticalDivider(indent: 14, endIndent: 14, width: 16),
+          const SizedBox(width: 4),
+
+          // 5. Business & Operations Menu Dropdown
+          PopupMenuButton<String>(
+            tooltip: 'إدارة المبيعات والنشاط',
+            icon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.teal.shade200),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.dashboard_customize_rounded, size: 18, color: Colors.teal.shade800),
+                  const SizedBox(width: 6),
+                  Text(
+                    'إدارة المبيعات',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(Icons.arrow_drop_down, size: 18, color: Colors.teal.shade800),
+                ],
+              ),
+            ),
+            offset: const Offset(0, 50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            onSelected: (val) {
+              switch (val) {
+                case 'docs':
+                  context.push('/documents');
+                  break;
+                case 'reports':
+                  context.push('/reports');
+                  break;
+                case 'shifts':
+                  context.push('/shifts');
+                  break;
+                case 'staff':
+                  context.push('/staff-management');
+                  break;
+                case 'shopping':
+                  context.push('/products/shopping-list');
+                  break;
+                case 'expiry':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpiryMonitorPage()));
+                  break;
+                case 'catalog':
+                  context.push('/master-catalog');
+                  break;
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'docs',
+                child: Row(
+                  children: [
+                    Icon(Icons.description_outlined, color: Colors.teal, size: 20),
+                    SizedBox(width: 10),
+                    Text('المستندات والفواتير التجاريّة', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'reports',
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics_outlined, color: Colors.purple, size: 20),
+                    SizedBox(width: 10),
+                    Text('التقارير والإحصائيات المالية', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'shifts',
+                child: Row(
+                  children: [
+                    Icon(Icons.badge_rounded, color: Colors.indigo, size: 20),
+                    SizedBox(width: 10),
+                    Text('الورديات وتقرير Z اليومي', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'staff',
+                child: Row(
+                  children: [
+                    Icon(Icons.people_alt_rounded, color: Colors.blueGrey, size: 20),
+                    SizedBox(width: 10),
+                    Text('الموظفون وإدارة الرواتب (HR)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'shopping',
+                child: Row(
+                  children: [
+                    Icon(Icons.shopping_cart_checkout, color: Colors.orange, size: 20),
+                    SizedBox(width: 10),
+                    Text('قائمة النواقص والتسوق 📝', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'expiry',
+                child: Row(
+                  children: [
+                    Icon(Icons.hourglass_bottom_rounded, color: Colors.amber, size: 20),
+                    SizedBox(width: 10),
+                    Text('مراقبة الصلاحية والتوالف ⏳', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'catalog',
+                child: Row(
+                  children: [
+                    Icon(Icons.library_books_rounded, color: Colors.deepOrange, size: 20),
+                    SizedBox(width: 10),
+                    Text('الفهرس المرجعي الجزائري 📚', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            tooltip: context.tr('pos_settings'),
-            icon: const Icon(Icons.settings_outlined, color: Colors.grey),
-            onPressed: () => context.push('/settings'),
+
+          const SizedBox(width: 8),
+
+          // 6. Devices & Hardware Menu Dropdown
+          PopupMenuButton<String>(
+            tooltip: 'الأجهزة والإعدادات',
+            icon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blueGrey.shade200),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.settings_outlined, size: 18, color: Colors.blueGrey.shade800),
+                  const SizedBox(width: 6),
+                  Text(
+                    'الأجهزة والإعدادات',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade900),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(Icons.arrow_drop_down, size: 18, color: Colors.blueGrey.shade800),
+                ],
+              ),
+            ),
+            offset: const Offset(0, 50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            onSelected: (val) {
+              switch (val) {
+                case 'printers':
+                  PrinterSelectionDialog.show(context);
+                  break;
+                case 'lan':
+                  context.push('/lan-sync');
+                  break;
+                case 'kiosk':
+                  context.push('/kiosk');
+                  break;
+                case 'kiosk_settings':
+                  context.push('/kiosk-settings');
+                  break;
+                case 'advanced_pos':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage()));
+                  break;
+                case 'backups':
+                  context.push('/backups');
+                  break;
+                case 'settings':
+                  context.push('/settings');
+                  break;
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'printers',
+                child: Row(
+                  children: [
+                    Icon(Icons.print_outlined, color: Colors.teal, size: 20),
+                    SizedBox(width: 10),
+                    Text('طابعات الفواتير والملصقات 🖨️', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'lan',
+                child: Row(
+                  children: [
+                    Icon(Icons.wifi_tethering_rounded, color: Colors.indigo, size: 20),
+                    SizedBox(width: 10),
+                    Text('إدارة الشبكة والمزامنة المحلية (LAN)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'kiosk',
+                child: Row(
+                  children: [
+                    Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF4F46E5), size: 20),
+                    SizedBox(width: 10),
+                    Text('كشك فاحص الأسعار للزبائن 🛍️', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'kiosk_settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.tv_rounded, color: Colors.blueGrey, size: 20),
+                    SizedBox(width: 10),
+                    Text('إعدادات شاشة الكشك والعروض ⚙️', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'advanced_pos',
+                child: Row(
+                  children: [
+                    Icon(Icons.tune_rounded, color: Colors.blueGrey, size: 20),
+                    SizedBox(width: 10),
+                    Text('إعدادات التشغيل المتقدمة والموازين 🎛️', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'backups',
+                child: Row(
+                  children: [
+                    Icon(Icons.cloud_sync_rounded, color: Colors.blueAccent, size: 20),
+                    SizedBox(width: 10),
+                    Text('النسخ الاحتياطي السحابي والمحلي', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_suggest_rounded, color: Colors.grey, size: 20),
+                    SizedBox(width: 10),
+                    Text('إعدادات المتجر العامة ⚙️', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

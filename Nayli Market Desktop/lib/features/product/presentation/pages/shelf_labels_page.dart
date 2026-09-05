@@ -42,6 +42,8 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   static const List<String> _categoryTabs = [
     'الكل',
     '⚖️ مواد الميزان',
+    '📚 أدوات مدرسية ومكتبية',
+    '🚬 تبغ وسجائر',
     'مواد غذائية ومعلبات',
     'حليب ومشتقاته',
     'مخبوزات وعجائن',
@@ -220,7 +222,14 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
             if (_selectedCategoryFilter == '⚖️ مواد الميزان') {
               return p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ');
             }
-            return p.category == _selectedCategoryFilter;
+            if (_selectedCategoryFilter == '📚 أدوات مدرسية ومكتبية') {
+              final cat = p.category.toLowerCase();
+              return cat.contains('مدرس') || cat.contains('مكتب') || cat.contains('ورق') || cat.contains('كراس') || cat.contains('قلم') || cat.contains('papeterie');
+            }
+            if (_selectedCategoryFilter == '🚬 تبغ وسجائر') {
+              return p.isTobacco || p.category.contains('تبغ') || p.category.contains('سجائر') || p.category.contains('شمة') || p.category.contains('معسل');
+            }
+            return p.category == _selectedCategoryFilter || p.category.contains(_selectedCategoryFilter);
           }).toList();
 
           return Column(

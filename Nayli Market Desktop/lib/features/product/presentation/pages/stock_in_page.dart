@@ -17,6 +17,7 @@ import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/data/master_catalog_seed.dart';
 import '../../../../core/data/master_catalog_service.dart';
+import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
@@ -95,10 +96,23 @@ class _StockInPageState extends State<StockInPage> {
   int _activeOcrIndex = -1;
   String? _ocrSupplierName;
   String? _itemImageUrl;
+  String _selectedCategory = 'مشروبات ومياه وعصائر';
+  bool _isCategoryUserSelected = false;
 
   @override
   void initState() {
     super.initState();
+    _nameController.addListener(() {
+      if (!_isCategoryUserSelected && _nameController.text.trim().isNotEmpty) {
+        final detected = CategoryTaxonomy.smartDetect(_nameController.text.trim());
+        if (mounted && _selectedCategory != detected.titleAr) {
+          setState(() {
+            _selectedCategory = detected.titleAr;
+          });
+        }
+      }
+    });
+
     _cartonCountController.addListener(_onCartonInputsChanged);
     _unitsPerCartonController.addListener(_onCartonInputsChanged);
     _cartonCostController.addListener(_onCartonCostChanged);
@@ -282,6 +296,8 @@ class _StockInPageState extends State<StockInPage> {
         _costPriceController.text = existing.costPrice.toStringAsFixed(2);
         _currentStock = existing.stock;
         _itemImageUrl = existing.imageUrl;
+        _selectedCategory = existing.category.isNotEmpty ? existing.category : 'عام';
+        _isCategoryUserSelected = true;
         if (existing.isWeighted || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
           _unitMode = ArrivageUnitMode.vracSacs;
         }
@@ -301,6 +317,8 @@ class _StockInPageState extends State<StockInPage> {
         _costPriceController.text = masterMatch.defaultCost.toStringAsFixed(2);
         _currentStock = 0;
         _itemImageUrl = masterMatch.imageUrl;
+        _selectedCategory = masterMatch.category.isNotEmpty ? masterMatch.category : CategoryTaxonomy.smartDetect(masterMatch.name).titleAr;
+        _isCategoryUserSelected = true;
       });
       SoundService.playScanBeep();
       return;
@@ -314,6 +332,7 @@ class _StockInPageState extends State<StockInPage> {
       _costPriceController.clear();
       _currentStock = 0;
       _itemImageUrl = null;
+      _isCategoryUserSelected = false;
     });
     SoundService.playScanBeep();
   }
@@ -366,6 +385,10 @@ class _StockInPageState extends State<StockInPage> {
     final cartonCostPrice = existingProduct?.cartonCostPrice ?? masterMatch?.cartonCostPrice ?? 0.0;
     final unitType = existingProduct?.unitType ?? masterMatch?.unitType ?? 'unit';
 
+    final effectiveCategory = _selectedCategory.trim().isNotEmpty
+        ? _selectedCategory.trim()
+        : (existingProduct?.category ?? masterMatch?.category ?? 'عام');
+
     if (_isExistingInShop && _existingProductId != null) {
       final updatedProduct = (existingProduct ?? Product(
         id: _existingProductId!,
@@ -375,6 +398,7 @@ class _StockInPageState extends State<StockInPage> {
       )).copyWith(
         name: name,
         barcode: _activeBarcode,
+        category: effectiveCategory,
         price: price,
         costPrice: effectiveCost,
         stock: _currentStock + qty,
@@ -385,7 +409,7 @@ class _StockInPageState extends State<StockInPage> {
       productBloc.add(UpdateProduct(updatedProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         updatedProduct,
-        category: 'أريفاج ومخزن',
+        category: effectiveCategory,
         unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : 'حبة'),
       );
     } else {
@@ -393,6 +417,7 @@ class _StockInPageState extends State<StockInPage> {
         id: const Uuid().v4(),
         name: name,
         barcode: _activeBarcode,
+        category: effectiveCategory,
         price: price,
         costPrice: effectiveCost,
         stock: qty,
@@ -412,7 +437,7 @@ class _StockInPageState extends State<StockInPage> {
       productBloc.add(AddProduct(newProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         newProduct,
-        category: 'أريفاج ومخزن',
+        category: effectiveCategory,
         unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : 'حبة'),
       );
     }
@@ -534,6 +559,8 @@ class _StockInPageState extends State<StockInPage> {
         _priceController.text = existing.price.toStringAsFixed(2);
         _currentStock = existing.stock;
         _itemImageUrl = existing.imageUrl;
+        _selectedCategory = existing.category.isNotEmpty ? existing.category : 'عام';
+        _isCategoryUserSelected = true;
       } else {
         final masterMatch = MasterCatalogService.instance.search(item.designation).firstOrNull ??
             (item.reference.isNotEmpty ? MasterCatalogService.searchByBarcode(item.reference) : null);
@@ -546,6 +573,8 @@ class _StockInPageState extends State<StockInPage> {
               : (item.unitPrice > 0 ? (item.unitPrice * 1.25).toStringAsFixed(2) : '');
           _currentStock = 0;
           _itemImageUrl = masterMatch.imageUrl;
+          _selectedCategory = masterMatch.category.isNotEmpty ? masterMatch.category : CategoryTaxonomy.smartDetect(masterMatch.name).titleAr;
+          _isCategoryUserSelected = true;
         } else {
           _isExistingInShop = false;
           _existingProductId = null;
@@ -553,6 +582,8 @@ class _StockInPageState extends State<StockInPage> {
           _priceController.text = item.unitPrice > 0 ? (item.unitPrice * 1.25).toStringAsFixed(2) : '';
           _currentStock = 0;
           _itemImageUrl = null;
+          _selectedCategory = CategoryTaxonomy.smartDetect(item.designation).titleAr;
+          _isCategoryUserSelected = false;
         }
       }
     });
@@ -618,10 +649,15 @@ class _StockInPageState extends State<StockInPage> {
             ? masterMatch.defaultPrice
             : (costPrice > 0 ? costPrice * 1.25 : 100.0);
 
+        final ocrCat = (masterMatch?.category != null && masterMatch!.category.isNotEmpty)
+            ? masterMatch.category
+            : CategoryTaxonomy.smartDetect(item.designation).titleAr;
+
         final newProduct = Product(
           id: const Uuid().v4(),
           name: item.designation,
           barcode: barcode,
+          category: ocrCat,
           price: price,
           costPrice: costPrice,
           stock: qty,
@@ -637,7 +673,7 @@ class _StockInPageState extends State<StockInPage> {
           unitType: masterMatch?.unitType ?? 'unit',
         );
         productBloc.add(AddProduct(newProduct));
-        CatalogCrowdsourceHelper.silentHarvest(newProduct, category: 'أريفاج ورقي', unit: item.unit);
+        CatalogCrowdsourceHelper.silentHarvest(newProduct, category: ocrCat, unit: item.unit);
       }
 
       _sessionStockIns.insert(0, {
@@ -937,7 +973,11 @@ class _StockInPageState extends State<StockInPage> {
                           : null,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+
+                  // Architectural Category Selector
+                  _buildCategorySelector(),
+                  const SizedBox(height: 12),
 
                   // Arrivage Mode 3-Way Selector
                   const Text('اختر طريقة ووحدة الاستلام:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -1287,6 +1327,114 @@ class _StockInPageState extends State<StockInPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCategorySelector() {
+    final domain = CategoryTaxonomy.resolveDomain(_selectedCategory);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              domain.icon,
+              style: const TextStyle(fontSize: 20),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'التصنيف المعماري للمنتج:',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(width: 6),
+                    if (!_isCategoryUserSelected)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'اكتشاف ذكي ⚡',
+                          style: TextStyle(fontSize: 9, color: Colors.blue.shade800, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _selectedCategory,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                ),
+              ],
+            ),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'تغيير تصنيف السلعة',
+            icon: const Icon(Icons.tune, color: AppTheme.primaryColor),
+            onSelected: (String cat) {
+              setState(() {
+                _selectedCategory = cat;
+                _isCategoryUserSelected = true;
+              });
+            },
+            itemBuilder: (BuildContext context) {
+              final List<PopupMenuEntry<String>> items = [];
+              for (final d in CategoryTaxonomy.allDomains) {
+                items.add(
+                  PopupMenuItem<String>(
+                    value: d.titleAr,
+                    child: Row(
+                      children: [
+                        Text(d.icon, style: const TextStyle(fontSize: 16)),
+                        const SizedBox(width: 8),
+                        Text(d.titleAr, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                );
+                for (final sub in d.subCategories) {
+                  items.add(
+                    PopupMenuItem<String>(
+                      value: sub.titleAr,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 20.0),
+                        child: Row(
+                          children: [
+                            Text(sub.icon, style: const TextStyle(fontSize: 14)),
+                            const SizedBox(width: 6),
+                            Text(sub.titleAr, style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                items.add(const PopupMenuDivider());
+              }
+              if (items.isNotEmpty) items.removeLast();
+              return items;
+            },
+          ),
+        ],
       ),
     );
   }
