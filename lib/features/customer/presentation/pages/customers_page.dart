@@ -1,9 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../domain/entities/customer.dart';
@@ -585,6 +587,26 @@ class _CustomersPageState extends State<CustomersPage> {
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
+                                        if (hasDebt && customer.phoneNumber.isNotEmpty)
+                                          GestureDetector(
+                                            onTap: () async {
+                                              final phone = customer.phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+                                              final msg = 'السلام عليكم، تذكير ودي بتسديد مبلغ ${customer.currentDebt.toStringAsFixed(0)} دج لـ Nayli Kiosk.';
+                                              final url = Uri.parse('whatsapp://send?phone=$phone&text=${Uri.encodeComponent(msg)}');
+                                              if (await canLaunchUrl(url)) {
+                                                await launchUrl(url);
+                                              }
+                                            },
+                                            child: Container(
+                                              margin: const EdgeInsets.only(right: 6),
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: const Icon(Icons.chat_bubble_outline, color: Colors.green, size: 14),
+                                            ),
+                                          ),
                                         if (hasDebt)
                                           GestureDetector(
                                             onTap: () => _showRecordPaymentDialog(customer),

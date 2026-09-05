@@ -38,6 +38,8 @@ import '../../features/billing/presentation/pages/kiosk_price_checker_page.dart'
 import '../../features/settings/presentation/pages/kiosk_settings_page.dart';
 import '../../features/settings/presentation/pages/advanced_pos_settings_page.dart';
 import '../../features/product/presentation/pages/expiry_monitor_page.dart';
+import '../../features/product/presentation/pages/shopping_list_page.dart';
+import '../../features/documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -140,6 +142,12 @@ final router = GoRouter(
       builder: (context, state) => const DocumentsHubPage(),
     ),
     GoRoute(
+      path: '/stock-in',
+      builder: (context, state) => StockInPage(
+        initialReceiptResult: state.extra is ParsedReceiptResult ? state.extra as ParsedReceiptResult : null,
+      ),
+    ),
+    GoRoute(
       path: '/backups',
       builder: (context, state) => const BackupPage(),
     ),
@@ -161,7 +169,9 @@ final router = GoRouter(
         ),
         GoRoute(
           path: 'stock-in',
-          builder: (context, state) => const StockInPage(),
+          builder: (context, state) => StockInPage(
+            initialReceiptResult: state.extra is ParsedReceiptResult ? state.extra as ParsedReceiptResult : null,
+          ),
         ),
         GoRoute(
           path: 'supplier-invoices',
@@ -186,6 +196,14 @@ final router = GoRouter(
         GoRoute(
           path: 'losses',
           builder: (context, state) => const LossesPage(),
+        ),
+        GoRoute(
+          path: 'shopping-list',
+          builder: (context, state) => const ShoppingListPage(),
+        ),
+        GoRoute(
+          path: 'expiry-monitor',
+          builder: (context, state) => const ExpiryMonitorPage(),
         ),
         GoRoute(
           path: 'edit/:id',
@@ -218,10 +236,6 @@ final router = GoRouter(
     GoRoute(
       path: '/advanced-pos-settings',
       builder: (context, state) => const AdvancedPosSettingsPage(),
-    ),
-    GoRoute(
-      path: '/expiry-monitor',
-      builder: (context, state) => const ExpiryMonitorPage(),
     ),
   ],
 );

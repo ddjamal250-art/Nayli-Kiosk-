@@ -153,7 +153,7 @@ class _BackupPageState extends State<BackupPage> {
         '🧾 عدد الزبائن: 34 زبون\n'
         '💳 مدفوعات TPE: 12,000.00 دج\n'
         '💾 تم أخذ نسخة احتياطية سحابية بنجاح ✅\n\n'
-        'Nayli Market POS ';
+        'Nayli Market POS 🇩🇿';
 
     final launched = await TelegramService.sendWhatsAppReport(
       phone: phone,
@@ -371,88 +371,66 @@ class _BackupPageState extends State<BackupPage> {
                         ),
                         const SizedBox(height: 14),
 
-                        if (isWide)
-                          Row(
+                        // Simplified UI for Telegram Status
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _telegramChatIdController.text.isNotEmpty ? Colors.green.shade50 : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: _telegramChatIdController.text.isNotEmpty ? Colors.green.shade200 : Colors.grey.shade300),
+                          ),
+                          child: Row(
                             children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextField(
-                                  controller: _telegramTokenController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Bot Token (اتركه فارغاً للبوت الافتراضي الجاهز)',
-                                    hintText: 'افتراضي: Nayli Market Master Bot',
-                                    border: OutlineInputBorder(),
-                                    isDense: true,
-                                  ),
-                                ),
+                              Icon(
+                                _telegramChatIdController.text.isNotEmpty ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+                                color: _telegramChatIdController.text.isNotEmpty ? Colors.green : Colors.grey,
+                                size: 28,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: TextField(
-                                  controller: _telegramChatIdController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Chat ID (معرف المحادثة)',
-                                    hintText: 'يكتشف تلقائياً',
-                                    border: OutlineInputBorder(),
-                                    isDense: true,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              IconButton(
-                                tooltip: 'إرسال رسالة تجريبية للتحقق',
-                                icon: const Icon(Icons.mark_email_read_rounded, color: Colors.indigo),
-                                onPressed: _sendTestTelegramMessage,
-                              ),
-                              IconButton(
-                                tooltip: 'فتح البوت في التلغرام',
-                                icon: const Icon(Icons.open_in_new_rounded, color: Colors.blueAccent),
-                                onPressed: () => TelegramService.launchBotChat(),
-                              ),
-                            ],
-                          )
-                        else
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              TextField(
-                                controller: _telegramTokenController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Bot Token (اتركه فارغاً للبوت الافتراضي)',
-                                  hintText: 'افتراضي: Nayli Market Master Bot',
-                                  border: OutlineInputBorder(),
-                                  isDense: true,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _telegramChatIdController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Chat ID (معرف المحادثة)',
-                                        hintText: 'يكتشف تلقائياً',
-                                        border: OutlineInputBorder(),
-                                        isDense: true,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'حالة الربط بحسابك في تليجرام:',
+                                      style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                                    ),
+                                    Text(
+                                      _telegramChatIdController.text.isNotEmpty
+                                          ? '✅ متصل وجاهز للعمل (ID: ${_telegramChatIdController.text})'
+                                          : '❌ غير متصل بعد',
+                                      style: TextStyle(
+                                        color: _telegramChatIdController.text.isNotEmpty ? Colors.green.shade800 : Colors.red.shade700,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  IconButton(
-                                    tooltip: 'إرسال تجريبي',
-                                    icon: const Icon(Icons.mark_email_read_rounded, color: Colors.indigo),
-                                    onPressed: _sendTestTelegramMessage,
-                                  ),
-                                  IconButton(
-                                    tooltip: 'فتح البوت',
-                                    icon: const Icon(Icons.open_in_new_rounded, color: Colors.blueAccent),
-                                    onPressed: () => TelegramService.launchBotChat(),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              if (_telegramChatIdController.text.isNotEmpty)
+                                TextButton.icon(
+                                  onPressed: _sendTestTelegramMessage,
+                                  icon: const Icon(Icons.mark_email_read_rounded, size: 18),
+                                  label: const Text('فحص الاتصال'),
+                                  style: TextButton.styleFrom(foregroundColor: Colors.teal),
+                                ),
+                              if (_telegramChatIdController.text.isNotEmpty)
+                                TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _telegramChatIdController.clear();
+                                    });
+                                    _saveSettings();
+                                  },
+                                  icon: const Icon(Icons.link_off_rounded, size: 18),
+                                  label: const Text('إلغاء الربط'),
+                                  style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                                ),
                             ],
                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -617,6 +595,41 @@ class _BackupPageState extends State<BackupPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            IconButton(
+                              icon: const Icon(Icons.restore_page_rounded, color: Colors.orange, size: 20),
+                              tooltip: 'استرجاع البيانات من هذه النسخة',
+                              onPressed: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('تحذير الاسترجاع ⚠️'),
+                                    content: const Text(
+                                        'هل أنت متأكد من استرجاع البيانات؟\n\nهذه العملية ستقوم بحذف المنتجات الحالية واستبدالها بالمنتجات الموجودة في هذه النسخة الاحتياطية.'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        child: const Text('نعم، استرجاع الآن', style: TextStyle(color: Colors.white)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed == true && mounted) {
+                                  setState(() => _isLoading = true);
+                                  final success = await BackupService.restoreDatabaseFromFile(File(item.filePath));
+                                  setState(() => _isLoading = false);
+                                  if (success && mounted) {
+                                    SoundService.playSaveSuccess();
+                                    SnackbarHelper.showSuccess(context, '✅ تم استرجاع البيانات بنجاح!');
+                                    // reload app if needed
+                                  } else if (mounted) {
+                                    SoundService.playWarning();
+                                    SnackbarHelper.showError(context, '❌ فشل في استرجاع البيانات، تأكد من صحة الملف.');
+                                  }
+                                }
+                              },
+                            ),
                             IconButton(
                               icon: const Icon(Icons.share_rounded, color: Colors.blueAccent, size: 20),
                               tooltip: 'مشاركة الملف',

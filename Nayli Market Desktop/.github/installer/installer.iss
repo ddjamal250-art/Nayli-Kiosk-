@@ -1,7 +1,7 @@
-#define MyAppName "Nayli Market Desktop POS"
+#define MyAppName "Nayli Kiosk Desktop POS"
 #define MyAppVersion "2.0.0"
 #define MyAppPublisher "Nayli Market Solutions"
-#define MyAppExeName "Nayli-Market.exe"
+#define MyAppExeName "Nayli-Kiosk.exe"
 
 [Setup]
 AppId={{D821F244-6C0D-4C92-9F9C-A63E0124B8A1}
@@ -11,7 +11,7 @@ AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 OutputDir=..\..\build\installer
-OutputBaseFilename=Nayli-Market-Desktop-Setup
+OutputBaseFilename=Nayli-Kiosk-Desktop-Setup
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -31,7 +31,7 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "تشغيل برنامج نايلي ماركت Nayli Market"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "تشغيل برنامج نايلي كيوسك Nayli Kiosk"; Flags: nowait postinstall skipifsilent
 
 [Code]
 function InitializeSetup(): Boolean;

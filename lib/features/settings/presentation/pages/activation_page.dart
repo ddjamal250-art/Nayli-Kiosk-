@@ -190,8 +190,48 @@ class _ActivationPageState extends State<ActivationPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'تم إرسال معلومات المحل وكود الجهاز مباشرة إلى المطور عبر التلغرام.',
+                  'تم تسجيل معلومات المحل وكود الجهاز وإرسالها مباشرة إلى سيرفر التراخيص والمطور.',
                   style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF334155)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.fingerprint, color: Color(0xFF38BDF8), size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SelectableText(
+                          LicenseService.getDeviceId(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'نسخ الكود',
+                        icon: const Icon(Icons.copy, size: 16, color: Color(0xFF38BDF8)),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: LicenseService.getDeviceId()));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('📋 تم نسخ كود الجهاز بنجاح!'),
+                              backgroundColor: Colors.teal,
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(

@@ -19,6 +19,7 @@ class HiveDatabase {
   static const String staffBoxName = 'staff_members_box';
   static const String payrollBoxName = 'payroll_records_box';
   static const String attendanceBoxName = 'attendance_records_box';
+  static const String shoppingListBoxName = 'shopping_list_box';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -44,6 +45,7 @@ class HiveDatabase {
     await Hive.openBox(staffBoxName); // Enterprise staff & employee profiles
     await Hive.openBox(payrollBoxName); // Staff payroll, salary advances & bonuses
     await Hive.openBox(attendanceBoxName); // Staff attendance & pointage
+    await Hive.openBox(shoppingListBoxName); // Smart shopping list
   }
 
   static Box<ProductModel> get productBox =>
@@ -63,4 +65,5 @@ class HiveDatabase {
   static Box get staffBox => Hive.box(staffBoxName);
   static Box get payrollBox => Hive.box(payrollBoxName);
   static Box get attendanceBox => Hive.box(attendanceBoxName);
+  static Box get shoppingListBox => Hive.box(shoppingListBoxName);
 }

@@ -31,13 +31,23 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       packMultiplier: (fields[11] as num?)?.toInt() ?? 1,
       packPrice: (fields[12] as num?)?.toDouble() ?? 0.0,
       packName: fields[13] as String?,
+      imageUrl: fields[14] as String?,
+      isTobacco: fields[15] as bool? ?? false,
+      piecesPerPack: (fields[16] as num?)?.toInt() ?? 20,
+      packsPerCarton: (fields[17] as num?)?.toInt() ?? 10,
+      singlePiecePrice: (fields[18] as num?)?.toDouble() ?? 0.0,
+      cartonPrice: (fields[19] as num?)?.toDouble() ?? 0.0,
+      wholesaleCartonPrice: (fields[20] as num?)?.toDouble() ?? 0.0,
+      wholesalePackPrice: (fields[21] as num?)?.toDouble() ?? 0.0,
+      cartonCostPrice: (fields[22] as num?)?.toDouble() ?? 0.0,
+      unitType: fields[23] as String? ?? 'unit',
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductModel obj) {
     writer
-      ..writeByte(14)
+      ..writeByte(24)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -65,7 +75,27 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       ..writeByte(12)
       ..write(obj.packPrice)
       ..writeByte(13)
-      ..write(obj.packName);
+      ..write(obj.packName)
+      ..writeByte(14)
+      ..write(obj.imageUrl)
+      ..writeByte(15)
+      ..write(obj.isTobacco)
+      ..writeByte(16)
+      ..write(obj.piecesPerPack)
+      ..writeByte(17)
+      ..write(obj.packsPerCarton)
+      ..writeByte(18)
+      ..write(obj.singlePiecePrice)
+      ..writeByte(19)
+      ..write(obj.cartonPrice)
+      ..writeByte(20)
+      ..write(obj.wholesaleCartonPrice)
+      ..writeByte(21)
+      ..write(obj.wholesalePackPrice)
+      ..writeByte(22)
+      ..write(obj.cartonCostPrice)
+      ..writeByte(23)
+      ..write(obj.unitType);
   }
 
   @override

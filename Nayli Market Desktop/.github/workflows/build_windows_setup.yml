@@ -35,17 +35,17 @@ jobs:
           # 1. Replace default Flutter icon with official Nayli Market multi-res icon
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
-          # 2. Rename executable binary from billing_app.exe to Nayli-Market.exe
-          (Get-Content "windows\CMakeLists.txt") -replace 'set\(BINARY_NAME "billing_app"\)', 'set(BINARY_NAME "Nayli-Market")' | Set-Content "windows\CMakeLists.txt"
+          # 2. Rename executable binary from billing_app.exe to Nayli-Kiosk.exe
+          (Get-Content "windows\CMakeLists.txt") -replace 'set\(BINARY_NAME "billing_app"\)', 'set(BINARY_NAME "Nayli-Kiosk")' | Set-Content "windows\CMakeLists.txt"
 
-          # 3. Set Windows native Title Bar text to "Nayli Market POS"
-          (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Market POS 🇩🇿"' | Set-Content "windows\runner\main.cpp"
+          # 3. Set Windows native Title Bar text to "Nayli Kiosk POS"
+          (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Kiosk POS 🇩🇿"' | Set-Content "windows\runner\main.cpp"
 
           # 4. Set Windows File Description and Product Name metadata
           (Get-Content "windows\runner\Runner.rc") `
-            -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Market Desktop POS"' `
-            -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Market Desktop POS"' `
-            -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Market"' `
+            -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' `
+            -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' `
+            -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' `
             | Set-Content "windows\runner\Runner.rc"
 
       - name: Install dependencies
@@ -60,10 +60,10 @@ jobs:
 
       - name: Archive Portable Release Folder
         run: |
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\installer\Nayli-Market-Desktop-Portable.zip -Force
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\installer\Nayli-Kiosk-Desktop-Portable.zip -Force
 
       - name: Upload Windows Installer Setup Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nayli-market-desktop-setup
+          name: nayli-kiosk-desktop-setup
           path: build/installer/

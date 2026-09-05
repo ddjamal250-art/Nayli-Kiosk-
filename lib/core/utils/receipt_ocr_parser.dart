@@ -203,11 +203,53 @@ class ReceiptOcrParser {
     double qty = 1.0;
     double unitPrice = 0.0;
 
-    if (numbers.length >= 2) {
-      qty = numbers[0];
-      unitPrice = numbers[1];
+    // Check for explicit "10 x 350.00" pattern
+    final multiplyMatch = RegExp(r'(\d+[\.,]?\d*)\s*[xX*]\s*(\d+[\.,]?\d*)').firstMatch(line);
+    if (multiplyMatch != null) {
+      final q = double.tryParse(multiplyMatch.group(1)!.replaceAll(',', '.')) ?? 1.0;
+      final p = double.tryParse(multiplyMatch.group(2)!.replaceAll(',', '.')) ?? 0.0;
+      if (q > 0 && p > 0) {
+        qty = q;
+        unitPrice = p;
+      }
+    } else if (numbers.length >= 3) {
+      // In Algerian invoices: [Quantity, UnitPrice, LineTotal]
+      final n0 = numbers[0];
+      final n1 = numbers[1];
+      final n2 = numbers[2];
+
+      // Check n0 * n1 ≈ n2
+      if ((n0 * n1 - n2).abs() < (n2 * 0.05 + 1.5)) {
+        if (n0 <= n1 && n0 == n0.truncateToDouble()) {
+          qty = n0;
+          unitPrice = n1;
+        } else {
+          qty = n1;
+          unitPrice = n0;
+        }
+      } else if ((n1 * n2 - n0).abs() < (n0 * 0.05 + 1.5)) {
+        qty = n1;
+        unitPrice = n2;
+      } else {
+        qty = n0;
+        unitPrice = n1;
+      }
+    } else if (numbers.length == 2) {
+      final n0 = numbers[0];
+      final n1 = numbers[1];
+      if (n0 > 0 && n0 <= 500 && n0 == n0.truncateToDouble() && n1 > 10.0) {
+        qty = n0;
+        unitPrice = n1;
+      } else if (n1 > 0 && n1 <= 500 && n1 == n1.truncateToDouble() && n0 > 10.0) {
+        qty = n1;
+        unitPrice = n0;
+      } else {
+        qty = n0;
+        unitPrice = n1;
+      }
     } else if (numbers.length == 1) {
       unitPrice = numbers[0];
+      qty = 1.0;
     } else {
       return null;
     }

@@ -28,6 +28,54 @@ class MasterCatalogService {
 
   Future<void> init() async {
     try {
+      // 1. Load Algerian Tobacco Products Catalog (تبغ، سجائر، شمة، معسل، لوازم الأكشاك)
+      try {
+        final tobaccoJsonString = await rootBundle.loadString('assets/data/algerian_tobacco_products.json');
+        final List<dynamic> tobaccoList = jsonDecode(tobaccoJsonString) as List<dynamic>;
+        for (final raw in tobaccoList) {
+          if (raw is Map) {
+            final barcode = (raw['barcode'] ?? '').toString().trim();
+            if (barcode.isEmpty) continue;
+
+            final name = (raw['name'] ?? '').toString().trim();
+            final category = (raw['category'] ?? 'تبغ وسجائر').toString().trim();
+            final double retailPrice = (raw['retail_price'] as num?)?.toDouble() ?? 0.0;
+            final double costPrice = (raw['cost_price'] as num?)?.toDouble() ?? 0.0;
+            final double wholesalePrice = (raw['wholesale_price'] as num?)?.toDouble() ?? 0.0;
+            final double cartonPrice = (raw['carton_price'] as num?)?.toDouble() ?? 0.0;
+            final double wholesaleCartonPrice = (raw['wholesale_carton_price'] as num?)?.toDouble() ?? 0.0;
+            final double singlePiecePrice = (raw['single_piece_price'] as num?)?.toDouble() ?? 0.0;
+            final int piecesPerPack = (raw['pieces_per_pack'] as num?)?.toInt() ?? 20;
+            final int packsPerCarton = (raw['packs_per_carton'] as num?)?.toInt() ?? 10;
+            final bool isTobacco = raw['is_tobacco'] == true || category.contains('تبغ') || category.contains('شمة') || category.contains('معسل');
+            final String unitType = (raw['unit_type'] ?? 'piece').toString();
+
+            final catalogItem = MasterCatalogItem(
+              barcode: barcode,
+              name: name.isNotEmpty ? name : 'منتج تبغ $barcode',
+              category: category.isNotEmpty ? category : 'تبغ وسجائر',
+              defaultPrice: retailPrice > 0 ? retailPrice : 300.0,
+              defaultCost: costPrice > 0 ? costPrice : 270.0,
+              imageUrl: raw['image_url']?.toString(),
+              isTobacco: isTobacco,
+              cartonPrice: cartonPrice,
+              wholesaleCartonPrice: wholesaleCartonPrice,
+              wholesalePackPrice: wholesalePrice,
+              singlePiecePrice: singlePiecePrice,
+              piecesPerPack: piecesPerPack,
+              packsPerCarton: packsPerCarton,
+              unitType: unitType,
+            );
+
+            _barcodeMap[barcode] = catalogItem;
+            _allItems.removeWhere((i) => i.barcode == barcode);
+            _allItems.add(catalogItem);
+            if (category.isNotEmpty) _categories.add(category);
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Tobacco products json load warning: $e');
+      }
 
       // 2. Load and index algerian_supermarket_products.json (high quality local supermarket items)
       try {

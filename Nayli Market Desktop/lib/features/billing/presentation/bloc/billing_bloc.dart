@@ -285,34 +285,75 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     try {
       final items = state.cartItems
           .map((item) => {
+                'id': item.product.id,
                 'name': item.product.name,
                 'qty': item.quantity,
                 'price': item.product.price,
+                'costPrice': item.product.costPrice,
+                'isTobacco': item.product.isTobacco || item.product.category.contains('تبغ') || item.product.category.contains('سجائر'),
+                'category': item.product.category,
                 'total': item.total,
+                'profit': (item.product.price - item.product.costPrice) * item.quantity,
               })
           .toList();
 
       // 1. Auto-deduct stock from Hive for all sold products
       final productBox = HiveDatabase.productBox;
       for (final cartItem in state.cartItems) {
-        final originalId = cartItem.product.id.endsWith('_pack')
-            ? cartItem.product.id.replaceAll('_pack', '')
-            : cartItem.product.id;
+        String originalId = cartItem.product.id;
+        if (originalId.contains('_carton_')) {
+          originalId = originalId.split('_carton_').first;
+        } else if (originalId.contains('_piece_')) {
+          originalId = originalId.split('_piece_').first;
+        } else if (originalId.contains('_meter_')) {
+          originalId = originalId.split('_meter_').first;
+        } else if (originalId.contains('_ml_')) {
+          originalId = originalId.split('_ml_').first;
+        } else if (originalId.endsWith('_pack')) {
+          originalId = originalId.replaceAll('_pack', '');
+        }
+
         final productModel = productBox.get(originalId);
         if (productModel != null) {
-          final multiplier = cartItem.product.id.endsWith('_pack')
-              ? cartItem.product.packMultiplier
-              : 1;
-          final deductAmount = cartItem.quantity * (multiplier > 0 ? multiplier : 1);
+          int deductAmount = 1;
+          if (cartItem.product.id.contains('_carton_')) {
+            deductAmount = cartItem.quantity * (productModel.packsPerCarton > 0 ? productModel.packsPerCarton : 10);
+          } else if (cartItem.product.id.contains('_piece_')) {
+            deductAmount = (cartItem.quantity / (productModel.piecesPerPack > 0 ? productModel.piecesPerPack : 20)).ceil();
+            if (deductAmount < 1) deductAmount = 1;
+          } else if (cartItem.product.id.endsWith('_pack')) {
+            deductAmount = cartItem.quantity * (cartItem.product.packMultiplier > 0 ? cartItem.product.packMultiplier : 1);
+          } else {
+            deductAmount = cartItem.quantity;
+          }
+
           final newStock = (productModel.stock - deductAmount).clamp(0, 999999);
           productBox.put(
             originalId,
             productModel.copyWith(stock: newStock),
           );
+
+          // SMART SHOPPING LIST AUTOMATION
+          if (newStock <= 5) {
+            final shoppingList = HiveDatabase.shoppingListBox;
+            final existingList = shoppingList.get(originalId);
+            if (existingList == null) {
+              shoppingList.put(originalId, {
+                'id': originalId,
+                'name': productModel.name,
+                'currentStock': newStock,
+                'qtyToBuy': 10, // Suggested refill qty
+              });
+            } else if (existingList is Map) {
+               final updatedList = Map<String, dynamic>.from(existingList);
+               updatedList['currentStock'] = newStock;
+               shoppingList.put(originalId, updatedList);
+            }
+          }
         }
       }
 
-      // 2. Record sale invoice in invoicesBox for Daily Reports & History
+      // 2. Record sale invoice in invoicesBox with separate Tobacco vs General analytics
       final invoicesBox = HiveDatabase.invoicesBox;
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
       final totalCost = state.cartItems.fold<double>(
@@ -320,12 +361,29 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         (sum, i) => sum + (i.product.costPrice * i.quantity),
       );
 
+      final tobaccoItems = state.cartItems.where(
+        (i) => i.product.isTobacco || i.product.category.contains('تبغ') || i.product.category.contains('سجائر'),
+      );
+      final tobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
+      final tobaccoCost = tobaccoItems.fold<double>(0.0, (sum, i) => sum + (i.product.costPrice * i.quantity));
+      final tobaccoProfit = (tobaccoSales - tobaccoCost).clamp(0.0, double.infinity);
+
+      final generalSales = (state.totalAmount - tobaccoSales).clamp(0.0, double.infinity);
+      final generalCost = (totalCost - tobaccoCost).clamp(0.0, double.infinity);
+      final generalProfit = (generalSales - generalCost).clamp(0.0, double.infinity);
+
       await invoicesBox.put(invoiceId, {
         'id': invoiceId,
         'timestamp': DateTime.now().toIso8601String(),
         'totalAmount': state.totalAmount,
         'totalCost': totalCost,
         'netProfit': (state.totalAmount - totalCost).clamp(0.0, double.infinity),
+        'tobaccoSales': tobaccoSales,
+        'tobaccoCost': tobaccoCost,
+        'tobaccoProfit': tobaccoProfit,
+        'generalSales': generalSales,
+        'generalCost': generalCost,
+        'generalProfit': generalProfit,
         'itemCount': state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity),
         'items': items,
         'isCredit': event.isCredit,

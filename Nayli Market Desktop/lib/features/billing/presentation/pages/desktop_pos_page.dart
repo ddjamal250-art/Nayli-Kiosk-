@@ -34,6 +34,7 @@ import '../widgets/quick_items_manager_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
+import '../widgets/kiosk_tobacco_modal.dart';
 
 enum PosPriceTier { detail, demiGros, gros }
 
@@ -81,6 +82,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   static const List<Map<String, String>> _categoriesDef = [
     {'key': 'all', 'tr': 'cat_all', 'ar': 'الكل'},
+    {'key': 'tobacco', 'tr': 'cat_tobacco', 'ar': 'تبغ وسجائر'},
     {'key': 'beverages', 'tr': 'cat_beverages', 'ar': 'المشروبات'},
     {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'البقوليات'},
     {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات'},
@@ -196,6 +198,53 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     SoundService.playScanBeep();
   }
 
+  void _onProductSelectedForSale(Product product, {int multiplier = 1}) {
+    final isTobaccoOrKioskUnit = product.isTobacco ||
+        product.category.contains('تبغ') ||
+        product.category.contains('سجائر') ||
+        product.category.contains('شمة') ||
+        product.category.contains('معسل') ||
+        product.singlePiecePrice > 0 ||
+        product.cartonPrice > 0 ||
+        product.unitType == 'meter' ||
+        product.unitType == 'ml';
+
+    if (isTobaccoOrKioskUnit) {
+      KioskTobaccoModal.show(
+        context,
+        product,
+        isWholesale: _activePriceTier == PosPriceTier.gros,
+      );
+      return;
+    }
+
+    double effectivePrice = product.price;
+    if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
+      effectivePrice = product.wholesalePrice;
+    } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
+      effectivePrice = (product.price + product.wholesalePrice) / 2;
+    }
+
+    if (_isReturnMode) {
+      effectivePrice = -effectivePrice.abs();
+    }
+
+    final itemProduct = Product(
+      id: product.id,
+      name: _isReturnMode ? '[${context.tr('return_mode')}] ${product.name}' : product.name,
+      barcode: product.barcode,
+      price: effectivePrice,
+      costPrice: product.costPrice,
+      stock: product.stock,
+      category: product.category,
+      imageUrl: product.imageUrl,
+    );
+
+    for (int i = 0; i < multiplier; i++) {
+      context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
+    }
+  }
+
   void _handleBarcodeSubmit(String rawInput) {
     if (rawInput.trim().isEmpty) return;
     final input = rawInput.trim();
@@ -240,6 +289,14 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       final qBarcode = matchedQuickItem['barcode']?.toString() ?? barcodeToScan;
       final qId = matchedQuickItem['id']?.toString() ?? barcodeToScan;
 
+      final existingProduct = HiveDatabase.productBox.values
+          .where((p) => (p.barcode.isNotEmpty && p.barcode == qBarcode) || p.id == qId)
+          .firstOrNull;
+      if (existingProduct != null) {
+        _onProductSelectedForSale(existingProduct, multiplier: multiplier);
+        return;
+      }
+
       final quickProduct = Product(
         id: qId,
         name: _isReturnMode ? '[${context.tr('return_mode')}] $qName' : qName,
@@ -248,11 +305,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         costPrice: qCost,
         stock: (matchedQuickItem['stock'] as num?)?.toInt() ?? 999,
         category: 'بيع سريع',
+        isTobacco: matchedQuickItem['isTobacco'] == true,
+        singlePiecePrice: (matchedQuickItem['singlePiecePrice'] as num?)?.toDouble() ?? 0.0,
+        cartonPrice: (matchedQuickItem['cartonPrice'] as num?)?.toDouble() ?? 0.0,
+        wholesaleCartonPrice: (matchedQuickItem['wholesaleCartonPrice'] as num?)?.toDouble() ?? 0.0,
+        wholesalePackPrice: (matchedQuickItem['wholesalePackPrice'] as num?)?.toDouble() ?? 0.0,
+        unitType: matchedQuickItem['unitType']?.toString() ?? 'unit',
       );
 
-      for (int i = 0; i < multiplier; i++) {
-        context.read<BillingBloc>().add(AddProductToCartEvent(quickProduct));
-      }
+      _onProductSelectedForSale(quickProduct, multiplier: multiplier);
       return;
     }
 
@@ -308,30 +369,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     final product = products.where((p) => p.barcode == barcodeToScan).firstOrNull;
 
     if (product != null) {
-      double effectivePrice = product.price;
-      if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
-        effectivePrice = product.wholesalePrice;
-      } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
-        effectivePrice = (product.price + product.wholesalePrice) / 2;
-      }
-
-      if (_isReturnMode) {
-        effectivePrice = -effectivePrice.abs();
-      }
-
-      final itemProduct = Product(
-        id: product.id,
-        name: _isReturnMode ? '[${context.tr('return_mode')}] ${product.name}' : product.name,
-        barcode: product.barcode,
-        price: effectivePrice,
-        costPrice: product.costPrice,
-        stock: product.stock,
-        category: product.category,
-      );
-
-      for (int i = 0; i < multiplier; i++) {
-        context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
-      }
+      _onProductSelectedForSale(product, multiplier: multiplier);
     } else {
       context.read<BillingBloc>().add(ScanBarcodeEvent(barcodeToScan));
     }
@@ -1272,8 +1310,8 @@ $itemsSummary
                                   borderRadius: BorderRadius.circular(10),
                                   onTap: () {
                                     SoundService.playScanBeep();
-                                    context.read<BillingBloc>().add(AddProductToCartEvent(prod));
-                                    SnackbarHelper.showSuccess(context, 'تمت إضافة ${prod.name} للسلة');
+                                    Navigator.pop(dialogCtx);
+                                    _onProductSelectedForSale(prod);
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
@@ -1558,6 +1596,29 @@ $itemsSummary
     }
   }
 
+  int _getExpiringProductsCount() {
+    try {
+      final box = HiveDatabase.productsBox;
+      int count = 0;
+      final now = DateTime.now();
+      for (var key in box.keys) {
+        final p = box.get(key);
+        if (p != null && p.expiryDate != null && p.expiryDate!.isNotEmpty) {
+          try {
+            final eDate = DateFormat('yyyy-MM-dd').parse(p.expiryDate!);
+            final diff = eDate.difference(now).inDays;
+            if (diff >= 0 && diff <= 7) {
+              count++;
+            }
+          } catch (_) {}
+        }
+      }
+      return count;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1567,6 +1628,30 @@ $itemsSummary
             children: [
               // Top Header Bar
               _buildTopHeaderBar(),
+
+              // Expiry Alert Banner
+              if (_getExpiringProductsCount() > 0)
+                Material(
+                  color: Colors.redAccent.shade700,
+                  child: InkWell(
+                    onTap: () => context.push('/products/expiry-monitor'),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.warning_rounded, color: Colors.white, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            '⚠️ انتبه: يوجد ${_getExpiringProductsCount()} منتجات تقترب من انتهاء صلاحيتها! انقر هنا للمراجعة.',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
 
               // Return Mode / Wholesale Banner if active
               if (_isReturnMode || _activePriceTier != PosPriceTier.detail)
@@ -2113,6 +2198,26 @@ $itemsSummary
                   ),
                 ),
                 const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _showCategoryProductsModal('tobacco', 'تبغ وسجائر 🚬'),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF78350F).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFB45309)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Text('🚬', style: TextStyle(fontSize: 13)),
+                        SizedBox(width: 4),
+                        Text('قسم التبغ', style: TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 const SizedBox(height: 24, child: VerticalDivider(width: 1)),
                 const SizedBox(width: 8),
 
@@ -2228,16 +2333,29 @@ $itemsSummary
           borderRadius: BorderRadius.circular(16),
           onTap: () {
             _onItemScanned();
-            final prod = Product(
-              id: id,
-              name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
-              barcode: barcode,
-              price: _isReturnMode ? -price.abs() : price,
-              costPrice: cost,
-              stock: stock,
-              category: 'بيع سريع',
-            );
-            context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+            final existingProd = HiveDatabase.productBox.values
+                .where((p) => (p.barcode.isNotEmpty && p.barcode == barcode) || p.id == id)
+                .firstOrNull;
+            if (existingProd != null) {
+              _onProductSelectedForSale(existingProd);
+            } else {
+              final prod = Product(
+                id: id,
+                name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
+                barcode: barcode,
+                price: _isReturnMode ? -price.abs() : price,
+                costPrice: cost,
+                stock: stock,
+                category: 'بيع سريع',
+                isTobacco: item['isTobacco'] == true,
+                singlePiecePrice: (item['singlePiecePrice'] as num?)?.toDouble() ?? 0.0,
+                cartonPrice: (item['cartonPrice'] as num?)?.toDouble() ?? 0.0,
+                wholesaleCartonPrice: (item['wholesaleCartonPrice'] as num?)?.toDouble() ?? 0.0,
+                wholesalePackPrice: (item['wholesalePackPrice'] as num?)?.toDouble() ?? 0.0,
+                unitType: item['unitType']?.toString() ?? 'unit',
+              );
+              _onProductSelectedForSale(prod);
+            }
           },
           child: Container(
             padding: const EdgeInsets.all(12),

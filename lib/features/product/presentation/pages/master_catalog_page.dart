@@ -205,14 +205,21 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
 
                     if (name.isNotEmpty) {
                       if (existingProduct != null) {
-                        final updated = Product(
-                          id: existingProduct.id,
+                        final updated = existingProduct.copyWith(
                           name: name,
-                          barcode: item.barcode,
                           price: price,
                           costPrice: cost,
                           stock: existingProduct.stock + qty,
                           category: item.category,
+                          imageUrl: existingProduct.imageUrl ?? item.imageUrl,
+                          isTobacco: item.isTobacco || existingProduct.isTobacco,
+                          cartonPrice: item.cartonPrice > 0 ? item.cartonPrice : existingProduct.cartonPrice,
+                          wholesaleCartonPrice: item.wholesaleCartonPrice > 0 ? item.wholesaleCartonPrice : existingProduct.wholesaleCartonPrice,
+                          wholesalePackPrice: item.wholesalePackPrice > 0 ? item.wholesalePackPrice : existingProduct.wholesalePackPrice,
+                          singlePiecePrice: item.singlePiecePrice > 0 ? item.singlePiecePrice : existingProduct.singlePiecePrice,
+                          piecesPerPack: item.piecesPerPack > 0 ? item.piecesPerPack : existingProduct.piecesPerPack,
+                          packsPerCarton: item.packsPerCarton > 0 ? item.packsPerCarton : existingProduct.packsPerCarton,
+                          unitType: item.unitType.isNotEmpty ? item.unitType : existingProduct.unitType,
                         );
                         context.read<ProductBloc>().add(UpdateProduct(updated));
                       } else {
@@ -224,6 +231,16 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                           costPrice: cost,
                           stock: qty,
                           category: item.category,
+                          imageUrl: item.imageUrl,
+                          isTobacco: item.isTobacco,
+                          cartonPrice: item.cartonPrice,
+                          wholesaleCartonPrice: item.wholesaleCartonPrice,
+                          wholesalePackPrice: item.wholesalePackPrice,
+                          singlePiecePrice: item.singlePiecePrice,
+                          piecesPerPack: item.piecesPerPack,
+                          packsPerCarton: item.packsPerCarton,
+                          unitType: item.unitType,
+                          wholesalePrice: item.wholesalePackPrice > 0 ? item.wholesalePackPrice : price,
                         );
                         context.read<ProductBloc>().add(AddProduct(newProduct));
                       }
@@ -253,14 +270,17 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     for (var item in selectedItems) {
       final existing = existingMap[item.barcode.trim()];
       if (existing != null) {
-        final updated = Product(
-          id: existing.id,
-          name: existing.name,
-          barcode: existing.barcode,
-          price: existing.price,
-          costPrice: existing.costPrice,
+        final updated = existing.copyWith(
           stock: existing.stock + 12,
-          category: item.category,
+          imageUrl: existing.imageUrl ?? item.imageUrl,
+          isTobacco: item.isTobacco || existing.isTobacco,
+          cartonPrice: item.cartonPrice > 0 ? item.cartonPrice : existing.cartonPrice,
+          wholesaleCartonPrice: item.wholesaleCartonPrice > 0 ? item.wholesaleCartonPrice : existing.wholesaleCartonPrice,
+          wholesalePackPrice: item.wholesalePackPrice > 0 ? item.wholesalePackPrice : existing.wholesalePackPrice,
+          singlePiecePrice: item.singlePiecePrice > 0 ? item.singlePiecePrice : existing.singlePiecePrice,
+          piecesPerPack: item.piecesPerPack > 0 ? item.piecesPerPack : existing.piecesPerPack,
+          packsPerCarton: item.packsPerCarton > 0 ? item.packsPerCarton : existing.packsPerCarton,
+          unitType: item.unitType.isNotEmpty ? item.unitType : existing.unitType,
         );
         context.read<ProductBloc>().add(UpdateProduct(updated));
       } else {
@@ -272,6 +292,16 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
           costPrice: item.defaultCost,
           stock: 12,
           category: item.category,
+          imageUrl: item.imageUrl,
+          isTobacco: item.isTobacco,
+          cartonPrice: item.cartonPrice,
+          wholesaleCartonPrice: item.wholesaleCartonPrice,
+          wholesalePackPrice: item.wholesalePackPrice,
+          singlePiecePrice: item.singlePiecePrice,
+          piecesPerPack: item.piecesPerPack,
+          packsPerCarton: item.packsPerCarton,
+          unitType: item.unitType,
+          wholesalePrice: item.wholesalePackPrice > 0 ? item.wholesalePackPrice : item.defaultPrice,
         );
         context.read<ProductBloc>().add(AddProduct(newProduct));
       }

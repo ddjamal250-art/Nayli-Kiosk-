@@ -17,6 +17,8 @@ import '../../../shop/data/models/shop_model.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
 
+import '../widgets/product_image_picker_field.dart';
+
 class EditProductPage extends StatefulWidget {
   final Product product;
   const EditProductPage({super.key, required this.product});
@@ -33,12 +35,30 @@ class _EditProductPageState extends State<EditProductPage> {
   late TextEditingController _costPriceCtrl;
   late TextEditingController _wholesalePriceCtrl;
   late TextEditingController _stockCtrl;
+
+  // New Tobacco & Unit controllers
+  late TextEditingController _cartonPriceCtrl;
+  late TextEditingController _wholesaleCartonPriceCtrl;
+  late TextEditingController _wholesalePackPriceCtrl;
+  late TextEditingController _singlePiecePriceCtrl;
+  late TextEditingController _packsPerCartonCtrl;
+  late TextEditingController _piecesPerPackCtrl;
+
   late String _selectedCategory;
+  String? _imageUrl;
+  late bool _isTobacco;
+  late String _unitType; // 'piece', 'meter', 'ml'
   late bool _isWeighted;
   DateTime? _expiryDate;
 
   static const List<String> categories = [
     'عام',
+    'تبغ وسجائر',
+    'شمة وتبغ تقليدي',
+    'ورق لف وفلاتر',
+    'معسل وشيشة',
+    'ولاعات وغاز',
+    'عطور زيتية وبالمتر',
     'مواد غذائية ومعلبات',
     'حليب ومشتقاته',
     'مخبوزات وعجائن',
@@ -58,6 +78,17 @@ class _EditProductPageState extends State<EditProductPage> {
     _costPriceCtrl = TextEditingController(text: widget.product.costPrice > 0 ? widget.product.costPrice.toStringAsFixed(0) : '');
     _wholesalePriceCtrl = TextEditingController(text: widget.product.wholesalePrice > 0 ? widget.product.wholesalePrice.toStringAsFixed(0) : '');
     _stockCtrl = TextEditingController(text: widget.product.stock.toString());
+
+    _imageUrl = widget.product.imageUrl;
+    _isTobacco = widget.product.isTobacco || widget.product.category.contains('تبغ') || widget.product.category.contains('شمة') || widget.product.category.contains('معسل');
+    _unitType = widget.product.unitType.isNotEmpty ? widget.product.unitType : 'piece';
+    _cartonPriceCtrl = TextEditingController(text: widget.product.cartonPrice > 0 ? widget.product.cartonPrice.toStringAsFixed(0) : '');
+    _wholesaleCartonPriceCtrl = TextEditingController(text: widget.product.wholesaleCartonPrice > 0 ? widget.product.wholesaleCartonPrice.toStringAsFixed(0) : '');
+    _wholesalePackPriceCtrl = TextEditingController(text: widget.product.wholesalePackPrice > 0 ? widget.product.wholesalePackPrice.toStringAsFixed(0) : '');
+    _singlePiecePriceCtrl = TextEditingController(text: widget.product.singlePiecePrice > 0 ? widget.product.singlePiecePrice.toStringAsFixed(0) : '');
+    _packsPerCartonCtrl = TextEditingController(text: widget.product.packsPerCarton.toString());
+    _piecesPerPackCtrl = TextEditingController(text: widget.product.piecesPerPack.toString());
+
     _selectedCategory = widget.product.category.isNotEmpty ? widget.product.category : 'عام';
     _isWeighted = widget.product.isWeighted || widget.product.barcode.startsWith('SCALE_') || widget.product.name.contains('ميزان') || widget.product.name.contains('كغ');
     if (widget.product.expiryDate != null && widget.product.expiryDate!.isNotEmpty) {
@@ -73,6 +104,12 @@ class _EditProductPageState extends State<EditProductPage> {
     _costPriceCtrl.dispose();
     _wholesalePriceCtrl.dispose();
     _stockCtrl.dispose();
+    _cartonPriceCtrl.dispose();
+    _wholesaleCartonPriceCtrl.dispose();
+    _wholesalePackPriceCtrl.dispose();
+    _singlePiecePriceCtrl.dispose();
+    _packsPerCartonCtrl.dispose();
+    _piecesPerPackCtrl.dispose();
     super.dispose();
   }
 
@@ -108,11 +145,20 @@ class _EditProductPageState extends State<EditProductPage> {
         barcode: _barcodeCtrl.text.trim(),
         price: double.tryParse(_priceCtrl.text.trim()) ?? widget.product.price,
         costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? widget.product.costPrice,
-        wholesalePrice: double.tryParse(_wholesalePriceCtrl.text.trim()) ?? widget.product.wholesalePrice,
+        wholesalePrice: double.tryParse(_wholesalePriceCtrl.text.trim()) ?? (double.tryParse(_wholesalePackPriceCtrl.text.trim()) ?? widget.product.wholesalePrice),
         stock: int.tryParse(_stockCtrl.text.trim()) ?? widget.product.stock,
         category: _selectedCategory,
         isWeighted: _isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
+        imageUrl: _imageUrl,
+        isTobacco: _isTobacco,
+        cartonPrice: double.tryParse(_cartonPriceCtrl.text.trim()) ?? widget.product.cartonPrice,
+        wholesaleCartonPrice: double.tryParse(_wholesaleCartonPriceCtrl.text.trim()) ?? widget.product.wholesaleCartonPrice,
+        wholesalePackPrice: double.tryParse(_wholesalePackPriceCtrl.text.trim()) ?? widget.product.wholesalePackPrice,
+        singlePiecePrice: double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? widget.product.singlePiecePrice,
+        piecesPerPack: int.tryParse(_piecesPerPackCtrl.text.trim()) ?? widget.product.piecesPerPack,
+        packsPerCarton: int.tryParse(_packsPerCartonCtrl.text.trim()) ?? widget.product.packsPerCarton,
+        unitType: _unitType,
       );
 
       context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
@@ -318,6 +364,16 @@ class _EditProductPageState extends State<EditProductPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Product Image Picker (Web search + camera + gallery)
+                const InputLabel(text: 'صورة المنتج 📸 (تظهر بالتطبيق ولا تطبع على الوصل)'),
+                ProductImagePickerField(
+                  initialImageUrl: _imageUrl,
+                  barcode: _barcodeCtrl.text.trim(),
+                  productName: _nameCtrl.text.trim(),
+                  onImageChanged: (path) => setState(() => _imageUrl = path),
+                ),
+                const SizedBox(height: 16),
+
                 // Editable Barcode Box with Camera Scanner
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -379,8 +435,181 @@ class _EditProductPageState extends State<EditProductPage> {
                       .map((cat) => DropdownMenuItem(value: cat, child: Text(cat, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))))
                       .toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedCategory = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedCategory = val;
+                        if (val.contains('تبغ') || val.contains('شمة') || val.contains('معسل') || val.contains('ولاع') || val.contains('ورق لف')) {
+                          _isTobacco = true;
+                        }
+                      });
+                    }
                   },
+                ),
+                const SizedBox(height: 16),
+
+                // Unit Type Selection (قطعة، متر، مليلتر)
+                const InputLabel(text: 'وحدة البيع والقياس 📏📦'),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'piece', label: Text('بالقطعة/علبة 📦', style: TextStyle(fontSize: 12))),
+                    ButtonSegment(value: 'meter', label: Text('بالمتر 📏', style: TextStyle(fontSize: 12))),
+                    ButtonSegment(value: 'ml', label: Text('بالمليلتر 🧴', style: TextStyle(fontSize: 12))),
+                  ],
+                  selected: {_unitType},
+                  onSelectionChanged: (set) {
+                    setState(() => _unitType = set.first);
+                  },
+                ),
+                if (_unitType == 'meter')
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6, bottom: 4),
+                    child: Text('ℹ️ مخصص للأكشاك التي تبيع الحبال والمطاط بالمتر. في شاشة البيع ستتمكن من إدخال الطول بالمتر مباشرة.', style: TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                  ),
+                if (_unitType == 'ml')
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6, bottom: 4),
+                    child: Text('ℹ️ مخصص للعطور الزيتية المركزة وسوائل الفيب والشيشة. في شاشة البيع ستظهر أزرار سريعة (30ml, 50ml, 100ml).', style: TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                  ),
+                const SizedBox(height: 16),
+
+                // Tobacco & Kiosk Special pricing card
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _isTobacco ? Colors.brown.withOpacity(0.06) : Colors.grey[50],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _isTobacco ? Colors.brown : Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.smoking_rooms, color: _isTobacco ? Colors.brown : Colors.grey),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('منتج تبغ وسجائر / كشك 🚬',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isTobacco ? Colors.brown[800] : Colors.black87)),
+                                  const Text('تفعيل تسعير الكرطوشة، العلبة، والسيجارة بالجملة والتجزئة', style: TextStyle(fontSize: 10.5, color: Colors.grey)),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Switch(
+                            value: _isTobacco,
+                            activeColor: Colors.brown,
+                            onChanged: (v) => setState(() {
+                              _isTobacco = v;
+                              if (v && _selectedCategory == 'عام') _selectedCategory = 'تبغ وسجائر';
+                            }),
+                          ),
+                        ],
+                      ),
+                      if (_isTobacco) ...[
+                        const Divider(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const InputLabel(text: 'سعر بيع الكرطوشة (تجزئة)'),
+                                  TextFormField(
+                                    controller: _cartonPriceCtrl,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: const InputDecoration(hintText: '4100', suffixText: 'دج'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const InputLabel(text: 'سعر بيع الكرطوشة (جملة)'),
+                                  TextFormField(
+                                    controller: _wholesaleCartonPriceCtrl,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: const InputDecoration(hintText: '3950', suffixText: 'دج'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const InputLabel(text: 'سعر بيع العلبة (جملة)'),
+                                  TextFormField(
+                                    controller: _wholesalePackPriceCtrl,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: const InputDecoration(hintText: '400', suffixText: 'دج'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const InputLabel(text: 'سعر بيع السيجارة بالحبة (دج)'),
+                                  TextFormField(
+                                    controller: _singlePiecePriceCtrl,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: const InputDecoration(hintText: '25', suffixText: 'دج'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const InputLabel(text: 'سجائر في العلبة'),
+                                  TextFormField(
+                                    controller: _piecesPerPackCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(hintText: '20'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const InputLabel(text: 'علب في الكرطوشة'),
+                                  TextFormField(
+                                    controller: _packsPerCartonCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(hintText: '10'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
 

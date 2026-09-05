@@ -68,18 +68,89 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
   void _scanPaperReceipt() async {
     final result = await ReceiptOcrScannerDialog.show(context);
     if (result != null && result.items.isNotEmpty) {
-      final docType = _selectedTypeFilter ?? CommercialDocType.facture;
-      final newDoc = CommercialDocument(
-        id: const Uuid().v4(),
-        documentNumber: CommercialDocumentService.generateNextDocNumber(docType),
-        type: docType,
-        status: CommercialDocStatus.valide,
-        date: result.date ?? DateTime.now(),
-        entityName: result.entityName.isNotEmpty ? result.entityName : 'زبون عابر',
-        items: result.items,
-        amountPaid: 0.0,
+      if (!mounted) return;
+      final destination = await showModalBottomSheet<String>(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.indigo.shade50, borderRadius: BorderRadius.circular(10)),
+                      child: const Icon(Icons.check_circle_outline, color: Colors.indigo, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('تم مسح واستخراج ${result.items.length} سلع بنجاح 🎉',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text('المجموع: ${result.totalAmount.toStringAsFixed(2)} دج',
+                              style: TextStyle(fontSize: 12, color: Colors.teal[800], fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal[700],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.inventory_2_outlined),
+                  label: const Text('نقل إلى صفحة الأريفاج (إدخال في المخزون) 📦',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: () => Navigator.pop(ctx, 'stock_in'),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.description_outlined),
+                  label: const Text('فتح كمحرر وثائق تجارية / فاتورة مورد 📄',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: () => Navigator.pop(ctx, 'editor'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
-      _openEditor(doc: newDoc);
+
+      if (destination == 'stock_in') {
+        if (mounted) {
+          context.push('/stock-in', extra: result);
+        }
+      } else if (destination == 'editor') {
+        final docType = _selectedTypeFilter ?? CommercialDocType.facture;
+        final newDoc = CommercialDocument(
+          id: const Uuid().v4(),
+          documentNumber: CommercialDocumentService.generateNextDocNumber(docType),
+          type: docType,
+          status: CommercialDocStatus.valide,
+          date: result.date ?? DateTime.now(),
+          entityName: result.entityName.isNotEmpty ? result.entityName : 'مورد غير مسمى',
+          items: result.items,
+          amountPaid: 0.0,
+        );
+        _openEditor(doc: newDoc);
+      }
     }
   }
 

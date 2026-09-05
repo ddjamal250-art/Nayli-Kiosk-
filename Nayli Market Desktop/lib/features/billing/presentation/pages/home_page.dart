@@ -17,20 +17,17 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
+import '../../../../core/utils/update_checker.dart';
 
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../domain/entities/cart_item.dart';
 
-import '../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
-import '../../documents/domain/entities/commercial_document.dart';
-import '../../documents/data/commercial_document_service.dart';
-import 'package:uuid/uuid.dart';
-
 import '../bloc/billing_bloc.dart';
 import '../widgets/quick_amount_modal.dart';
 import '../widgets/smart_scale_modal.dart';
 import '../widgets/held_carts_modal.dart';
+import '../widgets/kiosk_tobacco_modal.dart';
 
 class QuickItem {
   final String id;
@@ -108,6 +105,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateChecker.checkForUpdates(context);
+    });
     WidgetsBinding.instance.addObserver(this);
     _scannerController = MobileScannerController(
       detectionSpeed: DetectionSpeed.unrestricted,
@@ -185,6 +185,37 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     SoundService.playScanBeep();
   }
 
+  void _onProductSelectedForSale(Product product) {
+    final isTobaccoOrKioskUnit = product.isTobacco ||
+        product.category.contains('تبغ') ||
+        product.category.contains('سجائر') ||
+        product.category.contains('شمة') ||
+        product.category.contains('معسل') ||
+        product.singlePiecePrice > 0 ||
+        product.cartonPrice > 0 ||
+        product.unitType == 'meter' ||
+        product.unitType == 'ml';
+
+    if (isTobaccoOrKioskUnit) {
+      KioskTobaccoModal.show(context, product);
+      return;
+    }
+
+    context.read<BillingBloc>().add(AddProductToCartEvent(product));
+    SoundService.playScanBeep();
+    if (_currentSheetSize < 0.35) {
+      _sheetController.animateTo(
+        0.52,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    }
+    context.showAppSnackBar(
+      '✅ تمت إضافة ${product.name} (${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
+      icon: Icons.add_shopping_cart,
+    );
+  }
+
   void _addQuickItem(QuickItem item) {
     if (item.linkedProductId != null && item.linkedProductId!.isNotEmpty) {
       final productState = context.read<ProductBloc>().state;
@@ -192,19 +223,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
           .where((p) => p.id == item.linkedProductId)
           .firstOrNull;
       if (matched != null) {
-        context.read<BillingBloc>().add(AddProductToCartEvent(matched));
-        SoundService.playScanBeep();
-        if (_currentSheetSize < 0.35) {
-          _sheetController.animateTo(
-            0.52,
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeOutCubic,
-          );
-        }
-        context.showAppSnackBar(
-          '✅ تمت إضافة ${matched.name} (${matched.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
-          icon: Icons.add_shopping_cart,
-        );
+        _onProductSelectedForSale(matched);
         return;
       }
     }
@@ -473,7 +492,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     }
 
     if (matchedProduct != null) {
-      context.read<BillingBloc>().add(AddProductToCartEvent(matchedProduct));
+      _onProductSelectedForSale(matchedProduct);
     } else {
       context.read<BillingBloc>().add(ScanBarcodeEvent(code));
     }
@@ -1166,8 +1185,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     );
   }
 
-
-
   void _navigateToSettings() {
     setState(() => _isScanningPaused = true);
     try {
@@ -1186,6 +1203,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         });
       }
     });
+  }
+
+  int _getExpiringProductsCount() {
+    try {
+      final box = HiveDatabase.productsBox;
+      int count = 0;
+      final now = DateTime.now();
+      for (var key in box.keys) {
+        final p = box.get(key);
+        if (p != null && p.expiryDate != null && p.expiryDate!.isNotEmpty) {
+          try {
+            final eDate = DateFormat('yyyy-MM-dd').parse(p.expiryDate!);
+            final diff = eDate.difference(now).inDays;
+            if (diff >= 0 && diff <= 7) {
+              count++;
+            }
+          } catch (_) {}
+        }
+      }
+      return count;
+    } catch (_) {
+      return 0;
+    }
   }
 
   @override
@@ -1218,6 +1258,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               Positioned.fill(
                 child: _buildScannerSection(),
               ),
+
+              // Expiry Alert Banner
+              if (_getExpiringProductsCount() > 0)
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 8,
+                  left: 16,
+                  right: 16,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => context.push('/products/expiry-monitor'),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.shade700,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning_rounded, color: Colors.white, size: 28),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '⚠️ انتبه: يوجد ${_getExpiringProductsCount()} منتجات تقترب من انتهاء صلاحيتها!',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, color: Colors.white),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
               // 2. DRAGGABLE SCROLLABLE CART SHEET
               DraggableScrollableSheet(
@@ -1293,43 +1371,49 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     );
                   },
                 ),
+                const SizedBox(width: 8),
+                // Shopping List Button
+                InkWell(
+                  onTap: () => context.push('/products/shopping-list'),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.teal[800]?.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white70, width: 1.2),
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.shopping_cart_checkout, color: Colors.white, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'التسوق',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
 
                 // Full-Screen Settings & Management Hamburger Button
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    InkWell(
-                      onTap: () => context.push('/documents'),
-                      borderRadius: BorderRadius.circular(24),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        margin: const EdgeInsets.only(left: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.tealAccent),
-                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
-                        ),
-                        child: const Icon(Icons.auto_stories_rounded, color: Colors.tealAccent, size: 22),
-                      ),
+                InkWell(
+                  onTap: _navigateToSettings,
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white70),
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
                     ),
-                    InkWell(
-                      onTap: _navigateToSettings,
-                      borderRadius: BorderRadius.circular(24),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white70),
-                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
-                        ),
-                        child: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-                      ),
-                    ),
-                  ],
+                    child: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+                  ),
                 ),
               ],
             ),

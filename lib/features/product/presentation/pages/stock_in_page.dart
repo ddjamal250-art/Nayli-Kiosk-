@@ -20,12 +20,15 @@ import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
+import '../../../documents/domain/entities/commercial_document.dart';
 import '../../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
+import '../widgets/product_image_picker_field.dart';
 
 enum ArrivageUnitMode { cartons, vracSacs, singleUnits }
 
 class StockInPage extends StatefulWidget {
-  const StockInPage({super.key});
+  final ParsedReceiptResult? initialReceiptResult;
+  const StockInPage({super.key, this.initialReceiptResult});
 
   @override
   State<StockInPage> createState() => _StockInPageState();
@@ -86,6 +89,12 @@ class _StockInPageState extends State<StockInPage> {
 
   bool _isUpdatingFromCalculation = false;
 
+  // OCR Invoice Review Queue
+  List<CommercialDocItem> _pendingOcrItems = [];
+  int _activeOcrIndex = -1;
+  String? _ocrSupplierName;
+  String? _itemImageUrl;
+
   @override
   void initState() {
     super.initState();
@@ -99,6 +108,12 @@ class _StockInPageState extends State<StockInPage> {
     _costPerKgController.addListener(_onKgCostChanged);
 
     _priceController.addListener(() => setState(() {}));
+
+    if (widget.initialReceiptResult != null && widget.initialReceiptResult!.items.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _applyOcrResult(widget.initialReceiptResult!);
+      });
+    }
   }
 
   @override
@@ -242,6 +257,7 @@ class _StockInPageState extends State<StockInPage> {
         _priceController.text = existing.price.toStringAsFixed(2);
         _costPriceController.text = existing.costPrice.toStringAsFixed(2);
         _currentStock = existing.stock;
+        _itemImageUrl = existing.imageUrl;
         if (existing.isWeighted || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
           _unitMode = ArrivageUnitMode.vracSacs;
         }
@@ -260,6 +276,7 @@ class _StockInPageState extends State<StockInPage> {
         _priceController.text = masterMatch.defaultPrice.toStringAsFixed(2);
         _costPriceController.text = masterMatch.defaultCost.toStringAsFixed(2);
         _currentStock = 0;
+        _itemImageUrl = masterMatch.imageUrl;
       });
       SoundService.playScanBeep();
       return;
@@ -272,6 +289,7 @@ class _StockInPageState extends State<StockInPage> {
       _priceController.clear();
       _costPriceController.clear();
       _currentStock = 0;
+      _itemImageUrl = null;
     });
     SoundService.playScanBeep();
   }
@@ -305,9 +323,32 @@ class _StockInPageState extends State<StockInPage> {
       effectiveCost = totalStock > 0 ? (totalValue / totalStock) : costPrice;
     }
 
+    final productBloc = context.read<ProductBloc>();
+    final products = productBloc.state.products;
+    final existingProduct = _existingProductId != null
+        ? products.where((p) => p.id == _existingProductId).firstOrNull
+        : null;
+    final masterMatch = MasterCatalogService.searchByBarcode(_activeBarcode) ??
+        MasterCatalogService.search(name).firstOrNull;
+
+    final productImageUrl = _itemImageUrl ?? existingProduct?.imageUrl ?? masterMatch?.imageUrl;
+    final isTobacco = existingProduct?.isTobacco ?? masterMatch?.isTobacco ?? false;
+    final piecesPerPack = existingProduct?.piecesPerPack ?? masterMatch?.piecesPerPack ?? 20;
+    final packsPerCarton = existingProduct?.packsPerCarton ?? masterMatch?.packsPerCarton ?? 10;
+    final singlePiecePrice = existingProduct?.singlePiecePrice ?? masterMatch?.singlePiecePrice ?? 0.0;
+    final cartonPrice = existingProduct?.cartonPrice ?? masterMatch?.cartonPrice ?? 0.0;
+    final wholesaleCartonPrice = existingProduct?.wholesaleCartonPrice ?? masterMatch?.wholesaleCartonPrice ?? 0.0;
+    final wholesalePackPrice = existingProduct?.wholesalePackPrice ?? masterMatch?.wholesalePackPrice ?? 0.0;
+    final cartonCostPrice = existingProduct?.cartonCostPrice ?? masterMatch?.cartonCostPrice ?? 0.0;
+    final unitType = existingProduct?.unitType ?? masterMatch?.unitType ?? 'unit';
+
     if (_isExistingInShop && _existingProductId != null) {
-      final updatedProduct = Product(
+      final updatedProduct = (existingProduct ?? Product(
         id: _existingProductId!,
+        name: name,
+        barcode: _activeBarcode,
+        price: price,
+      )).copyWith(
         name: name,
         barcode: _activeBarcode,
         price: price,
@@ -315,8 +356,9 @@ class _StockInPageState extends State<StockInPage> {
         stock: _currentStock + qty,
         isWeighted: isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
+        imageUrl: productImageUrl,
       );
-      context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
+      productBloc.add(UpdateProduct(updatedProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         updatedProduct,
         category: 'أريفاج ومخزن',
@@ -332,8 +374,18 @@ class _StockInPageState extends State<StockInPage> {
         stock: qty,
         isWeighted: isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
+        imageUrl: productImageUrl,
+        isTobacco: isTobacco,
+        piecesPerPack: piecesPerPack,
+        packsPerCarton: packsPerCarton,
+        singlePiecePrice: singlePiecePrice,
+        cartonPrice: cartonPrice,
+        wholesaleCartonPrice: wholesaleCartonPrice,
+        wholesalePackPrice: wholesalePackPrice,
+        cartonCostPrice: cartonCostPrice,
+        unitType: unitType,
       );
-      context.read<ProductBloc>().add(AddProduct(newProduct));
+      productBloc.add(AddProduct(newProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         newProduct,
         category: 'أريفاج ومخزن',
@@ -369,9 +421,32 @@ class _StockInPageState extends State<StockInPage> {
       _isExistingInShop = false;
       _existingProductId = null;
       _expiryDate = null;
+      _itemImageUrl = null;
     });
 
     SoundService.playSaveSuccess();
+
+    // Check if we are processing a pending OCR item
+    if (_activeOcrIndex >= 0 && _activeOcrIndex < _pendingOcrItems.length) {
+      _pendingOcrItems.removeAt(_activeOcrIndex);
+      if (_pendingOcrItems.isNotEmpty) {
+        final nextIdx = _activeOcrIndex < _pendingOcrItems.length ? _activeOcrIndex : 0;
+        _selectPendingOcrItem(nextIdx);
+        SnackbarHelper.showSuccess(
+          context,
+          '✅ تم حفظ واستلام "$name" بنجاح! تم تحميل السلعة التالية (${_pendingOcrItems.length} سلع متبقية)',
+        );
+        return;
+      } else {
+        _activeOcrIndex = -1;
+        SnackbarHelper.showSuccess(
+          context,
+          '🎉 رائع جداً! تم استلام وتأكيد جميع سلع الفاتورة بنجاح في المخزون!',
+        );
+        return;
+      }
+    }
+
     SnackbarHelper.showSuccess(context, '✅ تم تسجيل أريفاج "$name" (+$qty ${_unitMode == ArrivageUnitMode.vracSacs ? "كغ" : "حبة"}) بنجاح!');
   }
 
@@ -395,60 +470,317 @@ class _StockInPageState extends State<StockInPage> {
     if (picked != null) setState(() => _expiryDate = picked);
   }
 
+  void _applyOcrResult(ParsedReceiptResult result) {
+    if (result.items.isEmpty) return;
+    setState(() {
+      _pendingOcrItems = List.from(result.items);
+      _ocrSupplierName = result.entityName;
+      if (result.entityName.isNotEmpty) {
+        _supplierNameController.text = result.entityName;
+      }
+    });
+    _selectPendingOcrItem(0);
+    SnackbarHelper.showSuccess(
+      context,
+      '📄 تم استخراج ${result.items.length} سلع من الفاتورة. اضغط على أي سلعة لمراجعة تفاصيلها وتأكيدها.',
+    );
+  }
+
+  void _selectPendingOcrItem(int index) {
+    if (index < 0 || index >= _pendingOcrItems.length) return;
+    final item = _pendingOcrItems[index];
+
+    setState(() {
+      _activeOcrIndex = index;
+      _unitMode = ArrivageUnitMode.singleUnits;
+      _nameController.text = item.designation;
+      _qtyController.text = item.quantity.toInt().toString();
+      _costPriceController.text = item.unitPrice > 0 ? item.unitPrice.toStringAsFixed(2) : '';
+
+      final products = context.read<ProductBloc>().state.products;
+      final existing = products.where((p) =>
+        p.name.trim().toLowerCase() == item.designation.trim().toLowerCase() ||
+        (item.reference.isNotEmpty && p.barcode == item.reference)
+      ).firstOrNull;
+
+      if (existing != null) {
+        _isExistingInShop = true;
+        _existingProductId = existing.id;
+        _activeBarcode = existing.barcode;
+        _priceController.text = existing.price.toStringAsFixed(2);
+        _currentStock = existing.stock;
+        _itemImageUrl = existing.imageUrl;
+      } else {
+        final masterMatch = MasterCatalogService.search(item.designation).firstOrNull ??
+            (item.reference.isNotEmpty ? MasterCatalogService.searchByBarcode(item.reference) : null);
+        if (masterMatch != null) {
+          _isExistingInShop = false;
+          _existingProductId = null;
+          _activeBarcode = masterMatch.barcode;
+          _priceController.text = masterMatch.defaultPrice > 0
+              ? masterMatch.defaultPrice.toStringAsFixed(2)
+              : (item.unitPrice > 0 ? (item.unitPrice * 1.25).toStringAsFixed(2) : '');
+          _currentStock = 0;
+          _itemImageUrl = masterMatch.imageUrl;
+        } else {
+          _isExistingInShop = false;
+          _existingProductId = null;
+          _activeBarcode = item.reference.isNotEmpty ? item.reference : BarcodeGeneratorHelper.generateUniqueInStoreEan13();
+          _priceController.text = item.unitPrice > 0 ? (item.unitPrice * 1.25).toStringAsFixed(2) : '';
+          _currentStock = 0;
+          _itemImageUrl = null;
+        }
+      }
+    });
+    SoundService.playScanBeep();
+  }
+
+  Future<void> _receiveAllPendingOcrItems() async {
+    if (_pendingOcrItems.isEmpty) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.bolt, color: Colors.amber, size: 28),
+            SizedBox(width: 8),
+            Text('استلام جميع السلع دفعة واحدة ⚡'),
+          ],
+        ),
+        content: Text(
+          'سيتم إدخال جميع السلع المتبقية (${_pendingOcrItems.length} سلعة) إلى المخزون بهامش ربح تلقائي (25%) وبسعر الشراء المستخرج من الفاتورة.\n\nهل تريد المتابعة؟',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal[700], foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('تأكيد الاستلام الشامل 🚀'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final productBloc = context.read<ProductBloc>();
+    final products = productBloc.state.products;
+    int addedCount = 0;
+
+    for (final item in _pendingOcrItems) {
+      final existing = products.where((p) =>
+        p.name.trim().toLowerCase() == item.designation.trim().toLowerCase() ||
+        (item.reference.isNotEmpty && p.barcode == item.reference)
+      ).firstOrNull;
+
+      final qty = item.quantity.toInt();
+      final costPrice = item.unitPrice;
+
+      if (existing != null) {
+        final updatedProduct = existing.copyWith(
+          stock: existing.stock + qty,
+          costPrice: costPrice > 0 ? costPrice : existing.costPrice,
+        );
+        productBloc.add(UpdateProduct(updatedProduct));
+      } else {
+        final masterMatch = MasterCatalogService.search(item.designation).firstOrNull;
+        final barcode = masterMatch?.barcode ?? (item.reference.isNotEmpty ? item.reference : BarcodeGeneratorHelper.generateUniqueInStoreEan13());
+        final price = masterMatch != null && masterMatch.defaultPrice > 0
+            ? masterMatch.defaultPrice
+            : (costPrice > 0 ? costPrice * 1.25 : 100.0);
+
+        final newProduct = Product(
+          id: const Uuid().v4(),
+          name: item.designation,
+          barcode: barcode,
+          price: price,
+          costPrice: costPrice,
+          stock: qty,
+          imageUrl: masterMatch?.imageUrl,
+          isTobacco: masterMatch?.isTobacco ?? false,
+          cartonPrice: masterMatch?.cartonPrice ?? 0.0,
+          wholesalePrice: masterMatch?.wholesalePrice ?? 0.0,
+          wholesaleCartonPrice: masterMatch?.wholesaleCartonPrice ?? 0.0,
+          wholesalePackPrice: masterMatch?.wholesalePackPrice ?? 0.0,
+          singlePiecePrice: masterMatch?.singlePiecePrice ?? 0.0,
+          piecesPerPack: masterMatch?.piecesPerPack ?? 20,
+          packsPerCarton: masterMatch?.packsPerCarton ?? 10,
+          unitType: masterMatch?.unitType ?? 'unit',
+        );
+        productBloc.add(AddProduct(newProduct));
+        CatalogCrowdsourceHelper.silentHarvest(newProduct, category: 'أريفاج ورقي', unit: item.unit);
+      }
+
+      _sessionStockIns.insert(0, {
+        'name': item.designation,
+        'barcode': item.reference,
+        'qty': qty,
+        'unitMode': 'singleUnits',
+        'price': costPrice * 1.25,
+        'costPrice': costPrice,
+        'supplier': _supplierNameController.text.trim(),
+        'receiptDate': _receiptDate,
+        'condition': '✅ ممتازة / سليمة',
+      });
+      addedCount++;
+    }
+
+    setState(() {
+      _pendingOcrItems.clear();
+      _activeOcrIndex = -1;
+      _nameController.clear();
+      _priceController.clear();
+      _costPriceController.clear();
+      _activeBarcode = '';
+    });
+
+    SoundService.playSaveSuccess();
+    SnackbarHelper.showSuccess(context, '🎉 تم استلام $addedCount سلع بنجاح وإضافتها للمخزن!');
+  }
+
   Future<void> _scanSupplierPaperInvoice() async {
     final result = await ReceiptOcrScannerDialog.show(context);
     if (result != null && result.items.isNotEmpty) {
-      final productBloc = context.read<ProductBloc>();
-      final products = productBloc.state.products;
-
-      int addedCount = 0;
-      for (final item in result.items) {
-        final existing = products.where((p) => p.name.trim().toLowerCase() == item.designation.trim().toLowerCase()).firstOrNull;
-
-        if (existing != null) {
-          final updatedProduct = existing.copyWith(
-            stock: existing.stock + item.quantity.toInt(),
-            costPrice: item.unitPrice > 0 ? item.unitPrice : existing.costPrice,
-          );
-          productBloc.add(UpdateProduct(updatedProduct));
-        } else {
-          final newProduct = Product(
-            id: const Uuid().v4(),
-            name: item.designation,
-            barcode: BarcodeGeneratorHelper.generateUniqueInStoreEan13(),
-            price: item.unitPrice > 0 ? (item.unitPrice * 1.25) : 100.0,
-            costPrice: item.unitPrice,
-            stock: item.quantity.toInt(),
-          );
-          productBloc.add(AddProduct(newProduct));
-          CatalogCrowdsourceHelper.silentHarvest(newProduct, category: 'أريفاج ورقي', unit: item.unit);
-        }
-
-        _sessionStockIns.insert(0, {
-          'name': item.designation,
-          'barcode': '',
-          'qty': item.quantity.toInt(),
-          'unitMode': 'singleUnits',
-          'price': item.unitPrice * 1.25,
-          'costPrice': item.unitPrice,
-          'supplier': result.entityName.isNotEmpty ? result.entityName : _supplierNameController.text.trim(),
-          'receiptDate': DateTime.now(),
-          'condition': '✅ ممتازة / سليمة',
-        });
-        addedCount++;
-      }
-
-      setState(() {
-        if (result.entityName.isNotEmpty && _supplierNameController.text.isEmpty) {
-          _supplierNameController.text = result.entityName;
-        }
-      });
-
-      SoundService.playSaveSuccess();
-      if (mounted) {
-        SnackbarHelper.showSuccess(context, '🎉 تم استيراد $addedCount سلع من فاتورة المورد الورقية وإدخالها في المخزون بنجاح!');
-      }
+      _applyOcrResult(result);
     }
+  }
+
+  Widget _buildOcrQueueBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFC7D2FE), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.indigo,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'فاتورة الشراء الممسوحة (${_pendingOcrItems.length} سلع معلقة)',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo),
+                    ),
+                    if (_ocrSupplierName != null && _ocrSupplierName!.isNotEmpty)
+                      Text(
+                        'المورد: $_ocrSupplierName',
+                        style: TextStyle(fontSize: 11, color: Colors.indigo.shade700),
+                      ),
+                  ],
+                ),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal[700],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                icon: const Icon(Icons.bolt, size: 16),
+                label: const Text('استلام الكل ⚡', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                onPressed: _receiveAllPendingOcrItems,
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                tooltip: 'إلغاء قائمة الفاتورة',
+                onPressed: () {
+                  setState(() {
+                    _pendingOcrItems.clear();
+                    _activeOcrIndex = -1;
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'اضغط على أي سلعة لتعبئة بياناتها، ضبط سعر البيع والصلاحية، ثم اضغط "تأكيد واستلام":',
+            style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 48,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _pendingOcrItems.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final item = _pendingOcrItems[index];
+                final isSelected = index == _activeOcrIndex;
+                return InkWell(
+                  onTap: () => _selectPendingOcrItem(index),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.indigo : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected ? Colors.indigo.shade800 : Colors.indigo.shade100,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [BoxShadow(color: Colors.indigo.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${index + 1}. ${item.designation}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.indigo.shade700 : Colors.indigo.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'x${item.quantity.toInt()} | ${item.unitPrice.toStringAsFixed(0)} دج',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? Colors.amberAccent : Colors.indigo.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -509,6 +841,8 @@ class _StockInPageState extends State<StockInPage> {
                 ),
               ),
 
+            if (_pendingOcrItems.isNotEmpty) _buildOcrQueueBanner(),
+
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -550,6 +884,15 @@ class _StockInPageState extends State<StockInPage> {
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Product Image Picker (Web search + camera + gallery)
+                  ProductImagePickerField(
+                    initialImageUrl: _itemImageUrl,
+                    barcode: _activeBarcode,
+                    productName: _nameController.text,
+                    onImageChanged: (path) => setState(() => _itemImageUrl = path),
                   ),
                   const SizedBox(height: 14),
 

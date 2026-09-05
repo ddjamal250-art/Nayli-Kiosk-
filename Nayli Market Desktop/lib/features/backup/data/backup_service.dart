@@ -233,12 +233,35 @@ class BackupService {
       final content = utf8.decode(jsonFile.content as List<int>);
       final data = jsonDecode(content) as Map<String, dynamic>;
 
+      // Setup images directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final imagesDir = Directory('${appDir.path}/product_images');
+      if (!await imagesDir.exists()) await imagesDir.create(recursive: true);
+
+      // Extract images if present in the backup zip
+      for (var file in archive.files) {
+        if (file.isFile && file.name.startsWith('images/')) {
+          final fileName = file.name.split('/').last;
+          if (fileName.isNotEmpty) {
+            final localFile = File('${imagesDir.path}/$fileName');
+            await localFile.writeAsBytes(file.content as List<int>);
+          }
+        }
+      }
+
       // 1. Restore Products
       if (data['products'] is List) {
         await HiveDatabase.productBox.clear();
         for (var p in (data['products'] as List)) {
           final id = p['id']?.toString() ?? p['barcode']?.toString();
           if (id != null) {
+            // Rewrite imageUrl to absolute path for the current device
+            if (p['imageUrl'] != null) {
+              String img = p['imageUrl'];
+              if (!img.startsWith('http') && !img.contains('/') && !img.contains('\\')) {
+                p['imageUrl'] = '${imagesDir.path}/$img';
+              }
+            }
             await HiveDatabase.productBox.put(id, p);
           }
         }

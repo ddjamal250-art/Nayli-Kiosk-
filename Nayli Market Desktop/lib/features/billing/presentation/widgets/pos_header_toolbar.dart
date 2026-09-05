@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -78,7 +76,7 @@ class PosHeaderToolbar extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5, color: Color(0xFF0F172A), letterSpacing: 0.3),
                   ),
                   SizedBox(width: 6),
-                  Text('', style: TextStyle(fontSize: 14)),
+                  Text('🇩🇿', style: TextStyle(fontSize: 14)),
                 ],
               ),
               Text(
@@ -247,45 +245,22 @@ class PosHeaderToolbar extends StatelessWidget {
           IconButton(
             tooltip: 'ملء الشاشة التام (Plein Écran) ⛶',
             icon: const Icon(Icons.fullscreen_rounded, color: Colors.cyanAccent, size: 24),
-            onPressed: () async {
-              bool isFull = false;
-              final mode = HiveDatabase.settingsBox.get('windows_fullscreen_mode', defaultValue: 'maximize_mode') as String;
-              
-              if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                if (mode == 'game_mode') {
-                  isFull = await windowManager.isFullScreen();
-                } else {
-                  isFull = await windowManager.isMaximized();
-                }
-              } else {
-                isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
-              }
-
+            onPressed: () {
+              final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
               if (isFull) {
-                if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                  if (mode == 'game_mode') {
-                    await windowManager.setFullScreen(false);
-                  } else {
-                    await windowManager.unmaximize();
-                  }
-                } else {
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                }
+                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                 HiveDatabase.settingsBox.put('is_app_fullscreen', false);
               } else {
-                if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                  if (mode == 'game_mode') {
-                    await windowManager.setFullScreen(true);
-                  } else {
-                    await windowManager.maximize();
-                  }
-                } else {
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-                }
+                SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
                 HiveDatabase.settingsBox.put('is_app_fullscreen', true);
               }
               SoundService.playKeyTap();
             },
+          ),
+          IconButton(
+            tooltip: 'قائمة النواقص (التسوق) 📝',
+            icon: const Icon(Icons.shopping_cart_checkout, color: Colors.orange),
+            onPressed: () => context.push('/products/shopping-list'),
           ),
           IconButton(
             tooltip: context.tr('pos_settings'),

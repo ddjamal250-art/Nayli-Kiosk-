@@ -50,8 +50,9 @@ class OnlineLicenseService {
     String phone = 'غير محدد',
   }) async {
     try {
-      final token = HiveDatabase.settingsBox.get('telegram_bot_token', defaultValue: defaultBotToken) as String;
-      final chatId = HiveDatabase.settingsBox.get('telegram_chat_id', defaultValue: defaultChatId) as String;
+      // Developer activation notifications must always use the developer's official bot credentials
+      final token = defaultBotToken;
+      final chatId = defaultChatId;
 
       if (token.isEmpty || chatId.isEmpty) return false;
 
@@ -109,10 +110,11 @@ class OnlineLicenseService {
           'parse_mode': 'HTML',
           'reply_markup': inlineKeyboard,
         }),
-      );
+      ).timeout(const Duration(seconds: 4));
 
       return res.statusCode == 200;
     } catch (_) {
+      // Direct connection to api.telegram.org may fail due to ISP blocking/throttling (e.g. Algerian Telecom ADSL/Fiber)
       return false;
     }
   }
@@ -124,12 +126,17 @@ class OnlineLicenseService {
   }) async {
     final deviceId = LicenseService.getDeviceId();
 
-    // 1. Send interactive inline button message to Developer's Telegram
-    notifyDeveloperTelegram(
-      deviceId: deviceId,
-      storeName: storeName.isEmpty ? 'متجر كاشير' : storeName,
-      phone: phone,
-    );
+    // 1. Send interactive inline button message directly to Developer's Telegram (fast 4s timeout)
+    bool directTelegramSent = false;
+    try {
+      directTelegramSent = await notifyDeveloperTelegram(
+        deviceId: deviceId,
+        storeName: storeName.isEmpty ? 'متجر كاشير' : storeName,
+        phone: phone,
+      );
+    } catch (_) {
+      directTelegramSent = false;
+    }
 
     try {
       final cleanPhone = phone.trim();
@@ -142,7 +149,8 @@ class OnlineLicenseService {
         '&storeName=${Uri.encodeComponent(cleanStore)}'
         '&phone=${Uri.encodeComponent(cleanPhone)}'
         '&deviceType=${Uri.encodeComponent(deviceType)}'
-        '&action=check_or_join',
+        '&action=check_or_join'
+        '${directTelegramSent ? '' : '&notifyTelegram=1'}',
       );
 
       final response = await http.get(uri).timeout(const Duration(seconds: 15));

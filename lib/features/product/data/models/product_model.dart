@@ -47,6 +47,36 @@ class ProductModel extends Product {
   @override
   @HiveField(13)
   final String? packName;
+  @override
+  @HiveField(14)
+  final String? imageUrl;
+  @override
+  @HiveField(15)
+  final bool isTobacco;
+  @override
+  @HiveField(16)
+  final int piecesPerPack;
+  @override
+  @HiveField(17)
+  final int packsPerCarton;
+  @override
+  @HiveField(18)
+  final double singlePiecePrice;
+  @override
+  @HiveField(19)
+  final double cartonPrice;
+  @override
+  @HiveField(20)
+  final double wholesaleCartonPrice;
+  @override
+  @HiveField(21)
+  final double wholesalePackPrice;
+  @override
+  @HiveField(22)
+  final double cartonCostPrice;
+  @override
+  @HiveField(23)
+  final String unitType;
 
   const ProductModel({
     required this.id,
@@ -63,6 +93,16 @@ class ProductModel extends Product {
     this.packMultiplier = 1,
     this.packPrice = 0.0,
     this.packName,
+    this.imageUrl,
+    this.isTobacco = false,
+    this.piecesPerPack = 20,
+    this.packsPerCarton = 10,
+    this.singlePiecePrice = 0.0,
+    this.cartonPrice = 0.0,
+    this.wholesaleCartonPrice = 0.0,
+    this.wholesalePackPrice = 0.0,
+    this.cartonCostPrice = 0.0,
+    this.unitType = 'unit',
   }) : super(
           id: id,
           name: name,
@@ -78,6 +118,16 @@ class ProductModel extends Product {
           packMultiplier: packMultiplier,
           packPrice: packPrice,
           packName: packName,
+          imageUrl: imageUrl,
+          isTobacco: isTobacco,
+          piecesPerPack: piecesPerPack,
+          packsPerCarton: packsPerCarton,
+          singlePiecePrice: singlePiecePrice,
+          cartonPrice: cartonPrice,
+          wholesaleCartonPrice: wholesaleCartonPrice,
+          wholesalePackPrice: wholesalePackPrice,
+          cartonCostPrice: cartonCostPrice,
+          unitType: unitType,
         );
 
   @override
@@ -96,6 +146,16 @@ class ProductModel extends Product {
     int? packMultiplier,
     double? packPrice,
     String? packName,
+    String? imageUrl,
+    bool? isTobacco,
+    int? piecesPerPack,
+    int? packsPerCarton,
+    double? singlePiecePrice,
+    double? cartonPrice,
+    double? wholesaleCartonPrice,
+    double? wholesalePackPrice,
+    double? cartonCostPrice,
+    String? unitType,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -112,6 +172,16 @@ class ProductModel extends Product {
       packMultiplier: packMultiplier ?? this.packMultiplier,
       packPrice: packPrice ?? this.packPrice,
       packName: packName ?? this.packName,
+      imageUrl: imageUrl ?? this.imageUrl,
+      isTobacco: isTobacco ?? this.isTobacco,
+      piecesPerPack: piecesPerPack ?? this.piecesPerPack,
+      packsPerCarton: packsPerCarton ?? this.packsPerCarton,
+      singlePiecePrice: singlePiecePrice ?? this.singlePiecePrice,
+      cartonPrice: cartonPrice ?? this.cartonPrice,
+      wholesaleCartonPrice: wholesaleCartonPrice ?? this.wholesaleCartonPrice,
+      wholesalePackPrice: wholesalePackPrice ?? this.wholesalePackPrice,
+      cartonCostPrice: cartonCostPrice ?? this.cartonCostPrice,
+      unitType: unitType ?? this.unitType,
     );
   }
 
@@ -131,6 +201,16 @@ class ProductModel extends Product {
       packMultiplier: product.packMultiplier,
       packPrice: product.packPrice,
       packName: product.packName,
+      imageUrl: product.imageUrl,
+      isTobacco: product.isTobacco,
+      piecesPerPack: product.piecesPerPack,
+      packsPerCarton: product.packsPerCarton,
+      singlePiecePrice: product.singlePiecePrice,
+      cartonPrice: product.cartonPrice,
+      wholesaleCartonPrice: product.wholesaleCartonPrice,
+      wholesalePackPrice: product.wholesalePackPrice,
+      cartonCostPrice: product.cartonCostPrice,
+      unitType: product.unitType,
     );
   }
 
@@ -150,6 +230,16 @@ class ProductModel extends Product {
       packMultiplier: packMultiplier,
       packPrice: packPrice,
       packName: packName,
+      imageUrl: imageUrl,
+      isTobacco: isTobacco,
+      piecesPerPack: piecesPerPack,
+      packsPerCarton: packsPerCarton,
+      singlePiecePrice: singlePiecePrice,
+      cartonPrice: cartonPrice,
+      wholesaleCartonPrice: wholesaleCartonPrice,
+      wholesalePackPrice: wholesalePackPrice,
+      cartonCostPrice: cartonCostPrice,
+      unitType: unitType,
     );
   }
 
@@ -169,6 +259,16 @@ class ProductModel extends Product {
       packMultiplier: (json['packMultiplier'] as num?)?.toInt() ?? 1,
       packPrice: (json['packPrice'] as num?)?.toDouble() ?? 0.0,
       packName: json['packName'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      isTobacco: json['isTobacco'] as bool? ?? false,
+      piecesPerPack: (json['piecesPerPack'] as num?)?.toInt() ?? 20,
+      packsPerCarton: (json['packsPerCarton'] as num?)?.toInt() ?? 10,
+      singlePiecePrice: (json['singlePiecePrice'] as num?)?.toDouble() ?? 0.0,
+      cartonPrice: (json['cartonPrice'] as num?)?.toDouble() ?? 0.0,
+      wholesaleCartonPrice: (json['wholesaleCartonPrice'] as num?)?.toDouble() ?? 0.0,
+      wholesalePackPrice: (json['wholesalePackPrice'] as num?)?.toDouble() ?? 0.0,
+      cartonCostPrice: (json['cartonCostPrice'] as num?)?.toDouble() ?? 0.0,
+      unitType: json['unitType'] as String? ?? 'unit',
     );
   }
 
@@ -188,6 +288,16 @@ class ProductModel extends Product {
       'packMultiplier': packMultiplier,
       'packPrice': packPrice,
       'packName': packName,
+      'imageUrl': imageUrl,
+      'isTobacco': isTobacco,
+      'piecesPerPack': piecesPerPack,
+      'packsPerCarton': packsPerCarton,
+      'singlePiecePrice': singlePiecePrice,
+      'cartonPrice': cartonPrice,
+      'wholesaleCartonPrice': wholesaleCartonPrice,
+      'wholesalePackPrice': wholesalePackPrice,
+      'cartonCostPrice': cartonCostPrice,
+      'unitType': unitType,
     };
   }
 }

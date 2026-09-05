@@ -53,6 +53,8 @@ dependencies:
   url_launcher: ^6.3.0
   archive: ^3.6.1
   crypto: ^3.0.3
+  http: ^1.2.0
+  package_info_plus: ^8.1.0
 
 dev_dependencies:
   flutter_test:

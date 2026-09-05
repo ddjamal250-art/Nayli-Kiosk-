@@ -258,6 +258,11 @@ class PosHeaderToolbar extends StatelessWidget {
             },
           ),
           IconButton(
+            tooltip: 'قائمة النواقص (التسوق) 📝',
+            icon: const Icon(Icons.shopping_cart_checkout, color: Colors.orange),
+            onPressed: () => context.push('/products/shopping-list'),
+          ),
+          IconButton(
             tooltip: context.tr('pos_settings'),
             icon: const Icon(Icons.settings_outlined, color: Colors.grey),
             onPressed: () => context.push('/settings'),
