@@ -46,6 +46,30 @@ class CommercialDocItem {
   double get totalHT => (quantity * unitPrice) - discount;
   double get totalTVA => totalHT * (tvaPercent / 100.0);
   double get totalTTC => totalHT + totalTVA;
+  String get reference => barcode;
+
+  CommercialDocItem copyWith({
+    String? id,
+    String? productId,
+    String? designation,
+    String? barcode,
+    double? quantity,
+    String? unit,
+    double? unitPrice,
+    double? discount,
+    double? tvaPercent,
+  }) =>
+      CommercialDocItem(
+        id: id ?? this.id,
+        productId: productId ?? this.productId,
+        designation: designation ?? this.designation,
+        barcode: barcode ?? this.barcode,
+        quantity: quantity ?? this.quantity,
+        unit: unit ?? this.unit,
+        unitPrice: unitPrice ?? this.unitPrice,
+        discount: discount ?? this.discount,
+        tvaPercent: tvaPercent ?? this.tvaPercent,
+      );
 
   Map<String, dynamic> toMap() => {
         'id': id,

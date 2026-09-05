@@ -4,6 +4,7 @@ class MasterCatalogItem {
   final String category;
   final double defaultPrice;
   final double defaultCost;
+  final double wholesalePrice;
   final String? imageUrl;
   final bool isTobacco;
   final double cartonPrice;
@@ -20,6 +21,7 @@ class MasterCatalogItem {
     required this.category,
     this.defaultPrice = 0.0,
     this.defaultCost = 0.0,
+    this.wholesalePrice = 0.0,
     this.imageUrl,
     this.isTobacco = false,
     this.cartonPrice = 0.0,

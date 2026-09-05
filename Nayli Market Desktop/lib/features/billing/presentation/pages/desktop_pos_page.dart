@@ -1598,7 +1598,7 @@ $itemsSummary
 
   int _getExpiringProductsCount() {
     try {
-      final box = HiveDatabase.productsBox;
+      final box = HiveDatabase.productBox;
       int count = 0;
       final now = DateTime.now();
       for (var key in box.keys) {

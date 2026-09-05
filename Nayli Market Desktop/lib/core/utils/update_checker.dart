@@ -54,8 +54,7 @@ class UpdateChecker {
       builder: (context) {
         return AlertDialog(
           title: const Text('تحديث جديد متاح'),
-          content: Text('تم إصدار نسخة جديدة من نايلي كيوسك (الإصدار $version).
-هل ترغب في تحميلها الآن مجاناً؟'),
+          content: Text('تم إصدار نسخة جديدة من نايلي كيوسك (الإصدار $version).\nهل ترغب في تحميلها الآن مجاناً؟'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),

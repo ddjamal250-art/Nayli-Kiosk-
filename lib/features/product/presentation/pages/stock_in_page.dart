@@ -22,6 +22,7 @@ import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
 import '../../../documents/domain/entities/commercial_document.dart';
 import '../../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
+import '../../../../core/utils/receipt_ocr_parser.dart';
 import '../widgets/product_image_picker_field.dart';
 
 enum ArrivageUnitMode { cartons, vracSacs, singleUnits }
@@ -329,7 +330,7 @@ class _StockInPageState extends State<StockInPage> {
         ? products.where((p) => p.id == _existingProductId).firstOrNull
         : null;
     final masterMatch = MasterCatalogService.searchByBarcode(_activeBarcode) ??
-        MasterCatalogService.search(name).firstOrNull;
+        MasterCatalogService.instance.search(name).firstOrNull;
 
     final productImageUrl = _itemImageUrl ?? existingProduct?.imageUrl ?? masterMatch?.imageUrl;
     final isTobacco = existingProduct?.isTobacco ?? masterMatch?.isTobacco ?? false;
@@ -511,7 +512,7 @@ class _StockInPageState extends State<StockInPage> {
         _currentStock = existing.stock;
         _itemImageUrl = existing.imageUrl;
       } else {
-        final masterMatch = MasterCatalogService.search(item.designation).firstOrNull ??
+        final masterMatch = MasterCatalogService.instance.search(item.designation).firstOrNull ??
             (item.reference.isNotEmpty ? MasterCatalogService.searchByBarcode(item.reference) : null);
         if (masterMatch != null) {
           _isExistingInShop = false;
@@ -588,7 +589,7 @@ class _StockInPageState extends State<StockInPage> {
         );
         productBloc.add(UpdateProduct(updatedProduct));
       } else {
-        final masterMatch = MasterCatalogService.search(item.designation).firstOrNull;
+        final masterMatch = MasterCatalogService.instance.search(item.designation).firstOrNull;
         final barcode = masterMatch?.barcode ?? (item.reference.isNotEmpty ? item.reference : BarcodeGeneratorHelper.generateUniqueInStoreEan13());
         final price = masterMatch != null && masterMatch.defaultPrice > 0
             ? masterMatch.defaultPrice

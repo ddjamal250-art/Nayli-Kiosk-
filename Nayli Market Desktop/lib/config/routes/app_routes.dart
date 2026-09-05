@@ -22,6 +22,7 @@ import '../../features/customer/presentation/pages/customers_page.dart';
 import '../../features/product/domain/entities/product.dart';
 import '../../core/utils/license_service.dart';
 import '../../core/data/hive_database.dart';
+import '../../core/utils/receipt_ocr_parser.dart';
 
 import '../../features/product/presentation/pages/shelf_labels_page.dart';
 import '../../features/product/presentation/pages/inventory_audit_page.dart';
