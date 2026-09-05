@@ -238,13 +238,21 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
 
       final existing = currentProducts.where((p) => p.barcode.trim() == barcode.trim()).firstOrNull;
       if (existing != null) {
+        final double effectiveCost;
+        if (existing.stock > 0 && existing.costPrice > 0 && unitCost > 0) {
+          final totalVal = (existing.stock * existing.costPrice) + (qty * unitCost);
+          final totalQty = existing.stock + qty;
+          effectiveCost = totalQty > 0 ? (totalVal / totalQty) : unitCost;
+        } else {
+          effectiveCost = unitCost > 0 ? unitCost : existing.costPrice;
+        }
         final p = Product(
           id: existing.id,
           name: name,
           barcode: existing.barcode,
           category: existing.category.isNotEmpty && existing.category != 'عام' ? existing.category : category,
           price: sellPrice > 0 ? sellPrice : existing.price,
-          costPrice: unitCost > 0 ? unitCost : existing.costPrice,
+          costPrice: effectiveCost,
           stock: existing.stock + qty,
         );
         productBloc.add(UpdateProduct(p));

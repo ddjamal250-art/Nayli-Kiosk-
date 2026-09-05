@@ -357,20 +357,22 @@ class _StockInPageState extends State<StockInPage> {
 
     final isWeighted = _unitMode == ArrivageUnitMode.vracSacs;
 
-    // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
-    double effectiveCost = costPrice;
-    if (_isExistingInShop && _currentStock > 0 && costPrice > 0) {
-      final oldCost = double.tryParse(_costPriceController.text.trim()) ?? costPrice;
-      final totalValue = (_currentStock * oldCost) + (qty * costPrice);
-      final totalStock = _currentStock + qty;
-      effectiveCost = totalStock > 0 ? (totalValue / totalStock) : costPrice;
-    }
-
     final productBloc = context.read<ProductBloc>();
     final products = productBloc.state.products;
     final existingProduct = _existingProductId != null
         ? products.where((p) => p.id == _existingProductId).firstOrNull
         : null;
+
+    // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
+    double effectiveCost = costPrice;
+    if (_isExistingInShop && _currentStock > 0 && costPrice > 0) {
+      final oldCost = (existingProduct != null && existingProduct.costPrice > 0)
+          ? existingProduct.costPrice
+          : costPrice;
+      final totalValue = (_currentStock * oldCost) + (qty * costPrice);
+      final totalStock = _currentStock + qty;
+      effectiveCost = totalStock > 0 ? (totalValue / totalStock) : costPrice;
+    }
     final masterMatch = MasterCatalogService.searchByBarcode(_activeBarcode) ??
         MasterCatalogService.instance.search(name).firstOrNull;
 

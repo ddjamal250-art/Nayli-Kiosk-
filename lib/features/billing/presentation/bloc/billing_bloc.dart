@@ -361,23 +361,28 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         (sum, i) => sum + (i.product.costPrice * i.quantity),
       );
 
+      final subtotal = state.subTotalAmount;
+      final discountRatio = (subtotal > 0) ? (state.totalAmount / subtotal) : 1.0;
+
       final tobaccoItems = state.cartItems.where(
         (i) => i.product.isTobacco || i.product.category.contains('تبغ') || i.product.category.contains('سجائر'),
       );
-      final tobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
+      final rawTobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
+      final tobaccoSales = rawTobaccoSales * discountRatio;
       final tobaccoCost = tobaccoItems.fold<double>(0.0, (sum, i) => sum + (i.product.costPrice * i.quantity));
-      final tobaccoProfit = (tobaccoSales - tobaccoCost).clamp(0.0, double.infinity);
+      final tobaccoProfit = tobaccoSales - tobaccoCost;
 
       final generalSales = (state.totalAmount - tobaccoSales).clamp(0.0, double.infinity);
       final generalCost = (totalCost - tobaccoCost).clamp(0.0, double.infinity);
-      final generalProfit = (generalSales - generalCost).clamp(0.0, double.infinity);
+      final generalProfit = generalSales - generalCost;
+      final netProfit = state.totalAmount - totalCost;
 
       await invoicesBox.put(invoiceId, {
         'id': invoiceId,
         'timestamp': DateTime.now().toIso8601String(),
         'totalAmount': state.totalAmount,
         'totalCost': totalCost,
-        'netProfit': (state.totalAmount - totalCost).clamp(0.0, double.infinity),
+        'netProfit': netProfit,
         'tobaccoSales': tobaccoSales,
         'tobaccoCost': tobaccoCost,
         'tobaccoProfit': tobaccoProfit,
