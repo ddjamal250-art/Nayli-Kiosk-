@@ -8,6 +8,7 @@ class MasterCatalogItem {
   final String? imageUrl;
   final bool isTobacco;
   final double cartonPrice;
+  final double cartonCostPrice;
   final double wholesaleCartonPrice;
   final double wholesalePackPrice;
   final double singlePiecePrice;
@@ -25,6 +26,7 @@ class MasterCatalogItem {
     this.imageUrl,
     this.isTobacco = false,
     this.cartonPrice = 0.0,
+    this.cartonCostPrice = 0.0,
     this.wholesaleCartonPrice = 0.0,
     this.wholesalePackPrice = 0.0,
     this.singlePiecePrice = 0.0,
