@@ -3,10 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/utils/shelf_label_generator.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../shop/data/models/shop_model.dart';
@@ -25,10 +28,15 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   final Set<String> _selectedProductIds = {};
   final Map<String, int> _labelQuantities = {};
   String _selectedCategoryFilter = 'الكل';
+
+  // Label Configuration
+  ShelfLabelSize _selectedSize = ShelfLabelSize.standard50x30;
+  ShelfLabelTemplate _selectedTemplate = ShelfLabelTemplate.shelfTag;
   bool _includeShopName = true;
   bool _includeDate = true;
   bool _includeBarcode = true;
-  String _labelSize = 'medium'; // 'small', 'medium', 'large'
+  bool _showHriDigits = true;
+  double _barcodeHeight = 12.0;
   bool _isPrinting = false;
 
   static const List<String> _categoryTabs = [
@@ -48,6 +56,27 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  ShelfLabelConfig _buildConfig() {
+    return ShelfLabelConfig(
+      size: _selectedSize,
+      template: _selectedTemplate,
+      includeShopName: _includeShopName,
+      includeDate: _includeDate,
+      includeBarcode: _includeBarcode,
+      showHriDigits: _showHriDigits,
+      barcodeHeight: _barcodeHeight,
+      currencySymbol: 'دج',
+      shopName: ShelfLabelGenerator.getEffectiveShopName(),
+    );
+  }
+
+  List<MapEntry<Product, int>> _getSelectedEntries(List<Product> allProducts) {
+    return allProducts
+        .where((p) => _selectedProductIds.contains(p.id))
+        .map((p) => MapEntry(p, _labelQuantities[p.id] ?? 1))
+        .toList();
   }
 
   void _toggleProduct(String id) {
@@ -90,75 +119,39 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     SoundService.playScanBeep();
   }
 
-  Future<void> _printSelectedLabels(List<Product> allProducts) async {
+  /// Print via Bluetooth Thermal Printer (ESC/POS)
+  Future<void> _printThermalBluetooth(List<Product> allProducts) async {
     if (_isPrinting) return;
-    final selectedProds = allProducts.where((p) => _selectedProductIds.contains(p.id)).toList();
-    if (selectedProds.isEmpty) {
+    final entries = _getSelectedEntries(allProducts);
+    if (entries.isEmpty) {
       context.showAppSnackBar('يرجى اختيار سلعة واحدة على الأقل لطباعة ملصق الرف!', backgroundColor: Colors.orange[800]!);
       return;
     }
 
     final isConnected = await PrintBluetoothThermal.connectionStatus;
     if (!isConnected) {
-      context.showAppSnackBar('⚠️ الطابعة الحرارية غير متصلة بالبلوتوث! يرجى توصيلها في الإعدادات.', backgroundColor: Colors.red[800]!);
+      if (mounted) {
+        context.showAppSnackBar('⚠️ الطابعة الحرارية غير متصلة بالبلوتوث! يرجى توصيلها في الإعدادات أو استخدام طباعة ويندوز/PDF.', backgroundColor: Colors.red[800]!);
+      }
       return;
     }
 
     setState(() => _isPrinting = true);
 
-    // Get Shop Name
-    String shopName = AppConstants.defaultShopName;
-    final shopBox = HiveDatabase.shopBox;
-    if (shopBox.isNotEmpty) {
-      final ShopModel? shop = shopBox.getAt(0);
-      if (shop != null && shop.name.isNotEmpty) shopName = shop.name;
-    }
-
-    final dateStr = DateFormat('yyyy/MM/dd').format(DateTime.now());
-
     try {
-      final List<int> bytes = [];
+      final bytes = ShelfLabelGenerator.generateEscPosBytes(
+        itemsWithCopies: entries,
+        config: _buildConfig(),
+      );
 
-      for (final p in selectedProds) {
-        final count = _labelQuantities[p.id] ?? 1;
-        for (int c = 0; c < count; c++) {
-          // ESC/POS Label Format
-          bytes.addAll([27, 64]); // Initialize
-          bytes.addAll([27, 97, 1]); // Center align
-
-          if (_includeShopName) {
-            bytes.addAll([27, 33, 0]); // Normal
-            bytes.addAll('$shopName\n'.codeUnits);
-          }
-
-          bytes.addAll([27, 33, 16]); // Double height (Product Name)
-          bytes.addAll('${p.name}\n'.codeUnits);
-
-          bytes.addAll([27, 33, 48]); // Double width + double height (Huge Price)
-          bytes.addAll('${p.price.toStringAsFixed(0)} DZD\n'.codeUnits);
-
-          if (_includeBarcode && p.barcode.isNotEmpty) {
-            bytes.addAll([27, 33, 0]); // Normal
-            bytes.addAll('||||| ${p.barcode} |||||\n'.codeUnits);
-          }
-
-          if (_includeDate) {
-            bytes.addAll([27, 33, 0]);
-            bytes.addAll('Date: $dateStr\n'.codeUnits);
-          }
-
-          bytes.addAll('--------------------------------\n\n'.codeUnits);
-        }
-      }
-
-      bytes.addAll([29, 86, 66, 0]); // Cut paper
       SoundService.playPrintSound();
       await PrintBluetoothThermal.writeBytes(bytes);
 
       SoundService.playCheckoutSuccess();
       if (mounted) {
+        final totalCopies = entries.fold<int>(0, (s, e) => s + e.value);
         context.showAppSnackBar(
-          '✅ تم إرسال ${selectedProds.length} ملصق رف إلى الطابعة بنجاح!',
+          '✅ تم إرسال $totalCopies ملصق رف إلى الطابعة الحرارية بنجاح!',
           backgroundColor: Colors.green[800]!,
         );
       }
@@ -171,6 +164,31 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
         setState(() => _isPrinting = false);
       }
     }
+  }
+
+  /// Print or Export via PDF / Windows Printer Dialog
+  Future<void> _printPdfOrWindows(List<Product> allProducts) async {
+    final entries = _getSelectedEntries(allProducts);
+    if (entries.isEmpty) {
+      context.showAppSnackBar('يرجى اختيار سلعة واحدة على الأقل لطباعة الملصقات!', backgroundColor: Colors.orange[800]!);
+      return;
+    }
+
+    final config = _buildConfig();
+    final timestamp = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+    final docName = 'shelf_labels_${config.size.name}_$timestamp';
+
+    SoundService.playTabSwitch();
+    await Printing.layoutPdf(
+      name: docName,
+      format: config.size.pageFormat,
+      onLayout: (PdfPageFormat format) async {
+        return await ShelfLabelGenerator.generateLabelsPdf(
+          itemsWithCopies: entries,
+          config: config,
+        );
+      },
+    );
   }
 
   @override
@@ -215,7 +233,9 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Search & Select All
                     Row(
                       children: [
                         Expanded(
@@ -255,39 +275,20 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    // Options Switches (Responsive Wrap)
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      alignment: WrapAlignment.spaceBetween,
+                    const SizedBox(height: 10),
+
+                    // Label Size Selector Ribbon
+                    Row(
                       children: [
-                        Wrap(
-                          spacing: 6,
-                          children: [
-                            FilterChip(
-                              label: const Text('اسم المحل', style: TextStyle(fontSize: 11)),
-                              selected: _includeShopName,
-                              onSelected: (v) => setState(() => _includeShopName = v),
-                            ),
-                            FilterChip(
-                              label: const Text('الباركود', style: TextStyle(fontSize: 11)),
-                              selected: _includeBarcode,
-                              onSelected: (v) => setState(() => _includeBarcode = v),
-                            ),
-                            FilterChip(
-                              label: const Text('التاريخ', style: TextStyle(fontSize: 11)),
-                              selected: _includeDate,
-                              onSelected: (v) => setState(() => _includeDate = v),
-                            ),
-                          ],
-                        ),
+                        const Icon(Icons.aspect_ratio_rounded, size: 15, color: AppTheme.primaryColor),
+                        const SizedBox(width: 4),
+                        const Text('مقاس الملصق:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            color: AppTheme.primaryColor.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             'المحدد: ${_selectedProductIds.length}',
@@ -296,14 +297,107 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 4),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final size in ShelfLabelSize.values) ...[
+                            ChoiceChip(
+                              label: Text(
+                                size.displayName,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: _selectedSize == size ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                              selected: _selectedSize == size,
+                              selectedColor: AppTheme.primaryColor.withOpacity(0.18),
+                              checkmarkColor: AppTheme.primaryColor,
+                              onSelected: (v) {
+                                if (v) setState(() => _selectedSize = size);
+                              },
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Label Template Selector Ribbon
+                    Row(
+                      children: [
+                        const Icon(Icons.dashboard_customize_rounded, size: 15, color: Colors.amber),
+                        const SizedBox(width: 4),
+                        const Text('نموذج التصميم:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final template in ShelfLabelTemplate.values) ...[
+                            ChoiceChip(
+                              label: Text(
+                                template.displayName,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: _selectedTemplate == template ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                              selected: _selectedTemplate == template,
+                              selectedColor: Colors.amber.withOpacity(0.25),
+                              checkmarkColor: Colors.brown,
+                              onSelected: (v) {
+                                if (v) setState(() => _selectedTemplate = template);
+                              },
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Options Switches (Wrap)
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        FilterChip(
+                          label: const Text('اسم المحل', style: TextStyle(fontSize: 10.5)),
+                          selected: _includeShopName,
+                          onSelected: (v) => setState(() => _includeShopName = v),
+                        ),
+                        FilterChip(
+                          label: const Text('خطوط الباركود', style: TextStyle(fontSize: 10.5)),
+                          selected: _includeBarcode,
+                          onSelected: (v) => setState(() => _includeBarcode = v),
+                        ),
+                        if (_includeBarcode)
+                          FilterChip(
+                            label: const Text('أرقام الكود', style: TextStyle(fontSize: 10.5)),
+                            selected: _showHriDigits,
+                            onSelected: (v) => setState(() => _showHriDigits = v),
+                          ),
+                        FilterChip(
+                          label: const Text('التاريخ', style: TextStyle(fontSize: 10.5)),
+                          selected: _includeDate,
+                          onSelected: (v) => setState(() => _includeDate = v),
+                        ),
+                      ],
+                    ),
+
                     if (_selectedProductIds.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Wrap(
                         spacing: 6,
                         runSpacing: 4,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          const Text('عدد النسخ:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const Text('تعيين نسخ:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
                           ...[1, 2, 5, 10, 20].map((qty) {
                             return ActionChip(
                               label: Text('$qty', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
@@ -321,7 +415,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
 
               // Categories & Weighted Filter Ribbon
               Container(
-                height: 40,
+                height: 38,
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
@@ -393,7 +487,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                               ),
                               title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               subtitle: Text(
-                                '${p.barcode} • السعر: ${p.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                '${p.barcode.isNotEmpty ? p.barcode : 'بدون كود'} • السعر: ${p.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
                                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                               ),
                               trailing: isSelected
@@ -460,38 +554,51 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                         TextButton.icon(
                           style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                           icon: const Icon(Icons.preview_rounded, size: 18, color: Colors.teal),
-                          label: const Text('معاينة الملصق 👁️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.teal)),
+                          label: const Text('معاينة حية 👁️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.teal)),
                           onPressed: () => _showLivePreviewSheet(context, state.products),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                   ],
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: hasSelection ? AppTheme.primaryColor : Colors.grey[400],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        elevation: hasSelection ? 2 : 0,
+                  Row(
+                    children: [
+                      // Bluetooth Thermal Print Button
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: hasSelection ? AppTheme.primaryColor : Colors.grey,
+                            side: BorderSide(color: hasSelection ? AppTheme.primaryColor : Colors.grey[300]!),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          icon: _isPrinting
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.bluetooth_connected_rounded, size: 20),
+                          label: const Text('بلوتوث حراري 📱', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          onPressed: (_isPrinting || !hasSelection) ? null : () => _printThermalBluetooth(state.products),
+                        ),
                       ),
-                      icon: _isPrinting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Icon(Icons.print, size: 22),
-                      label: Text(
-                        hasSelection
-                            ? 'طباعة الملصقات المحددة ($totalCopies ملصق) 🖨️'
-                            : 'حدد السلع المراد طباعتها',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      const SizedBox(width: 10),
+                      // Windows / A4 / PDF Printing
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: hasSelection ? AppTheme.primaryColor : Colors.grey[400],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: hasSelection ? 2 : 0,
+                          ),
+                          icon: const Icon(Icons.print_rounded, size: 20),
+                          label: Text(
+                            hasSelection ? 'ويندوز / PDF ($totalCopies) 🖨️' : 'حدد سلعاً للطباعة',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                          ),
+                          onPressed: hasSelection ? () => _printPdfOrWindows(state.products) : null,
+                        ),
                       ),
-                      onPressed: (_isPrinting || !hasSelection) ? null : () => _printSelectedLabels(state.products),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -506,9 +613,12 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     final selectedProducts = allProducts.where((p) => _selectedProductIds.contains(p.id)).toList();
     if (selectedProducts.isEmpty) return;
     final first = selectedProducts.first;
+    final config = _buildConfig();
+    final copies = _labelQuantities[first.id] ?? 1;
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
@@ -519,62 +629,272 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.label_important_rounded, color: AppTheme.primaryColor, size: 24),
-                    SizedBox(width: 8),
-                    Text('معاينة بطاقة الرف الحرارية 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    const Icon(Icons.label_important_rounded, color: AppTheme.primaryColor, size: 24),
+                    const SizedBox(width: 8),
+                    Text(
+                      'معاينة الملصق (${config.size.displayName})',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
                   ],
                 ),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
             const SizedBox(height: 16),
-            Container(
-              width: 240,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.black87, width: 2),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
-              ),
-              child: Column(
-                children: [
-                  if (_includeShopName)
-                    const Text('🏪 سوبرماركت النايلي', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 2),
-                  Text(
-                    first.name,
-                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${first.price.toStringAsFixed(0)} دج',
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.black),
-                  ),
-                  if (_includeBarcode) ...[
-                    const SizedBox(height: 4),
-                    Text('|||||| ${first.barcode} ||||||',
-                        style: const TextStyle(fontSize: 10, fontFamily: 'monospace', letterSpacing: 1.5, fontWeight: FontWeight.bold)),
-                  ],
-                  if (_includeDate) ...[
-                    const SizedBox(height: 2),
-                    Text('تاريخ: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
-                        style: const TextStyle(fontSize: 8.5, color: Colors.grey)),
-                  ],
-                ],
-              ),
-            ),
+
+            // Realistic Label Card Mockup
+            _buildInteractiveLabelPreviewCard(first, config),
+
+            const SizedBox(height: 14),
+            Text('سيتم طباعة $copies نسخ لهذه السلعة (${first.name})',
+                style: const TextStyle(fontSize: 11.5, color: Colors.grey, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            Text('سيتم طباعة ${_labelQuantities[first.id] ?? 1} نسخ لهذه السلعة',
-                style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+
+            // Print Action Inside Preview
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    icon: const Icon(Icons.print_rounded, size: 18),
+                    label: const Text('طباعة الكل الآن 🖨️', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _printPdfOrWindows(allProducts);
+                    },
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInteractiveLabelPreviewCard(Product p, ShelfLabelConfig config) {
+    final dateStr = DateFormat('dd/MM/yyyy').format(DateTime.now());
+
+    switch (config.template) {
+      case ShelfLabelTemplate.productSticker:
+        return Container(
+          width: 250,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.black87, width: 2),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (config.includeShopName)
+                Text(config.shopName, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 2),
+              Text(
+                p.name,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              if (config.includeBarcode && p.barcode.isNotEmpty)
+                _BarcodeStripeWidget(
+                  barcode: p.barcode,
+                  showDigits: config.showHriDigits,
+                  height: 38,
+                ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(4)),
+                    child: Text(
+                      '${p.price.toStringAsFixed(0)} ${config.currencySymbol}',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+                  if (config.includeDate)
+                    Text(dateStr, style: const TextStyle(fontSize: 8.5, color: Colors.grey)),
+                ],
+              ),
+            ],
+          ),
+        );
+
+      case ShelfLabelTemplate.scaleWeight:
+        return Container(
+          width: 250,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.teal[800]!, width: 2),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(config.shopName, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(color: Colors.teal.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+                    child: const Text('⚖️ ميزان', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.teal)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(p.name, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('سعر الكيلوغرام:', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
+                  Text('${p.price.toStringAsFixed(0)} ${config.currencySymbol}/كغ',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              if (config.includeBarcode && p.barcode.isNotEmpty)
+                _BarcodeStripeWidget(
+                  barcode: p.barcode,
+                  showDigits: config.showHriDigits,
+                  height: 32,
+                ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('طازج يومياً', style: TextStyle(fontSize: 8.5, color: Colors.teal, fontWeight: FontWeight.bold)),
+                  if (config.includeDate)
+                    Text(dateStr, style: const TextStyle(fontSize: 8.5, color: Colors.grey)),
+                ],
+              ),
+            ],
+          ),
+        );
+
+      case ShelfLabelTemplate.shelfTag:
+      default:
+        return Container(
+          width: 250,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.black87, width: 2),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (config.includeShopName)
+                Text(config.shopName, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 2),
+              Text(
+                p.name,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${p.price.toStringAsFixed(0)} ${config.currencySymbol}',
+                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.black),
+              ),
+              if (config.includeBarcode && p.barcode.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                _BarcodeStripeWidget(
+                  barcode: p.barcode,
+                  showDigits: config.showHriDigits,
+                  height: 28,
+                ),
+              ],
+              if (config.includeDate) ...[
+                const SizedBox(height: 4),
+                Text('تاريخ: $dateStr', style: const TextStyle(fontSize: 8.5, color: Colors.grey)),
+              ],
+            ],
+          ),
+        );
+    }
+  }
+}
+
+/// A lightweight, clean vector simulation of 1D barcode lines for UI preview
+class _BarcodeStripeWidget extends StatelessWidget {
+  final String barcode;
+  final bool showDigits;
+  final double height;
+
+  const _BarcodeStripeWidget({
+    required this.barcode,
+    this.showDigits = true,
+    this.height = 32,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final clean = barcode.trim();
+    if (clean.isEmpty) return const SizedBox.shrink();
+
+    // Deterministic bar widths pattern based on string
+    final chars = clean.codeUnits;
+    final List<int> barWidths = [2, 1, 3, 1]; // Start guard
+    for (int i = 0; i < chars.length; i++) {
+      final v = chars[i];
+      barWidths.add((v % 3) + 1);
+      barWidths.add(((v ~/ 3) % 2) + 1);
+    }
+    barWidths.addAll([1, 2, 1, 3]); // Stop guard
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: height,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (int i = 0; i < barWidths.length && i < 40; i++)
+                Container(
+                  width: barWidths[i].toDouble(),
+                  color: (i % 2 == 0) ? Colors.black : Colors.transparent,
+                ),
+            ],
+          ),
+        ),
+        if (showDigits) ...[
+          const SizedBox(height: 2),
+          Text(
+            clean,
+            style: const TextStyle(
+              fontSize: 8.5,
+              fontFamily: 'monospace',
+              letterSpacing: 1.5,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
