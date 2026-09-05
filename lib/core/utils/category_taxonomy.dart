@@ -14,6 +14,8 @@ class CategoryDomain {
     required this.icon,
     required this.subcategories,
   });
+
+  List<CategorySub> get subCategories => subcategories;
 }
 
 class CategorySub {
@@ -334,6 +336,9 @@ class CategoryTaxonomy {
     return names;
   }
 
+  /// All category domains
+  static List<CategoryDomain> get allDomains => domains;
+
   /// Finds the parent domain for a given category name or product name
   static CategoryDomain? findDomain(String categoryOrProductName) {
     final clean = categoryOrProductName.trim().toLowerCase();
@@ -348,6 +353,11 @@ class CategoryTaxonomy {
       }
     }
     return null;
+  }
+
+  /// Resolves the parent domain for a given category name or product name (with default fallback)
+  static CategoryDomain resolveDomain(String categoryOrProductName) {
+    return findDomain(categoryOrProductName) ?? domains.first;
   }
 
   /// Smartly detects the best subcategory for an item name based on tags

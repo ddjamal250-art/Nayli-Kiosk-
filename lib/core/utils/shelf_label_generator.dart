@@ -344,7 +344,7 @@ class ShelfLabelGenerator {
           // Huge Price
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.center,
-            crossAxisAlignment: pw.CrossAxisAlignment.baseline,
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               pw.Text(
                 priceStr,
