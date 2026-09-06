@@ -12,7 +12,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  window_manager: ^0.4.3
   
   # State Management & DI
   flutter_bloc: ^8.1.5
@@ -54,8 +53,7 @@ dependencies:
   url_launcher: ^6.3.0
   archive: ^3.6.1
   crypto: ^3.0.3
-  http: ^1.2.0
-  package_info_plus: ^8.1.0
+  file_picker: ^8.1.1
 
 dev_dependencies:
   flutter_test:

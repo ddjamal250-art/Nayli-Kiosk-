@@ -96,18 +96,18 @@ class ProductImageSearchService {
       }
     }
 
-    // 4. Web & Bing Image Search (Real web images)
+    // 4. Web & Google Image Search
     if (results.length < maxResults && cleanQuery.isNotEmpty) {
       try {
-        final bingResults = await _searchBingImages(cleanQuery);
-        for (final r in bingResults) {
+        final googleResults = await _searchGoogleImages(cleanQuery);
+        for (final r in googleResults) {
           if (!results.any((existing) => existing.url == r.url)) {
             results.add(r);
           }
           if (results.length >= maxResults) break;
         }
       } catch (e) {
-        debugPrint('⚠️ Bing search error: $e');
+        debugPrint('⚠️ Google search error: $e');
       }
     }
 
@@ -149,7 +149,7 @@ class ProductImageSearchService {
     try {
       final uri = Uri.parse('https://world.openfoodfacts.org/api/v2/product/$barcode.json?fields=product_name,image_url,image_front_url,image_front_small_url,brands');
       final request = await _httpClient.getUrl(uri);
-      request.headers.set('User-Agent', 'NayliPOS-Algeria-Kiosk/1.4 (admin@naylipos.dz)');
+      request.headers.set('User-Agent', 'NayliPOS-Algeria/1.4 (admin@naylipos.dz)');
       final response = await request.close().timeout(const Duration(seconds: 4));
 
       if (response.statusCode == 200) {
@@ -158,24 +158,15 @@ class ProductImageSearchService {
         if (data is Map && data['status'] == 1) {
           final product = data['product'] as Map?;
           if (product != null) {
-            final name = product['product_name']?.toString() ?? barcode;
+            final name = product['product_name']?.toString() ?? 'منتج غذائي';
             final brand = product['brands']?.toString() ?? '';
-            final title = brand.isNotEmpty ? '$brand $name' : name;
-
-            final mainImg = product['image_url']?.toString() ?? product['image_front_url']?.toString();
-            final smallImg = product['image_front_small_url']?.toString();
-
-            if (mainImg != null && mainImg.startsWith('http')) {
+            final title = brand.isNotEmpty ? '$brand - $name' : name;
+            final img = product['image_front_url'] ?? product['image_url'] ?? product['image_front_small_url'];
+            if (img != null && img.toString().startsWith('http')) {
               results.add(ProductImageSearchResult(
-                url: mainImg,
+                url: img.toString(),
                 title: title,
-                source: 'Open Food Facts (HQ)',
-              ));
-            } else if (smallImg != null && smallImg.startsWith('http')) {
-              results.add(ProductImageSearchResult(
-                url: smallImg,
-                title: title,
-                source: 'Open Food Facts',
+                source: 'Open Food Facts (قاعدة باركود الأغذية)',
               ));
             }
           }
@@ -189,27 +180,26 @@ class ProductImageSearchService {
     final List<ProductImageSearchResult> results = [];
     try {
       final uri = Uri.parse(
-        'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(term)}&search_simple=1&action=process&json=1&page_size=10',
+        'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(term)}&search_simple=1&action=process&json=1&page_size=6&fields=product_name,image_front_url,image_url,brands',
       );
       final request = await _httpClient.getUrl(uri);
-      request.headers.set('User-Agent', 'NayliPOS-Algeria-Kiosk/1.4 (admin@naylipos.dz)');
+      request.headers.set('User-Agent', 'NayliPOS-Algeria/1.4 (admin@naylipos.dz)');
       final response = await request.close().timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final body = await response.transform(utf8.decoder).join();
         final data = jsonDecode(body);
         if (data is Map && data['products'] is List) {
-          for (final item in data['products']) {
-            if (item is Map) {
-              final img = item['image_url']?.toString() ??
-                  item['image_front_url']?.toString() ??
-                  item['image_front_small_url']?.toString();
-              if (img != null && img.startsWith('http')) {
-                final name = item['product_name']?.toString() ?? term;
-                final brand = item['brands']?.toString() ?? '';
+          for (final p in (data['products'] as List)) {
+            if (p is Map) {
+              final img = p['image_front_url'] ?? p['image_url'];
+              final name = p['product_name']?.toString() ?? term;
+              final brand = p['brands']?.toString() ?? '';
+              final title = brand.isNotEmpty ? '$brand - $name' : name;
+              if (img != null && img.toString().startsWith('http')) {
                 results.add(ProductImageSearchResult(
-                  url: img,
-                  title: brand.isNotEmpty ? '$brand - $name' : name,
+                  url: img.toString(),
+                  title: title,
                   source: 'Open Food Facts',
                 ));
               }
@@ -221,47 +211,37 @@ class ProductImageSearchService {
     return results;
   }
 
-  Future<List<ProductImageSearchResult>> _searchBingImages(String query) async {
+  Future<List<ProductImageSearchResult>> _searchGoogleImages(String query) async {
     final List<ProductImageSearchResult> results = [];
     try {
-      final uri = Uri.parse(
-        'https://www.bing.com/images/search?q=${Uri.encodeComponent(query)}&form=HDRSC2&first=1',
-      );
+      final uri = Uri.parse('https://www.google.com/search?tbm=isch&q=${Uri.encodeComponent(query)}');
       final request = await _httpClient.getUrl(uri);
-      request.headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
-      request.headers.set('Accept-Language', 'fr-FR,fr;q=0.9,ar;q=0.8,en;q=0.7');
+      // Using a standard User-Agent so Google returns the older, simpler HTML structure with direct thumbnails
+      request.headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36');
+      request.headers.set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
+      request.headers.set('Accept-Language', 'ar,fr;q=0.9,en;q=0.8');
+
       final response = await request.close().timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
-        final body = await response.transform(utf8.decoder).join();
-        final matches = RegExp(r'class="iusc"[^>]*?m="([^"]+)"').allMatches(body);
-        for (final m in matches) {
-          final rawJson = m.group(1);
-          if (rawJson != null) {
-            final unescaped = rawJson
-                .replaceAll('&quot;', '"')
-                .replaceAll('&amp;', '&')
-                .replaceAll('&lt;', '<')
-                .replaceAll('&gt;', '>');
-            try {
-              final parsed = jsonDecode(unescaped) as Map<String, dynamic>;
-              final murl = parsed['murl']?.toString();
-              final turl = parsed['turl']?.toString();
-              final title = parsed['t']?.toString() ?? query;
-              final chosenUrl = (murl != null && murl.startsWith('http')) ? murl : turl;
-              if (chosenUrl != null && chosenUrl.startsWith('http')) {
-                results.add(ProductImageSearchResult(
-                  url: chosenUrl,
-                  title: title,
-                  source: 'محرك بحث الصور (Bing)',
-                ));
-              }
-            } catch (_) {}
+        final html = await response.transform(utf8.decoder).join();
+        
+        // Extract thumbnails from image tags (this relies on the fallback HTML version of Google Images)
+        final regex = RegExp(r'<img[^>]+src="([^">]+)"');
+        final matches = regex.allMatches(html);
+        
+        for (final match in matches) {
+          final src = match.group(1);
+          if (src != null && src.startsWith('http') && !src.contains('branding/googlelogo') && !src.contains('text/html')) {
+            results.add(ProductImageSearchResult(
+              url: src,
+              title: query,
+              source: 'صور جوجل 🌐 (Google)',
+            ));
           }
-          if (results.length >= 8) break;
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Bing search error: $e');
+      debugPrint('Google Images scraping error: $e');
     }
     return results;
   }
@@ -353,7 +333,7 @@ class ProductImageSearchService {
       if (pickedFile == null) return null;
 
       final appDir = await getApplicationDocumentsDirectory();
-      final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
+      final imagesDir = Directory('${appDir.path}/nayli_market_images');
       if (!await imagesDir.exists()) {
         await imagesDir.create(recursive: true);
       }
@@ -378,7 +358,7 @@ class ProductImageSearchService {
       if (response.statusCode == 200) {
         final bytes = await consolidateHttpClientResponseBytes(response);
         final appDir = await getApplicationDocumentsDirectory();
-        final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
+        final imagesDir = Directory('${appDir.path}/nayli_market_images');
         if (!await imagesDir.exists()) {
           await imagesDir.create(recursive: true);
         }
@@ -392,6 +372,6 @@ class ProductImageSearchService {
     } catch (e) {
       debugPrint('⚠️ Error caching web image locally: $e, using remote URL as fallback');
     }
-    return webUrl; // Fallback to remote URL
+    return webUrl;
   }
 }

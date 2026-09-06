@@ -483,4 +483,44 @@ class MasterCatalogService {
 
     return importedCount;
   }
+
+  /// Parses JSON catalog array and inserts into Master Catalog
+  static int importFromJson(String jsonContent) {
+    int importedCount = 0;
+    try {
+      final decoded = jsonDecode(jsonContent);
+      if (decoded is List) {
+        for (var obj in decoded) {
+          if (obj is Map<String, dynamic>) {
+            final barcode = obj['barcode']?.toString() ?? '';
+            if (barcode.isEmpty) continue;
+
+            final name = obj['name']?.toString() ?? 'منتج $barcode';
+            final category = obj['category']?.toString() ?? 'عام';
+            final price = (obj['price'] as num?)?.toDouble() ?? 100.0;
+            final cost = (obj['costPrice'] as num?)?.toDouble() ?? (price * 0.85);
+            final imageUrl = obj['imageUrl']?.toString();
+
+            final item = MasterCatalogItem(
+              barcode: barcode,
+              name: name,
+              category: category,
+              defaultPrice: price,
+              defaultCost: cost,
+              imageUrl: imageUrl,
+            );
+
+            instance._barcodeMap[barcode] = item;
+            instance._allItems.removeWhere((it) => it.barcode == barcode);
+            instance._allItems.add(item);
+            if (category.isNotEmpty) instance._categories.add(category);
+            importedCount++;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('JSON Import Error: $e');
+    }
+    return importedCount;
+  }
 }

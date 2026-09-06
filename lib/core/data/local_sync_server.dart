@@ -112,20 +112,48 @@ class LocalSyncServer {
   static Stream<RemoteIncomingCart> get posHandoffStream => _posHandoffStreamController.stream;
   static int get connectedClients => _connectedClients;
 
-  /// Get local machine Wi-Fi / Ethernet IPv4 address
   static Future<String> getLocalIp() async {
     try {
       final interfaces = await NetworkInterface.list(
         includeLoopback: false,
         type: InternetAddressType.IPv4,
       );
-      for (var interface in interfaces) {
+      
+      // Sort interfaces to prioritize Wi-Fi and Ethernet over virtual/WSL interfaces
+      final sortedInterfaces = interfaces.toList()..sort((a, b) {
+        final nameA = a.name.toLowerCase();
+        final nameB = b.name.toLowerCase();
+        
+        bool isVirtual(String name) => name.contains('virtual') || name.contains('veth') || name.contains('wsl') || name.contains('vmware') || name.contains('hyper-v');
+        bool isPreferred(String name) => name.contains('wi-fi') || name.contains('wlan') || name.contains('ethernet') || name.contains('eth');
+        
+        if (isVirtual(nameA) && !isVirtual(nameB)) return 1;
+        if (!isVirtual(nameA) && isVirtual(nameB)) return -1;
+        if (isPreferred(nameA) && !isPreferred(nameB)) return -1;
+        if (!isPreferred(nameA) && isPreferred(nameB)) return 1;
+        return 0;
+      });
+
+      for (var interface in sortedInterfaces) {
         for (var addr in interface.addresses) {
           if (!addr.isLoopback) {
-            return addr.address;
+            // Also ensure it's a private network IP to avoid weird public/virtual IPs if possible
+            if (addr.address.startsWith('192.168.') || addr.address.startsWith('10.') || addr.address.startsWith('172.')) {
+               return addr.address;
+            }
           }
         }
       }
+      
+      // Fallback to first non-loopback if no standard private IP is found
+      for (var interface in sortedInterfaces) {
+        for (var addr in interface.addresses) {
+          if (!addr.isLoopback) {
+             return addr.address;
+          }
+        }
+      }
+      
     } catch (e) {
       debugPrint('Error finding local IP: $e');
     }

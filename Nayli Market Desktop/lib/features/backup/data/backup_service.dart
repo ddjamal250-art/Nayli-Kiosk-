@@ -107,6 +107,25 @@ class BackupService {
     // Compress using ZIP
     final archive = Archive();
     archive.addFile(ArchiveFile('nayli_market_database.json', jsonBytes.length, jsonBytes));
+
+    // Package local images
+    try {
+      final docDir = await getApplicationDocumentsDirectory();
+      final imgDir = Directory('${docDir.path}/NayliMarket/images');
+      if (await imgDir.exists()) {
+        final imageFiles = imgDir.listSync(recursive: false);
+        for (final entity in imageFiles) {
+          if (entity is File) {
+            final fileName = entity.uri.pathSegments.last;
+            final imgBytes = await entity.readAsBytes();
+            archive.addFile(ArchiveFile('images/$fileName', imgBytes.length, imgBytes));
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error packaging images: $e');
+    }
+
     final zipBytes = ZipEncoder().encode(archive);
 
     final backupDir = await getBackupDirectory();
@@ -305,7 +324,7 @@ class BackupService {
 
       // Setup images directory
       final appDir = await getApplicationDocumentsDirectory();
-      final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
+      final imagesDir = Directory('${appDir.path}/NayliMarket/images');
       if (!await imagesDir.exists()) await imagesDir.create(recursive: true);
 
       // 1. Try reading as zip archive
@@ -368,8 +387,11 @@ class BackupService {
               final pMap = Map<String, dynamic>.from(p);
               if (pMap['imageUrl'] != null) {
                 String img = pMap['imageUrl'].toString();
-                if (!img.startsWith('http') && !img.contains('/') && !img.contains('\\')) {
-                  pMap['imageUrl'] = '${imagesDir.path}/$img';
+                if (!img.startsWith('http')) {
+                  final filename = img.split(RegExp(r'[\\/]')).last;
+                  if (filename.isNotEmpty) {
+                    pMap['imageUrl'] = filename; // Only save the relative filename
+                  }
                 }
               }
               var model = ProductModel.fromJson(pMap);

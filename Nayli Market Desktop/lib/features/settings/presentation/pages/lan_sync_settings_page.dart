@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -279,6 +280,22 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
       SoundService.playVoidWarning();
     } finally {
       if (mounted) setState(() => _isTestingPing = false);
+    }
+  }
+
+  Future<void> _fixWindowsFirewall() async {
+    if (!Platform.isWindows) return;
+    try {
+      final port = LocalSyncServer.port;
+      final command = 'Start-Process powershell -ArgumentList "-Command \\"netsh advfirewall firewall add rule name=\'Nayli POS Sync\' dir=in action=allow protocol=TCP localport=$port\\"" -Verb RunAs';
+      await Process.run('powershell', ['-c', command]);
+      setState(() {
+        _pingStatus = '✅ تم إرسال طلب فتح منفذ $port في جدار الحماية (وافق على صلاحيات الإدارة إذا ظهرت لك).';
+      });
+    } catch (e) {
+      setState(() {
+        _pingStatus = '❌ فشل في تعديل جدار الحماية، يرجى فتحه يدوياً. خطأ: $e';
+      });
     }
   }
 
@@ -571,6 +588,23 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
                 ),
                 onPressed: _isTestingPing || !_isServerRunning ? null : _testPing,
               ),
+              if (Platform.isWindows && _isServerRunning) ...[
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.security, size: 18),
+                  label: const Text(
+                    'إصلاح جدار الحماية (Windows Firewall)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                  ),
+                  onPressed: _fixWindowsFirewall,
+                ),
+              ],
               if (_pingStatus.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(

@@ -27,6 +27,7 @@ import '../../../../core/utils/tpe_payment_service.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
+import '../../../../core/widgets/product_image_display.dart';
 import '../../../shifts/data/shift_service.dart';
 import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
@@ -1294,25 +1295,39 @@ $itemsSummary
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(color: Colors.grey.shade300),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    child: Row(
                                       children: [
-                                        Text(prod.name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text('${prod.price.toStringAsFixed(2)} DA',
-                                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
-                                            Text('مخزون: ${prod.stock}',
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: prod.stock > 0 ? Colors.green : Colors.red)),
-                                          ],
+                                        ProductImageDisplay(
+                                          imageUrl: prod.imageUrl,
+                                          width: 46,
+                                          height: 46,
+                                          borderRadius: 8,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(prod.name,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Text('${prod.price.toStringAsFixed(2)} DA',
+                                                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+                                                  Text('مخزون: ${prod.stock}',
+                                                      style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: prod.stock > 0 ? Colors.green : Colors.red)),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1794,6 +1809,12 @@ $itemsSummary
                           final item = state.cartItems[index];
                           return ListTile(
                             dense: true,
+                            leading: ProductImageDisplay(
+                              imageUrl: item.product.imageUrl,
+                              width: 36,
+                              height: 36,
+                              borderRadius: 6,
+                            ),
                             title: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                             subtitle: Text('${item.product.price.toStringAsFixed(2)} DA', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                             trailing: SizedBox(

@@ -96,18 +96,18 @@ class ProductImageSearchService {
       }
     }
 
-    // 4. Web & Bing Image Search (Real web images)
+    // 4. Web & Google Image Search (Real web images)
     if (results.length < maxResults && cleanQuery.isNotEmpty) {
       try {
-        final bingResults = await _searchBingImages(cleanQuery);
-        for (final r in bingResults) {
+        final googleResults = await _searchGoogleImages(cleanQuery);
+        for (final r in googleResults) {
           if (!results.any((existing) => existing.url == r.url)) {
             results.add(r);
           }
           if (results.length >= maxResults) break;
         }
       } catch (e) {
-        debugPrint('⚠️ Bing search error: $e');
+        debugPrint('⚠️ Google search error: $e');
       }
     }
 
@@ -221,11 +221,11 @@ class ProductImageSearchService {
     return results;
   }
 
-  Future<List<ProductImageSearchResult>> _searchBingImages(String query) async {
+  Future<List<ProductImageSearchResult>> _searchGoogleImages(String query) async {
     final List<ProductImageSearchResult> results = [];
     try {
       final uri = Uri.parse(
-        'https://www.bing.com/images/search?q=${Uri.encodeComponent(query)}&form=HDRSC2&first=1',
+        'https://www.google.com/search?tbm=isch&q=${Uri.encodeComponent(query)}',
       );
       final request = await _httpClient.getUrl(uri);
       request.headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
@@ -233,35 +233,22 @@ class ProductImageSearchService {
       final response = await request.close().timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final body = await response.transform(utf8.decoder).join();
-        final matches = RegExp(r'class="iusc"[^>]*?m="([^"]+)"').allMatches(body);
+        
+        final matches = RegExp(r'<img[^>]+src="([^">]+)"').allMatches(body);
         for (final m in matches) {
-          final rawJson = m.group(1);
-          if (rawJson != null) {
-            final unescaped = rawJson
-                .replaceAll('&quot;', '"')
-                .replaceAll('&amp;', '&')
-                .replaceAll('&lt;', '<')
-                .replaceAll('&gt;', '>');
-            try {
-              final parsed = jsonDecode(unescaped) as Map<String, dynamic>;
-              final murl = parsed['murl']?.toString();
-              final turl = parsed['turl']?.toString();
-              final title = parsed['t']?.toString() ?? query;
-              final chosenUrl = (murl != null && murl.startsWith('http')) ? murl : turl;
-              if (chosenUrl != null && chosenUrl.startsWith('http')) {
-                results.add(ProductImageSearchResult(
-                  url: chosenUrl,
-                  title: title,
-                  source: 'محرك بحث الصور (Bing)',
-                ));
-              }
-            } catch (_) {}
+          final url = m.group(1);
+          if (url != null && url.startsWith('http') && !url.contains('branding/googlelogo')) {
+            results.add(ProductImageSearchResult(
+              url: url.replaceAll('&amp;', '&'),
+              title: query,
+              source: 'محرك بحث الصور (Google)',
+            ));
+            if (results.length >= 12) break;
           }
-          if (results.length >= 8) break;
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Bing search error: $e');
+      debugPrint('⚠️ Google search error: $e');
     }
     return results;
   }

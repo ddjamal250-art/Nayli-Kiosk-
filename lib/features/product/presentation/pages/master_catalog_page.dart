@@ -4,6 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vibration/vibration.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:archive/archive.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
@@ -165,6 +170,77 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     }
   }
 
+  Future<void> _handleFileImport() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'zip', 'json', 'nbak'],
+      );
+      if (result == null || result.files.isEmpty) return;
+      
+      final file = File(result.files.single.path!);
+      final ext = file.path.split('.').last.toLowerCase();
+      
+      if (ext == 'csv') {
+        final content = await file.readAsString();
+        final count = MasterCatalogService.importFromCSV(content);
+        setState((){});
+        if (count > 0) {
+           SoundService.playCheckoutSuccess();
+           SnackbarHelper.showSuccess(context, 'تم استيراد $count سلعة بنجاح!');
+        } else {
+           SnackbarHelper.showError(context, 'لم يتم التعرف على أسطر صالحة.');
+        }
+      } else if (ext == 'zip' || ext == 'nbak') {
+        final bytes = await file.readAsBytes();
+        final archive = ZipDecoder().decodeBytes(bytes);
+        
+        final appDir = await getApplicationDocumentsDirectory();
+        final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
+        if (!await imagesDir.exists()) await imagesDir.create(recursive: true);
+
+        int count = 0;
+        
+        for (var f in archive.files) {
+          if (f.isFile && f.name.startsWith('images/')) {
+            final fileName = f.name.split('/').last;
+            if (fileName.isNotEmpty) {
+              final localFile = File('${imagesDir.path}/$fileName');
+              await localFile.writeAsBytes(f.content as List<int>);
+            }
+          }
+        }
+        
+        final jsonFile = archive.findFile('catalog.json') ?? archive.files.where((f) => f.name.endsWith('.json')).firstOrNull;
+        if (jsonFile != null) {
+          final contentBytes = jsonFile.content as List<int>;
+          final content = utf8.decode(contentBytes);
+          count = MasterCatalogService.importFromJson(content);
+        }
+        
+        setState((){});
+        if (count > 0) {
+           SoundService.playCheckoutSuccess();
+           SnackbarHelper.showSuccess(context, 'تم استيراد $count سلعة مع الصور بنجاح!');
+        } else {
+           SnackbarHelper.showError(context, 'لم يتم العثور على سلع في ملف ZIP.');
+        }
+      } else if (ext == 'json') {
+        final content = await file.readAsString();
+        final count = MasterCatalogService.importFromJson(content);
+        setState((){});
+        if (count > 0) {
+           SoundService.playCheckoutSuccess();
+           SnackbarHelper.showSuccess(context, 'تم استيراد $count سلعة بنجاح!');
+        } else {
+           SnackbarHelper.showError(context, 'ملف JSON غير صالح.');
+        }
+      }
+    } catch (e) {
+      SnackbarHelper.showError(context, 'حدث خطأ أثناء الاستيراد: $e');
+    }
+  }
+
   void _showImportDialog() {
     final textController = TextEditingController();
     showDialog(
@@ -175,7 +251,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
           children: [
             Icon(Icons.file_download_outlined, color: Colors.teal),
             SizedBox(width: 8),
-            Text('استيراد سلع من CSV / إكسل'),
+            Text('استيراد سلع من CSV / JSON / ZIP'),
           ],
         ),
         content: SizedBox(
@@ -185,11 +261,27 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'الصق محتوى ملف CSV هنا (يقبل فواصل الفاصلة المنقوطة ; أو الفاصلة , أو Tab):\n'
-                'الأعمدة المطلوبة: Code_Barre, Designation, Famille, Prix_Vente, Prix_Achat',
+                'يمكنك رفع ملف CSV, JSON, أو ZIP (يحتوي على الصور):\n',
                 style: TextStyle(fontSize: 12, color: Colors.black87),
               ),
+              const SizedBox(height: 8),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _handleFileImport();
+                  },
+                  icon: const Icon(Icons.file_upload, size: 18),
+                  label: const Text('اختيار ملف من الجهاز'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
+              const Text('أو الصق النص:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               TextField(
                 controller: textController,
                 maxLines: 8,
@@ -225,7 +317,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                 SnackbarHelper.showError(context, 'لم يتم التعرف على أي أسطر صالحة في ملف CSV.');
               }
             },
-            child: const Text('استيراد الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('استيراد النص', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

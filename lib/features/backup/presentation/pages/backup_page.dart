@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:file_selector/file_selector.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/utils/snackbar_helper.dart';
@@ -212,8 +213,25 @@ class _BackupPageState extends State<BackupPage> {
       }
 
       await _loadBackups();
+      
       if (mounted) {
-        SnackbarHelper.showSuccess(context, '✅ تم إنشاء وحفظ النسخة الاحتياطية بنجاح!');
+        SnackbarHelper.showSuccess(context, '✅ تم إنشاء النسخة الاحتياطية بنجاح!');
+        
+        // Prompt user to choose where to save or share it
+        if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+          try {
+            final fileName = file.uri.pathSegments.last;
+            final saveLocation = await getSaveLocation(suggestedName: fileName);
+            if (saveLocation != null) {
+              await file.copy(saveLocation.path);
+              SnackbarHelper.showSuccess(context, '✅ تم حفظ النسخة في المكان المحدد!');
+            }
+          } catch (e) {
+            debugPrint('Save location error: $e');
+          }
+        } else {
+          Share.shareXFiles([XFile(file.path)], text: 'نسخة احتياطية نايل ماركت');
+        }
       }
     } catch (e) {
       if (mounted) {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart' as file_picker;
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/utils/snackbar_helper.dart';
@@ -224,6 +225,39 @@ class _BackupPageState extends State<BackupPage> {
     }
   }
 
+  Future<void> _handleExportBackup() async {
+    SoundService.playTabSwitch();
+    setState(() => _isLoading = true);
+    try {
+      final file = await BackupService.createFullBackupZip();
+      
+      final dateStr = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
+      final defaultName = 'Backup_NayliMarket_$dateStr.nbak';
+      
+      final String? outputFile = await file_picker.FilePicker.platform.saveFile(
+        dialogTitle: 'تصدير النسخة الاحتياطية',
+        fileName: defaultName,
+        type: file_picker.FileType.any,
+      );
+
+      if (outputFile != null) {
+        await file.copy(outputFile);
+        SoundService.playSaveSuccess();
+        if (mounted) {
+          SnackbarHelper.showSuccess(context, '✅ تم تصدير النسخة بنجاح إلى:\n$outputFile');
+        }
+      } else {
+        // User cancelled
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showError(context, 'فشل التصدير: ' + e.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _handleRestoreFromFile({String? directFilePath}) async {
     final customPathCtrl = TextEditingController(text: directFilePath ?? '');
     List<BackupSnapshotInfo> discovered = await BackupService.listLocalBackups();
@@ -294,15 +328,38 @@ class _BackupPageState extends State<BackupPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
-                              controller: customPathCtrl,
-                              style: const TextStyle(fontSize: 12.5),
-                              decoration: InputDecoration(
-                                hintText: 'مثال: G:\\data\\nayli_market_backup.nbak',
-                                isDense: true,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.blueGrey,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  side: BorderSide(color: Colors.grey.shade300),
+                                ),
                               ),
+                              icon: const Icon(Icons.folder_open_rounded, size: 20),
+                              label: Text(
+                                customPathCtrl.text.isEmpty ? 'تصفح لاختيار ملف النسخة الاحتياطية (.nbak / .zip)' : customPathCtrl.text.split(RegExp(r'[\\/]')).last,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onPressed: () async {
+                                try {
+                                  // We use file_picker to let user select
+                                  final result = await file_picker.FilePicker.platform.pickFiles(
+                                    type: file_picker.FileType.any,
+                                    allowMultiple: false,
+                                  );
+                                  if (result != null && result.files.single.path != null) {
+                                    setModalState(() {
+                                      customPathCtrl.text = result.files.single.path!;
+                                    });
+                                  }
+                                } catch (e) {
+                                  debugPrint('FilePicker error: $e');
+                                }
+                              },
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -310,7 +367,7 @@ class _BackupPageState extends State<BackupPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange.shade700,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             icon: const Icon(Icons.play_arrow_rounded, size: 18),
@@ -567,6 +624,17 @@ class _BackupPageState extends State<BackupPage> {
                             icon: const Icon(Icons.save_rounded),
                             label: const Text('أخذ نسخة احتياطية الآن 💾', style: TextStyle(fontWeight: FontWeight.bold)),
                             onPressed: _handleCreateBackup,
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade50,
+                              foregroundColor: Colors.blue.shade800,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            icon: const Icon(Icons.drive_folder_upload_rounded),
+                            label: const Text('تصدير النسخة (Save As) 📤', style: TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: _handleExportBackup,
                           ),
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(

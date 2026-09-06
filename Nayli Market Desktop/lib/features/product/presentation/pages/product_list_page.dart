@@ -18,6 +18,7 @@ import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/adaptive_modal_helper.dart';
+import '../../../../core/widgets/product_image_display.dart';
 import '../../../shop/data/models/shop_model.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
@@ -1152,6 +1153,13 @@ class _ProductListPageState extends State<ProductListPage> {
                               ),
                               const SizedBox(width: 4),
                             ],
+                            ProductImageDisplay(
+                              imageUrl: product.imageUrl,
+                              width: 48,
+                              height: 48,
+                              borderRadius: 8,
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
