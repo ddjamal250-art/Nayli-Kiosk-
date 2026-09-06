@@ -104,7 +104,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
       }
 
       final savedPath = await MasterCatalogService.saveExportFile(content, filename);
-      SoundService.playSuccess();
+      SoundService.playCheckoutSuccess();
       if (!mounted) return;
 
       showDialog(
@@ -219,7 +219,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
               Navigator.pop(ctx);
               setState(() {});
               if (count > 0) {
-                SoundService.playSuccess();
+                SoundService.playCheckoutSuccess();
                 SnackbarHelper.showSuccess(context, 'تم استيراد $count سلعة بنجاح وإضافتها للكتالوج!');
               } else {
                 SnackbarHelper.showError(context, 'لم يتم التعرف على أي أسطر صالحة في ملف CSV.');

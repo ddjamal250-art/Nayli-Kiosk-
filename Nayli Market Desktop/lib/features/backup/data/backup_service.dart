@@ -212,9 +212,7 @@ class BackupService {
                   archive.files.where((f) => f.name.endsWith('.json')).firstOrNull;
 
               if (jsonFile != null) {
-                final contentBytes = jsonFile.content is List<int>
-                    ? (jsonFile.content as List<int>)
-                    : (jsonFile.readBytes() ?? <int>[]);
+                final contentBytes = jsonFile.content as List<int>;
                 if (contentBytes.isNotEmpty) {
                   final content = utf8.decode(contentBytes);
                   final map = jsonDecode(content) as Map<String, dynamic>;
@@ -317,9 +315,7 @@ class BackupService {
             archive.files.where((f) => f.name.endsWith('.json')).firstOrNull;
 
         if (jsonFile != null) {
-          final contentBytes = jsonFile.content is List<int>
-              ? (jsonFile.content as List<int>)
-              : (jsonFile.readBytes() ?? <int>[]);
+          final contentBytes = jsonFile.content as List<int>;
           if (contentBytes.isNotEmpty) {
             final content = utf8.decode(contentBytes);
             final decoded = jsonDecode(content);
@@ -332,9 +328,7 @@ class BackupService {
               if (file.isFile && file.name.startsWith('images/')) {
                 final fileName = file.name.split('/').last;
                 if (fileName.isNotEmpty) {
-                  final imgBytes = file.content is List<int>
-                      ? (file.content as List<int>)
-                      : (file.readBytes() ?? <int>[]);
+                  final imgBytes = file.content as List<int>;
                   if (imgBytes.isNotEmpty) {
                     final localFile = File('${imagesDir.path}/$fileName');
                     await localFile.writeAsBytes(imgBytes);
