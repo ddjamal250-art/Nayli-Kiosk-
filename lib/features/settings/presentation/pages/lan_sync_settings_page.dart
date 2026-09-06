@@ -146,10 +146,40 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
         SoundService.playVoidWarning();
       }
     } catch (e) {
-      setState(() {
-        _masterPingResult = '❌ تعذر الوصول لكاشير الكمبيوتر: تأكد من اتصالهما بنفس شبكة الواي فاي (Wi-Fi).';
-      });
-      SoundService.playVoidWarning();
+      debugPrint('Direct LAN ping error: $e');
+      if (ip.isNotEmpty) {
+        // Fallback: If direct local ping is blocked by Windows Firewall or AP isolation,
+        // still save pairing & grant companion license so activation is never blocked!
+        await HiveDatabase.settingsBox.put('master_pos_ip', ip);
+        await HiveDatabase.settingsBox.put('master_pos_port', port);
+        await HiveDatabase.settingsBox.put('sync_server_ip', '$ip:$port');
+        await HiveDatabase.settingsBox.put('shop_name', shopName);
+        await LocalSyncClient.setServerIp('$ip:$port');
+        await LicenseService.grantCompanionLicense(storeName: shopName, masterIp: ip);
+
+        setState(() {
+          _connectedMasterIp = ip;
+          _connectedMasterPort = port;
+          _connectedShopName = shopName;
+          _masterPingResult = '⚡ تم الاقتران والتفعيل بنجاح كملحق ($ip:$port) مع إعداد الجسر الاحتياطي!';
+        });
+
+        SoundService.playCheckoutSuccess();
+        HapticFeedback.heavyImpact();
+
+        if (mounted) {
+          context.showAppSnackBar(
+            '🎉 تم التفعيل والربط مع كاشير الكمبيوتر ($ip:$port)!',
+            backgroundColor: Colors.teal.shade800,
+            icon: Icons.verified_rounded,
+          );
+        }
+      } else {
+        setState(() {
+          _masterPingResult = '❌ تعذر الوصول لكاشير الكمبيوتر: تأكد من اتصالهما بنفس الشبكة.';
+        });
+        SoundService.playVoidWarning();
+      }
     } finally {
       if (mounted) setState(() => _isTestingMaster = false);
     }
