@@ -52,7 +52,9 @@ jobs:
         run: flutter pub get
 
       - name: Generate App Icons
-        run: dart run flutter_launcher_icons
+        run: |
+          dart run flutter_launcher_icons
+          Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
       - name: Build Windows Executable Release
         run: flutter build windows --release --obfuscate --split-debug-info=symbols/
