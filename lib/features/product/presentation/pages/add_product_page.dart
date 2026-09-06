@@ -538,14 +538,14 @@ class _AddProductPageState extends State<AddProductPage> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.smoking_rooms, color: _isTobacco ? Colors.brown : Colors.grey),
+                              Icon(Icons.inventory_2, color: _isTobacco ? Colors.brown : Colors.grey),
                               const SizedBox(width: 8),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('منتج تبغ وسجائر / كشك 🚬',
+                                  Text('إدارة تسعير الكراتين والعلب (Multi-Pack)',
                                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isTobacco ? Colors.brown[800] : Colors.black87)),
-                                  const Text('تفعيل تسعير الكرطوشة، العلبة، والسيجارة بالجملة والتجزئة', style: TextStyle(fontSize: 10.5, color: Colors.grey)),
+                                  const Text('تفعيل بيع المنتج بالكرتونة أو بالعلبة، وتحديد عدد الوحدات', style: TextStyle(fontSize: 10.5, color: Colors.grey)),
                                 ],
                               ),
                             ],
@@ -555,7 +555,6 @@ class _AddProductPageState extends State<AddProductPage> {
                             activeColor: Colors.brown,
                             onChanged: (v) => setState(() {
                               _isTobacco = v;
-                              if (v && _selectedCategory == 'عام') _selectedCategory = 'تبغ وسجائر';
                             }),
                           ),
                         ],
