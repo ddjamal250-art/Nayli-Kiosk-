@@ -47,6 +47,10 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
   String? _pairingStatusMessage;
   String _localIp = '127.0.0.1';
 
+  // Mobile Luxury Pathways State (0: Hub, 1: Pairing, 2: Standalone, 3: Kiosk)
+  int _mobileSelectedPathway = 0;
+  int _standaloneSubTab = 0; // 0: Online Cloud, 1: Offline License Key
+
   @override
   void initState() {
     super.initState();
@@ -508,7 +512,12 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          SystemNavigator.pop();
+          if (!isDesktop && _mobileSelectedPathway != 0) {
+            SoundService.playTabSwitch();
+            setState(() => _mobileSelectedPathway = 0);
+          } else {
+            SystemNavigator.pop();
+          }
         }
       },
       child: Scaffold(
@@ -659,50 +668,71 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                             ),
                           ),
 
-                          // Modern Tab Bar
-                          Container(
-                            color: const Color(0xFF162238),
-                            child: TabBar(
-                              controller: _tabController,
-                              isScrollable: true,
-                              tabAlignment: TabAlignment.center,
-                              indicatorColor: const Color(0xFF38BDF8),
-                              indicatorWeight: 3,
-                              labelColor: const Color(0xFF38BDF8),
-                              unselectedLabelColor: Colors.grey[400],
-                              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                              tabs: const [
-                                Tab(icon: Icon(Icons.qr_code_scanner_rounded, size: 18), text: 'الاقتران السريع 📲'),
-                                Tab(icon: Icon(Icons.cloud_sync_rounded, size: 18), text: 'تفعيل أونلاين 🚀'),
-                                Tab(icon: Icon(Icons.dialpad_rounded, size: 18), text: 'تفعيل أوفلاين 🔑'),
-                                Tab(icon: Icon(Icons.tv_rounded, size: 18), text: 'كشك الأسعار 🛍️'),
-                              ],
-                            ),
-                          ),
-
-                          // Tab View Contents
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: SizedBox(
-                              height: isDesktop ? 430 : 390,
-                              child: TabBarView(
+                          if (isDesktop) ...[
+                            // Modern Tab Bar for Desktop PC
+                            Container(
+                              color: const Color(0xFF162238),
+                              child: TabBar(
                                 controller: _tabController,
-                                children: [
-                                  // TAB 1: SMART QR PAIRING (DUAL MODE)
-                                  _buildSmartPairingTab(isDesktop, qrPayload, merchantId),
-
-                                  // TAB 2: ONLINE CLOUD ACTIVATION
-                                  _buildOnlineCloudTab(),
-
-                                  // TAB 3: OFFLINE & DOUCHETTE ACTIVATION
-                                  _buildOfflineDouchetteTab(),
-
-                                  // TAB 4: FREE PRICE CHECKER KIOSK
-                                  _buildKioskModeTab(),
+                                isScrollable: true,
+                                tabAlignment: TabAlignment.center,
+                                indicatorColor: const Color(0xFF38BDF8),
+                                indicatorWeight: 3,
+                                labelColor: const Color(0xFF38BDF8),
+                                unselectedLabelColor: Colors.grey[400],
+                                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                tabs: const [
+                                  Tab(icon: Icon(Icons.qr_code_scanner_rounded, size: 18), text: 'الاقتران السريع 📲'),
+                                  Tab(icon: Icon(Icons.cloud_sync_rounded, size: 18), text: 'تفعيل أونلاين 🚀'),
+                                  Tab(icon: Icon(Icons.dialpad_rounded, size: 18), text: 'تفعيل أوفلاين 🔑'),
+                                  Tab(icon: Icon(Icons.tv_rounded, size: 18), text: 'كشك الأسعار 🛍️'),
                                 ],
                               ),
                             ),
-                          ),
+
+                            // Tab View Contents
+                            Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: SizedBox(
+                                height: 430,
+                                child: TabBarView(
+                                  controller: _tabController,
+                                  children: [
+                                    _buildSmartPairingTab(isDesktop, qrPayload, merchantId),
+                                    _buildOnlineCloudTab(),
+                                    _buildOfflineDouchetteTab(),
+                                    _buildKioskModeTab(),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            // Mobile View: 3 Luxury Interactive Action Cards with Smooth Animated Transitions
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 280),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0.04, 0.0),
+                                      end: Offset.zero,
+                                    ).animate(animation),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: _mobileSelectedPathway == 0
+                                  ? _buildMobileHub()
+                                  : _mobileSelectedPathway == 1
+                                      ? _buildMobilePairingPathway()
+                                      : _mobileSelectedPathway == 2
+                                          ? _buildMobileStandalonePathway()
+                                          : _buildMobileKioskPathway(),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -727,6 +757,471 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // MOBILE LUXURY 3-ACTION CARDS HUB & PATHWAYS
+  // ==========================================
+
+  Widget _buildMobileHub() {
+    return Padding(
+      key: const ValueKey('mobile_hub'),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'اختر نمط تشغيل التطبيق في متجرك 🌟',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'اضغط على الخيار الأنسب لطريقة عملك للمتابعة بسهولة وسلاسة:',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // 1. Luxury Card: Smart Pairing with PC POS
+          _buildLuxuryActionCard(
+            title: 'الاقتران الذكي بكاشير الحاسوب 📲 ↔️ 🖥️',
+            subtitle: 'ربط الهاتف مع كاشير الكمبيوتر كـ جهاز ملحق أو قارئ باركود لاسلكي يرسل المبيعات للحاسوب مباشرة (عبر الواي فاي أو السحابة تلقائياً).',
+            badgeText: 'الأكثر طلباً ⭐',
+            badgeColor: const Color(0xFF38BDF8),
+            gradientColors: [const Color(0xFF0369A1), const Color(0xFF0284C7)],
+            icon: Icons.wifi_tethering_rounded,
+            onTap: () {
+              SoundService.playTabSwitch();
+              setState(() => _mobileSelectedPathway = 1);
+            },
+          ),
+          const SizedBox(height: 14),
+
+          // 2. Luxury Card: Standalone Store POS
+          _buildLuxuryActionCard(
+            title: 'تفعيل متجر سحابي مستقل (كاشير كامل) 🏪 🚀',
+            subtitle: 'تشغيل الهاتف كنقطة بيع كاملة ومستقلة لإدارة المخزون والمبيعات، وتفعيلها سحابياً باسم متجرك أو بمفتاح ترخيص.',
+            badgeText: 'ترخيص مستقل 🔑',
+            badgeColor: const Color(0xFF34D399),
+            gradientColors: [const Color(0xFF047857), const Color(0xFF059669)],
+            icon: Icons.storefront_rounded,
+            onTap: () {
+              SoundService.playTabSwitch();
+              setState(() => _mobileSelectedPathway = 2);
+            },
+          ),
+          const SizedBox(height: 14),
+
+          // 3. Luxury Card: Free Customer Price Checker Kiosk
+          _buildLuxuryActionCard(
+            title: 'كشك فحص الأسعار للزبائن 🛍️ 🆓',
+            subtitle: 'تحويل الهاتف أو التابلت إلى شاشة معلقة للزبائن لفحص الأسعار والعروض في ممرات السوبرماركت فوراً ومجاناً بدون استهلاك رخص!',
+            badgeText: 'مجاني 100% 🆓',
+            badgeColor: const Color(0xFF818CF8),
+            gradientColors: [const Color(0xFF4338CA), const Color(0xFF6366F1)],
+            icon: Icons.tv_rounded,
+            onTap: () {
+              SoundService.playTabSwitch();
+              setState(() => _mobileSelectedPathway = 3);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLuxuryActionCard({
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required Color badgeColor,
+    required List<Color> gradientColors,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            gradientColors.last.withOpacity(0.18),
+            const Color(0xFF0F172A).withOpacity(0.95),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: gradientColors.last.withOpacity(0.4),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors.last.withOpacity(0.14),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          splashColor: gradientColors.last.withOpacity(0.2),
+          highlightColor: gradientColors.last.withOpacity(0.08),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: gradientColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: gradientColors.last.withOpacity(0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: badgeColor.withOpacity(0.5)),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: TextStyle(
+                          color: badgeColor,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11.5,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      'متابعة والبدء',
+                      style: TextStyle(
+                        color: badgeColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_back_ios_rounded,
+                      size: 12,
+                      color: badgeColor,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPathwayHeader({
+    required String title,
+    required String subtitle,
+    required Color accentColor,
+  }) {
+    return Row(
+      children: [
+        InkWell(
+          onTap: () {
+            SoundService.playTabSwitch();
+            setState(() => _mobileSelectedPathway = 0);
+          },
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: accentColor.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.arrow_forward_rounded, size: 16, color: accentColor),
+                const SizedBox(width: 4),
+                Text(
+                  'رجوع',
+                  style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 11.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(color: Colors.grey[400], fontSize: 10.5),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobilePairingPathway() {
+    return Padding(
+      key: const ValueKey('mobile_pairing_pathway'),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildPathwayHeader(
+            title: 'الاقتران الذكي بكاشير الحاسوب 📲',
+            subtitle: 'ربط الهاتف مع كاشير الكمبيوتر بالمحل',
+            accentColor: const Color(0xFF38BDF8),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0284C7).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFF0284C7).withOpacity(0.35)),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.wifi_tethering_rounded, color: Color(0xFF38BDF8), size: 36),
+                SizedBox(height: 8),
+                Text(
+                  'امسح كود الـ QR الظاهر في كاشير الحاسوب 📸',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'افتح برنامج الحاسوب واضغط على كود الاقتران أو رمز الـ QR، ثم وجّه كاميرا الهاتف نحوه ليتم التفعيل والمزامنة تلقائياً سواء عبر الواي فاي أو السحابة.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          if (_pairingStatusMessage != null) ...[
+            Text(
+              _pairingStatusMessage!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: _pairingStatusMessage!.startsWith('✅') || _pairingStatusMessage!.startsWith('🎉')
+                    ? const Color(0xFF34D399)
+                    : const Color(0xFFF87171),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 4,
+                  ),
+                  icon: _isPairingWithMaster
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.camera_alt_rounded, size: 20),
+                  label: const Text('مسح كود الكمبيوتر (QR) 📸', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: _isPairingWithMaster ? null : _scanMasterQrCode,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF38BDF8),
+                    side: const BorderSide(color: Color(0xFF38BDF8)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.edit_rounded, size: 16),
+                  label: const Text('إدخال IP ✍️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  onPressed: _isPairingWithMaster ? null : _showManualIpDialog,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileStandalonePathway() {
+    return Padding(
+      key: const ValueKey('mobile_standalone_pathway'),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildPathwayHeader(
+            title: 'تفعيل متجر سحابي مستقل 🏪',
+            subtitle: 'تشغيل الهاتف كنقطة بيع متكاملة',
+            accentColor: const Color(0xFF34D399),
+          ),
+          const SizedBox(height: 14),
+
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF334155)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _standaloneSubTab = 0),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _standaloneSubTab == 0 ? const Color(0xFF059669) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'تفعيل أونلاين سحابي 🚀',
+                        style: TextStyle(
+                          color: _standaloneSubTab == 0 ? Colors.white : Colors.white60,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _standaloneSubTab = 1),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _standaloneSubTab == 1 ? const Color(0xFF0284C7) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'مفتاح ترخيص أوفلاين 🔑',
+                        style: TextStyle(
+                          color: _standaloneSubTab == 1 ? Colors.white : Colors.white60,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          if (_standaloneSubTab == 0) ...[
+            _buildOnlineCloudTab(isScrollable: false),
+          ] else ...[
+            _buildOfflineDouchetteTab(isScrollable: false),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileKioskPathway() {
+    return Padding(
+      key: const ValueKey('mobile_kiosk_pathway'),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildPathwayHeader(
+            title: 'كشك فاحص الأسعار للزبائن 🛍️',
+            subtitle: 'شاشة معلقة لفحص الأسعار والعروض بالممرات',
+            accentColor: const Color(0xFF818CF8),
+          ),
+          const SizedBox(height: 16),
+          _buildKioskModeTab(),
+        ],
       ),
     );
   }
@@ -892,9 +1387,8 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
   }
 
   /// TAB 2: Online Cloud Activation Tab
-  Widget _buildOnlineCloudTab() {
-    return SingleChildScrollView(
-      child: Column(
+  Widget _buildOnlineCloudTab({bool isScrollable = true}) {
+    final content = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
@@ -980,15 +1474,14 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             onPressed: _isCheckingOnline ? null : _activateOnline,
           ),
         ],
-      ),
-    );
+      );
+    return isScrollable ? SingleChildScrollView(child: content) : content;
   }
 
   /// TAB 3: Offline Barcode Gun & Manual Key Tab
-  Widget _buildOfflineDouchetteTab() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildOfflineDouchetteTab({bool isScrollable = true}) {
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
             'تفعيل فوري بقارئ الباركود (Douchette) 🔫',
@@ -1119,8 +1612,8 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             ),
           ),
         ],
-      ),
-    );
+      );
+    return isScrollable ? SingleChildScrollView(child: content) : content;
   }
 
   /// TAB 4: Free Customer Price Checker Kiosk Tab
