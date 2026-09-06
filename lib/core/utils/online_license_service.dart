@@ -30,7 +30,11 @@ class OnlineLicenseService {
   static String get defaultBotToken {
     try {
       // Obfuscated using XOR 42
-      const List<int> _o = [18, 16, 16, 17, 25, 19, 26, 19, 24, 16, 16, 107, 107, 103, 79, 123, 77, 22, 116, 101, 18, 80, 17, 101, 87, 85, 107, 75, 79, 87, 85, 109, 109, 78, 116, 102, 110, 82, 107, 19, 107, 83, 87, 122, 101, 107];
+      const List<int> _o = [
+        18, 28, 28, 29, 25, 19, 26, 19, 24, 28, 16, 107, 107, 111, 95, 123, 77, 30,
+        112, 97, 18, 80, 29, 97, 71, 93, 107, 75, 79, 71, 69, 109, 109, 78, 112,
+        108, 110, 82, 99, 7, 99, 67, 91, 122, 101, 99
+      ];
       return String.fromCharCodes(_o.map((e) => e ^ 42));
     } catch (_) {
       return '';
@@ -40,7 +44,7 @@ class OnlineLicenseService {
   static String get defaultChatId {
     try {
       // Obfuscated using XOR 42
-      const List<int> _o = [21, 27, 27, 21, 22, 24, 21, 24, 22, 25];
+      const List<int> _o = [31, 27, 27, 31, 30, 28, 31, 24, 28, 29];
       return String.fromCharCodes(_o.map((e) => e ^ 42));
     } catch (_) {
       return '';
@@ -114,11 +118,12 @@ class OnlineLicenseService {
           'parse_mode': 'HTML',
           'reply_markup': inlineKeyboard,
         }),
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 10));
 
+      debugPrint('[TelegramBot] Notify status: ${res.statusCode}');
       return res.statusCode == 200;
-    } catch (_) {
-      // Direct connection to api.telegram.org may fail due to ISP blocking/throttling (e.g. Algerian Telecom ADSL/Fiber)
+    } catch (e) {
+      debugPrint('[TelegramBot] Failed to notify developer: $e');
       return false;
     }
   }
