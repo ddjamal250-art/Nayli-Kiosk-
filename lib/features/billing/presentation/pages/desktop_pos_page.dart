@@ -139,49 +139,47 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           _showIncomingHandoffBanner(cart);
         }
       });
+      _unlistedKioskScanSub = KioskService.unlistedScanStream.listen((scanData) {
+        if (mounted) {
+          SoundService.playWarning();
+          final barcode = scanData['barcode']?.toString() ?? '';
+          final count = scanData['scanCount'] ?? 1;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: const Color(0xFFC2410C),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 8),
+              content: Row(
+                children: [
+                  const Icon(Icons.notification_important_rounded, color: Colors.white, size: 24),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '⚠️ كشك الزبائن: زبون مسح سلعة غير مسجلة ($barcode) • مسحت $count مرات',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              action: SnackBarAction(
+                label: 'أضف للمخزون ➕',
+                textColor: Colors.amberAccent,
+                onPressed: () => context.push('/add-product?barcode=$barcode'),
+              ),
+            ),
+          );
+        }
+      });
+
+      if (mounted) {
+        setState(() {
+          _isServerRunning = started;
+          _serverIp = ip;
+          _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
+        });
+      }
     } catch (e) {
       debugPrint('Local server init failed: $e');
-    }
-  }
-
-    _unlistedKioskScanSub = KioskService.unlistedScanStream.listen((scanData) {
-      if (mounted) {
-        SoundService.playWarning();
-        final barcode = scanData['barcode']?.toString() ?? '';
-        final count = scanData['scanCount'] ?? 1;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFFC2410C),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 8),
-            content: Row(
-              children: [
-                const Icon(Icons.notification_important_rounded, color: Colors.white, size: 24),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '⚠️ كشك الزبائن: زبون مسح سلعة غير مسجلة ($barcode) • مسحت $count مرات',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            action: SnackBarAction(
-              label: 'أضف للمخزون ➕',
-              textColor: Colors.amberAccent,
-              onPressed: () => context.push('/add-product?barcode=$barcode'),
-            ),
-          ),
-        );
-      }
-    });
-
-    if (mounted) {
-      setState(() {
-        _isServerRunning = started;
-        _serverIp = ip;
-        _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
-      });
     }
   }
 
@@ -632,6 +630,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             ],
           ),
         ),
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
           ElevatedButton(
@@ -789,6 +788,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         );
                       },
                     ),
+              ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('close'))),
