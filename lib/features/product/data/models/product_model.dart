@@ -244,23 +244,25 @@ class ProductModel extends Product {
   }
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    final rawIsWeighted = json['isWeighted'];
+    final rawIsTobacco = json['isTobacco'];
     return ProductModel(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      barcode: json['barcode'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      barcode: json['barcode']?.toString() ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       stock: (json['stock'] as num?)?.toInt() ?? 0,
       costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0.0,
-      category: json['category'] as String? ?? 'عام',
-      isWeighted: json['isWeighted'] as bool? ?? false,
+      category: json['category']?.toString() ?? 'عام',
+      isWeighted: rawIsWeighted == true || rawIsWeighted == 1 || rawIsWeighted == 'true',
       wholesalePrice: (json['wholesalePrice'] as num?)?.toDouble() ?? 0.0,
-      expiryDate: json['expiryDate'] as String?,
-      packBarcode: json['packBarcode'] as String?,
+      expiryDate: json['expiryDate']?.toString(),
+      packBarcode: json['packBarcode']?.toString(),
       packMultiplier: (json['packMultiplier'] as num?)?.toInt() ?? 1,
       packPrice: (json['packPrice'] as num?)?.toDouble() ?? 0.0,
-      packName: json['packName'] as String?,
-      imageUrl: json['imageUrl'] as String?,
-      isTobacco: json['isTobacco'] as bool? ?? false,
+      packName: json['packName']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
+      isTobacco: rawIsTobacco == true || rawIsTobacco == 1 || rawIsTobacco == 'true',
       piecesPerPack: (json['piecesPerPack'] as num?)?.toInt() ?? 20,
       packsPerCarton: (json['packsPerCarton'] as num?)?.toInt() ?? 10,
       singlePiecePrice: (json['singlePiecePrice'] as num?)?.toDouble() ?? 0.0,
@@ -268,7 +270,7 @@ class ProductModel extends Product {
       wholesaleCartonPrice: (json['wholesaleCartonPrice'] as num?)?.toDouble() ?? 0.0,
       wholesalePackPrice: (json['wholesalePackPrice'] as num?)?.toDouble() ?? 0.0,
       cartonCostPrice: (json['cartonCostPrice'] as num?)?.toDouble() ?? 0.0,
-      unitType: json['unitType'] as String? ?? 'unit',
+      unitType: json['unitType']?.toString() ?? 'unit',
     );
   }
 

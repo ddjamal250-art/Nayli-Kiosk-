@@ -46,10 +46,10 @@ class _BackupPageState extends State<BackupPage> {
 
   void _loadSettings() {
     final box = HiveDatabase.settingsBox;
-    _telegramTokenController.text = box.get('telegram_bot_token', defaultValue: '');
-    _telegramChatIdController.text = box.get('telegram_chat_id', defaultValue: '');
-    _whatsAppPhoneController.text = box.get('merchant_whatsapp_phone', defaultValue: '');
-    _autoBackupOnShiftClose = box.get('auto_backup_on_shift_close', defaultValue: true);
+    _telegramTokenController.text = box.get('telegram_bot_token', defaultValue: '')?.toString() ?? '';
+    _telegramChatIdController.text = box.get('telegram_chat_id', defaultValue: '')?.toString() ?? '';
+    _whatsAppPhoneController.text = box.get('merchant_whatsapp_phone', defaultValue: '')?.toString() ?? '';
+    _autoBackupOnShiftClose = box.get('auto_backup_on_shift_close', defaultValue: true) == true;
   }
 
   Future<void> _saveSettings() async {
@@ -174,12 +174,22 @@ class _BackupPageState extends State<BackupPage> {
 
   Future<void> _loadBackups() async {
     setState(() => _isLoading = true);
-    final list = await BackupService.listLocalBackups();
-    if (mounted) {
-      setState(() {
-        _backups = list;
-        _isLoading = false;
-      });
+    try {
+      final list = await BackupService.listLocalBackups();
+      if (mounted) {
+        setState(() {
+          _backups = list;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading backups: $e');
+      if (mounted) {
+        setState(() {
+          _backups = [];
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -288,7 +298,7 @@ class _BackupPageState extends State<BackupPage> {
                               controller: customPathCtrl,
                               style: const TextStyle(fontSize: 12.5),
                               decoration: InputDecoration(
-                                hintText: 'مثال: G:\\data\\graviola_migration_to_nayli.nbak',
+                                hintText: 'مثال: G:\\data\\nayli_market_backup.nbak',
                                 isDense: true,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -901,9 +911,10 @@ class _BackupPageState extends State<BackupPage> {
                                   final success = await BackupService.restoreDatabaseFromFile(File(item.filePath));
                                   setState(() => _isLoading = false);
                                   if (success && mounted) {
+                                    context.read<ProductBloc>().add(LoadProducts());
+                                    await _loadBackups();
                                     SoundService.playSaveSuccess();
                                     SnackbarHelper.showSuccess(context, '✅ تم استرجاع البيانات بنجاح!');
-                                    // reload app if needed
                                   } else if (mounted) {
                                     SoundService.playWarning();
                                     SnackbarHelper.showError(context, '❌ فشل في استرجاع البيانات، تأكد من صحة الملف.');

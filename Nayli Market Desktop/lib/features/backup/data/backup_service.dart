@@ -139,11 +139,10 @@ class BackupService {
     }
   }
 
-  /// List all local backup archives from app directory and external/connected drives
+  /// List all local backup archives from app directory and external/connected drives safely
   static Future<List<BackupSnapshotInfo>> listLocalBackups() async {
     final list = <BackupSnapshotInfo>[];
     final Set<String> scannedPaths = {};
-
     final directoriesToScan = <Directory>[];
 
     // 1. Primary app backup directory
@@ -152,13 +151,12 @@ class BackupService {
       directoriesToScan.add(backupDir);
     } catch (_) {}
 
-    // 2. Common external backup locations on Windows / Android
+    // 2. Windows specific backup folders (ONLY dedicated folders, NEVER arbitrary drive roots like C:\ or D:\)
     if (Platform.isWindows) {
-      final driveLetters = ['G', 'D', 'E', 'F', 'H', 'C'];
+      final driveLetters = ['D', 'E', 'F', 'G', 'H', 'C'];
       for (final letter in driveLetters) {
-        directoriesToScan.add(Directory('$letter:\\data'));
         directoriesToScan.add(Directory('$letter:\\NayliMarket_AutoBackups'));
-        directoriesToScan.add(Directory('$letter:\\'));
+        directoriesToScan.add(Directory('$letter:\\NayliKiosk_Backups'));
       }
     }
 
@@ -176,10 +174,22 @@ class BackupService {
     for (final dir in directoriesToScan) {
       try {
         if (!dir.existsSync()) continue;
-        final files = dir
-            .listSync(recursive: false)
-            .whereType<File>()
-            .where((f) => f.path.toLowerCase().endsWith('.nbak') || f.path.toLowerCase().endsWith('.zip'));
+
+        final isDedicated = dir.path.toLowerCase().contains('nayli') || dir.path.toLowerCase().contains('backup');
+        final files = dir.listSync(recursive: false).whereType<File>().where((f) {
+          final p = f.path.toLowerCase();
+          final name = f.uri.pathSegments.isNotEmpty ? f.uri.pathSegments.last.toLowerCase() : p;
+
+          if (p.endsWith('.nbak')) return true;
+          if (p.endsWith('.zip')) {
+            // If in a general folder like Downloads or Documents, strictly require Nayli/Backup in filename
+            if (!isDedicated) {
+              return name.contains('nayli') || name.contains('backup') || name.contains('kiosk');
+            }
+            return true;
+          }
+          return false;
+        });
 
         for (var file in files) {
           final normPath = file.path.toLowerCase();
@@ -188,22 +198,32 @@ class BackupService {
 
           try {
             final stat = file.statSync();
-            final bytes = file.readAsBytesSync();
+            // Skip files larger than 150MB to prevent memory exhaustion
+            if (stat.size > 150 * 1024 * 1024) continue;
+
             int pCount = 0, iCount = 0, cCount = 0, dCount = 0;
 
+            // Read asynchronously without blocking UI thread
+            final bytes = await file.readAsBytes();
+
             try {
-              final archive = ZipDecoder().decodeBytes(bytes);
+              final archive = ZipDecoder().decodeBytes(bytes, verify: false);
               final jsonFile = archive.findFile('nayli_market_database.json') ??
                   archive.files.where((f) => f.name.endsWith('.json')).firstOrNull;
 
               if (jsonFile != null) {
-                final content = utf8.decode(jsonFile.content as List<int>);
-                final map = jsonDecode(content) as Map<String, dynamic>;
-                final stats = map['stats'] as Map<String, dynamic>?;
-                pCount = stats?['productsCount'] ?? (map['products'] as List?)?.length ?? 0;
-                iCount = stats?['invoicesCount'] ?? (map['invoices'] as List?)?.length ?? 0;
-                cCount = stats?['customersCount'] ?? (map['customers'] as List?)?.length ?? 0;
-                dCount = stats?['documentsCount'] ?? (map['documents'] as List?)?.length ?? 0;
+                final contentBytes = jsonFile.content is List<int>
+                    ? (jsonFile.content as List<int>)
+                    : (jsonFile.readBytes() ?? <int>[]);
+                if (contentBytes.isNotEmpty) {
+                  final content = utf8.decode(contentBytes);
+                  final map = jsonDecode(content) as Map<String, dynamic>;
+                  final stats = map['stats'] as Map<String, dynamic>?;
+                  pCount = stats?['productsCount'] ?? (map['products'] as List?)?.length ?? 0;
+                  iCount = stats?['invoicesCount'] ?? (map['invoices'] as List?)?.length ?? 0;
+                  cCount = stats?['customersCount'] ?? (map['customers'] as List?)?.length ?? 0;
+                  dCount = stats?['documentsCount'] ?? (map['documents'] as List?)?.length ?? 0;
+                }
               }
             } catch (_) {
               // Try raw JSON format
@@ -277,7 +297,7 @@ class BackupService {
     }
   }
 
-  /// Restore Database from a backup file (.nbak / .zip / .json)
+  /// Restore Database from a backup file (.nbak / .zip / .json) safely and atomically
   static Future<bool> restoreDatabaseFromFile(File backupFile) async {
     try {
       if (!backupFile.existsSync()) return false;
@@ -290,123 +310,198 @@ class BackupService {
       final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
       if (!await imagesDir.exists()) await imagesDir.create(recursive: true);
 
-      // Try reading as zip archive
+      // 1. Try reading as zip archive
       try {
-        final archive = ZipDecoder().decodeBytes(bytes);
+        final archive = ZipDecoder().decodeBytes(bytes, verify: false);
         final jsonFile = archive.findFile('nayli_market_database.json') ??
             archive.files.where((f) => f.name.endsWith('.json')).firstOrNull;
 
         if (jsonFile != null) {
-          final content = utf8.decode(jsonFile.content as List<int>);
-          data = jsonDecode(content) as Map<String, dynamic>;
+          final contentBytes = jsonFile.content is List<int>
+              ? (jsonFile.content as List<int>)
+              : (jsonFile.readBytes() ?? <int>[]);
+          if (contentBytes.isNotEmpty) {
+            final content = utf8.decode(contentBytes);
+            final decoded = jsonDecode(content);
+            if (decoded is Map) {
+              data = Map<String, dynamic>.from(decoded);
+            }
 
-          // Extract embedded images
-          for (var file in archive.files) {
-            if (file.isFile && file.name.startsWith('images/')) {
-              final fileName = file.name.split('/').last;
-              if (fileName.isNotEmpty) {
-                final localFile = File('${imagesDir.path}/$fileName');
-                await localFile.writeAsBytes(file.content as List<int>);
+            // Extract embedded images
+            for (var file in archive.files) {
+              if (file.isFile && file.name.startsWith('images/')) {
+                final fileName = file.name.split('/').last;
+                if (fileName.isNotEmpty) {
+                  final imgBytes = file.content is List<int>
+                      ? (file.content as List<int>)
+                      : (file.readBytes() ?? <int>[]);
+                  if (imgBytes.isNotEmpty) {
+                    final localFile = File('${imagesDir.path}/$fileName');
+                    await localFile.writeAsBytes(imgBytes);
+                  }
+                }
               }
             }
           }
         }
-      } catch (_) {
-        // Not a zip, fallback to raw UTF-8 JSON text
+      } catch (e) {
+        debugPrint('Zip extraction notice: $e');
       }
 
-      // If not zip or archive extraction produced no data, try raw JSON
+      // 2. If not zip or archive extraction produced no data, try raw JSON text
       if (data == null) {
-        final content = utf8.decode(bytes);
-        data = jsonDecode(content) as Map<String, dynamic>;
+        try {
+          final content = utf8.decode(bytes);
+          final decoded = jsonDecode(content);
+          if (decoded is Map) {
+            data = Map<String, dynamic>.from(decoded);
+          }
+        } catch (_) {}
       }
 
-      // 1. Restore Products safely as ProductModel instances
+      if (data == null) {
+        debugPrint('Failed to extract valid JSON data from backup file');
+        return false;
+      }
+
+      // 3. Restore Products safely & atomically
       if (data['products'] is List) {
-        await HiveDatabase.productBox.clear();
-        for (var p in (data['products'] as List)) {
+        final rawList = data['products'] as List;
+        final parsedModels = <ProductModel>[];
+        for (var p in rawList) {
           if (p is Map) {
-            final pMap = Map<String, dynamic>.from(p);
-            // Rewrite local image filenames to absolute path for the current device
-            if (pMap['imageUrl'] != null) {
-              String img = pMap['imageUrl'].toString();
-              if (!img.startsWith('http') && !img.contains('/') && !img.contains('\\')) {
-                pMap['imageUrl'] = '${imagesDir.path}/$img';
+            try {
+              final pMap = Map<String, dynamic>.from(p);
+              if (pMap['imageUrl'] != null) {
+                String img = pMap['imageUrl'].toString();
+                if (!img.startsWith('http') && !img.contains('/') && !img.contains('\\')) {
+                  pMap['imageUrl'] = '${imagesDir.path}/$img';
+                }
               }
+              var model = ProductModel.fromJson(pMap);
+              if (model.id.isEmpty) {
+                final fallbackId = model.barcode.isNotEmpty ? model.barcode : 'prod_${DateTime.now().microsecondsSinceEpoch}_${parsedModels.length}';
+                model = model.copyWith(id: fallbackId);
+              }
+              parsedModels.add(model);
+            } catch (err) {
+              debugPrint('Warning: Skipped corrupted product entry: $err');
             }
-            final model = ProductModel.fromJson(pMap);
+          }
+        }
+
+        if (parsedModels.isNotEmpty || rawList.isEmpty) {
+          await HiveDatabase.productBox.clear();
+          for (var model in parsedModels) {
             await HiveDatabase.productBox.put(model.id, model);
           }
         }
       }
 
-      // 2. Restore Invoices
+      // 4. Restore Invoices safely
       if (data['invoices'] is List) {
-        await HiveDatabase.invoicesBox.clear();
+        final parsedInvoices = <String, Map<String, dynamic>>{};
         for (var inv in (data['invoices'] as List)) {
           if (inv is Map) {
-            final id = inv['id']?.toString() ?? inv['invoiceNumber']?.toString() ?? inv['reference']?.toString();
-            if (id != null) {
-              await HiveDatabase.invoicesBox.put(id, Map<String, dynamic>.from(inv));
-            }
+            try {
+              final invMap = Map<String, dynamic>.from(inv);
+              final id = invMap['id']?.toString() ?? invMap['invoiceNumber']?.toString() ?? invMap['reference']?.toString();
+              if (id != null && id.isNotEmpty) {
+                parsedInvoices[id] = invMap;
+              }
+            } catch (_) {}
           }
+        }
+        await HiveDatabase.invoicesBox.clear();
+        for (var entry in parsedInvoices.entries) {
+          await HiveDatabase.invoicesBox.put(entry.key, entry.value);
         }
       }
 
-      // 3. Restore Customers
+      // 5. Restore Customers safely
       if (data['customers'] is List) {
-        await HiveDatabase.customersBox.clear();
+        final parsedCustomers = <String, Map<String, dynamic>>{};
         for (var c in (data['customers'] as List)) {
           if (c is Map) {
-            final id = c['id']?.toString() ?? c['name']?.toString();
-            if (id != null) {
-              await HiveDatabase.customersBox.put(id, Map<String, dynamic>.from(c));
-            }
+            try {
+              final cMap = Map<String, dynamic>.from(c);
+              final id = cMap['id']?.toString() ?? cMap['name']?.toString();
+              if (id != null && id.isNotEmpty) {
+                parsedCustomers[id] = cMap;
+              }
+            } catch (_) {}
           }
+        }
+        await HiveDatabase.customersBox.clear();
+        for (var entry in parsedCustomers.entries) {
+          await HiveDatabase.customersBox.put(entry.key, entry.value);
         }
       }
 
-      // 4. Restore Documents
+      // 6. Restore Commercial Documents safely
       if (data['documents'] is List) {
         final docBox = HiveDatabase.commercialDocsBox;
-        await docBox.clear();
+        final parsedDocs = <String, Map<String, dynamic>>{};
         for (var doc in (data['documents'] as List)) {
           if (doc is Map) {
-            final id = doc['id']?.toString() ?? doc['reference']?.toString();
-            if (id != null) {
-              await docBox.put(id, Map<String, dynamic>.from(doc));
-            }
+            try {
+              final docMap = Map<String, dynamic>.from(doc);
+              final id = docMap['id']?.toString() ?? docMap['reference']?.toString();
+              if (id != null && id.isNotEmpty) {
+                parsedDocs[id] = docMap;
+              }
+            } catch (_) {}
           }
+        }
+        await docBox.clear();
+        for (var entry in parsedDocs.entries) {
+          await docBox.put(entry.key, entry.value);
         }
       }
 
-      // 5. Restore Quick Items
+      // 7. Restore Quick Items safely
       if (data['quick_items'] is List) {
         final quickBox = HiveDatabase.quickItemsBox;
-        await quickBox.clear();
+        final parsedQuick = <Map<String, dynamic>>[];
         for (var q in (data['quick_items'] as List)) {
           if (q is Map) {
-            await quickBox.add(Map<String, dynamic>.from(q));
+            try {
+              parsedQuick.add(Map<String, dynamic>.from(q));
+            } catch (_) {}
           }
+        }
+        await quickBox.clear();
+        for (var item in parsedQuick) {
+          await quickBox.add(item);
         }
       }
 
-      // 6. Restore Customer Debts
+      // 8. Restore Customer Debts safely
       if (data['customer_debts'] is List) {
         final debtBox = HiveDatabase.customerDebtsBox;
-        await debtBox.clear();
+        final parsedDebts = <Map<String, dynamic>>[];
         for (var d in (data['customer_debts'] as List)) {
           if (d is Map) {
-            await debtBox.add(Map<String, dynamic>.from(d));
+            try {
+              parsedDebts.add(Map<String, dynamic>.from(d));
+            } catch (_) {}
           }
+        }
+        await debtBox.clear();
+        for (var item in parsedDebts) {
+          await debtBox.add(item);
         }
       }
 
-      // 7. Restore Settings
+      // 9. Restore Settings safely (preserve machine identity)
       if (data['settings'] is Map) {
         final setMap = data['settings'] as Map;
         for (var key in setMap.keys) {
-          await HiveDatabase.settingsBox.put(key, setMap[key]);
+          final k = key.toString();
+          if (k == 'device_id' || k == 'hardware_fingerprint' || k == 'window_size') continue;
+          try {
+            await HiveDatabase.settingsBox.put(k, setMap[key]);
+          } catch (_) {}
         }
       }
 

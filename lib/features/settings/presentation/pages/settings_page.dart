@@ -1419,7 +1419,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ListTile(
               leading: const CircleAvatar(backgroundColor: Color(0xFFFFEBEE), child: Icon(Icons.settings_backup_restore_rounded, color: Colors.deepOrange)),
               title: const Text('استرجاع قاعدة البيانات من ملف خارجي (.nbak / ZIP) 📥'),
-              subtitle: const Text('استيراد المنتجات والبيانات من فلاش ديسك أو قرص صلب (مثل G:\\data\\graviola_migration_to_nayli.nbak)'),
+              subtitle: const Text('استيراد المنتجات والبيانات من فلاش ديسك أو قرص صلب (مثل G:\\data\\nayli_market_backup.nbak)'),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/backups');
