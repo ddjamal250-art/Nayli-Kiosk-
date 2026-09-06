@@ -29,7 +29,9 @@ class OnlineLicenseService {
   // Developer Telegram Bot (Obfuscated to protect against automated scrapers)
   static String get defaultBotToken {
     try {
-      return utf8.decode(base64.decode('ODY2NzM5MDkyNjpBQUV1UWc0Wks4ejdLbXdBYWVtb0dHZFpGRHhJLUlpcVBPSQ=='));
+      // Obfuscated using XOR 42
+      const List<int> _o = [18, 16, 16, 17, 25, 19, 26, 19, 24, 16, 16, 107, 107, 103, 79, 123, 77, 22, 116, 101, 18, 80, 17, 101, 87, 85, 107, 75, 79, 87, 85, 109, 109, 78, 116, 102, 110, 82, 107, 19, 107, 83, 87, 122, 101, 107];
+      return String.fromCharCodes(_o.map((e) => e ^ 42));
     } catch (_) {
       return '';
     }
@@ -37,7 +39,9 @@ class OnlineLicenseService {
 
   static String get defaultChatId {
     try {
-      return utf8.decode(base64.decode('NTExNTQ2NTI2Nw=='));
+      // Obfuscated using XOR 42
+      const List<int> _o = [21, 27, 27, 21, 22, 24, 21, 24, 22, 25];
+      return String.fromCharCodes(_o.map((e) => e ^ 42));
     } catch (_) {
       return '';
     }

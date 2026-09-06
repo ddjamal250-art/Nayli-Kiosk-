@@ -271,20 +271,10 @@ class LicenseService {
         };
       }
 
-      // Check for Short PIN format: NY-123456 or 123456
-      final cleanPin = input.replaceAll('NY-', '').replaceAll('-', '').trim();
-      if (cleanPin.length == 6 && int.tryParse(cleanPin) != null) {
-        await grantPermanentLicense();
-        final currentShop = HiveDatabase.shopBox.isNotEmpty ? HiveDatabase.shopBox.getAt(0)?.name ?? 'متجر كاشير' : 'متجر كاشير';
-        await HiveDatabase.settingsBox.put('licensed_store_name', currentShop);
-        return {
-          'success': true,
-          'message': '🎉 تم قبول الرمز وتفعيل الحاسوب بنجاح!',
-          'storeName': currentShop,
-        };
-      }
+      // Short PIN bypass removed for security reasons - it allowed any 6-digit number to grant a permanent license.
+      // Activation must now strictly use the cryptographically signed barcode.
 
-      return {'success': false, 'message': '❌ صيغة الكود غير معترف بها. يرجى مسح الرمز من شاشة الهاتف.'};
+      return {'success': false, 'message': '❌ صيغة الكود غير معترف بها. يرجى مسح رمز الـ QR للتفعيل.'};
     } catch (e) {
       return {'success': false, 'message': '❌ خطأ أثناء معالجة الرمز: $e'};
     }

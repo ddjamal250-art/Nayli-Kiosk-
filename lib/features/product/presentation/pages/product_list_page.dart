@@ -1679,7 +1679,11 @@ class _ProductListPageState extends State<ProductListPage> {
                 label: Text('بلوتوث ($copies)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                 onPressed: () async {
                   Navigator.pop(ctx);
-                  final isConnected = await PrintBluetoothThermal.connectionStatus;
+                  bool isConnected = false;
+                  if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
+                    isConnected = await PrintBluetoothThermal.connectionStatus;
+                  }
+                  
                   if (!isConnected) {
                     if (context.mounted) {
                       context.showAppSnackBar(
@@ -1695,7 +1699,9 @@ class _ProductListPageState extends State<ProductListPage> {
                       itemsWithCopies: [MapEntry(product, copies)],
                       config: config,
                     );
-                    await PrintBluetoothThermal.writeBytes(bytes);
+                    if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
+                      await PrintBluetoothThermal.writeBytes(bytes);
+                    }
                     SoundService.playCheckoutSuccess();
                     if (context.mounted) {
                       context.showAppSnackBar(

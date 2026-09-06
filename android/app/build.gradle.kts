@@ -1,3 +1,11 @@
+import java.util.Properties
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -6,7 +14,7 @@ plugins {
 }
 
 android {
-    namespace = "dz.nayli.kiosk"
+    namespace = "dz.nayli.market"
     compileSdk = 36
     ndkVersion = "27.0.12077973"
 
@@ -20,8 +28,8 @@ android {
     }
 
     defaultConfig {
-        // Unique Application ID for Nayli Kiosk (Installs side-by-side with Nayli Market)
-        applicationId = "dz.nayli.kiosk"
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "dz.nayli.market"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -33,9 +41,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("nayli_release.jks")
-            storePassword = "NayliMarketSecure2026!"
-            keyAlias = "naylimarket"
-            keyPassword = "NayliMarketSecure2026!"
+            storePassword = localProperties.getProperty("storePassword") ?: System.getenv("STORE_PASSWORD") ?: ""
+            keyAlias = localProperties.getProperty("keyAlias") ?: System.getenv("KEY_ALIAS") ?: "naylimarket"
+            keyPassword = localProperties.getProperty("keyPassword") ?: System.getenv("KEY_PASSWORD") ?: ""
         }
     }
 

@@ -130,7 +130,11 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       return;
     }
 
-    final isConnected = await PrintBluetoothThermal.connectionStatus;
+    bool isConnected = false;
+    if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
+      isConnected = await PrintBluetoothThermal.connectionStatus;
+    }
+    
     if (!isConnected) {
       if (mounted) {
         context.showAppSnackBar('⚠️ الطابعة الحرارية غير متصلة بالبلوتوث! يرجى توصيلها في الإعدادات أو استخدام طباعة ويندوز/PDF.', backgroundColor: Colors.red[800]!);
@@ -147,7 +151,9 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       );
 
       SoundService.playPrintSound();
-      await PrintBluetoothThermal.writeBytes(bytes);
+      if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
+        await PrintBluetoothThermal.writeBytes(bytes);
+      }
 
       SoundService.playCheckoutSuccess();
       if (mounted) {

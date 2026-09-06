@@ -114,8 +114,8 @@ class BackupService {
     final backupFile = File('${backupDir.path}/Backup_NayliMarket_$dateStr.nbak');
     await backupFile.writeAsBytes(zipBytes!);
 
-    // Check if USB / Secondary drive is available and mirror
-    await _mirrorToExternalDrives(backupFile.readAsBytesSync(), backupFile.uri.pathSegments.last);
+    // Check if USB / Secondary drive is available and mirror (async read to avoid blocking UI thread)
+    await _mirrorToExternalDrives(await backupFile.readAsBytes(), backupFile.uri.pathSegments.last);
 
     return backupFile;
   }

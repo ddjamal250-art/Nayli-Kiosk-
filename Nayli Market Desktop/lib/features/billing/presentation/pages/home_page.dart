@@ -17,7 +17,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
-import '../../../../core/utils/update_checker.dart';
+import '../../../../core/utils/expiry_tracker_service.dart';
 
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -27,7 +27,6 @@ import '../bloc/billing_bloc.dart';
 import '../widgets/quick_amount_modal.dart';
 import '../widgets/smart_scale_modal.dart';
 import '../widgets/held_carts_modal.dart';
-import '../widgets/kiosk_tobacco_modal.dart';
 
 class QuickItem {
   final String id;
@@ -105,9 +104,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      UpdateChecker.checkForUpdates(context);
-    });
     WidgetsBinding.instance.addObserver(this);
     _scannerController = MobileScannerController(
       detectionSpeed: DetectionSpeed.unrestricted,
@@ -185,37 +181,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     SoundService.playScanBeep();
   }
 
-  void _onProductSelectedForSale(Product product) {
-    final isTobaccoOrKioskUnit = product.isTobacco ||
-        product.category.contains('تبغ') ||
-        product.category.contains('سجائر') ||
-        product.category.contains('شمة') ||
-        product.category.contains('معسل') ||
-        product.singlePiecePrice > 0 ||
-        product.cartonPrice > 0 ||
-        product.unitType == 'meter' ||
-        product.unitType == 'ml';
-
-    if (isTobaccoOrKioskUnit) {
-      KioskTobaccoModal.show(context, product);
-      return;
-    }
-
-    context.read<BillingBloc>().add(AddProductToCartEvent(product));
-    SoundService.playScanBeep();
-    if (_currentSheetSize < 0.35) {
-      _sheetController.animateTo(
-        0.52,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-      );
-    }
-    context.showAppSnackBar(
-      '✅ تمت إضافة ${product.name} (${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
-      icon: Icons.add_shopping_cart,
-    );
-  }
-
   void _addQuickItem(QuickItem item) {
     if (item.linkedProductId != null && item.linkedProductId!.isNotEmpty) {
       final productState = context.read<ProductBloc>().state;
@@ -223,7 +188,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
           .where((p) => p.id == item.linkedProductId)
           .firstOrNull;
       if (matched != null) {
-        _onProductSelectedForSale(matched);
+        context.read<BillingBloc>().add(AddProductToCartEvent(matched));
+        SoundService.playScanBeep();
+        if (_currentSheetSize < 0.35) {
+          _sheetController.animateTo(
+            0.52,
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeOutCubic,
+          );
+        }
+        context.showAppSnackBar(
+          '✅ تمت إضافة ${matched.name} (${matched.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
+          icon: Icons.add_shopping_cart,
+        );
         return;
       }
     }
@@ -492,7 +469,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     }
 
     if (matchedProduct != null) {
-      _onProductSelectedForSale(matchedProduct);
+      context.read<BillingBloc>().add(AddProductToCartEvent(matchedProduct));
     } else {
       context.read<BillingBloc>().add(ScanBarcodeEvent(code));
     }
@@ -884,24 +861,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   const SizedBox(height: 10),
 
                   // Mode Segmented Buttons (From Stock vs Custom)
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
                     children: [
-                      Expanded(
-                        child: ChoiceChip(
-                          label: const Center(child: Text('📦 تثبيت من المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          selected: selectedTab == 0,
-                          selectedColor: AppTheme.primaryColor.withOpacity(0.18),
-                          onSelected: (v) => setDlgState(() => selectedTab = 0),
-                        ),
+                      ChoiceChip(
+                        label: const Text('📦 تثبيت من المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        selected: selectedTab == 0,
+                        selectedColor: AppTheme.primaryColor.withOpacity(0.18),
+                        onSelected: (v) => setDlgState(() => selectedTab = 0),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ChoiceChip(
-                          label: const Center(child: Text('✏️ سلعة مخصصة جديدة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                          selected: selectedTab == 1,
-                          selectedColor: AppTheme.primaryColor.withOpacity(0.18),
-                          onSelected: (v) => setDlgState(() => selectedTab = 1),
-                        ),
+                      ChoiceChip(
+                        label: const Text('✏️ سلعة مخصصة جديدة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        selected: selectedTab == 1,
+                        selectedColor: AppTheme.primaryColor.withOpacity(0.18),
+                        onSelected: (v) => setDlgState(() => selectedTab = 1),
                       ),
                     ],
                   ),
@@ -1205,29 +1180,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     });
   }
 
-  int _getExpiringProductsCount() {
-    try {
-      final box = HiveDatabase.productBox;
-      int count = 0;
-      final now = DateTime.now();
-      for (var key in box.keys) {
-        final p = box.get(key);
-        if (p != null && p.expiryDate != null && p.expiryDate!.isNotEmpty) {
-          try {
-            final eDate = DateFormat('yyyy-MM-dd').parse(p.expiryDate!);
-            final diff = eDate.difference(now).inDays;
-            if (diff >= 0 && diff <= 7) {
-              count++;
-            }
-          } catch (_) {}
-        }
-      }
-      return count;
-    } catch (_) {
-      return 0;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1258,44 +1210,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               Positioned.fill(
                 child: _buildScannerSection(),
               ),
-
-              // Expiry Alert Banner
-              if (_getExpiringProductsCount() > 0)
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 8,
-                  left: 16,
-                  right: 16,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => context.push('/products/expiry-monitor'),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent.shade700,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.warning_rounded, color: Colors.white, size: 28),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                '⚠️ انتبه: يوجد ${_getExpiringProductsCount()} منتجات تقترب من انتهاء صلاحيتها!',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                            ),
-                            const Icon(Icons.chevron_right, color: Colors.white),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
 
               // 2. DRAGGABLE SCROLLABLE CART SHEET
               DraggableScrollableSheet(
@@ -1339,65 +1253,81 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 // Multi-Scan Stacked Barcode Toggle Button
                 _buildMultiScanButton(),
 
-                // Low Stock Alert Badge
-                BlocBuilder<ProductBloc, ProductState>(
-                  builder: (context, prodState) {
-                    final lowStockProducts = prodState.products.where((p) => p.stock <= 5).toList();
-                    if (lowStockProducts.isEmpty) return const SizedBox.shrink();
+                // Top Alerts: Expiry & Low Stock
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Expiry Alert Badge
+                    BlocBuilder<ProductBloc, ProductState>(
+                      builder: (context, prodState) {
+                        final expiringList = ExpiryTrackerService.getExpiringProducts(productsList: prodState.products);
+                        final urgentCount = expiringList.where((i) => i.status == ExpiryStatus.expired || i.status == ExpiryStatus.critical7Days).length;
+                        if (urgentCount == 0) return const SizedBox.shrink();
 
-                    return InkWell(
-                      onTap: () => _handleLowStockBadgeTap(lowStockProducts),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[900]?.withOpacity(0.85),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.amberAccent.withOpacity(0.8), width: 1.2),
-                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${lowStockProducts.length} مخزون منخفض',
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: InkWell(
+                            onTap: () => context.push('/expiry-monitor'),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.red[900]?.withOpacity(0.90),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.redAccent, width: 1.2),
+                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.hourglass_bottom_rounded, color: Colors.amberAccent, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$urgentCount قاربت الصلاحية ⏳',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 8),
-                // Shopping List Button
-                InkWell(
-                  onTap: () => context.push('/products/shopping-list'),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.teal[800]?.withOpacity(0.85),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white70, width: 1.2),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                          ),
+                        );
+                      },
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.shopping_cart_checkout, color: Colors.white, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          'التسوق',
-                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+
+                    // Low Stock Alert Badge
+                    BlocBuilder<ProductBloc, ProductState>(
+                      builder: (context, prodState) {
+                        final lowStockProducts = prodState.products.where((p) => p.stock <= 5).toList();
+                        if (lowStockProducts.isEmpty) return const SizedBox.shrink();
+
+                        return InkWell(
+                          onTap: () => _handleLowStockBadgeTap(lowStockProducts),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[900]?.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.amberAccent.withOpacity(0.8), width: 1.2),
+                              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${lowStockProducts.length} مخزون منخفض',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
 
                 // Full-Screen Settings & Management Hamburger Button
                 InkWell(
@@ -1767,19 +1697,42 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               ),
             ),
             const SizedBox(height: 14),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              icon: const Icon(Icons.inventory_2_outlined, size: 18),
-              label: const Text('الانتقال إلى كامل المخزن', style: TextStyle(fontWeight: FontWeight.bold)),
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.push('/products');
-              },
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 18),
+                    label: const Text('قائمة النواقص 🛒', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.push('/products/shopping-list');
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                    label: const Text('كامل المخزن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.push('/products');
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         ),

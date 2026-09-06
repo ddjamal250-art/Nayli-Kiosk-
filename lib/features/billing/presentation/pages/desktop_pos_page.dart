@@ -19,11 +19,11 @@ import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/staff_permissions_service.dart';
+import '../../../../core/utils/whatsapp_helper.dart';
 import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../settings/presentation/pages/advanced_pos_settings_page.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import '../../../../core/utils/tpe_payment_service.dart';
-import '../../../../core/utils/whatsapp_helper.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -35,7 +35,6 @@ import '../widgets/quick_items_manager_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
-import '../widgets/kiosk_tobacco_modal.dart';
 
 enum PosPriceTier { detail, demiGros, gros }
 
@@ -83,7 +82,6 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   static const List<Map<String, String>> _categoriesDef = [
     {'key': 'all', 'tr': 'cat_all', 'ar': 'الكل'},
-    {'key': 'tobacco', 'tr': 'cat_tobacco', 'ar': 'تبغ وسجائر'},
     {'key': 'beverages', 'tr': 'cat_beverages', 'ar': 'المشروبات'},
     {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'البقوليات'},
     {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات'},
@@ -118,28 +116,33 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   }
 
   Future<void> _initLocalServer() async {
-    final started = await LocalSyncServer.startServer();
-    final ip = await LocalSyncServer.getLocalIp();
-    
-    _remoteCartSub = LocalSyncServer.remoteCartStream.listen((cart) {
-      if (mounted) {
-        setState(() {
-          _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
-        });
-        SoundService.playRestockSound();
-        SnackbarHelper.showSuccess(
-          context,
-          '🔔 ${context.tr('pos_incoming_carts')}: ${cart.senderName} (${cart.token}) - ${cart.totalAmount.toStringAsFixed(2)} DA',
-        );
-      }
-    });
+    try {
+      final started = await LocalSyncServer.startServer();
+      final ip = await LocalSyncServer.getLocalIp();
+      
+      _remoteCartSub = LocalSyncServer.remoteCartStream.listen((cart) {
+        if (mounted) {
+          setState(() {
+            _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
+          });
+          SoundService.playRestockSound();
+          SnackbarHelper.showSuccess(
+            context,
+            '🔔 ${context.tr('pos_incoming_carts')}: ${cart.senderName} (${cart.token}) - ${cart.totalAmount.toStringAsFixed(2)} DA',
+          );
+        }
+      });
 
-    _handoffCartSub = LocalSyncServer.posHandoffStream.listen((cart) {
-      if (mounted) {
-        SoundService.playMemberCardScan();
-        _showIncomingHandoffBanner(cart);
-      }
-    });
+      _handoffCartSub = LocalSyncServer.posHandoffStream.listen((cart) {
+        if (mounted) {
+          SoundService.playMemberCardScan();
+          _showIncomingHandoffBanner(cart);
+        }
+      });
+    } catch (e) {
+      debugPrint('Local server init failed: $e');
+    }
+  }
 
     _unlistedKioskScanSub = KioskService.unlistedScanStream.listen((scanData) {
       if (mounted) {
@@ -199,53 +202,6 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     SoundService.playScanBeep();
   }
 
-  void _onProductSelectedForSale(Product product, {int multiplier = 1}) {
-    final isTobaccoOrKioskUnit = product.isTobacco ||
-        product.category.contains('تبغ') ||
-        product.category.contains('سجائر') ||
-        product.category.contains('شمة') ||
-        product.category.contains('معسل') ||
-        product.singlePiecePrice > 0 ||
-        product.cartonPrice > 0 ||
-        product.unitType == 'meter' ||
-        product.unitType == 'ml';
-
-    if (isTobaccoOrKioskUnit) {
-      KioskTobaccoModal.show(
-        context,
-        product,
-        isWholesale: _activePriceTier == PosPriceTier.gros,
-      );
-      return;
-    }
-
-    double effectivePrice = product.price;
-    if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
-      effectivePrice = product.wholesalePrice;
-    } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
-      effectivePrice = (product.price + product.wholesalePrice) / 2;
-    }
-
-    if (_isReturnMode) {
-      effectivePrice = -effectivePrice.abs();
-    }
-
-    final itemProduct = Product(
-      id: product.id,
-      name: _isReturnMode ? '[${context.tr('return_mode')}] ${product.name}' : product.name,
-      barcode: product.barcode,
-      price: effectivePrice,
-      costPrice: product.costPrice,
-      stock: product.stock,
-      category: product.category,
-      imageUrl: product.imageUrl,
-    );
-
-    for (int i = 0; i < multiplier; i++) {
-      context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
-    }
-  }
-
   void _handleBarcodeSubmit(String rawInput) {
     if (rawInput.trim().isEmpty) return;
     final input = rawInput.trim();
@@ -290,14 +246,6 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       final qBarcode = matchedQuickItem['barcode']?.toString() ?? barcodeToScan;
       final qId = matchedQuickItem['id']?.toString() ?? barcodeToScan;
 
-      final existingProduct = HiveDatabase.productBox.values
-          .where((p) => (p.barcode.isNotEmpty && p.barcode == qBarcode) || p.id == qId)
-          .firstOrNull;
-      if (existingProduct != null) {
-        _onProductSelectedForSale(existingProduct, multiplier: multiplier);
-        return;
-      }
-
       final quickProduct = Product(
         id: qId,
         name: _isReturnMode ? '[${context.tr('return_mode')}] $qName' : qName,
@@ -306,15 +254,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         costPrice: qCost,
         stock: (matchedQuickItem['stock'] as num?)?.toInt() ?? 999,
         category: 'بيع سريع',
-        isTobacco: matchedQuickItem['isTobacco'] == true,
-        singlePiecePrice: (matchedQuickItem['singlePiecePrice'] as num?)?.toDouble() ?? 0.0,
-        cartonPrice: (matchedQuickItem['cartonPrice'] as num?)?.toDouble() ?? 0.0,
-        wholesaleCartonPrice: (matchedQuickItem['wholesaleCartonPrice'] as num?)?.toDouble() ?? 0.0,
-        wholesalePackPrice: (matchedQuickItem['wholesalePackPrice'] as num?)?.toDouble() ?? 0.0,
-        unitType: matchedQuickItem['unitType']?.toString() ?? 'unit',
       );
 
-      _onProductSelectedForSale(quickProduct, multiplier: multiplier);
+      for (int i = 0; i < multiplier; i++) {
+        context.read<BillingBloc>().add(AddProductToCartEvent(quickProduct));
+      }
       return;
     }
 
@@ -370,7 +314,30 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     final product = products.where((p) => p.barcode == barcodeToScan).firstOrNull;
 
     if (product != null) {
-      _onProductSelectedForSale(product, multiplier: multiplier);
+      double effectivePrice = product.price;
+      if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
+        effectivePrice = product.wholesalePrice;
+      } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
+        effectivePrice = (product.price + product.wholesalePrice) / 2;
+      }
+
+      if (_isReturnMode) {
+        effectivePrice = -effectivePrice.abs();
+      }
+
+      final itemProduct = Product(
+        id: product.id,
+        name: _isReturnMode ? '[${context.tr('return_mode')}] ${product.name}' : product.name,
+        barcode: product.barcode,
+        price: effectivePrice,
+        costPrice: product.costPrice,
+        stock: product.stock,
+        category: product.category,
+      );
+
+      for (int i = 0; i < multiplier; i++) {
+        context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
+      }
     } else {
       context.read<BillingBloc>().add(ScanBarcodeEvent(barcodeToScan));
     }
@@ -550,15 +517,16 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       ChoiceChip(
                         label: const Text('نسبة %'),
                         selected: isPercent,
                         onSelected: (val) => setModalState(() => isPercent = true),
                       ),
-                      const SizedBox(width: 8),
                       ChoiceChip(
                         label: const Text('مبلغ د.ج'),
                         selected: !isPercent,
@@ -619,8 +587,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             Text(context.tr('quick_item_no_barcode')),
           ],
         ),
-        content: SizedBox(
-          width: 400,
+        content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -716,9 +686,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                 Text('${context.tr('pos_incoming_carts')} (${pending.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
-            content: SizedBox(
-              width: 550,
-              height: 400,
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 550, maxHeight: 400),
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.height * 0.8,
               child: pending.isEmpty
                   ? Center(
                       child: Column(
@@ -1112,15 +1084,17 @@ $itemsSummary
 شكراً لتعاملكم معنا! • Merci de votre visite!
 ''';
 
-    final launched = await WhatsAppReceiptHelper.sendDirectWhatsAppMessage(
-      phone: rawPhone,
+    final success = await WhatsAppReceiptHelper.launchWhatsApp(
+      phoneNumber: rawPhone,
       message: message,
     );
-    if (launched) {
-      SoundService.playCheckoutSuccess();
-      SnackbarHelper.showSuccess(context, '✅ تم فتح WhatsApp بنجاح!');
-    } else {
-      SnackbarHelper.showError(context, 'تعذر فتح تطبيق WhatsApp');
+    if (mounted) {
+      if (success) {
+        SoundService.playCheckoutSuccess();
+        SnackbarHelper.showSuccess(context, '✅ تم فتح تطبيق WhatsApp مباشرة وإرسال الوصل!');
+      } else {
+        SnackbarHelper.showWarning(context, 'تعذر فتح WhatsApp، تم نسخ نص الوصل إلى الحافظة تلقائياً');
+      }
     }
   }
 
@@ -1240,7 +1214,8 @@ $itemsSummary
             return Dialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: Container(
-                width: 720,
+                constraints: const BoxConstraints(maxWidth: 720),
+                width: MediaQuery.of(context).size.width * 0.9,
                 height: 560,
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -1309,8 +1284,8 @@ $itemsSummary
                                   borderRadius: BorderRadius.circular(10),
                                   onTap: () {
                                     SoundService.playScanBeep();
-                                    Navigator.pop(dialogCtx);
-                                    _onProductSelectedForSale(prod);
+                                    context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+                                    SnackbarHelper.showSuccess(context, 'تمت إضافة ${prod.name} للسلة');
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
@@ -1595,29 +1570,6 @@ $itemsSummary
     }
   }
 
-  int _getExpiringProductsCount() {
-    try {
-      final box = HiveDatabase.productBox;
-      int count = 0;
-      final now = DateTime.now();
-      for (var key in box.keys) {
-        final p = box.get(key);
-        if (p != null && p.expiryDate != null && p.expiryDate!.isNotEmpty) {
-          try {
-            final eDate = DateFormat('yyyy-MM-dd').parse(p.expiryDate!);
-            final diff = eDate.difference(now).inDays;
-            if (diff >= 0 && diff <= 7) {
-              count++;
-            }
-          } catch (_) {}
-        }
-      }
-      return count;
-    } catch (_) {
-      return 0;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1628,30 +1580,6 @@ $itemsSummary
               // Top Header Bar
               _buildTopHeaderBar(),
 
-              // Expiry Alert Banner
-              if (_getExpiringProductsCount() > 0)
-                Material(
-                  color: Colors.redAccent.shade700,
-                  child: InkWell(
-                    onTap: () => context.push('/products/expiry-monitor'),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.warning_rounded, color: Colors.white, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            '⚠️ انتبه: يوجد ${_getExpiringProductsCount()} منتجات تقترب من انتهاء صلاحيتها! انقر هنا للمراجعة.',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
               // Return Mode / Wholesale Banner if active
               if (_isReturnMode || _activePriceTier != PosPriceTier.detail)
                 _buildActiveModeNotice(),
@@ -1661,8 +1589,8 @@ $itemsSummary
                 child: Row(
                   children: [
                     // Left Pane: Cart, Totals, Actions (42% width)
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.42,
+                    Expanded(
+                      flex: 42,
                       child: _buildLeftCartPane(),
                     ),
 
@@ -1670,6 +1598,7 @@ $itemsSummary
 
                     // Right Pane: Categories, Quick Products & Keypad (58% width)
                     Expanded(
+                      flex: 58,
                       child: _buildRightCatalogPane(),
                     ),
                   ],
@@ -2197,26 +2126,6 @@ $itemsSummary
                   ),
                 ),
                 const SizedBox(width: 8),
-                InkWell(
-                  onTap: () => _showCategoryProductsModal('tobacco', 'تبغ وسجائر 🚬'),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF78350F).withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFB45309)),
-                    ),
-                    child: const Row(
-                      children: [
-                        Text('🚬', style: TextStyle(fontSize: 13)),
-                        SizedBox(width: 4),
-                        Text('قسم التبغ', style: TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
                 const SizedBox(height: 24, child: VerticalDivider(width: 1)),
                 const SizedBox(width: 8),
 
@@ -2332,29 +2241,16 @@ $itemsSummary
           borderRadius: BorderRadius.circular(16),
           onTap: () {
             _onItemScanned();
-            final existingProd = HiveDatabase.productBox.values
-                .where((p) => (p.barcode.isNotEmpty && p.barcode == barcode) || p.id == id)
-                .firstOrNull;
-            if (existingProd != null) {
-              _onProductSelectedForSale(existingProd);
-            } else {
-              final prod = Product(
-                id: id,
-                name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
-                barcode: barcode,
-                price: _isReturnMode ? -price.abs() : price,
-                costPrice: cost,
-                stock: stock,
-                category: 'بيع سريع',
-                isTobacco: item['isTobacco'] == true,
-                singlePiecePrice: (item['singlePiecePrice'] as num?)?.toDouble() ?? 0.0,
-                cartonPrice: (item['cartonPrice'] as num?)?.toDouble() ?? 0.0,
-                wholesaleCartonPrice: (item['wholesaleCartonPrice'] as num?)?.toDouble() ?? 0.0,
-                wholesalePackPrice: (item['wholesalePackPrice'] as num?)?.toDouble() ?? 0.0,
-                unitType: item['unitType']?.toString() ?? 'unit',
-              );
-              _onProductSelectedForSale(prod);
-            }
+            final prod = Product(
+              id: id,
+              name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
+              barcode: barcode,
+              price: _isReturnMode ? -price.abs() : price,
+              costPrice: cost,
+              stock: stock,
+              category: 'بيع سريع',
+            );
+            context.read<BillingBloc>().add(AddProductToCartEvent(prod));
           },
           child: Container(
             padding: const EdgeInsets.all(12),

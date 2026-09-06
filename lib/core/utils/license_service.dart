@@ -7,7 +7,10 @@ class LicenseService {
   static const String _licenseTypeKey = 'app_license_type';
   static const String _licenseExpiryKey = 'app_license_expiry';
   static const String _licenseSigKey = 'app_license_signature';
-  static const String _salt = 'NAYLI_POS_ULTRA_SECURE_2026_@!';
+  static String get _salt {
+    const List<int> _o = [100, 107, 115, 102, 107, 117, 106, 101, 121, 117, 127, 102, 126, 120, 107, 117, 121, 99, 105, 127, 120, 99, 117, 24, 26, 24, 16, 117, 106, 9];
+    return String.fromCharCodes(_o.map((e) => e ^ 42));
+  }
 
   /// Generates or retrieves a unique persistent hardware ID for this device
   static String getDeviceId() {
@@ -61,6 +64,7 @@ class LicenseService {
 
   /// Check if current license is permanent
   static bool isPermanent() {
+    if (!isActivated()) return false;
     final box = HiveDatabase.settingsBox;
     final type = box.get(_licenseTypeKey) as String?;
     return type == 'permanent';
@@ -68,6 +72,7 @@ class LicenseService {
 
   /// Check if current license is a companion terminal of a Master POS
   static bool isCompanion() {
+    if (!isActivated()) return false;
     final box = HiveDatabase.settingsBox;
     final type = box.get(_licenseTypeKey) as String?;
     return type == 'companion';
@@ -271,20 +276,10 @@ class LicenseService {
         };
       }
 
-      // Check for Short PIN format: NY-123456 or 123456
-      final cleanPin = input.replaceAll('NY-', '').replaceAll('-', '').trim();
-      if (cleanPin.length == 6 && int.tryParse(cleanPin) != null) {
-        await grantPermanentLicense();
-        final currentShop = HiveDatabase.shopBox.isNotEmpty ? HiveDatabase.shopBox.getAt(0)?.name ?? 'متجر كاشير' : 'متجر كاشير';
-        await HiveDatabase.settingsBox.put('licensed_store_name', currentShop);
-        return {
-          'success': true,
-          'message': '🎉 تم قبول الرمز وتفعيل الحاسوب بنجاح!',
-          'storeName': currentShop,
-        };
-      }
+      // Short PIN bypass removed for security reasons - it allowed any 6-digit number to grant a permanent license.
+      // Activation must now strictly use the cryptographically signed barcode.
 
-      return {'success': false, 'message': '❌ صيغة الكود غير معترف بها. يرجى مسح الرمز من شاشة الهاتف.'};
+      return {'success': false, 'message': '❌ صيغة الكود غير معترف بها. يرجى مسح رمز الـ QR للتفعيل.'};
     } catch (e) {
       return {'success': false, 'message': '❌ خطأ أثناء معالجة الرمز: $e'};
     }

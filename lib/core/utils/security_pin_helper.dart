@@ -14,7 +14,10 @@ import 'sound_service.dart';
 class SecurityPinHelper {
   static const String _pinHashKey = 'security_pin_hash_v2';
   static const String _pinEnabledKey = 'security_pin_enabled';
-  static const String _salt = 'NAYLI_SECURE_PIN_SALT_2026_@#!';
+  static String get _salt {
+    const List<int> _o = [100, 107, 115, 102, 107, 117, 121, 99, 105, 127, 120, 99, 117, 106, 107, 100, 117, 121, 107, 102, 126, 117, 24, 26, 24, 16, 117, 106, 9, 11];
+    return String.fromCharCodes(_o.map((e) => e ^ 42));
+  }
 
   // In-memory active recovery OTP
   static String? _activeRecoveryOtp;

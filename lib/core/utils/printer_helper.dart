@@ -252,6 +252,7 @@ class PrinterHelper {
   // Mobile Bluetooth Thermal Section (Android / iOS)
   // -------------------------------------------------------------
   Future<bool> checkPermission() async {
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return false;
     Map<Permission, PermissionStatus> statuses = await [
       Permission.bluetooth,
       Permission.bluetoothScan,
@@ -264,6 +265,7 @@ class PrinterHelper {
 
   Future<List<BluetoothInfo>> getBondedDevices() async {
     try {
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return [];
       final List<BluetoothInfo> list = await PrintBluetoothThermal.pairedBluetooths;
       return list;
     } catch (e) {
@@ -273,6 +275,7 @@ class PrinterHelper {
 
   Future<bool> connect(String macAddress) async {
     try {
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return false;
       final bool result = await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
       _isConnected = result;
       return result;
@@ -284,6 +287,10 @@ class PrinterHelper {
 
   Future<bool> disconnect() async {
     try {
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        _isConnected = false;
+        return true;
+      }
       final bool result = await PrintBluetoothThermal.disconnect;
       _isConnected = !result;
       return result;
