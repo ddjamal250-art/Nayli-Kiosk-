@@ -27,8 +27,8 @@ class ProductImageHelper {
 
   /// Resolves an image path dynamically across platforms (Windows / Android / Linux)
   /// If the path is an old absolute path from another machine, it searches for the
-  /// filename in the current device's image vault.
-  static Future<String?> resolveImagePath(String? storedPath) async {
+  /// filename in the current device's image vault or the provided imagesDir.
+  static Future<String?> resolveImagePath(String? storedPath, {Directory? imagesDir}) async {
     if (storedPath == null || storedPath.trim().isEmpty) return null;
     final trimmed = storedPath.trim();
 
@@ -43,13 +43,46 @@ class ProductImageHelper {
       return directFile.path;
     }
 
-    // 3. Search in local app images vault by file name
+    // 3. Search in provided imagesDir
     final fileName = trimmed.replaceAll('\\', '/').split('/').last;
+    if (imagesDir != null && fileName.isNotEmpty) {
+      final imgFile = File('${imagesDir.path}/$fileName');
+      if (imgFile.existsSync()) {
+        return imgFile.path;
+      }
+    }
+
+    // 4. Search in local app images vault by file name
     if (fileName.isNotEmpty) {
       final vault = await getImagesDirectory();
       final vaultFile = File('${vault.path}/$fileName');
       if (vaultFile.existsSync()) {
         return vaultFile.path;
+      }
+    }
+
+    return trimmed;
+  }
+
+  /// Synchronous fallback resolver for in-memory mapping
+  static String? resolveImagePathSync(String? storedPath, {Directory? imagesDir}) {
+    if (storedPath == null || storedPath.trim().isEmpty) return null;
+    final trimmed = storedPath.trim();
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    final directFile = File(trimmed);
+    if (directFile.existsSync()) {
+      return directFile.path;
+    }
+
+    final fileName = trimmed.replaceAll('\\', '/').split('/').last;
+    if (imagesDir != null && fileName.isNotEmpty) {
+      final imgFile = File('${imagesDir.path}/$fileName');
+      if (imgFile.existsSync()) {
+        return imgFile.path;
       }
     }
 
@@ -89,23 +122,26 @@ class ProductImageHelper {
   }
 
   /// Scans a directory for images that match product barcodes or names
-  static Future<Map<String, String>> scanDirectoryForBarcodeImages(Directory dir) async {
+  static Future<Map<String, String>> scanDirectoryForBarcodeImages(Directory dir, [Directory? secondDir]) async {
     final matchedImages = <String, String>{};
-    if (!dir.existsSync()) return matchedImages;
+    final dirs = [dir, if (secondDir != null) secondDir];
 
-    try {
-      final entities = dir.listSync(recursive: true);
-      for (final entity in entities) {
-        if (entity is File) {
-          final p = entity.path.toLowerCase();
-          if (p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.png') || p.endsWith('.webp')) {
-            final fileNameWithoutExt = entity.uri.pathSegments.last.split('.').first.trim().toLowerCase();
-            matchedImages[fileNameWithoutExt] = entity.path;
+    for (final d in dirs) {
+      if (!d.existsSync()) continue;
+      try {
+        final entities = d.listSync(recursive: true);
+        for (final entity in entities) {
+          if (entity is File) {
+            final p = entity.path.toLowerCase();
+            if (p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.png') || p.endsWith('.webp')) {
+              final fileNameWithoutExt = entity.uri.pathSegments.last.split('.').first.trim().toLowerCase();
+              matchedImages[fileNameWithoutExt] = entity.path;
+            }
           }
         }
+      } catch (e) {
+        debugPrint('Error scanning directory for images: $e');
       }
-    } catch (e) {
-      debugPrint('Error scanning directory for images: $e');
     }
 
     return matchedImages;

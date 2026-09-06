@@ -682,7 +682,7 @@ class UniversalDatabaseImporter {
           final pMap = Map<String, dynamic>.from(p);
           if (pMap['imageUrl'] != null && imagesDir != null) {
             final img = pMap['imageUrl'].toString();
-            pMap['imageUrl'] = ProductImageHelper.resolveImagePath(img, imagesDir: imagesDir);
+            pMap['imageUrl'] = ProductImageHelper.resolveImagePathSync(img, imagesDir: imagesDir);
           }
           var model = ProductModel.fromJson(pMap);
           if (model.id.isEmpty) {
@@ -825,7 +825,7 @@ class UniversalDatabaseImporter {
       if (colMap.containsKey('image') && colMap['image']! < row.length) {
         final img = row[colMap['image']!].trim();
         if (img.isNotEmpty) {
-          imageUrl = ProductImageHelper.resolveImagePath(img, imagesDir: imagesDir);
+          imageUrl = ProductImageHelper.resolveImagePathSync(img, imagesDir: imagesDir);
         }
       }
       // Check adjacent discovered image if no image URL in CSV
@@ -844,7 +844,6 @@ class UniversalDatabaseImporter {
         imageUrl: imageUrl,
         unitType: unit,
         wholesalePrice: wholesale > 0 ? wholesale : price,
-        updatedAt: DateTime.now(),
       );
 
       products.add(product);

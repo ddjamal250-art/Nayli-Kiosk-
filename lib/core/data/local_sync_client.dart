@@ -76,25 +76,6 @@ class LocalSyncClient {
   /// Pull latest products from Master Desktop Server to Mobile
   static Future<int> pullProductsFromMaster() async {
     final serverIp = getServerIp();
-    if (serverIp.isEmpty) return 0;
-
-    try {
-      String url = serverIp;
-      if (!url.startsWith('http://')) url = 'http://$url';
-      if (!url.contains(':8080') && !url.contains(':')) url = '$url:8080';
-
-      final uri = Uri.parse('$url/api/products');
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 6);
-
-      final request = await client.getUrl(uri);
-      final response = await request.close();
-
-      if (response.statusCode == 200) {
-        final body = await utf8.decoder.bind(response).join();
-        final List list = jsonDecode(body) as List;
-
-        int updatedCount = 0;
     if (serverIp.isNotEmpty) {
       try {
         String url = serverIp;
