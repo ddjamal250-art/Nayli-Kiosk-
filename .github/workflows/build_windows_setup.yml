@@ -51,6 +51,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Generate App Icons
+        run: dart run flutter_launcher_icons
+
       - name: Build Windows Executable Release
         run: flutter build windows --release --obfuscate --split-debug-info=symbols/
 
@@ -67,3 +70,4 @@ jobs:
         with:
           name: nayli-kiosk-desktop-setup
           path: build/installer/
+
