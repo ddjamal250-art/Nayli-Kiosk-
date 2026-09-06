@@ -32,10 +32,14 @@ jobs:
         run: flutter pub get
 
       - name: Build Release APK with Code Obfuscation
+        env:
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: naylimarket
         run: flutter build apk --release --obfuscate --split-debug-info=symbols/
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nayli-kiosk-app-release
+          name: billing-pos-app-release
           path: build/app/outputs/flutter-apk/app-release.apk
