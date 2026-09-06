@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'hive_database.dart';
+import '../data/hive_database.dart';
 import 'license_service.dart';
 
 class MerchantContextService {
