@@ -907,7 +907,9 @@ class _StockInPageState extends State<StockInPage> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    MobileScanner(controller: _scannerController, onDetect: _onDetect),
+                    (Platform.isWindows || Platform.isMacOS || Platform.isLinux) 
+                        ? const Center(child: Text("الكاميرا غير مدعومة في سطح المكتب (استخدم قارئ الباركود اليدوي)", style: TextStyle(color: Colors.white)))
+                        : MobileScanner(controller: _scannerController, onDetect: _onDetect),
                     Container(
                       width: 220,
                       height: 100,

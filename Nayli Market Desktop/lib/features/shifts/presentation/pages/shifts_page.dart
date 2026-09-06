@@ -87,7 +87,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                 prefixIcon: const Icon(Icons.monetization_on_outlined),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.calculate_rounded, color: Colors.teal),
-                  tooltip: 'حاسبة الفئات النقدية الجزائرية ',
+                  tooltip: 'حاسبة الفئات النقدية الجزائرية 🇩🇿',
                   onPressed: () async {
                     final counted = await AlgerianDenominationDialog.show(context, title: 'حساب رصيد بداية الصندوق (Fond de Caisse)');
                     if (counted != null) {
@@ -153,7 +153,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                 prefixIcon: const Icon(Icons.payments_outlined),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.calculate_rounded, color: Colors.teal),
-                  tooltip: 'حاسبة الفئات النقدية الجزائرية ',
+                  tooltip: 'حاسبة الفئات النقدية الجزائرية 🇩🇿',
                   onPressed: () async {
                     final counted = await AlgerianDenominationDialog.show(context, title: 'جرد نقدية الصندوق الفعلية');
                     if (counted != null) {

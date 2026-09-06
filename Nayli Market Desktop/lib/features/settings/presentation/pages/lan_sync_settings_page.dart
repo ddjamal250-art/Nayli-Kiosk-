@@ -166,50 +166,20 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.wifi_find_rounded, color: Colors.indigo),
+            Icon(Icons.edit_note_rounded, color: Colors.indigo),
             SizedBox(width: 8),
-            Text('ربط مع كاشير الكمبيوتر', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text('إدخال عنوان IP الكمبيوتر يدوياً', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal.shade50,
-                foregroundColor: Colors.teal.shade800,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: Colors.teal.shade200)),
-              ),
-              icon: const Icon(Icons.search_rounded),
-              label: const Text('بحث تلقائي في الشبكة (Auto-Discover)', style: TextStyle(fontWeight: FontWeight.bold)),
-              onPressed: () async {
-                Navigator.pop(ctx);
-                setState(() {
-                  _isTestingMaster = true;
-                  _masterPingResult = 'جاري مسح الشبكة المحلية بحثاً عن الكمبيوتر... ⏳';
-                });
-                
-                final discoveredIp = await LocalSyncClient.autoDiscoverServer();
-                if (discoveredIp != null) {
-                  _processScannedMasterCode(discoveredIp);
-                } else {
-                  setState(() {
-                    _isTestingMaster = false;
-                    _masterPingResult = '❌ لم يتم العثور على أي كمبيوتر شغال في الشبكة الحالية.';
-                  });
-                  SoundService.playVoidWarning();
-                }
-              },
-            ),
-            const SizedBox(height: 16),
             const Text(
-              'أو اكتب عنوان IP الكمبيوتر يدوياً (مثال: 192.168.1.15:8080):',
+              'اكتب عنوان IP المنشور في برنامج الكمبيوتر (مثال: 192.168.1.15 أو 192.168.1.15:8080):',
               style: TextStyle(fontSize: 12, color: Colors.black87),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             TextField(
               controller: ipCtrl,
               keyboardType: TextInputType.url,
@@ -231,7 +201,7 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
             icon: const Icon(Icons.check, size: 16),
-            label: const Text('اتصال'),
+            label: const Text('اتصال وحفظ'),
             onPressed: () {
               Navigator.pop(ctx);
               _processScannedMasterCode(ipCtrl.text.trim());

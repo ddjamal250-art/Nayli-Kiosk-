@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -56,23 +53,6 @@ class CommercialDocumentService {
   /// Save or Update Document
   static Future<void> saveDocument(CommercialDocument document) async {
     await _box.put(document.id, document.toMap());
-    
-    // Auto-sync to desktop if mobile paired
-    if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
-      final ip = HiveDatabase.settingsBox.get('sync_server_ip', defaultValue: '') as String;
-      final port = HiveDatabase.settingsBox.get('sync_server_port', defaultValue: 8080);
-      if (ip.isNotEmpty) {
-        try {
-          final urlStr = ip.contains(':') ? 'http://$ip/api/documents' : 'http://$ip:$port/api/documents';
-          final url = Uri.parse(urlStr);
-          await http.post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(document.toMap()),
-          ).timeout(const Duration(seconds: 4));
-        } catch (_) {}
-      }
-    }
   }
 
   /// Delete Document

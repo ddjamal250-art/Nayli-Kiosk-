@@ -37,69 +37,6 @@ class LocalSyncClient {
     await HiveDatabase.settingsBox.put(_autoSyncKey, enabled);
   }
 
-  /// Automatically discovers the Master Desktop POS Server on the local network.
-  /// Scans common subnet IP ranges on port 8080/8081.
-  static Future<String?> autoDiscoverServer() async {
-    try {
-      final interfaces = await NetworkInterface.list(
-          type: InternetAddressType.IPv4, includeLinkLocal: false);
-      String? localIp;
-      for (var interface in interfaces) {
-        for (var addr in interface.addresses) {
-          if (!addr.address.startsWith('127.')) {
-            localIp = addr.address;
-            break;
-          }
-        }
-        if (localIp != null) break;
-      }
-
-      if (localIp == null) return null;
-
-      final parts = localIp.split('.');
-      final subnet = '${parts[0]}.${parts[1]}.${parts[2]}';
-
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 2);
-      
-      // We will ping concurrently for faster results
-      final futures = <Future<String?>>[];
-      
-      for (int i = 1; i <= 254; i++) {
-        final targetIp = '$subnet.$i';
-        if (targetIp == localIp) continue;
-        
-        for (final port in [8080, 8081]) {
-           futures.add(() async {
-            try {
-              final uri = Uri.parse('http://$targetIp:$port/api/status');
-              final req = await client.getUrl(uri);
-              final res = await req.close();
-              if (res.statusCode == 200) {
-                 final body = await utf8.decoder.bind(res).join();
-                 final data = jsonDecode(body) as Map<String, dynamic>;
-                 if (data['status'] == 'online' && data['server'] == 'NayliMarketPOS') {
-                   return '$targetIp:$port';
-                 }
-              }
-            } catch (_) {}
-            return null;
-          }());
-        }
-      }
-
-      final results = await Future.wait(futures);
-      client.close(force: true);
-      
-      for (final res in results) {
-        if (res != null) return res;
-      }
-    } catch (e) {
-      debugPrint('Auto-discover failed: $e');
-    }
-    return null;
-  }
-
   /// Test connection to Master Desktop POS Server
   static Future<bool> testConnection(String ipWithPort) async {
     try {

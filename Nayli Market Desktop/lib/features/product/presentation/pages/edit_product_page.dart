@@ -498,7 +498,11 @@ class _EditProductPageState extends State<EditProductPage> {
   }
 
   Future<void> _executePrintShelfLabels(int copies) async {
-    final isConnected = await PrintBluetoothThermal.connectionStatus;
+    bool isConnected = false;
+    if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
+      isConnected = await PrintBluetoothThermal.connectionStatus;
+    }
+    
     if (!isConnected) {
       if (mounted) {
         context.showAppSnackBar(
@@ -541,7 +545,9 @@ class _EditProductPageState extends State<EditProductPage> {
         bytes.addAll([29, 86, 66, 0]); // Cut paper
       }
 
-      await PrintBluetoothThermal.writeBytes(bytes);
+      if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
+        await PrintBluetoothThermal.writeBytes(bytes);
+      }
       SoundService.playCheckoutSuccess();
       if (mounted) {
         context.showAppSnackBar(

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:go_router/go_router.dart';
@@ -57,11 +58,12 @@ class _ScannerPageState extends State<ScannerPage> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
       body: Stack(
         children: [
-          MobileScanner(
-            controller: controller,
-            onDetect: _onDetect,
-            // Removed overlay property
-          ),
+          (Platform.isWindows || Platform.isMacOS || Platform.isLinux) 
+              ? const Center(child: Text("الكاميرا غير مدعومة في سطح المكتب (استخدم قارئ الباركود اليدوي)", style: TextStyle(color: Colors.white)))
+              : MobileScanner(
+                  controller: controller,
+                  onDetect: _onDetect,
+                ),
           // Simple border overlay manually
           Container(
             decoration: BoxDecoration(

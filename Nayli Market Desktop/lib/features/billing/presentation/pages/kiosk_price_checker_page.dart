@@ -1,8 +1,7 @@
-import 'dart:async';import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:window_manager/window_manager.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/sound_service.dart';
@@ -60,24 +59,13 @@ class _KioskPriceCheckerPageState extends State<KioskPriceCheckerPage>
     HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
 
     // فرض ملء الشاشة التام للكشك وإخفاء أشرطة النظام (Immersive Sticky Fullscreen)
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      windowManager.setFullScreen(true);
-    } else {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    }
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
   void dispose() {
     // استعادة وضع الشاشة العادي عند الخروج
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
-      if (!isFull) {
-        windowManager.setFullScreen(false);
-      }
-    } else {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    }
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     HardwareKeyboard.instance.removeHandler(_handleGlobalHardwareKey);
     _arrowAnimCtrl.dispose();
     _dismissTimer?.cancel();

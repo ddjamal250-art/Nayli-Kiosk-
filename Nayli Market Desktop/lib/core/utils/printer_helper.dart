@@ -109,7 +109,7 @@ class PrinterHelper {
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Text('Nayli Market POS ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+                  pw.Text('Nayli Market POS 🇩🇿', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
                   pw.Text('طابعة التوصيل الحرارية (80mm)', style: const pw.TextStyle(fontSize: 9)),
                   pw.Divider(thickness: 0.5),
                   pw.Text('الطابعة: ${printer.name}', style: const pw.TextStyle(fontSize: 8)),
@@ -149,6 +149,7 @@ class PrinterHelper {
     }
   }
 
+  /// Print Cashier Sale Receipt for Windows POS
   static Future<bool> printReceiptWindows({
     required String shopName,
     String? address1,
@@ -166,27 +167,6 @@ class PrinterHelper {
     String? specificPrinterName,
   }) async {
     try {
-      final tmpl = HiveDatabase.settingsBox.get('receipt_template');
-      String finalShopName = shopName;
-      String? finalAddress1 = address1;
-      String? finalAddress2 = address2;
-      String? finalPhone = phone;
-      String? finalFooter = footer;
-      String thankYou = 'شكراً لزيارتكم • Merci pour votre visite!';
-      List<String> extraLines = [];
-
-      if (tmpl is Map) {
-        if (tmpl['shopName'] != null && tmpl['shopName'].toString().isNotEmpty) finalShopName = tmpl['shopName'];
-        if (tmpl['address'] != null && tmpl['address'].toString().isNotEmpty) finalAddress1 = tmpl['address'];
-        if (tmpl['slogan'] != null && tmpl['slogan'].toString().isNotEmpty) finalAddress2 = tmpl['slogan'];
-        if (tmpl['phone'] != null && tmpl['phone'].toString().isNotEmpty) finalPhone = tmpl['phone'];
-        if (tmpl['footerNote'] != null && tmpl['footerNote'].toString().isNotEmpty) finalFooter = tmpl['footerNote'];
-        if (tmpl['thankYou'] != null && tmpl['thankYou'].toString().isNotEmpty) thankYou = tmpl['thankYou'];
-        if (tmpl['customExtraLines'] != null) {
-          extraLines = (tmpl['customExtraLines'] as List).map((e) => e.toString()).toList();
-        }
-      }
-
       final doc = pw.Document();
       doc.addPage(
         pw.Page(
@@ -195,10 +175,10 @@ class PrinterHelper {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
-                pw.Text(finalShopName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
-                if (finalAddress1 != null && finalAddress1.isNotEmpty) pw.Text(finalAddress1, style: const pw.TextStyle(fontSize: 8.5)),
-                if (finalAddress2 != null && finalAddress2.isNotEmpty) pw.Text(finalAddress2, style: const pw.TextStyle(fontSize: 8.5)),
-                if (finalPhone != null && finalPhone.isNotEmpty) pw.Text('Tel: $finalPhone', style: const pw.TextStyle(fontSize: 8.5)),
+                pw.Text(shopName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+                if (address1 != null && address1.isNotEmpty) pw.Text(address1, style: const pw.TextStyle(fontSize: 8.5)),
+                if (address2 != null && address2.isNotEmpty) pw.Text(address2, style: const pw.TextStyle(fontSize: 8.5)),
+                if (phone != null && phone.isNotEmpty) pw.Text('Tel: $phone', style: const pw.TextStyle(fontSize: 8.5)),
                 pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
                 pw.Divider(thickness: 0.5),
                 ...items.map((item) {
@@ -235,13 +215,10 @@ class PrinterHelper {
                   pw.Divider(thickness: 0.5),
                   pw.Text('CREDIT CLIENT: $customerName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
                   if (previousDebt > 0) pw.Text('Dette prec: ${previousDebt.toStringAsFixed(2)} DA', style: const pw.TextStyle(fontSize: 8)),
-                  if (paidAmount > 0) pw.Text('Acompte Paye: ${paidAmount.toStringAsFixed(2)} DA', style: const pw.TextStyle(fontSize: 8)),
                   pw.Text('Total du: ${newDebtTotal.toStringAsFixed(2)} DA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
                 ],
                 pw.SizedBox(height: 8),
-                if (finalFooter != null && finalFooter.isNotEmpty) pw.Text(finalFooter, style: const pw.TextStyle(fontSize: 8)),
-                pw.Text(thankYou, style: const pw.TextStyle(fontSize: 8)),
-                ...extraLines.map((line) => pw.Text(line, style: const pw.TextStyle(fontSize: 8))),
+                pw.Text((footer != null && footer.isNotEmpty) ? footer : 'Merci pour votre visite!', style: const pw.TextStyle(fontSize: 8)),
               ],
             );
           },
@@ -275,6 +252,7 @@ class PrinterHelper {
   // Mobile Bluetooth Thermal Section (Android / iOS)
   // -------------------------------------------------------------
   Future<bool> checkPermission() async {
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return false;
     Map<Permission, PermissionStatus> statuses = await [
       Permission.bluetooth,
       Permission.bluetoothScan,
@@ -287,6 +265,7 @@ class PrinterHelper {
 
   Future<List<BluetoothInfo>> getBondedDevices() async {
     try {
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return [];
       final List<BluetoothInfo> list = await PrintBluetoothThermal.pairedBluetooths;
       return list;
     } catch (e) {
@@ -296,6 +275,7 @@ class PrinterHelper {
 
   Future<bool> connect(String macAddress) async {
     try {
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return false;
       final bool result = await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
       _isConnected = result;
       return result;
@@ -307,6 +287,10 @@ class PrinterHelper {
 
   Future<bool> disconnect() async {
     try {
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        _isConnected = false;
+        return true;
+      }
       final bool result = await PrintBluetoothThermal.disconnect;
       _isConnected = !result;
       return result;
@@ -380,26 +364,8 @@ class PrinterHelper {
     final int lineWidth = paperSize == '58mm' ? 32 : 48;
     final String sepLine = '-' * lineWidth;
 
-    final tmpl = box.get('receipt_template');
-    String finalShopName = shopName;
-    String? finalAddress1 = address1;
-    String? finalAddress2 = address2;
-    String? finalPhone = phone;
-    String? finalFooter = footer;
-    String finalThankYou = 'شكراً لزيارتكم • Merci pour votre visite';
-    List<String> extraLines = [];
-
-    if (tmpl is Map) {
-      if (tmpl['shopName'] != null && tmpl['shopName'].toString().isNotEmpty) finalShopName = tmpl['shopName'];
-      if (tmpl['address'] != null && tmpl['address'].toString().isNotEmpty) finalAddress1 = tmpl['address'];
-      if (tmpl['slogan'] != null && tmpl['slogan'].toString().isNotEmpty) finalAddress2 = tmpl['slogan'];
-      if (tmpl['phone'] != null && tmpl['phone'].toString().isNotEmpty) finalPhone = tmpl['phone'];
-      if (tmpl['footerNote'] != null && tmpl['footerNote'].toString().isNotEmpty) finalFooter = tmpl['footerNote'];
-      if (tmpl['thankYou'] != null && tmpl['thankYou'].toString().isNotEmpty) finalThankYou = tmpl['thankYou'];
-      if (tmpl['customExtraLines'] != null) {
-        extraLines = (tmpl['customExtraLines'] as List).map((e) => e.toString()).toList();
-      }
-    }
+    final actualFooter = box.get('receipt_footer', defaultValue: '') as String;
+    final actualThankYou = box.get('receipt_thank_you', defaultValue: 'شكراً لزيارتكم • Merci pour votre visite') as String;
 
     List<int> bytes = [];
     bytes += EscPos.init;
@@ -408,23 +374,13 @@ class PrinterHelper {
     bytes += EscPos.alignCenter;
     bytes += EscPos.boldOn;
     bytes += EscPos.textLarge;
-    bytes += _textToBytes(finalShopName);
+    bytes += _textToBytes(shopName);
     bytes += EscPos.lineFeed;
     bytes += EscPos.textNormal;
     bytes += EscPos.boldOff;
 
-    if (finalAddress1 != null && finalAddress1.isNotEmpty) {
-      bytes += _textToBytes(finalAddress1);
-      bytes += EscPos.lineFeed;
-    }
-    
-    if (finalAddress2 != null && finalAddress2.isNotEmpty) {
-      bytes += _textToBytes(finalAddress2);
-      bytes += EscPos.lineFeed;
-    }
-
-    if (finalPhone != null && finalPhone.isNotEmpty) {
-      bytes += _textToBytes('Tel: $finalPhone');
+    if (phone.isNotEmpty) {
+      bytes += _textToBytes('Tel: $phone');
       bytes += EscPos.lineFeed;
     }
 
@@ -482,36 +438,32 @@ class PrinterHelper {
         bytes += EscPos.lineFeed;
       }
       bytes += EscPos.boldOn;
-      bytes += _textToBytes('Total du: ${newDebtTotal.toStringAsFixed(2)} DA');
-      bytes += EscPos.lineFeed;
+      bytes += _textToBytes('SOLDE TOTAL RESTE: ${newDebtTotal.toStringAsFixed(2)} DA');
       bytes += EscPos.boldOff;
-    }
-
-    bytes += EscPos.lineFeed;
-    bytes += EscPos.alignCenter;
-    
-    if (finalFooter != null && finalFooter.isNotEmpty) {
-      bytes += _textToBytes(finalFooter);
       bytes += EscPos.lineFeed;
-    }
-    
-    bytes += _textToBytes(finalThankYou);
-    bytes += EscPos.lineFeed;
-
-    for (String line in extraLines) {
-      bytes += _textToBytes(line);
+      bytes += _textToBytes(sepLine);
       bytes += EscPos.lineFeed;
     }
 
+    // Footer
+    if (actualFooter.isNotEmpty) {
+      bytes += EscPos.alignCenter;
+      bytes += _textToBytes(actualFooter);
+      bytes += EscPos.lineFeed;
+    }
+    if (actualThankYou.isNotEmpty) {
+      bytes += EscPos.alignCenter;
+      bytes += _textToBytes(actualThankYou);
+      bytes += EscPos.lineFeed;
+    }
     bytes += EscPos.lineFeed;
     bytes += EscPos.lineFeed;
 
-    try {
-      await PrintBluetoothThermal.writeBytes(bytes);
-    } catch (_) {}
+    await PrintBluetoothThermal.writeBytes(bytes);
   }
 
   List<int> _textToBytes(String text) {
     return List.from(text.codeUnits);
   }
 }
+

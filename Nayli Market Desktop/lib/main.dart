@@ -4,9 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'dart:io';
-import 'package:window_manager/window_manager.dart';
-
 import 'config/routes/app_routes.dart';
 import 'core/data/hive_database.dart';
 import 'core/data/master_catalog_service.dart';
@@ -38,17 +35,6 @@ void main() async {
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
     };
-
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      await windowManager.ensureInitialized();
-      WindowOptions windowOptions = const WindowOptions(
-        title: 'Nayli Market Desktop',
-      );
-      windowManager.waitUntilReadyToShow(windowOptions, () async {
-        await windowManager.show();
-        await windowManager.focus();
-      });
-    }
 
     await HiveDatabase.init();
     await di.init();
