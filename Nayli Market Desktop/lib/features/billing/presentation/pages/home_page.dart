@@ -18,7 +18,6 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
 import '../../../../core/utils/expiry_tracker_service.dart';
-import '../../../../core/presentation/widgets/product_thumbnail.dart';
 
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -2450,13 +2449,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         ),
         child: Row(
           children: [
-            ProductThumbnail(
-              imageUrl: item.product.imageUrl,
-              category: item.product.category,
-              size: 44.0,
-              borderRadius: 8.0,
-            ),
-            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

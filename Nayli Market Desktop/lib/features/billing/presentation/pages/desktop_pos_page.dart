@@ -21,13 +21,13 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/staff_permissions_service.dart';
 import '../../../../core/utils/whatsapp_helper.dart';
 import '../../../../core/utils/adaptive_modal_helper.dart';
-import '../../../../core/presentation/widgets/product_thumbnail.dart';
 import '../../../settings/presentation/pages/advanced_pos_settings_page.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import '../../../../core/utils/tpe_payment_service.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
+import '../../../../core/widgets/product_image_display.dart';
 import '../../../shifts/data/shift_service.dart';
 import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
@@ -789,7 +789,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         );
                       },
                     ),
-            ),
+              ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('close'))),
@@ -1065,7 +1065,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       return;
     }
 
-    final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Market');
+    final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Kiosk');
     final invoiceNumber = '#${DateTime.now().millisecondsSinceEpoch % 90000 + 10000}';
     final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
 
@@ -1085,8 +1085,8 @@ $itemsSummary
 شكراً لتعاملكم معنا! • Merci de votre visite!
 ''';
 
-    final success = await WhatsAppReceiptHelper.launchWhatsApp(
-      phoneNumber: rawPhone,
+    final success = await WhatsAppReceiptHelper.sendDirectWhatsAppMessage(
+      phone: rawPhone,
       message: message,
     );
     if (mounted) {
@@ -1295,25 +1295,39 @@ $itemsSummary
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(color: Colors.grey.shade300),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    child: Row(
                                       children: [
-                                        Text(prod.name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text('${prod.price.toStringAsFixed(2)} DA',
-                                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
-                                            Text('مخزون: ${prod.stock}',
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: prod.stock > 0 ? Colors.green : Colors.red)),
-                                          ],
+                                        ProductImageDisplay(
+                                          imageUrl: prod.imageUrl,
+                                          width: 46,
+                                          height: 46,
+                                          borderRadius: 8,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(prod.name,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Text('${prod.price.toStringAsFixed(2)} DA',
+                                                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+                                                  Text('مخزون: ${prod.stock}',
+                                                      style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: prod.stock > 0 ? Colors.green : Colors.red)),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1523,7 +1537,7 @@ $itemsSummary
     // 1. Dispatch PrintReceiptEvent to deduct stock and save invoice in invoicesBox
     final shopBox = HiveDatabase.shopBox;
     final shop = shopBox.isNotEmpty ? shopBox.getAt(0) : null;
-    final shopName = shop?.name ?? 'Nayli Market';
+    final shopName = shop?.name ?? 'Nayli Kiosk';
     final shopPhone = shop?.phoneNumber ?? '';
 
     billingBloc.add(PrintReceiptEvent(
@@ -1795,11 +1809,11 @@ $itemsSummary
                           final item = state.cartItems[index];
                           return ListTile(
                             dense: true,
-                            leading: ProductThumbnail(
+                            leading: ProductImageDisplay(
                               imageUrl: item.product.imageUrl,
-                              category: item.product.category,
-                              size: 40.0,
-                              borderRadius: 8.0,
+                              width: 36,
+                              height: 36,
+                              borderRadius: 6,
                             ),
                             title: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                             subtitle: Text('${item.product.price.toStringAsFixed(2)} DA', style: const TextStyle(fontSize: 11, color: Colors.grey)),

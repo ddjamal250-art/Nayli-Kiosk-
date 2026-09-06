@@ -84,7 +84,7 @@ class BackupService {
     final documents = docBox.values.toList();
 
     final backupData = {
-      'app': 'Nayli Market POS',
+      'app': 'Nayli Kiosk POS',
       'version': '2.0.0',
       'timestamp': DateTime.now().toIso8601String(),
       'customNote': customNote ?? '',
