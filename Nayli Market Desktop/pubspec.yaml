@@ -52,6 +52,7 @@ dependencies:
   printing: ^5.13.2
   url_launcher: ^6.3.0
   archive: ^3.6.1
+  http: ^1.2.0
   crypto: ^3.0.3
   file_picker: ^8.1.1
 
