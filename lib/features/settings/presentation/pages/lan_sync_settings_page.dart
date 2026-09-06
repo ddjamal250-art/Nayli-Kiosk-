@@ -9,10 +9,12 @@ import 'package:http/http.dart' as http;
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_client.dart';
 import '../../../../core/data/local_sync_server.dart';
+import '../../../../core/data/cloud_sync_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/license_service.dart';
+import '../../../../core/utils/merchant_context_service.dart';
 import '../widgets/pc_douchette_activation_modal.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 
@@ -70,6 +72,8 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
     String ip = '';
     String port = '8080';
     String shopName = 'كاشير الكمبيوتر الرئيسي';
+    String merchantId = '';
+    String masterDeviceId = '';
 
     try {
       final trimmed = rawCode.trim();
@@ -78,6 +82,8 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
         ip = data['ip']?.toString() ?? '';
         port = data['port']?.toString() ?? '8080';
         shopName = data['name']?.toString() ?? data['shopName']?.toString() ?? 'Nayli POS Master';
+        merchantId = data['merchantId']?.toString() ?? '';
+        masterDeviceId = data['deviceId']?.toString() ?? '';
       } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
         final uri = Uri.tryParse(trimmed);
         if (uri != null) {
@@ -92,6 +98,10 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
 
       ip = ip.trim();
       port = port.trim();
+
+      if (merchantId.isNotEmpty) {
+        await MerchantContextService.setMerchantId(merchantId);
+      }
 
       if (ip.isNotEmpty && ip != '127.0.0.1') {
         final url = Uri.parse('http://$ip:$port/api/status');
@@ -147,21 +157,22 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
       }
     } catch (e) {
       debugPrint('Direct LAN ping error: $e');
-      if (ip.isNotEmpty) {
+      if (ip.isNotEmpty || merchantId.isNotEmpty) {
         // Fallback: If direct local ping is blocked by Windows Firewall or AP isolation,
-        // still save pairing & grant companion license so activation is never blocked!
-        await HiveDatabase.settingsBox.put('master_pos_ip', ip);
-        await HiveDatabase.settingsBox.put('master_pos_port', port);
-        await HiveDatabase.settingsBox.put('sync_server_ip', '$ip:$port');
-        await HiveDatabase.settingsBox.put('shop_name', shopName);
-        await LocalSyncClient.setServerIp('$ip:$port');
-        await LicenseService.grantCompanionLicense(storeName: shopName, masterIp: ip);
+        // use CloudSyncService to grant companion license & pair to isolated merchant channel!
+        final result = await CloudSyncService.pairDeviceViaCloud(
+          merchantId: merchantId.isNotEmpty ? merchantId : MerchantContextService.getMerchantId(),
+          masterDeviceId: masterDeviceId,
+          storeName: shopName,
+          masterIp: ip,
+          port: port,
+        );
 
         setState(() {
           _connectedMasterIp = ip;
           _connectedMasterPort = port;
           _connectedShopName = shopName;
-          _masterPingResult = '⚡ تم الاقتران والتفعيل بنجاح كملحق ($ip:$port) مع إعداد الجسر الاحتياطي!';
+          _masterPingResult = '⚡ ${result.message}';
         });
 
         SoundService.playCheckoutSuccess();
@@ -169,9 +180,9 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
 
         if (mounted) {
           context.showAppSnackBar(
-            '🎉 تم التفعيل والربط مع كاشير الكمبيوتر ($ip:$port)!',
+            '🎉 تم التفعيل والربط السحابي للمتجر ($shopName)!',
             backgroundColor: Colors.teal.shade800,
-            icon: Icons.verified_rounded,
+            icon: Icons.cloud_done_rounded,
           );
         }
       } else {
@@ -314,14 +325,12 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final qrPayload = jsonEncode({
-      'app': 'nayli_pos',
-      'action': 'pair',
-      'ip': _localIp,
-      'port': LocalSyncServer.port,
-      'name': 'Nayli POS Master',
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    });
+    final qrPayload = jsonEncode(
+      MerchantContextService.generatePairingPayload(
+        localIp: _localIp,
+        port: LocalSyncServer.port,
+      ),
+    );
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isWide = screenWidth >= 720;
