@@ -1,4 +1,4 @@
-﻿package dz.nayli.kiosk
+package dz.naylisoft.kiosk
 
 import io.flutter.embedding.android.FlutterActivity
 
