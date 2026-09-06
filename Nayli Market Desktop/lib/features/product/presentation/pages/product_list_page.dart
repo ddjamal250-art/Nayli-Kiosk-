@@ -1,3 +1,4 @@
+import '../../../../core/utils/category_taxonomy.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,11 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
-import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/data/hive_database.dart';
-import '../../../../core/utils/shelf_label_generator.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
@@ -18,7 +17,6 @@ import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/adaptive_modal_helper.dart';
-import '../../../../core/widgets/product_image_display.dart';
 import '../../../shop/data/models/shop_model.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
@@ -41,16 +39,16 @@ class _ProductListPageState extends State<ProductListPage> {
   static const List<Map<String, String>> _categoryTabsDef = [
     {'key': 'all', 'ar': 'الكل', 'fr': 'Tous', 'en': 'All'},
     {'key': 'scale', 'ar': '⚖️ مواد الميزان', 'fr': '⚖️ Vrac & Balance', 'en': '⚖️ Scale & Bulk'},
-    {'key': 'stationery', 'ar': '📚 أدوات مدرسية', 'fr': '📚 Papeterie', 'en': '📚 Stationery'},
-    {'key': 'tobacco', 'ar': '🚬 تبغ وسجائر', 'fr': '🚬 Tabac', 'en': '🚬 Tobacco'},
-    {'key': 'food', 'ar': 'مواد غذائية', 'fr': 'Alimentation', 'en': 'Groceries'},
-    {'key': 'dairy', 'ar': 'حليب ومشتقاته', 'fr': 'Produits Laitiers', 'en': 'Dairy'},
-    {'key': 'bakery', 'ar': 'مخبوزات وعجائن', 'fr': 'Boulangerie & Pâtes', 'en': 'Bakery & Pasta'},
-    {'key': 'beverages', 'ar': 'مشروبات ومياه', 'fr': 'Boissons & Eaux', 'en': 'Beverages & Water'},
-    {'key': 'cleaning', 'ar': 'نظافة وتجميل', 'fr': 'Entretien & Hygiène', 'en': 'Cleaning & Hygiene'},
-    {'key': 'sweets', 'ar': 'حلويات وسكاكر', 'fr': 'Confiserie & Biscuits', 'en': 'Sweets & Biscuits'},
-    {'key': 'fruits', 'ar': 'خضر وفواكه', 'fr': 'Fruits & Légumes', 'en': 'Fruits & Veg'},
-    {'key': 'other', 'ar': 'أخرى', 'fr': 'Autres', 'en': 'Other'},
+    {'key': 'food', 'ar': 'مواد غذائية 🌾', 'fr': 'Alimentation 🌾', 'en': 'Groceries 🌾'},
+    {'key': 'dairy', 'ar': 'ألبان وأجبان 🥛', 'fr': 'Produits Laitiers 🥛', 'en': 'Dairy 🥛'},
+    {'key': 'beverages', 'ar': 'مشروبات ومياه 🥤', 'fr': 'Boissons & Eaux 🥤', 'en': 'Beverages & Water 🥤'},
+    {'key': 'stationery', 'ar': 'أدوات مدرسية وقرطاسية 📚', 'fr': 'Fournitures Scolaires 📚', 'en': 'Stationery 📚'},
+    {'key': 'sweets', 'ar': 'حلويات وبسكويت 🍫', 'fr': 'Confiserie & Biscuits 🍫', 'en': 'Sweets & Biscuits 🍫'},
+    {'key': 'cleaning', 'ar': 'نظافة وتجميل 🧼', 'fr': 'Entretien & Hygiène 🧼', 'en': 'Cleaning & Hygiene 🧼'},
+    {'key': 'bakery', 'ar': 'مخبوزات وعجائن 🥖', 'fr': 'Boulangerie & Pâtes 🥖', 'en': 'Bakery & Pasta 🥖'},
+    {'key': 'fruits', 'ar': 'خضر وفواكه وبيض 🍎', 'fr': 'Fruits, Légumes & Œufs 🍎', 'en': 'Produce & Eggs 🍎'},
+    {'key': 'tobacco', 'ar': 'تبغ ولوازم 🚬', 'fr': 'Tabac 🚬', 'en': 'Tobacco 🚬'},
+    {'key': 'other', 'ar': 'أخرى 📦', 'fr': 'Autres 📦', 'en': 'Other 📦'},
   ];
 
   List<String> get _categoryTabs => _categoryTabsDef.map((c) => c['ar']!).toList();
@@ -991,13 +989,6 @@ class _ProductListPageState extends State<ProductListPage> {
                       count = state.products.length;
                     } else if (idx == 1) {
                       count = state.products.where((p) => p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')).length;
-                    } else if (catDef['key'] == 'stationery') {
-                      count = state.products.where((p) {
-                        final pCat = p.category.toLowerCase();
-                        return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
-                      }).length;
-                    } else if (catDef['key'] == 'tobacco') {
-                      count = state.products.where((p) => p.isTobacco || p.category.contains('تبغ') || p.category.contains('سجائر') || p.category.contains('شمة') || p.category.contains('معسل')).length;
                     } else {
                       final arName = (catDef['ar'] ?? '').toLowerCase();
                       final frName = (catDef['fr'] ?? '').toLowerCase();
@@ -1080,14 +1071,22 @@ class _ProductListPageState extends State<ProductListPage> {
                         product.name.contains('كغ');
                   }
                   final catDef = _categoryTabsDef[_selectedCategoryIndex];
+                  final key = catDef['key'] ?? '';
+                  final arRaw = (catDef['ar'] ?? '').replaceAll(RegExp(r'[^\u0600-\u06FF]'), '').trim();
                   final pCat = product.category.toLowerCase();
-                  if (catDef['key'] == 'stationery') {
-                    return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
+                  final pName = product.name.toLowerCase();
+
+                  if (key == 'stationery') {
+                    return pCat.contains('مدرس') || pCat.contains('قرطاس') || pCat.contains('كراس') || pCat.contains('أدوات') ||
+                        pName.contains('كراس') || pName.contains('قلم') || pName.contains('سيالة') || pName.contains('ممحاة') ||
+                        pName.contains('مبراة') || pName.contains('مسطرة') || pName.contains('غراء') || pName.contains('ورق');
                   }
-                  if (catDef['key'] == 'tobacco') {
-                    return product.isTobacco || pCat.contains('تبغ') || pCat.contains('سجائر') || pCat.contains('شمة') || pCat.contains('معسل');
+                  if (key == 'tobacco') {
+                    return pCat.contains('تبغ') || pCat.contains('دخان') || pCat.contains('سجائر') ||
+                        pName.contains('مارلبورو') || pName.contains('شمة') || pName.contains('ولاعة');
                   }
-                  return pCat.contains((catDef['ar'] ?? '').toLowerCase()) || pCat.contains((catDef['fr'] ?? '').toLowerCase());
+
+                  return pCat.contains(arRaw.toLowerCase()) || (catDef['fr'] != null && pCat.contains(catDef['fr']!.toLowerCase()));
                 }).toList();
 
                 if (filteredProducts.isEmpty) {
@@ -1153,19 +1152,19 @@ class _ProductListPageState extends State<ProductListPage> {
                               ),
                               const SizedBox(width: 4),
                             ],
-                            ProductImageDisplay(
-                              imageUrl: product.imageUrl,
-                              width: 48,
-                              height: 48,
-                              borderRadius: 8,
-                            ),
-                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
+                                      ProductThumbnail(
+                                        imageUrl: product.imageUrl,
+                                        category: product.category,
+                                        size: 40.0,
+                                        borderRadius: 8.0,
+                                      ),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           product.name,
@@ -1498,261 +1497,140 @@ class _ProductListPageState extends State<ProductListPage> {
 
   Future<void> _printSingleShelfLabel(BuildContext context, Product product) async {
     int copies = 1;
-    ShelfLabelSize selectedSize = ShelfLabelSize.standard50x30;
-    ShelfLabelTemplate selectedTemplate = product.isWeighted || product.barcode.startsWith('SCALE_')
-        ? ShelfLabelTemplate.scaleWeight
-        : ShelfLabelTemplate.shelfTag;
-
-    final shopName = ShelfLabelGenerator.getEffectiveShopName();
+    String shopName = AppConstants.defaultShopName;
+    final shopBox = HiveDatabase.shopBox;
+    if (shopBox.isNotEmpty) {
+      final ShopModel? shop = shopBox.getAt(0);
+      if (shop != null && shop.name.isNotEmpty) shopName = shop.name;
+    }
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final config = ShelfLabelConfig(
-            size: selectedSize,
-            template: selectedTemplate,
-            includeShopName: true,
-            includeDate: true,
-            includeBarcode: true,
-            showHriDigits: true,
-            currencySymbol: 'دج',
-            shopName: shopName,
-          );
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            title: const Row(
-              children: [
-                Icon(Icons.label_important_rounded, color: Colors.amber),
-                SizedBox(width: 8),
-                Text('طباعة ملصق وباركود السلعة 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Live Tag Preview Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.black87, width: 1.5),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Row(
+            children: [
+              Icon(Icons.label_important_rounded, color: Colors.amber),
+              SizedBox(width: 8),
+              Text('طباعة ملصق الرف 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Live Tag Preview Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.black87, width: 1.5),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
+                ),
+                child: Column(
+                  children: [
+                    Text('🏪 $shopName', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 2),
+                    Text(product.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
                     ),
-                    child: Column(
-                      children: [
-                        Text('🏪 $shopName', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-                        const SizedBox(height: 2),
-                        Text(product.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
-                        ),
-                        if (product.barcode.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'كود: ${product.barcode}',
-                              style: const TextStyle(fontSize: 10, fontFamily: 'monospace', fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Template Selection
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('النموذج:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
-                  ),
-                  const SizedBox(height: 4),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        ChoiceChip(
-                          label: const Text('بطاقة رف', style: TextStyle(fontSize: 10.5)),
-                          selected: selectedTemplate == ShelfLabelTemplate.shelfTag,
-                          onSelected: (v) {
-                            if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.shelfTag);
-                          },
-                        ),
-                        const SizedBox(width: 4),
-                        ChoiceChip(
-                          label: const Text('لاصقة باركود', style: TextStyle(fontSize: 10.5)),
-                          selected: selectedTemplate == ShelfLabelTemplate.productSticker,
-                          onSelected: (v) {
-                            if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.productSticker);
-                          },
-                        ),
-                        if (product.isWeighted || product.barcode.startsWith('SCALE_')) ...[
-                          const SizedBox(width: 4),
-                          ChoiceChip(
-                            label: const Text('ملصق ميزان', style: TextStyle(fontSize: 10.5)),
-                            selected: selectedTemplate == ShelfLabelTemplate.scaleWeight,
-                            onSelected: (v) {
-                              if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.scaleWeight);
-                            },
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Size Selection
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('المقاس:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
-                  ),
-                  const SizedBox(height: 4),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (final sz in [
-                          ShelfLabelSize.standard50x30,
-                          ShelfLabelSize.compact40x30,
-                          ShelfLabelSize.mini38x25,
-                          ShelfLabelSize.roll80mm,
-                        ]) ...[
-                          ChoiceChip(
-                            label: Text(
-                              sz == ShelfLabelSize.standard50x30
-                                  ? '50×30 مم'
-                                  : sz == ShelfLabelSize.compact40x30
-                                      ? '40×30 مم'
-                                      : sz == ShelfLabelSize.mini38x25
-                                          ? '38×25 مم'
-                                          : 'رول 80 مم',
-                              style: const TextStyle(fontSize: 10.5),
-                            ),
-                            selected: selectedSize == sz,
-                            onSelected: (v) {
-                              if (v) setDialogState(() => selectedSize = sz);
-                            },
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Quantity Selector Row
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('عدد النسخ:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (final count in [1, 2, 3, 5, 10]) ...[
-                        ChoiceChip(
-                          label: Text('$count', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                          selected: copies == count,
-                          selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-                          onSelected: (v) {
-                            if (v) setDialogState(() => copies = count);
-                          },
-                        ),
-                        const SizedBox(width: 6),
-                      ],
+                    if (product.barcode.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text('||||| ${product.barcode} |||||', style: const TextStyle(fontSize: 9, fontFamily: 'monospace', letterSpacing: 1.2)),
                     ],
-                  ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Quantity Selector Row
+              const Text('عدد النسخ المراد طباعتها:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (final count in [1, 2, 3, 5]) ...[
+                    ChoiceChip(
+                      label: Text('$count', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      selected: copies == count,
+                      selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+                      onSelected: (v) {
+                        if (v) setDialogState(() => copies = count);
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                  ],
                 ],
               ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                ),
-                icon: const Icon(Icons.bluetooth_connected, size: 16),
-                label: Text('بلوتوث ($copies)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  bool isConnected = false;
-                  if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
-                    isConnected = await PrintBluetoothThermal.connectionStatus;
-                  }
-                  
-                  if (!isConnected) {
-                    if (context.mounted) {
-                      context.showAppSnackBar(
-                        '⚠️ الطابعة الحرارية غير متصلة! يرجى تشغيل البلوتوث وتوصيلها في الإعدادات أو استخدام طباعة ويندوز/PDF.',
-                        backgroundColor: Colors.orange[800]!,
-                      );
-                    }
-                    return;
-                  }
-
-                  try {
-                    final bytes = ShelfLabelGenerator.generateEscPosBytes(
-                      itemsWithCopies: [MapEntry(product, copies)],
-                      config: config,
-                    );
-                    if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
-                      await PrintBluetoothThermal.writeBytes(bytes);
-                    }
-                    SoundService.playCheckoutSuccess();
-                    if (context.mounted) {
-                      context.showAppSnackBar(
-                        '✅ تم إرسال $copies ملصق لـ (${product.name}) إلى الطابعة الحرارية بنجاح!',
-                        backgroundColor: Colors.green[800]!,
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      context.showAppSnackBar('حدث خطأ أثناء الطباعة: $e', backgroundColor: Colors.red[800]!);
-                    }
-                  }
-                },
-              ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                ),
-                icon: const Icon(Icons.print_rounded, size: 16),
-                label: Text('ويندوز/PDF ($copies)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  await Printing.layoutPdf(
-                    name: 'label_${product.barcode}_$copies',
-                    format: config.size.pageFormat,
-                    onLayout: (format) async {
-                      return await ShelfLabelGenerator.generateLabelsPdf(
-                        itemsWithCopies: [MapEntry(product, copies)],
-                        config: config,
-                      );
-                    },
-                  );
-                },
-              ),
             ],
-          );
-        },
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.print, size: 18),
+              label: Text('طباعة ($copies)', style: const TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final isConnected = await PrintBluetoothThermal.connectionStatus;
+                if (!isConnected) {
+                  if (context.mounted) {
+                    context.showAppSnackBar(
+                      '⚠️ الطابعة الحرارية غير متصلة! يرجى تشغيل البلوتوث وتوصيلها في الإعدادات.',
+                      backgroundColor: Colors.orange[800]!,
+                    );
+                  }
+                  return;
+                }
+
+                final dateStr = DateFormat('yyyy/MM/dd').format(DateTime.now());
+                try {
+                  final List<int> bytes = [];
+                  for (int i = 0; i < copies; i++) {
+                    bytes.addAll([27, 64]); // Initialize
+                    bytes.addAll([27, 97, 1]); // Center
+                    bytes.addAll('$shopName\n'.codeUnits);
+                    bytes.addAll([27, 33, 16]); // Double height
+                    bytes.addAll('${product.name}\n'.codeUnits);
+                    bytes.addAll([27, 33, 48]); // Huge Price
+                    bytes.addAll('${product.price.toStringAsFixed(0)} DZD\n'.codeUnits);
+                    if (product.barcode.isNotEmpty) {
+                      bytes.addAll([27, 33, 0]);
+                      bytes.addAll('||||| ${product.barcode} |||||\n'.codeUnits);
+                    }
+                    bytes.addAll([27, 33, 0]);
+                    bytes.addAll('Date: $dateStr\n'.codeUnits);
+                    bytes.addAll('--------------------------------\n\n'.codeUnits);
+                  }
+                  bytes.addAll([29, 86, 66, 0]); // Cut paper
+                  await PrintBluetoothThermal.writeBytes(bytes);
+                  SoundService.playCheckoutSuccess();
+                  if (context.mounted) {
+                    context.showAppSnackBar(
+                      '✅ تم إرسال $copies ملصق رف لـ (${product.name}) إلى الطابعة بنجاح!',
+                      backgroundColor: Colors.green[800]!,
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    context.showAppSnackBar('حدث خطأ أثناء الطباعة: $e', backgroundColor: Colors.red[800]!);
+                  }
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
 

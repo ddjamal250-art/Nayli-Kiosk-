@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     
     <application
-        android:label="Nayli Kiosk"
+        android:label="Nayli Market"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
