@@ -1084,8 +1084,8 @@ $itemsSummary
 شكراً لتعاملكم معنا! • Merci de votre visite!
 ''';
 
-    final success = await WhatsAppReceiptHelper.launchWhatsApp(
-      phoneNumber: rawPhone,
+    final success = await WhatsAppReceiptHelper.sendDirectWhatsAppMessage(
+      phone: rawPhone,
       message: message,
     );
     if (mounted) {

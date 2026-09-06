@@ -788,7 +788,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         );
                       },
                     ),
-            ),
+              ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('close'))),
@@ -1084,8 +1084,8 @@ $itemsSummary
 شكراً لتعاملكم معنا! • Merci de votre visite!
 ''';
 
-    final success = await WhatsAppReceiptHelper.launchWhatsApp(
-      phoneNumber: rawPhone,
+    final success = await WhatsAppReceiptHelper.sendDirectWhatsAppMessage(
+      phone: rawPhone,
       message: message,
     );
     if (mounted) {
