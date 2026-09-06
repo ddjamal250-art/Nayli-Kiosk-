@@ -788,7 +788,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         );
                       },
                     ),
-              ),
+            ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('close'))),
