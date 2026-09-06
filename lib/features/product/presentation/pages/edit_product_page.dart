@@ -578,12 +578,12 @@ class _EditProductPageState extends State<EditProductPage> {
             }
           },
         ),
-        title: const Text('تعديل واستلام السلعة 📦✏️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        title: Text(context.tr('edit_product_title'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.label_important_rounded, color: Colors.amber),
-            tooltip: 'طباعة بطاقة الرف 🏷️',
+            tooltip: context.tr('shelf_tag_btn'),
             onPressed: _showPrintLabelDialog,
           ),
         ],
@@ -597,7 +597,7 @@ class _EditProductPageState extends State<EditProductPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Product Image Picker (Web search + camera + gallery)
-                const InputLabel(text: 'صورة المنتج 📸 (تظهر بالتطبيق ولا تطبع على الوصل)'),
+                InputLabel(text: context.tr('product_image')),
                 ProductImagePickerField(
                   initialImageUrl: _imageUrl,
                   barcode: _barcodeCtrl.text.trim(),
@@ -621,16 +621,16 @@ class _EditProductPageState extends State<EditProductPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('رمز الباركود (قابل للتعديل أو المسح):', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                            Text(context.tr('barcode_editable_hint'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
                             const SizedBox(height: 4),
                             TextFormField(
                               controller: _barcodeCtrl,
                               style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 15),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 isDense: true,
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.zero,
-                                hintText: 'امسح أو اكتب الباركود...',
+                                hintText: context.tr('barcode_editable_hint'),
                               ),
                             ),
                           ],
@@ -638,7 +638,7 @@ class _EditProductPageState extends State<EditProductPage> {
                       ),
                       IconButton.filledTonal(
                         icon: const Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
-                        tooltip: 'مسح باركود جديد بالكاميرا',
+                        tooltip: context.tr('scan_camera'),
                         onPressed: _scanBarcode,
                       ),
                     ],
@@ -646,17 +646,17 @@ class _EditProductPageState extends State<EditProductPage> {
                 ),
 
                 // Product Name
-                const InputLabel(text: 'اسم السلعة / المنتج *'),
+                InputLabel(text: context.tr('product_name_label')),
                 TextFormField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(hintText: 'اسم السلعة'),
+                  decoration: InputDecoration(hintText: context.tr('product_name_label')),
                   textCapitalization: TextCapitalization.words,
                   validator: AppValidators.required(context.tr('required')),
                 ),
                 const SizedBox(height: 16),
 
                 // Category Dropdown
-                const InputLabel(text: 'قسم / صنف السلعة 📂'),
+                InputLabel(text: context.tr('category_label')),
                 DropdownButtonFormField<String>(
                   value: categories.contains(_selectedCategory) ? _selectedCategory : 'عام',
                   decoration: InputDecoration(
@@ -680,12 +680,12 @@ class _EditProductPageState extends State<EditProductPage> {
                 const SizedBox(height: 16),
 
                 // Unit Type Selection (قطعة، متر، مليلتر)
-                const InputLabel(text: 'وحدة البيع والقياس 📏📦'),
+                InputLabel(text: context.tr('unit_label')),
                 SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'piece', label: Text('بالقطعة/علبة 📦', style: TextStyle(fontSize: 12))),
-                    ButtonSegment(value: 'meter', label: Text('بالمتر 📏', style: TextStyle(fontSize: 12))),
-                    ButtonSegment(value: 'ml', label: Text('بالمليلتر 🧴', style: TextStyle(fontSize: 12))),
+                  segments: [
+                    ButtonSegment(value: 'piece', label: Text(context.tr('unit_piece'), style: const TextStyle(fontSize: 12))),
+                    ButtonSegment(value: 'meter', label: Text(context.tr('unit_meter'), style: const TextStyle(fontSize: 12))),
+                    ButtonSegment(value: 'ml', label: Text(context.tr('unit_ml'), style: const TextStyle(fontSize: 12))),
                   ],
                   selected: {_unitType},
                   onSelectionChanged: (set) {
@@ -725,9 +725,9 @@ class _EditProductPageState extends State<EditProductPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('إدارة تسعير الكراتين والعلب (Multi-Pack)',
+                                  Text(context.tr('multipack_title'),
                                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isTobacco ? Colors.brown[800] : Colors.black87)),
-                                  const Text('تفعيل بيع المنتج بالكرتونة أو بالعلبة، وتحديد عدد الوحدات', style: TextStyle(fontSize: 10.5, color: Colors.grey)),
+                                  Text(context.tr('multipack_subtitle'), style: const TextStyle(fontSize: 10.5, color: Colors.grey)),
                                 ],
                               ),
                             ],
@@ -749,7 +749,7 @@ class _EditProductPageState extends State<EditProductPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const InputLabel(text: 'سعر بيع الكرطوشة (تجزئة)'),
+                                  InputLabel(text: context.tr('carton_retail_price')),
                                   TextFormField(
                                     controller: _cartonPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -764,7 +764,7 @@ class _EditProductPageState extends State<EditProductPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const InputLabel(text: 'سعر بيع الكرطوشة (جملة)'),
+                                  InputLabel(text: context.tr('carton_wholesale_price')),
                                   TextFormField(
                                     controller: _wholesaleCartonPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -783,7 +783,7 @@ class _EditProductPageState extends State<EditProductPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const InputLabel(text: 'سعر بيع العلبة (جملة)'),
+                                  InputLabel(text: context.tr('pack_wholesale_price')),
                                   TextFormField(
                                     controller: _wholesalePackPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -798,7 +798,7 @@ class _EditProductPageState extends State<EditProductPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const InputLabel(text: 'سعر بيع السيجارة بالحبة (دج)'),
+                                  InputLabel(text: context.tr('single_piece_price')),
                                   TextFormField(
                                     controller: _singlePiecePriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -817,7 +817,7 @@ class _EditProductPageState extends State<EditProductPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const InputLabel(text: 'سجائر في العلبة'),
+                                  InputLabel(text: context.tr('pieces_per_pack')),
                                   TextFormField(
                                     controller: _piecesPerPackCtrl,
                                     keyboardType: TextInputType.number,
@@ -838,7 +838,7 @@ class _EditProductPageState extends State<EditProductPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const InputLabel(text: 'علب في الكرطوشة'),
+                                  InputLabel(text: context.tr('packs_per_carton')),
                                   TextFormField(
                                     controller: _packsPerCartonCtrl,
                                     keyboardType: TextInputType.number,
@@ -881,9 +881,9 @@ class _EditProductPageState extends State<EditProductPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('تباع بالميزان (بالكيلوغرام) ⚖️',
+                              Text(context.tr('sold_by_weight_title'),
                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isWeighted ? Colors.teal[800] : Colors.black87)),
-                              const Text('احتساب السعر حسب الوزن والكسور', style: TextStyle(fontSize: 10.5, color: Colors.grey)),
+                              Text(context.tr('sold_by_weight_hint'), style: const TextStyle(fontSize: 10.5, color: Colors.grey)),
                             ],
                           ),
                         ],
@@ -905,7 +905,7 @@ class _EditProductPageState extends State<EditProductPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const InputLabel(text: 'سعر التكلفة (Achat)'),
+                          InputLabel(text: context.tr('cost_price_input')),
                           TextFormField(
                             controller: _costPriceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -920,7 +920,7 @@ class _EditProductPageState extends State<EditProductPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const InputLabel(text: 'سعر البيع (Détail) *'),
+                          InputLabel(text: context.tr('retail_price_input')),
                           TextFormField(
                             controller: _priceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -942,7 +942,7 @@ class _EditProductPageState extends State<EditProductPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const InputLabel(text: 'سعر الجملة (Gros)'),
+                          InputLabel(text: context.tr('wholesale_price_input')),
                           TextFormField(
                             controller: _wholesalePriceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -1003,7 +1003,7 @@ class _EditProductPageState extends State<EditProductPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('الكمية الحالية في المخزون (${_isWeighted ? "كغ" : "قطعة"}):', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    Text('${context.tr('stock_quantity_label')} (${_isWeighted ? "كغ" : "قطعة"}):', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                     Text('إجمالي القيمة: ${((double.tryParse(_priceCtrl.text) ?? 0) * (int.tryParse(_stockCtrl.text) ?? 0)).toStringAsFixed(0)} دج',
                         style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                   ],
@@ -1023,7 +1023,7 @@ class _EditProductPageState extends State<EditProductPage> {
                 // Quick Batch Addition (Arrivage) Chips
                 Row(
                   children: [
-                    const Text('استلام شحنة سريعة:', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600)),
+                    Text(context.tr('quick_arrivage_label'), style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 6),
                     Expanded(
                       child: SingleChildScrollView(
@@ -1076,9 +1076,9 @@ class _EditProductPageState extends State<EditProductPage> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('تاريخ انتهاء الصلاحية (Péremption):', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                Text(context.tr('expiry_date_label'), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                                 Text(
-                                  _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : 'غير محدد (انقر لتحديد التاريخ)',
+                                  _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : context.tr('no_expiry_date'),
                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _expiryDate != null ? Colors.black87 : Colors.grey[600]),
                                 ),
                               ],
@@ -1125,7 +1125,7 @@ class _EditProductPageState extends State<EditProductPage> {
                 )
               : const Icon(Icons.save),
           label: Text(
-            _isSaving ? 'جاري الحفظ... ⏳' : 'حفظ التعديلات والاستلام 💾',
+            _isSaving ? '...' : context.tr('save_changes_btn'),
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
           onPressed: _isSaving ? null : _submit,
@@ -1134,5 +1134,3 @@ class _EditProductPageState extends State<EditProductPage> {
     );
   }
 }
-
-

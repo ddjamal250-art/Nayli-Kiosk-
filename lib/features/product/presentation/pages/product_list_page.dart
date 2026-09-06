@@ -1280,54 +1280,54 @@ class _ProductListPageState extends State<ProductListPage> {
                                 }
                               },
                               itemBuilder: (ctx) => [
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'restock',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('استلام شحنة جديدة 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      const Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('quick_restock_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'edit',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('تعديل السلعة والأسعار ✏️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      const Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('edit_product_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'label',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('طباعة ملصق السعر 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      const Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('shelf_label_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'pin',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('تثبيت في البيع السريع ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      const Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('pin_to_quick_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
                                 const PopupMenuDivider(),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'delete',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('حذف من المخزون 🗑️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
+                                      const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('delete_product_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
                                     ],
                                   ),
                                 ),
@@ -1368,13 +1368,13 @@ class _ProductListPageState extends State<ProductListPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'إجراءات مجمعة ($selectedCount سلع محددة):',
+                              '${context.tr('batch_actions_title')} ($selectedCount):',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                             ),
                             TextButton(
                               onPressed: _clearSelection,
                               style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                              child: const Text('إلغاء التحديد ✖', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              child: Text(context.tr('clear_selection'), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                             ),
                           ],
                         ),

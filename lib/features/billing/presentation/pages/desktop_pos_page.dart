@@ -1200,7 +1200,14 @@ $itemsSummary
             final query = searchController.text.trim().toLowerCase();
 
             final productsInCat = allProducts.where((p) {
-              if (catKey != 'all') {
+              if (catKey == 'tobacco') {
+                final isTob = p.isTobacco ||
+                    p.category.toLowerCase().contains('تبغ') ||
+                    p.category.toLowerCase().contains('سجائر') ||
+                    p.category.toLowerCase().contains('tabac') ||
+                    p.category.toLowerCase().contains('cigarette');
+                if (!isTob) return false;
+              } else if (catKey != 'all') {
                 final def = _categoriesDef.firstWhere((c) => c['key'] == catKey, orElse: () => {'ar': ''});
                 final arLabel = def['ar'] ?? '';
                 final pCat = p.category.toLowerCase();
@@ -2142,6 +2149,31 @@ $itemsSummary
                         Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
                         SizedBox(width: 4),
                         Text('ترتيب وتخصيص ⚙️', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Tobacco Products Category Quick Access Button
+                InkWell(
+                  onTap: () => _showCategoryProductsModal('tobacco', 'المواد التبغية والسجائر 🚬'),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.shade400),
+                    ),
+                    child: const Row(
+                      children: [
+                        Text('🚬', style: TextStyle(fontSize: 14)),
+                        SizedBox(width: 4),
+                        Text(
+                          'المواد التبغية 🚬',
+                          style: TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11),
+                        ),
                       ],
                     ),
                   ),

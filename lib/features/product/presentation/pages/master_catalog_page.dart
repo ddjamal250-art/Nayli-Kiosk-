@@ -552,6 +552,177 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
     SnackbarHelper.showSuccess(context, 'تمت إضافة $count سلعة بنجاح إلى مخزون المحل!');
   }
 
+  void _showQuickStoreSetupWizard(List<MasterCatalogItem> allItems, Map<String, Product> existingMap) {
+    AdaptiveModalHelper.showAdaptiveModal(
+      context: context,
+      desktopMaxWidth: 640,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(22),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.amber.shade50, shape: BoxShape.circle),
+                        child: const Icon(Icons.auto_awesome, color: Colors.amber, size: 24),
+                      ),
+                      const SizedBox(width: 10),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('معالج تهيئة المحل الفورية 🪄', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('إعداد مخزون محلك بنقرة واحدة بحسب نوع نشاطك التجاري', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              _buildWizardActivityCard(
+                icon: Icons.storefront_rounded,
+                iconColor: Colors.teal,
+                title: '1. سوبرماركت ومواد غذائية عامة (Superette) 🛒',
+                subtitle: 'أهم سلع البقالة (زيت، سكر، حليب، معكرونة، قهوة، بسكويت، عصائر...)',
+                keywords: ['زيت', 'سكر', 'حليب', 'قهوة', 'مشروبات', 'بقوليات', 'معجنات', 'بسكويت', 'طماطم'],
+                allItems: allItems,
+                existingMap: existingMap,
+                onSelect: (matching) {
+                  Navigator.pop(ctx);
+                  _applyWizardSelection(matching);
+                },
+              ),
+              const SizedBox(height: 10),
+
+              _buildWizardActivityCard(
+                icon: Icons.smoking_rooms_rounded,
+                iconColor: Colors.amber.shade800,
+                title: '2. كشك ومحل تبغ وحلويات (Kiosk / Tabac) 🏪',
+                subtitle: 'سجائر بجميع أنواعها، لبان، حلوى، شوكولا، شيبس، ولاعات، أقلام...',
+                keywords: ['تبغ', 'سجائر', 'مارلبورو', 'ال_ام', 'نسيم', 'ريم', 'ولاعة', 'شوكولا', 'علكة', 'شيبس'],
+                allItems: allItems,
+                existingMap: existingMap,
+                onSelect: (matching) {
+                  Navigator.pop(ctx);
+                  _applyWizardSelection(matching);
+                },
+              ),
+              const SizedBox(height: 10),
+
+              _buildWizardActivityCard(
+                icon: Icons.cleaning_services_rounded,
+                iconColor: Colors.blue,
+                title: '3. مواد تنظيف وتجميل (Cosmétique & Hygiène) 🧼',
+                subtitle: 'مساحيق غسيل، صابون، شامبو، معجون أسنان، معطرات، منظفات أرضيات...',
+                keywords: ['منظفات', 'صابون', 'شامبو', 'غسيل', 'معجون', 'جافيل', 'أومو', 'إيزيس'],
+                allItems: allItems,
+                existingMap: existingMap,
+                onSelect: (matching) {
+                  Navigator.pop(ctx);
+                  _applyWizardSelection(matching);
+                },
+              ),
+              const SizedBox(height: 10),
+
+              _buildWizardActivityCard(
+                icon: Icons.egg_outlined,
+                iconColor: Colors.deepOrange,
+                title: '4. ملبنة واجبان ومصبرات (Laiterie & Épicerie) 🧀',
+                subtitle: 'أجبان، ياغورت، زبدة، بيض، قشطة، تونة، مايونيز، مصبرات...',
+                keywords: ['جبن', 'ياغورت', 'بيض', 'زبدة', 'تونة', 'حليب', 'كاشير', 'مايونيز', 'ألبان'],
+                allItems: allItems,
+                existingMap: existingMap,
+                onSelect: (matching) {
+                  Navigator.pop(ctx);
+                  _applyWizardSelection(matching);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWizardActivityCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required List<String> keywords,
+    required List<MasterCatalogItem> allItems,
+    required Map<String, Product> existingMap,
+    required void Function(List<MasterCatalogItem>) onSelect,
+  }) {
+    final matching = allItems.where((i) {
+      final text = '${i.name} ${i.category}'.toLowerCase();
+      return keywords.any((k) => text.contains(k.toLowerCase())) || (title.contains('تبغ') && i.isTobacco);
+    }).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: iconColor.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(height: 2),
+                Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 4),
+                Text('${matching.length} سلعة جاهزة متوفرة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: iconColor)),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: iconColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: matching.isEmpty ? null : () => onSelect(matching),
+            child: const Text('تطبيق ⚡', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _applyWizardSelection(List<MasterCatalogItem> items) {
+    setState(() {
+      for (var it in items) {
+        _selectedBarcodes.add(it.barcode);
+      }
+    });
+    SoundService.playCheckoutSuccess();
+    SnackbarHelper.showSuccess(
+      context,
+      '🎉 تم تحديد ${items.length} سلعة بنجاح! اضغط زر "إضافة محددة للمحل" بالأسفل لحفظها فوراً',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProductBloc, ProductState>(
@@ -590,6 +761,18 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
               ],
             ),
             actions: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.auto_awesome, size: 16),
+                label: const Text('تهيئة المحل 🪄', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                onPressed: () => _showQuickStoreSetupWizard(allItems, existingProductsMap),
+              ),
+              const SizedBox(width: 6),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.import_export_rounded),
                 tooltip: 'استيراد وتصدير الكتالوج',
