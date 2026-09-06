@@ -1065,7 +1065,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       return;
     }
 
-    final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Market');
+    final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Kiosk');
     final invoiceNumber = '#${DateTime.now().millisecondsSinceEpoch % 90000 + 10000}';
     final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
 
@@ -1537,7 +1537,7 @@ $itemsSummary
     // 1. Dispatch PrintReceiptEvent to deduct stock and save invoice in invoicesBox
     final shopBox = HiveDatabase.shopBox;
     final shop = shopBox.isNotEmpty ? shopBox.getAt(0) : null;
-    final shopName = shop?.name ?? 'Nayli Market';
+    final shopName = shop?.name ?? 'Nayli Kiosk';
     final shopPhone = shop?.phoneNumber ?? '';
 
     billingBloc.add(PrintReceiptEvent(

@@ -109,7 +109,7 @@ class PrinterHelper {
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Text('Nayli Market POS 🇩🇿', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+                  pw.Text('Nayli Kiosk POS 🇩🇿', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
                   pw.Text('طابعة التوصيل الحرارية (80mm)', style: const pw.TextStyle(fontSize: 9)),
                   pw.Divider(thickness: 0.5),
                   pw.Text('الطابعة: ${printer.name}', style: const pw.TextStyle(fontSize: 8)),
@@ -130,7 +130,7 @@ class PrinterHelper {
                 child: pw.Column(
                   mainAxisAlignment: pw.MainAxisAlignment.center,
                   children: [
-                    pw.Text('Nayli Market Solutions - Test Page', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 22)),
+                    pw.Text('Nayli Kiosk Solutions - Test Page', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 22)),
                     pw.SizedBox(height: 10),
                     pw.Text('طابعة المستندات والفواتير الرسمية (A4 Laser/Inkjet)', style: const pw.TextStyle(fontSize: 14)),
                     pw.Text('Printer: ${printer.name}', style: const pw.TextStyle(fontSize: 12)),

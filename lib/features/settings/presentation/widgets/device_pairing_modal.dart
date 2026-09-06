@@ -158,7 +158,7 @@ class DevicePairingModal extends StatelessWidget {
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal)),
                           SizedBox(height: 2),
                           Text(
-                            'افتح تطبيق Nayli Market على هاتفك وامسح نفس الكود لتحويل الهاتف إلى ماسح باركود لاسلكي وجرد سريع للمخزون عبر الواي فاي.',
+                            'افتح تطبيق Nayli Kiosk على هاتفك وامسح نفس الكود لتحويل الهاتف إلى ماسح باركود لاسلكي وجرد سريع للمخزون عبر الواي فاي.',
                             style: TextStyle(fontSize: 11, color: Colors.black87, height: 1.3),
                           ),
                         ],

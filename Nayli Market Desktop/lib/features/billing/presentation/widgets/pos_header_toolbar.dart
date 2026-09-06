@@ -72,7 +72,7 @@ class PosHeaderToolbar extends StatelessWidget {
               const Row(
                 children: [
                   Text(
-                    'Nayli Market POS',
+                    'Nayli Kiosk POS',
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.5, color: Color(0xFF0F172A), letterSpacing: 0.3),
                   ),
                   SizedBox(width: 6),

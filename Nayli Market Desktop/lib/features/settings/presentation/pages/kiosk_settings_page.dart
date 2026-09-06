@@ -710,7 +710,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
 
           _buildGuideItem(
             '2. خيار حاسوب مستقل أو All-in-One PC في الرواق:',
-            '• تثبيت برنامج Nayli Market Desktop Setup.\n'
+            '• تثبيت برنامج Nayli Kiosk Desktop Setup.\n'
             '• تشغيل الشاشة مباشرة عبر المسار: /kiosk بملء الشاشة.\n'
             '• ميزة الذاكرة الاحتياطية (Offline Cache) تضمن استمرار فحص الأسعار حتى لو انقطع الكابل.',
           ),

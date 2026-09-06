@@ -318,7 +318,7 @@ class MasterCatalogService {
     final list = items ?? instance.allItems;
     final sb = StringBuffer();
     sb.writeln('-- ========================================================');
-    sb.writeln('-- Nayli Market (نايلي ماركت) - Master Catalog SQL Export');
+    sb.writeln('-- Nayli Kiosk (نايلي ماركت) - Master Catalog SQL Export');
     sb.writeln('-- Total Products: ${list.length}');
     sb.writeln('-- Generated At: ${DateTime.now().toIso8601String()}');
     sb.writeln('-- ========================================================');

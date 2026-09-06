@@ -228,7 +228,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
         phone: _showPhone ? _phoneCtrl.text.trim() : '',
         items: testItems,
         total: 1270.0,
-        footer: _showFooterNote ? _footerNoteCtrl.text.trim() : '--- NAYLI MARKET ---',
+        footer: _showFooterNote ? _footerNoteCtrl.text.trim() : '--- Nayli Kiosk ---',
         customerName: 'زبون تجريبي',
         paidAmount: 1500.0,
       );
@@ -265,7 +265,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       phone: _showPhone ? _phoneCtrl.text.trim() : '',
       items: testItems,
       total: 1270.0,
-      footer: _showFooterNote ? _footerNoteCtrl.text.trim() : '--- NAYLI MARKET ---',
+      footer: _showFooterNote ? _footerNoteCtrl.text.trim() : '--- Nayli Kiosk ---',
       customerName: 'زبون تجريبي',
       paidAmount: 1500.0,
     );

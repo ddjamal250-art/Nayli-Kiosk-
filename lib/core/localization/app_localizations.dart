@@ -15,8 +15,8 @@ class AppLocalizations {
   static final Map<String, Map<String, String>> _localizedValues = {
     'ar': {
       // General & Navigation
-      'app_name': 'Nayli Market Pro',
-      'app_title': 'Nayli Market - إدارة الفوترة ونقاط البيع الذكية',
+      'app_name': 'Nayli Kiosk Pro',
+      'app_title': 'Nayli Kiosk - إدارة الفوترة ونقاط البيع الذكية',
       'pos_welcome': '🌟 مرحباً بكم • Bienvenue',
       'pos_title': 'نظام الفوترة ونقاط البيع السريعة',
       'cart': 'سلة المشتريات',
@@ -249,8 +249,8 @@ class AppLocalizations {
     },
     'fr': {
       // General & Navigation
-      'app_name': 'Nayli Market Pro',
-      'app_title': 'Nayli Market - Caisse & Stock POS',
+      'app_name': 'Nayli Kiosk Pro',
+      'app_title': 'Nayli Kiosk - Caisse & Stock POS',
       'pos_welcome': '🌟 Bienvenue • Welcome',
       'pos_title': 'Système POS & Caisse Rapide',
       'cart': 'Panier',
@@ -483,8 +483,8 @@ class AppLocalizations {
     },
     'en': {
       // General & Navigation
-      'app_name': 'Nayli Market Pro',
-      'app_title': 'Nayli Market - Smart POS & Inventory Management',
+      'app_name': 'Nayli Kiosk Pro',
+      'app_title': 'Nayli Kiosk - Smart POS & Inventory Management',
       'pos_welcome': '🌟 Welcome • Bienvenue',
       'pos_title': 'Fast POS & Checkout System',
       'cart': 'Shopping Cart',

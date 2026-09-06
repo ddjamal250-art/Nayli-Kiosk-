@@ -170,7 +170,7 @@ class LicenseService {
   /// Generates a signed, time-limited (15 mins) barcode token to activate a desktop PC via barcode douchette
   static Map<String, dynamic> generateDouchetteActivationData() {
     final box = HiveDatabase.settingsBox;
-    final storeName = box.get('licensed_store_name', defaultValue: box.get('shop_name', defaultValue: 'Nayli Market')) as String;
+    final storeName = box.get('licensed_store_name', defaultValue: box.get('shop_name', defaultValue: 'Nayli Kiosk')) as String;
     final phoneId = getDeviceId();
     final plan = box.get(_licenseTypeKey, defaultValue: 'permanent') as String;
     final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -231,7 +231,7 @@ class LicenseService {
       }
 
       if (data != null) {
-        final storeName = data['store']?.toString() ?? 'Nayli Market';
+        final storeName = data['store']?.toString() ?? 'Nayli Kiosk';
         final phoneId = data['phoneId']?.toString() ?? '';
         final plan = data['plan']?.toString() ?? 'permanent';
         final exp = (data['exp'] as num?)?.toInt() ?? 0;

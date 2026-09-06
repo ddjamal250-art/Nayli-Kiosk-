@@ -68,7 +68,7 @@ class MyApp extends StatelessWidget {
       child: BlocBuilder<LanguageCubit, Locale>(
         builder: (context, locale) {
           return MaterialApp.router(
-            title: 'Nayli Market',
+            title: 'Nayli Kiosk',
             theme: AppTheme.lightTheme,
             routerConfig: router,
             scrollBehavior: TouchAndMouseScrollBehavior(),

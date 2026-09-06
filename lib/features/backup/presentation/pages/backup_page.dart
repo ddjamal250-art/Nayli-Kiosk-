@@ -156,7 +156,7 @@ class _BackupPageState extends State<BackupPage> {
         '🧾 عدد الزبائن: 34 زبون\n'
         '💳 مدفوعات TPE: 12,000.00 دج\n'
         '💾 تم أخذ نسخة احتياطية سحابية بنجاح ✅\n\n'
-        'Nayli Market POS 🇩🇿';
+        'Nayli Kiosk POS 🇩🇿';
 
     final launched = await TelegramService.sendWhatsAppReport(
       phone: phone,

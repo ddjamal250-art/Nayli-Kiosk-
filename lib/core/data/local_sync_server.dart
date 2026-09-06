@@ -268,7 +268,7 @@ class LocalSyncServer {
     final ip = await getLocalIp();
     final isActivated = LicenseService.isActivated();
     final licenseType = HiveDatabase.settingsBox.get('app_license_type', defaultValue: 'unlicensed') as String;
-    String shopName = 'Nayli Market';
+    String shopName = 'Nayli Kiosk';
     if (HiveDatabase.shopBox.isNotEmpty) {
       final shop = HiveDatabase.shopBox.getAt(0);
       if (shop != null && shop.name.isNotEmpty) shopName = shop.name;
@@ -276,7 +276,7 @@ class LocalSyncServer {
 
     final data = {
       'status': 'online',
-      'server': 'Nayli Market Master Server',
+      'server': 'Nayli Kiosk Master Server',
       'version': '2.0.0',
       'ip': ip,
       'port': port,
@@ -479,7 +479,7 @@ class LocalSyncServer {
 
   static Future<void> _handleWebKiosk(HttpRequest request) async {
     final config = KioskService.getSettings();
-    final greetingTitle = config['greetingTitle'] ?? 'Nayli Market';
+    final greetingTitle = config['greetingTitle'] ?? 'Nayli Kiosk';
     final greetingSubtitle = config['greetingSubtitle'] ?? 'مرر باركود السلعة تحت الماسح';
     final duration = config['productDisplayDuration'] ?? 10;
     final arrowDir = config['arrowDirection'] ?? 'down';
@@ -494,7 +494,7 @@ class LocalSyncServer {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nayli Market - كشك فاحص الأسعار الذكي</title>
+  <title>Nayli Kiosk - كشك فاحص الأسعار الذكي</title>
   <style>
     :root {
       --primary: #4F46E5;
@@ -739,7 +739,7 @@ class LocalSyncServer {
 
   static Future<void> _handleWebCustomerDisplay(HttpRequest request) async {
     final shopBox = HiveDatabase.shopBox;
-    final shopName = shopBox.isNotEmpty ? shopBox.values.first.name : 'Nayli Market';
+    final shopName = shopBox.isNotEmpty ? shopBox.values.first.name : 'Nayli Kiosk';
 
     final html = '''<!DOCTYPE html>
 <html lang="ar" dir="rtl">

@@ -203,7 +203,7 @@ class PayrollService {
   static String formatThermalPaySlip({
     required StaffMember staff,
     required Map<String, dynamic> settlement,
-    String shopName = 'Nayli Market',
+    String shopName = 'Nayli Kiosk',
   }) {
     final monthStr = settlement['monthStr']?.toString() ?? '';
     final base = (settlement['baseSalary'] as num?)?.toDouble() ?? 0.0;

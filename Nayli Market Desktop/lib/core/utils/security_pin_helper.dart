@@ -89,7 +89,7 @@ class SecurityPinHelper {
     final timeStr = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
 
     final message = '''
-🔐 <b>[نايلي ماركت - Nayli Market]</b>
+🔐 <b>[نايلي ماركت - Nayli Kiosk]</b>
 ⚡ <b>طلب استرجاع آلي فوري لرمز المشرف (Instant PIN Recovery)</b>
 ━━━━━━━━━━━━━━━━━
 📍 <b>معرف الجهاز:</b> <code>$deviceId</code>

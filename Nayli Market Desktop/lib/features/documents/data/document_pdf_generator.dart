@@ -229,7 +229,7 @@ class DocumentPdfGenerator {
 
                 pw.SizedBox(height: 8),
                 pw.Center(
-                  child: pw.Text('تم إنشاء هذا المستند عبر نظام نايل ماركت (Nayli Market POS) • شكراً لثقتكم',
+                  child: pw.Text('تم إنشاء هذا المستند عبر نظام نايل ماركت (Nayli Kiosk POS) • شكراً لثقتكم',
                       style: pw.TextStyle(font: font, fontSize: 8, color: PdfColors.grey500)),
                 ),
               ],

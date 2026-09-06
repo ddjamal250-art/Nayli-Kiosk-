@@ -274,7 +274,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                             label: const Text('طباعة نسخة (Duplicata)',
                                 style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                             onPressed: () async {
-                              final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Market');
+                              final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Kiosk');
                               final shopPhone = HiveDatabase.settingsBox.get('shop_phone', defaultValue: '');
                               final printed = await PrinterHelper.printReceiptWindows(
                                 shopName: '$shopName (DUPLICATA)',

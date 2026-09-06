@@ -92,7 +92,7 @@ class ExpiryTrackerService {
     if (urgent.isEmpty) return false;
 
     final buffer = StringBuffer();
-    buffer.writeln('⏳ <b>تقرير مراقبة صلاحية السلع - Nayli Market</b>');
+    buffer.writeln('⏳ <b>تقرير مراقبة صلاحية السلع - Nayli Kiosk</b>');
     buffer.writeln('📅 التاريخ: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}');
     buffer.writeln('⚠️ السلع التي تحتاج تدخلاً عاجلاً (${urgent.length} سلعة):');
     buffer.writeln('-----------------------------------');

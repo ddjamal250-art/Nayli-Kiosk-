@@ -72,8 +72,8 @@ class KioskService {
   static Map<String, dynamic> getSettings() {
     try {
       final box = HiveDatabase.settingsBox;
-      final rawShopName = box.get('shop_name', defaultValue: 'Nayli Market');
-      final shopName = rawShopName?.toString().isNotEmpty == true ? rawShopName.toString() : 'Nayli Market';
+      final rawShopName = box.get('shop_name', defaultValue: 'Nayli Kiosk');
+      final shopName = rawShopName?.toString().isNotEmpty == true ? rawShopName.toString() : 'Nayli Kiosk';
 
       final rawDuration = box.get('kiosk_product_display_duration', defaultValue: 10);
       final duration = (rawDuration is num) ? rawDuration.toInt() : (int.tryParse(rawDuration?.toString() ?? '') ?? 10);
