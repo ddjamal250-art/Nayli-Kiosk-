@@ -219,7 +219,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
         backgroundColor: const Color(0xFF1E293B),
         title: const Row(
           children: [
-            Icon(Icons.send_rounded, color: Color(0xFF38BDF8), size: 24),
+            Icon(Icons.send_rounded, color: AppTheme.primaryColor, size: 24),
             SizedBox(width: 8),
             Text('تم إرسال طلب التفعيل بنجاح 📡', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
           ],
@@ -242,7 +242,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.fingerprint, color: Color(0xFF38BDF8), size: 18),
+                  const Icon(Icons.fingerprint, color: Color(0xFF818CF8), size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: SelectableText(
@@ -257,7 +257,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                   ),
                   IconButton(
                     tooltip: 'نسخ الكود',
-                    icon: const Icon(Icons.copy, size: 16, color: Color(0xFF38BDF8)),
+                    icon: const Icon(Icons.copy, size: 16, color: Color(0xFF818CF8)),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: LicenseService.getDeviceId()));
                       context.showAppSnackBar('📋 تم نسخ كود الجهاز بنجاح!');
@@ -270,18 +270,18 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF0284C7).withOpacity(0.12),
+                color: AppTheme.primaryColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF0284C7).withOpacity(0.3)),
+                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 20),
+                  Icon(Icons.touch_app_rounded, color: Color(0xFF818CF8), size: 20),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'بمجرد اعتماد طلبك، اضغط على زر "طلب تفعيل النسخة أونلاين" مرة أخرى وسيتم الدخول فوراً!',
-                      style: TextStyle(fontSize: 11.5, color: Color(0xFF38BDF8), fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF818CF8), fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -444,7 +444,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.edit_note_rounded, color: Color(0xFF38BDF8)),
+            Icon(Icons.edit_note_rounded, color: Color(0xFF818CF8)),
             SizedBox(width: 8),
             Text('إدخال عنوان IP الكمبيوتر يدوياً', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
           ],
@@ -466,7 +466,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
               decoration: InputDecoration(
                 hintText: '192.168.1.15:8080',
                 hintStyle: const TextStyle(color: Colors.white38),
-                prefixIcon: const Icon(Icons.computer_rounded, color: Color(0xFF38BDF8)),
+                prefixIcon: const Icon(Icons.computer_rounded, color: Color(0xFF818CF8)),
                 filled: true,
                 fillColor: const Color(0xFF0F172A),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF334155))),
@@ -482,7 +482,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             child: const Text('إلغاء', style: TextStyle(color: Colors.white70)),
           ),
           ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
             icon: const Icon(Icons.check, size: 16),
             label: const Text('اتصال وتحقق'),
             onPressed: () {
@@ -537,14 +537,14 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                       height: 80,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                          colors: [Color(0xFF4F46E5), AppTheme.primaryColor],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0284C7).withOpacity(0.45),
+                            color: AppTheme.primaryColor.withOpacity(0.45),
                             blurRadius: 24,
                             spreadRadius: 4,
                           ),
@@ -585,10 +585,10 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDesktop ? const Color(0xFF0284C7).withOpacity(0.18) : const Color(0xFF10B981).withOpacity(0.18),
+                        color: AppTheme.primaryColor.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isDesktop ? const Color(0xFF38BDF8).withOpacity(0.4) : const Color(0xFF34D399).withOpacity(0.4),
+                          color: const Color(0xFF818CF8).withOpacity(0.4),
                         ),
                       ),
                       child: Row(
@@ -597,15 +597,15 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                           Icon(
                             isDesktop ? Icons.desktop_windows_rounded : Icons.smartphone_rounded,
                             size: 14,
-                            color: isDesktop ? const Color(0xFF38BDF8) : const Color(0xFF34D399),
+                            color: const Color(0xFF818CF8),
                           ),
                           const SizedBox(width: 6),
                           Text(
                             isDesktop ? 'نسخة الحاسوب (Windows Desktop POS)' : 'نسخة الهاتف (Android Mobile Cashier)',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isDesktop ? const Color(0xFF38BDF8) : const Color(0xFF34D399),
+                              color: Color(0xFF818CF8),
                             ),
                           ),
                         ],
@@ -642,7 +642,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.fingerprint_rounded, color: Color(0xFF38BDF8), size: 20),
+                                    const Icon(Icons.fingerprint_rounded, color: Color(0xFF818CF8), size: 20),
                                     const SizedBox(width: 8),
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,7 +658,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                                 ),
                                 IconButton(
                                   tooltip: 'نسخ الكود',
-                                  icon: const Icon(Icons.copy_rounded, size: 18, color: Color(0xFF38BDF8)),
+                                  icon: const Icon(Icons.copy_rounded, size: 18, color: Color(0xFF818CF8)),
                                   onPressed: () {
                                     Clipboard.setData(ClipboardData(text: deviceId));
                                     context.showAppSnackBar('📋 تم نسخ كود الجهاز بنجاح!');
@@ -676,9 +676,9 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                                 controller: _tabController,
                                 isScrollable: true,
                                 tabAlignment: TabAlignment.center,
-                                indicatorColor: const Color(0xFF38BDF8),
+                                indicatorColor: AppTheme.primaryColor,
                                 indicatorWeight: 3,
-                                labelColor: const Color(0xFF38BDF8),
+                                labelColor: const Color(0xFF818CF8),
                                 unselectedLabelColor: Colors.grey[400],
                                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                                 tabs: const [
@@ -740,7 +740,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
 
                     // WhatsApp / Developer Support Button
                     TextButton.icon(
-                      style: TextButton.styleFrom(foregroundColor: const Color(0xFF34D399)),
+                      style: TextButton.styleFrom(foregroundColor: const Color(0xFF818CF8)),
                       icon: const Icon(Icons.support_agent_rounded, size: 20),
                       label: const Text(
                         'هل تحتاج إلى مساعدة أو ترخيص؟ تواصل مع المطور مباشرة',
@@ -797,8 +797,8 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             title: 'الاقتران الذكي بكاشير الحاسوب 📲 ↔️ 🖥️',
             subtitle: 'ربط الهاتف مع كاشير الكمبيوتر كـ جهاز ملحق أو قارئ باركود لاسلكي يرسل المبيعات للحاسوب مباشرة (عبر الواي فاي أو السحابة تلقائياً).',
             badgeText: 'الأكثر طلباً ⭐',
-            badgeColor: const Color(0xFF38BDF8),
-            gradientColors: [const Color(0xFF0369A1), const Color(0xFF0284C7)],
+            badgeColor: const Color(0xFF818CF8),
+            gradientColors: [const Color(0xFF4F46E5), AppTheme.primaryColor],
             icon: Icons.wifi_tethering_rounded,
             onTap: () {
               SoundService.playTabSwitch();
@@ -812,8 +812,8 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             title: 'تفعيل متجر سحابي مستقل (كاشير كامل) 🏪 🚀',
             subtitle: 'تشغيل الهاتف كنقطة بيع كاملة ومستقلة لإدارة المخزون والمبيعات، وتفعيلها سحابياً باسم متجرك أو بمفتاح ترخيص.',
             badgeText: 'ترخيص مستقل 🔑',
-            badgeColor: const Color(0xFF34D399),
-            gradientColors: [const Color(0xFF047857), const Color(0xFF059669)],
+            badgeColor: const Color(0xFF818CF8),
+            gradientColors: [const Color(0xFF4F46E5), AppTheme.primaryColor],
             icon: Icons.storefront_rounded,
             onTap: () {
               SoundService.playTabSwitch();
@@ -828,7 +828,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             subtitle: 'تحويل الهاتف أو التابلت إلى شاشة معلقة للزبائن لفحص الأسعار والعروض في ممرات السوبرماركت فوراً ومجاناً بدون استهلاك رخص!',
             badgeText: 'مجاني 100% 🆓',
             badgeColor: const Color(0xFF818CF8),
-            gradientColors: [const Color(0xFF4338CA), const Color(0xFF6366F1)],
+            gradientColors: [const Color(0xFF4F46E5), AppTheme.primaryColor],
             icon: Icons.tv_rounded,
             onTap: () {
               SoundService.playTabSwitch();
@@ -1039,19 +1039,19 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
           _buildPathwayHeader(
             title: 'الاقتران الذكي بكاشير الحاسوب 📲',
             subtitle: 'ربط الهاتف مع كاشير الكمبيوتر بالمحل',
-            accentColor: const Color(0xFF38BDF8),
+            accentColor: const Color(0xFF818CF8),
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF0284C7).withOpacity(0.12),
+              color: AppTheme.primaryColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFF0284C7).withOpacity(0.35)),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.35)),
             ),
             child: const Column(
               children: [
-                Icon(Icons.wifi_tethering_rounded, color: Color(0xFF38BDF8), size: 36),
+                Icon(Icons.wifi_tethering_rounded, color: Color(0xFF818CF8), size: 36),
                 SizedBox(height: 8),
                 Text(
                   'امسح كود الـ QR الظاهر في كاشير الحاسوب 📸',
@@ -1090,7 +1090,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                 flex: 3,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
+                    backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1108,8 +1108,8 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                 flex: 2,
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF38BDF8),
-                    side: const BorderSide(color: Color(0xFF38BDF8)),
+                    foregroundColor: const Color(0xFF818CF8),
+                    side: const BorderSide(color: Color(0xFF818CF8)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -1135,7 +1135,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
           _buildPathwayHeader(
             title: 'تفعيل متجر سحابي مستقل 🏪',
             subtitle: 'تشغيل الهاتف كنقطة بيع متكاملة',
-            accentColor: const Color(0xFF34D399),
+            accentColor: const Color(0xFF818CF8),
           ),
           const SizedBox(height: 14),
 
@@ -1155,7 +1155,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: _standaloneSubTab == 0 ? const Color(0xFF059669) : Colors.transparent,
+                        color: _standaloneSubTab == 0 ? AppTheme.primaryColor : Colors.transparent,
                         borderRadius: BorderRadius.circular(9),
                       ),
                       alignment: Alignment.center,
@@ -1177,7 +1177,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: _standaloneSubTab == 1 ? const Color(0xFF0284C7) : Colors.transparent,
+                        color: _standaloneSubTab == 1 ? AppTheme.primaryColor : Colors.transparent,
                         borderRadius: BorderRadius.circular(9),
                       ),
                       alignment: Alignment.center,
@@ -1240,7 +1240,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFF0284C7).withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 4)),
+                  BoxShadow(color: AppTheme.primaryColor.withOpacity(0.25), blurRadius: 16, offset: const Offset(0, 4)),
                 ],
               ),
               child: QrImageView(
@@ -1253,7 +1253,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             const SizedBox(height: 10),
             const Text(
               'وجّه كاميرا الهاتف نحو هذا الكود لاقترانه فوراً! 📸',
-              style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 13),
+              style: TextStyle(color: Color(0xFF818CF8), fontWeight: FontWeight.bold, fontSize: 13),
             ),
             const SizedBox(height: 3),
             Text(
@@ -1282,13 +1282,13 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
 
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF38BDF8),
-                side: const BorderSide(color: Color(0xFF38BDF8)),
+                foregroundColor: const Color(0xFF818CF8),
+                side: const BorderSide(color: Color(0xFF818CF8)),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               icon: _isPairingWithMaster
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)))
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF818CF8)))
                   : const Icon(Icons.link_rounded, size: 16),
               label: const Text(
                 'هل هذا الجهاز كاشير فرعي؟ اربطه بالحاسوب الرئيسي (Caisse 2) 🖥️ ↔️ 🖥️',
@@ -1308,13 +1308,13 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF0284C7).withOpacity(0.12),
+            color: AppTheme.primaryColor.withOpacity(0.12),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF0284C7).withOpacity(0.35)),
+            border: Border.all(color: AppTheme.primaryColor.withOpacity(0.35)),
           ),
           child: const Column(
             children: [
-              Icon(Icons.wifi_tethering_rounded, color: Color(0xFF38BDF8), size: 36),
+              Icon(Icons.wifi_tethering_rounded, color: Color(0xFF818CF8), size: 36),
               SizedBox(height: 8),
               Text(
                 'الاقتران الذكي بكاشير الحاسوب 📲 ↔️ 🖥️',
@@ -1352,7 +1352,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
               flex: 3,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0284C7),
+                  backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1370,8 +1370,8 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
               flex: 2,
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF38BDF8),
-                  side: const BorderSide(color: Color(0xFF38BDF8)),
+                  foregroundColor: const Color(0xFF818CF8),
+                  side: const BorderSide(color: Color(0xFF818CF8)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -1397,7 +1397,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             decoration: InputDecoration(
               labelText: 'اسم المحل التجاري * (مثال: سوبرماركت البركة)',
               labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-              prefixIcon: const Icon(Icons.storefront_rounded, color: Color(0xFF38BDF8), size: 18),
+              prefixIcon: const Icon(Icons.storefront_rounded, color: Color(0xFF818CF8), size: 18),
               filled: true,
               fillColor: const Color(0xFF0F172A),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
@@ -1417,7 +1417,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                   decoration: InputDecoration(
                     labelText: 'رقم الهاتف',
                     labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-                    prefixIcon: const Icon(Icons.phone_rounded, color: Color(0xFF38BDF8), size: 17),
+                    prefixIcon: const Icon(Icons.phone_rounded, color: Color(0xFF818CF8), size: 17),
                     filled: true,
                     fillColor: const Color(0xFF0F172A),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
@@ -1434,7 +1434,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                   decoration: InputDecoration(
                     labelText: 'المدينة / الولاية',
                     labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-                    prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF38BDF8), size: 17),
+                    prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF818CF8), size: 17),
                     filled: true,
                     fillColor: const Color(0xFF0F172A),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
@@ -1458,7 +1458,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
 
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
+              backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1485,7 +1485,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
         children: [
           const Text(
             'تفعيل فوري بقارئ الباركود (Douchette) 🔫',
-            style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 13.5),
+            style: TextStyle(color: Color(0xFF818CF8), fontWeight: FontWeight.bold, fontSize: 13.5),
           ),
           const SizedBox(height: 4),
           const Text(
@@ -1506,7 +1506,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                   decoration: InputDecoration(
                     hintText: 'امسح بالدوشيت أو اكتب الكود (مثال: NY-123456)...',
                     hintStyle: const TextStyle(color: Colors.white38, fontSize: 11.5),
-                    prefixIcon: const Icon(Icons.qr_code_rounded, color: Color(0xFF38BDF8), size: 18),
+                    prefixIcon: const Icon(Icons.qr_code_rounded, color: Color(0xFF818CF8), size: 18),
                     filled: true,
                     fillColor: const Color(0xFF0F172A),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
@@ -1519,7 +1519,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0284C7),
+                  backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1550,7 +1550,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                   decoration: InputDecoration(
                     hintText: 'أدخل مفتاح الترخيص (Licence Key)...',
                     hintStyle: const TextStyle(color: Colors.white38, fontSize: 11.5),
-                    prefixIcon: const Icon(Icons.key_rounded, color: Color(0xFF38BDF8), size: 18),
+                    prefixIcon: const Icon(Icons.key_rounded, color: Color(0xFF818CF8), size: 18),
                     filled: true,
                     fillColor: const Color(0xFF0F172A),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
@@ -1594,18 +1594,18 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF0284C7).withOpacity(0.08),
+              color: AppTheme.primaryColor.withOpacity(0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF0284C7).withOpacity(0.25)),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
             ),
             child: const Row(
               children: [
-                Icon(Icons.phone_android_rounded, color: Color(0xFF38BDF8), size: 22),
+                Icon(Icons.phone_android_rounded, color: Color(0xFF818CF8), size: 22),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     '💡 لديك هاتف مفعل؟ افتح الإعدادات في الهاتف واضغط "تفعيل حاسوب بالباركود"، ثم امسح الكود الظاهر على شاشة الهاتف بقارئ الباركود (Douchette)!',
-                    style: TextStyle(color: Color(0xFFBAE6FD), fontSize: 11.5, height: 1.4),
+                    style: TextStyle(color: Color(0xFFE0E7FF), fontSize: 11.5, height: 1.4),
                   ),
                 ),
               ],
@@ -1624,9 +1624,9 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF4F46E5).withOpacity(0.12),
+            color: AppTheme.primaryColor.withOpacity(0.12),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF818CF8).withOpacity(0.35)),
+            border: Border.all(color: AppTheme.primaryColor.withOpacity(0.35)),
           ),
           child: const Column(
             children: [
@@ -1649,7 +1649,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
 
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4F46E5),
+            backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
