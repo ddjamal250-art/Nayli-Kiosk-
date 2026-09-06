@@ -23,6 +23,7 @@ import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../settings/presentation/pages/advanced_pos_settings_page.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import '../../../../core/utils/tpe_payment_service.dart';
+import '../../../../core/utils/whatsapp_helper.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -1111,17 +1112,15 @@ $itemsSummary
 شكراً لتعاملكم معنا! • Merci de votre visite!
 ''';
 
-    final uri = Uri.parse('https://wa.me/$rawPhone?text=${Uri.encodeComponent(message)}');
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        SoundService.playCheckoutSuccess();
-        SnackbarHelper.showSuccess(context, '✅ تم فتح WhatsApp بنجاح!');
-      } else {
-        SnackbarHelper.showError(context, 'تعذر فتح تطبيق WhatsApp');
-      }
-    } catch (e) {
-      SnackbarHelper.showError(context, 'خطأ في إرسال الواتساب: $e');
+    final launched = await WhatsAppReceiptHelper.sendDirectWhatsAppMessage(
+      phone: rawPhone,
+      message: message,
+    );
+    if (launched) {
+      SoundService.playCheckoutSuccess();
+      SnackbarHelper.showSuccess(context, '✅ تم فتح WhatsApp بنجاح!');
+    } else {
+      SnackbarHelper.showError(context, 'تعذر فتح تطبيق WhatsApp');
     }
   }
 

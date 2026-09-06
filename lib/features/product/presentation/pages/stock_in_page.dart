@@ -59,7 +59,11 @@ class _StockInPageState extends State<StockInPage> {
   final TextEditingController _costPriceController = TextEditingController();
   final TextEditingController _qtyController = TextEditingController(text: '24');
   
-  // Cartons controllers
+  // FocusNodes for streamlined barcode scan -> cost -> qty -> enter workflow
+  final FocusNode _costPriceFocusNode = FocusNode();
+  final FocusNode _qtyFocusNode = FocusNode();
+  final FocusNode _priceFocusNode = FocusNode();
+  final FocusNode _nameFocusNode = FocusNode();
   final TextEditingController _cartonCountController = TextEditingController(text: '1');
   final TextEditingController _unitsPerCartonController = TextEditingController(text: '24');
   final TextEditingController _cartonCostController = TextEditingController();
@@ -149,6 +153,10 @@ class _StockInPageState extends State<StockInPage> {
     _costPerKgController.dispose();
     _supplierNameController.dispose();
     _supplierPhoneController.dispose();
+    _costPriceFocusNode.dispose();
+    _qtyFocusNode.dispose();
+    _priceFocusNode.dispose();
+    _nameFocusNode.dispose();
     super.dispose();
   }
 
@@ -303,6 +311,9 @@ class _StockInPageState extends State<StockInPage> {
         }
       });
       SoundService.playScanBeep();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _costPriceFocusNode.requestFocus();
+      });
       return;
     }
 
@@ -321,6 +332,9 @@ class _StockInPageState extends State<StockInPage> {
         _isCategoryUserSelected = true;
       });
       SoundService.playScanBeep();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _costPriceFocusNode.requestFocus();
+      });
       return;
     }
 
@@ -335,6 +349,9 @@ class _StockInPageState extends State<StockInPage> {
       _isCategoryUserSelected = false;
     });
     SoundService.playScanBeep();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _nameFocusNode.requestFocus();
+    });
   }
 
   void _saveStockIn() {
@@ -961,6 +978,9 @@ class _StockInPageState extends State<StockInPage> {
                   // Item Name
                   TextField(
                     controller: _nameController,
+                    focusNode: _nameFocusNode,
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => _priceFocusNode.requestFocus(),
                     decoration: InputDecoration(
                       labelText: 'اسم السلعة (مثلاً: زيت عافية 5L / شكارة قهوة 25kg) *',
                       border: const OutlineInputBorder(),
@@ -1070,6 +1090,9 @@ class _StockInPageState extends State<StockInPage> {
                   ] else ...[
                     TextField(
                       controller: _qtyController,
+                      focusNode: _qtyFocusNode,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _saveStockIn(),
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(labelText: 'الكمية المستلمة (بالحبة)', suffixText: 'حبة', border: OutlineInputBorder()),
                     ),
@@ -1083,6 +1106,9 @@ class _StockInPageState extends State<StockInPage> {
                       Expanded(
                         child: TextField(
                           controller: _priceController,
+                          focusNode: _priceFocusNode,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _costPriceFocusNode.requestFocus(),
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'سعر بيع الكيلوغرام *' : 'سعر بيع الحبة *',
@@ -1095,6 +1121,9 @@ class _StockInPageState extends State<StockInPage> {
                       Expanded(
                         child: TextField(
                           controller: _costPriceController,
+                          focusNode: _costPriceFocusNode,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _qtyFocusNode.requestFocus(),
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'تكلفة الكيلوغرام (PUMP)' : 'سعر تكلفة الحبة (PUMP)',

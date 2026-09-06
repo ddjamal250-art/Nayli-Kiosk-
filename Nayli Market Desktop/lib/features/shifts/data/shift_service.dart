@@ -121,13 +121,19 @@ class ShiftService {
     double cash = 0.0;
     double tpe = 0.0;
     double credit = 0.0;
+    double shiftRealProfit = 0.0;
+    int shiftInvoiceCount = 0;
 
     for (var inv in invoices) {
       if (inv is Map) {
         final invTime = DateTime.tryParse(inv['timestamp']?.toString() ?? '');
         if (invTime != null && invTime.isAfter(activeShift.openedAt)) {
+          shiftInvoiceCount++;
           final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
           final method = inv['paymentMethod']?.toString() ?? 'Espèces';
+          final invProfit = (inv['netProfit'] as num?)?.toDouble() ??
+              (total - ((inv['totalCost'] as num?)?.toDouble() ?? 0.0));
+          shiftRealProfit += invProfit;
           if (inv['isCredit'] == true) {
             credit += total;
           } else if (method.contains('TPE') || method.contains('Card')) {
@@ -162,8 +168,8 @@ class ShiftService {
         cashInDrawer: actualCashInDrawer,
         tpeSales: tpe,
         creditSales: credit,
-        invoiceCount: invoices.length,
-        estimatedNetProfit: (closedShift.totalSales * 0.22),
+        invoiceCount: shiftInvoiceCount,
+        estimatedNetProfit: shiftRealProfit > 0 ? shiftRealProfit : (closedShift.totalSales * 0.22),
       );
     } catch (_) {}
 

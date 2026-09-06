@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'master_catalog_seed.dart';
 
 class MasterCatalogService {
@@ -284,4 +286,201 @@ class MasterCatalogService {
       instance.search(query, category: category, limit: limit);
   static List<String> get categories => instance._categories.toList();
   static List<String> get categoryList => instance._categories.toList();
+
+  /// =========================================================================
+  /// 📦 منظومة التصدير والاستيراد التجاري الشاملة (Universal Algerian Export/Import)
+  /// =========================================================================
+
+  /// تصدير الكتالوج بصيغة CSV متوافقة 100% مع برامج التسيير الجزائرية (LogiStock, G-Stock, SoftCaisse, Odoo)
+  /// مع إضافة BOM (0xFEFF) لدعم اللغة العربية في Microsoft Excel مباشرة.
+  static String exportToCSV({List<MasterCatalogItem>? items}) {
+    final list = items ?? instance.allItems;
+    final sb = StringBuffer();
+    // UTF-8 BOM for seamless Arabic display in MS Excel
+    sb.write('\uFEFF');
+    // Algerian Market Standard Headers
+    sb.writeln('Code_Barre;Designation;Famille;Prix_Vente;Prix_Achat;Unite;Image_URL');
+    for (final item in list) {
+      final barcode = item.barcode.replaceAll(';', ' ');
+      final name = item.name.replaceAll(';', ' ').replaceAll('"', '""');
+      final cat = item.category.replaceAll(';', ' ');
+      final price = item.defaultPrice.toStringAsFixed(2);
+      final cost = item.defaultCost.toStringAsFixed(2);
+      final unit = (item.unitType ?? (item.isTobacco ? 'pack' : 'piece')).replaceAll(';', ' ');
+      final img = (item.imageUrl ?? '').replaceAll(';', ' ');
+      sb.writeln('$barcode;"$name";$cat;$price;$cost;$unit;$img');
+    }
+    return sb.toString();
+  }
+
+  /// تصدير الكتالوج بصيغة SQL Script جاهز للحقن المباشر في قواعد بيانات SQLite / MySQL / PostgreSQL / SQL Server
+  static String exportToSQL({List<MasterCatalogItem>? items}) {
+    final list = items ?? instance.allItems;
+    final sb = StringBuffer();
+    sb.writeln('-- ========================================================');
+    sb.writeln('-- Nayli Market (نايلي ماركت) - Master Catalog SQL Export');
+    sb.writeln('-- Total Products: ${list.length}');
+    sb.writeln('-- Generated At: ${DateTime.now().toIso8601String()}');
+    sb.writeln('-- ========================================================');
+    sb.writeln();
+    sb.writeln('CREATE TABLE IF NOT EXISTS master_products (');
+    sb.writeln('    barcode VARCHAR(64) PRIMARY KEY,');
+    sb.writeln('    name VARCHAR(255) NOT NULL,');
+    sb.writeln('    category VARCHAR(100),');
+    sb.writeln('    default_price DECIMAL(10,2) DEFAULT 0.0,');
+    sb.writeln('    default_cost DECIMAL(10,2) DEFAULT 0.0,');
+    sb.writeln('    is_tobacco TINYINT DEFAULT 0,');
+    sb.writeln('    unit_type VARCHAR(50) DEFAULT \'piece\',');
+    sb.writeln('    image_url TEXT');
+    sb.writeln(');');
+    sb.writeln();
+
+    final buffer = <String>[];
+    for (final item in list) {
+      final b = item.barcode.replaceAll("'", "''");
+      final n = item.name.replaceAll("'", "''");
+      final c = item.category.replaceAll("'", "''");
+      final p = item.defaultPrice.toStringAsFixed(2);
+      final cost = item.defaultCost.toStringAsFixed(2);
+      final isTob = item.isTobacco ? 1 : 0;
+      final u = (item.unitType ?? 'piece').replaceAll("'", "''");
+      final img = (item.imageUrl ?? '').replaceAll("'", "''");
+      buffer.add("('$b', '$n', '$c', $p, $cost, $isTob, '$u', '$img')");
+
+      if (buffer.length >= 100) {
+        sb.writeln('INSERT OR REPLACE INTO master_products (barcode, name, category, default_price, default_cost, is_tobacco, unit_type, image_url) VALUES');
+        sb.writeln('  ${buffer.join(',\n  ')};');
+        buffer.clear();
+      }
+    }
+    if (buffer.isNotEmpty) {
+      sb.writeln('INSERT OR REPLACE INTO master_products (barcode, name, category, default_price, default_cost, is_tobacco, unit_type, image_url) VALUES');
+      sb.writeln('  ${buffer.join(',\n  ')};');
+      buffer.clear();
+    }
+    return sb.toString();
+  }
+
+  /// تصدير الكتالوج بصيغة JSON القياسية للتطبيقات الحديثة
+  static String exportToJSON({List<MasterCatalogItem>? items}) {
+    final list = items ?? instance.allItems;
+    final data = list.map((item) => {
+      'barcode': item.barcode,
+      'name': item.name,
+      'category': item.category,
+      'default_price': item.defaultPrice,
+      'default_cost': item.defaultCost,
+      'is_tobacco': item.isTobacco,
+      'unit_type': item.unitType,
+      'image_url': item.imageUrl,
+    }).toList();
+    return const JsonEncoder.withIndent('  ').convert(data);
+  }
+
+  /// حفظ الملف المصدر محلياً في مجلد مخصص للمستندات والتنزيلات
+  static Future<String> saveExportFile(String content, String fileName) async {
+    Directory baseDir;
+    try {
+      baseDir = (await getDownloadsDirectory()) ?? (await getApplicationDocumentsDirectory());
+    } catch (_) {
+      baseDir = await getApplicationDocumentsDirectory();
+    }
+    final exportDir = Directory('${baseDir.path}/NayliMarket_Exports');
+    if (!await exportDir.exists()) {
+      await exportDir.create(recursive: true);
+    }
+    final file = File('${exportDir.path}/$fileName');
+    await file.writeAsString(content, encoding: utf8);
+    return file.path;
+  }
+
+  /// استيراد سلع من ملف CSV خارجي بذكاء وتعيين الحقول تلقائياً
+  static int importFromCSV(String csvContent) {
+    if (csvContent.trim().isEmpty) return 0;
+    
+    // Strip BOM if present
+    String cleanContent = csvContent;
+    if (cleanContent.startsWith('\uFEFF')) {
+      cleanContent = cleanContent.substring(1);
+    }
+
+    final lines = const LineSplitter().convert(cleanContent);
+    if (lines.isEmpty) return 0;
+
+    // Detect delimiter: semicolon, comma, or tab
+    final firstLine = lines.first;
+    String delimiter = ';';
+    if (firstLine.split(';').length >= 3) {
+      delimiter = ';';
+    } else if (firstLine.split(',').length >= 3) {
+      delimiter = ',';
+    } else if (firstLine.split('\t').length >= 3) {
+      delimiter = '\t';
+    }
+
+    // Parse header
+    final headers = firstLine.split(delimiter).map((h) => h.trim().toLowerCase().replaceAll('"', '')).toList();
+    int barcodeCol = -1;
+    int nameCol = -1;
+    int catCol = -1;
+    int priceCol = -1;
+    int costCol = -1;
+    int imgCol = -1;
+
+    for (int i = 0; i < headers.length; i++) {
+      final h = headers[i];
+      if (h.contains('code') || h.contains('barcode') || h.contains('cb')) {
+        barcodeCol = i;
+      } else if (h.contains('desig') || h.contains('name') || h.contains('nom') || h.contains('produit') || h.contains('libelle')) {
+        nameCol = i;
+      } else if (h.contains('famille') || h.contains('cat') || h.contains('rayon') || h.contains('صنف') || h.contains('قسم')) {
+        catCol = i;
+      } else if (h.contains('vente') || h.contains('price') || h.contains('prix') || h.contains('pv') || h.contains('سعر')) {
+        if (priceCol == -1) priceCol = i;
+      } else if (h.contains('achat') || h.contains('cost') || h.contains('pa') || h.contains('شراء')) {
+        costCol = i;
+      } else if (h.contains('image') || h.contains('photo') || h.contains('img') || h.contains('صورة')) {
+        imgCol = i;
+      }
+    }
+
+    // Fallbacks if header wasn't detected properly
+    if (barcodeCol == -1) barcodeCol = 0;
+    if (nameCol == -1 && headers.length > 1) nameCol = 1;
+
+    int importedCount = 0;
+    for (int i = 1; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) continue;
+
+      final cols = line.split(delimiter).map((c) => c.trim().replaceAll('"', '')).toList();
+      if (cols.length <= barcodeCol) continue;
+
+      final barcode = cols[barcodeCol].trim();
+      if (barcode.isEmpty) continue;
+
+      final name = (nameCol != -1 && cols.length > nameCol) ? cols[nameCol].trim() : 'منتج $barcode';
+      final category = (catCol != -1 && cols.length > catCol && cols[catCol].isNotEmpty) ? cols[catCol].trim() : 'عام';
+      final price = (priceCol != -1 && cols.length > priceCol) ? (double.tryParse(cols[priceCol].replaceAll(',', '.')) ?? 0.0) : 0.0;
+      final cost = (costCol != -1 && cols.length > costCol) ? (double.tryParse(cols[costCol].replaceAll(',', '.')) ?? (price * 0.85).roundToDouble()) : (price * 0.85).roundToDouble();
+      final img = (imgCol != -1 && cols.length > imgCol) ? cols[imgCol].trim() : null;
+
+      final item = MasterCatalogItem(
+        barcode: barcode,
+        name: name,
+        category: category,
+        defaultPrice: price > 0 ? price : 100.0,
+        defaultCost: cost > 0 ? cost : 80.0,
+        imageUrl: img?.isNotEmpty == true ? img : null,
+      );
+
+      instance._barcodeMap[barcode] = item;
+      instance._allItems.removeWhere((it) => it.barcode == barcode);
+      instance._allItems.add(item);
+      if (category.isNotEmpty) instance._categories.add(category);
+      importedCount++;
+    }
+
+    return importedCount;
+  }
 }

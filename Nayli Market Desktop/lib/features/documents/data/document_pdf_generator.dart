@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/data/hive_database.dart';
 import '../../../core/utils/app_constants.dart';
+import '../../../core/utils/whatsapp_helper.dart';
 import '../domain/entities/commercial_document.dart';
 
 class DocumentPdfGenerator {
@@ -282,10 +283,10 @@ class DocumentPdfGenerator {
 شكراً لتعاملكم معنا!
 ''';
 
-    final uri = Uri.parse('https://wa.me/$formattedPhone?text=${Uri.encodeComponent(message)}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await WhatsAppReceiptHelper.sendDirectWhatsAppMessage(
+      phone: formattedPhone,
+      message: message,
+    );
   }
 }
 

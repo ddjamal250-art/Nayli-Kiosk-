@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vibration/vibration.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
@@ -83,6 +84,152 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
       _selectedBarcodes.clear();
     });
     SoundService.playTabSwitch();
+  }
+
+  Future<void> _exportCatalog(String format) async {
+    try {
+      String content;
+      String filename;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+      if (format == 'csv') {
+        content = MasterCatalogService.exportToCSV();
+        filename = 'NayliMarket_Catalog_$timestamp.csv';
+      } else if (format == 'sql') {
+        content = MasterCatalogService.exportToSQL();
+        filename = 'NayliMarket_Catalog_$timestamp.sql';
+      } else {
+        content = MasterCatalogService.exportToJSON();
+        filename = 'NayliMarket_Catalog_$timestamp.json';
+      }
+
+      final savedPath = await MasterCatalogService.saveExportFile(content, filename);
+      SoundService.playSuccess();
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 8),
+              Text('تم التصدير بنجاح'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('تم إنشاء ملف $format متوافق وجاهز للاستخدام:'),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(
+                  savedPath,
+                  style: const TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'يمكن فتح الملف أو استيراده في أي برنامج تسيير تجاري في السوق الجزائري (LogiStock, G-Stock, SoftCaisse, Odoo...).',
+                style: TextStyle(fontSize: 12, color: Colors.black87),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إغلاق'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              onPressed: () {
+                Navigator.pop(ctx);
+                Share.shareXFiles([XFile(savedPath)], text: 'كتالوج نايلي ماركت التجاري');
+              },
+              icon: const Icon(Icons.share, color: Colors.white, size: 16),
+              label: const Text('مشاركة / إرسال', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      SnackbarHelper.showError(context, 'فشل التصدير: $e');
+    }
+  }
+
+  void _showImportDialog() {
+    final textController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.file_download_outlined, color: Colors.teal),
+            SizedBox(width: 8),
+            Text('استيراد سلع من CSV / إكسل'),
+          ],
+        ),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'الصق محتوى ملف CSV هنا (يقبل فواصل الفاصلة المنقوطة ; أو الفاصلة , أو Tab):\n'
+                'الأعمدة المطلوبة: Code_Barre, Designation, Famille, Prix_Vente, Prix_Achat',
+                style: TextStyle(fontSize: 12, color: Colors.black87),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: textController,
+                maxLines: 8,
+                decoration: InputDecoration(
+                  hintText: 'Code_Barre;Designation;Famille;Prix_Vente;Prix_Achat\n6130000000001;عصير رامي 1L;مشروبات;120;100',
+                  hintStyle: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+                style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            onPressed: () {
+              final content = textController.text.trim();
+              if (content.isEmpty) return;
+              final count = MasterCatalogService.importFromCSV(content);
+              Navigator.pop(ctx);
+              setState(() {});
+              if (count > 0) {
+                SoundService.playSuccess();
+                SnackbarHelper.showSuccess(context, 'تم استيراد $count سلعة بنجاح وإضافتها للكتالوج!');
+              } else {
+                SnackbarHelper.showError(context, 'لم يتم التعرف على أي أسطر صالحة في ملف CSV.');
+              }
+            },
+            child: const Text('استيراد الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAddOrEditModal(MasterCatalogItem item, Product? existingProduct) {
@@ -351,6 +498,64 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
               ],
             ),
             actions: [
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.import_export_rounded),
+                tooltip: 'استيراد وتصدير الكتالوج',
+                onSelected: (value) {
+                  if (value == 'csv') {
+                    _exportCatalog('csv');
+                  } else if (value == 'sql') {
+                    _exportCatalog('sql');
+                  } else if (value == 'json') {
+                    _exportCatalog('json');
+                  } else if (value == 'import') {
+                    _showImportDialog();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'csv',
+                    child: Row(
+                      children: [
+                        Icon(Icons.table_chart_outlined, color: Colors.green, size: 20),
+                        SizedBox(width: 8),
+                        Text('تصدير إكسل (CSV) للبرامج التجارية'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'sql',
+                    child: Row(
+                      children: [
+                        Icon(Icons.storage_outlined, color: Colors.blue, size: 20),
+                        SizedBox(width: 8),
+                        Text('تصدير سكربت قاعدة بيانات (SQL)'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'json',
+                    child: Row(
+                      children: [
+                        Icon(Icons.code_rounded, color: Colors.amber, size: 20),
+                        SizedBox(width: 8),
+                        Text('تصدير بصيغة JSON للتطبيقات'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    value: 'import',
+                    child: Row(
+                      children: [
+                        Icon(Icons.file_download_outlined, color: Colors.teal, size: 20),
+                        SizedBox(width: 8),
+                        Text('استيراد سلع من ملف CSV / إكسل'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               IconButton(
                 icon: const Icon(Icons.refresh_rounded),
                 tooltip: 'تحديث وتحميل الكتالوج',
