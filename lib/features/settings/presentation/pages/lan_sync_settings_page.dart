@@ -67,11 +67,11 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
       _masterPingResult = 'جاري الاتصال والتحقق من كاشير الكمبيوتر...';
     });
 
-    try {
-      String ip = '';
-      String port = '8080';
-      String shopName = 'كاشير الكمبيوتر الرئيسي';
+    String ip = '';
+    String port = '8080';
+    String shopName = 'كاشير الكمبيوتر الرئيسي';
 
+    try {
       final trimmed = rawCode.trim();
       if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
         final data = jsonDecode(trimmed) as Map<String, dynamic>;
