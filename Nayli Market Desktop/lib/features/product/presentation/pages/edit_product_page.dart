@@ -461,11 +461,11 @@ class _EditProductPageState extends State<EditProductPage> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.label_important_rounded, color: Colors.amber),
-              SizedBox(width: 8),
-              Text(context.tr('print_price_sticker'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Icon(Icons.label_important_rounded, color: Colors.amber),
+              const SizedBox(width: 8),
+              Text(ctx.tr('print_price_sticker'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
@@ -825,7 +825,7 @@ class _EditProductPageState extends State<EditProductPage> {
                                   TextFormField(
                                     controller: _cartonPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(hintText: '4100', suffixText: context.tr('currency_symbol')),
+                                    decoration: InputDecoration(hintText: '4100', suffixText: context.tr('currency_symbol')),
                                     onChanged: _onCartonPriceChanged,
                                   ),
                                 ],
@@ -840,7 +840,7 @@ class _EditProductPageState extends State<EditProductPage> {
                                   TextFormField(
                                     controller: _wholesaleCartonPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(hintText: '3950', suffixText: context.tr('currency_symbol')),
+                                    decoration: InputDecoration(hintText: '3950', suffixText: context.tr('currency_symbol')),
                                     onChanged: _onWholesaleCartonPriceChanged,
                                   ),
                                 ],
@@ -859,7 +859,7 @@ class _EditProductPageState extends State<EditProductPage> {
                                   TextFormField(
                                     controller: _wholesalePackPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(hintText: '400', suffixText: context.tr('currency_symbol')),
+                                    decoration: InputDecoration(hintText: '400', suffixText: context.tr('currency_symbol')),
                                     onChanged: _onWholesalePackPriceChanged,
                                   ),
                                 ],
@@ -874,7 +874,7 @@ class _EditProductPageState extends State<EditProductPage> {
                                   TextFormField(
                                     controller: _singlePiecePriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(hintText: '25', suffixText: context.tr('currency_symbol')),
+                                    decoration: InputDecoration(hintText: '25', suffixText: context.tr('currency_symbol')),
                                     onChanged: _onSinglePiecePriceChanged,
                                   ),
                                 ],
@@ -1011,7 +1011,7 @@ class _EditProductPageState extends State<EditProductPage> {
                           TextFormField(
                             controller: _costPriceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
+                            decoration: InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
                             onChanged: (_) => setState(() {}),
                           ),
                         ],
@@ -1026,7 +1026,7 @@ class _EditProductPageState extends State<EditProductPage> {
                           TextFormField(
                             controller: _priceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
+                            decoration: InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
                             validator: AppValidators.price,
                             onChanged: (v) {
                               if (_isTobacco) {
@@ -1048,7 +1048,7 @@ class _EditProductPageState extends State<EditProductPage> {
                           TextFormField(
                             controller: _wholesalePriceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
+                            decoration: InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
                             onChanged: (v) {
                               if (_isTobacco) {
                                 _onWholesalePackPriceChanged(v);

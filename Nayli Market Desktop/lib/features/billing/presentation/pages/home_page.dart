@@ -604,16 +604,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.delete_sweep_outlined, color: Colors.red),
-            SizedBox(width: 8),
+            const Icon(Icons.delete_sweep_outlined, color: Colors.red),
+            const SizedBox(width: 8),
             Text(context.tr('إفراغ السلة الحالية'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
-        content: const Text(
+        content: Text(
           context.tr('هل أنت متأكد من حذف جميع السلع الممسوحة في هذه السلة والبدء من جديد؟'),
-          style: TextStyle(fontSize: 14),
+          style: const TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
@@ -644,10 +644,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.pause_circle_filled, color: Colors.orange),
-            SizedBox(width: 8),
+            const Icon(Icons.pause_circle_filled, color: Colors.orange),
+            const SizedBox(width: 8),
             Text(context.tr('تعليق السلة الحالية (Panier en attente)'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ],
         ),
@@ -660,7 +660,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             const SizedBox(height: 12),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: context.tr('اسم الزبون أو وصف السلة (اختياري)'),
                 hintText: 'مثال: الشاب ذو القميص الأزرق',
               ),
@@ -711,10 +711,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.percent_rounded, color: AppTheme.primaryColor),
-                SizedBox(width: 8),
+                const Icon(Icons.percent_rounded, color: AppTheme.primaryColor),
+                const SizedBox(width: 8),
                 Text(context.tr('تطبيق تخفيض / Remise'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -849,10 +849,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.bolt, color: Colors.amber),
-                          SizedBox(width: 6),
+                          const Icon(Icons.bolt, color: Colors.amber),
+                          const SizedBox(width: 6),
                           Text(context.tr('إضافة سلعة لشريط البيع السريع ⚡'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
@@ -1964,10 +1964,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: Colors.red.withOpacity(0.3)),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       children: [
-                                        Icon(Icons.delete_outline, size: 12, color: Colors.red),
-                                        SizedBox(width: 2),
+                                        const Icon(Icons.delete_outline, size: 12, color: Colors.red),
+                                        const SizedBox(width: 2),
                                         Text(context.tr('clear'), style: const TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
@@ -1983,10 +1983,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: Colors.orange.withOpacity(0.3)),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       children: [
-                                        Icon(Icons.pause_circle_outline, size: 12, color: Colors.orange),
-                                        SizedBox(width: 2),
+                                        const Icon(Icons.pause_circle_outline, size: 12, color: Colors.orange),
+                                        const SizedBox(width: 2),
                                         Text(context.tr('hold'), style: const TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
                                       ],
                                     ),

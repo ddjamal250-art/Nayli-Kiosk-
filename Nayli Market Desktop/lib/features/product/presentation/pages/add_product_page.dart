@@ -489,9 +489,9 @@ class _AddProductPageState extends State<AddProductPage> {
                     Expanded(
                       child: TextFormField(
                         controller: _barcodeCtrl,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: context.tr('scan_or_type_barcode'),
-                          prefixIcon: Icon(Icons.qr_code),
+                          prefixIcon: const Icon(Icons.qr_code),
                         ),
                       ),
                     ),
@@ -543,7 +543,7 @@ class _AddProductPageState extends State<AddProductPage> {
                 // Unit Type Selection (قطعة، متر، مليلتر)
                 const InputLabel(text: 'وحدة البيع والقياس 📏📦'),
                 SegmentedButton<String>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(value: 'piece', label: Text(context.tr('unit_piece_box'), style: const TextStyle(fontSize: 12))),
                     ButtonSegment(value: 'meter', label: Text(context.tr('unit_meter'), style: const TextStyle(fontSize: 12))),
                     ButtonSegment(value: 'ml', label: Text(context.tr('unit_ml'), style: const TextStyle(fontSize: 12))),
@@ -633,7 +633,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                   TextFormField(
                                     controller: _cartonPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(hintText: '4100', suffixText: context.tr('currency_symbol')),
+                                    decoration: InputDecoration(hintText: '4100', suffixText: context.tr('currency_symbol')),
                                     onChanged: _onCartonPriceChanged,
                                   ),
                                 ],
@@ -648,7 +648,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                   TextFormField(
                                     controller: _wholesaleCartonPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(hintText: '3950', suffixText: context.tr('currency_symbol')),
+                                    decoration: InputDecoration(hintText: '3950', suffixText: context.tr('currency_symbol')),
                                     onChanged: _onWholesaleCartonPriceChanged,
                                   ),
                                 ],
@@ -667,7 +667,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                   TextFormField(
                                     controller: _wholesalePackPriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(hintText: '400', suffixText: context.tr('currency_symbol')),
+                                    decoration: InputDecoration(hintText: '400', suffixText: context.tr('currency_symbol')),
                                     onChanged: _onWholesalePackPriceChanged,
                                   ),
                                 ],
@@ -682,7 +682,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                   TextFormField(
                                     controller: _singlePiecePriceCtrl,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(hintText: '25', suffixText: context.tr('currency_symbol')),
+                                    decoration: InputDecoration(hintText: '25', suffixText: context.tr('currency_symbol')),
                                     onChanged: _onSinglePiecePriceChanged,
                                   ),
                                 ],
@@ -819,7 +819,7 @@ class _AddProductPageState extends State<AddProductPage> {
                           TextFormField(
                             controller: _costPriceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
+                            decoration: InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
                             onChanged: (_) => setState(() {}),
                           ),
                         ],
@@ -834,7 +834,7 @@ class _AddProductPageState extends State<AddProductPage> {
                           TextFormField(
                             controller: _priceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
+                            decoration: InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
                             validator: AppValidators.price,
                             onChanged: (v) {
                               if (_isTobacco) {
@@ -856,7 +856,7 @@ class _AddProductPageState extends State<AddProductPage> {
                           TextFormField(
                             controller: _wholesalePriceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
+                            decoration: InputDecoration(hintText: '0', suffixText: context.tr('currency_symbol')),
                             onChanged: (v) {
                               if (_isTobacco) {
                                 _onWholesalePackPriceChanged(v);

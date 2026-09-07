@@ -1194,9 +1194,7 @@ class AppLocalizations {
       'الطابعة': 'Imprimante',
       'لم تحدد طابعة إيصالات (انقر لتحديدها)': 'Aucune imprimante sélectionnée',
       'لم يتم تحديد طابعة إيصالات': 'Aucune imprimante sélectionnée',
-      'لم يتم اختيار طابعة الوصولات الحرارية.
-هل ترغب في تسجيل البيع في النظام بدون طباعة ورقية لتفادي الطباعة على الطابعة الكبيرة؟': 'Aucune imprimante ticket sélectionnée.
-Voulez-vous enregistrer la vente sans ticket papier ?',
+      'لم يتم اختيار طابعة الوصولات الحرارية.\nهل ترغب في تسجيل البيع في النظام بدون طباعة ورقية لتفادي الطباعة على الطابعة الكبيرة؟': 'Aucune imprimante ticket sélectionnée.\nVoulez-vous enregistrer la vente sans ticket papier ?',
       'نعم، حفظ بدون طباعة': 'Oui, sans impression',
       'تجاوز سقف الدين': 'Dépassement plafond de crédit',
       'إفراغ السلة الحالية': 'Vider le panier actuel',
@@ -1250,6 +1248,7 @@ Voulez-vous enregistrer la vente sans ticket papier ?',
       'إضافة إلى السلة': 'Ajouter au panier',
       'تصفير الميزان': 'Tarer la balance',
       'السلع الحرة': 'Articles libres',
+      'إضافة مادة ميزان جديدة وتفاصيل المخزون': 'Nouvel article balance & stock',
       'أدخل الوزن يدوياً': 'Entrer le poids manuellement',
       'زبون عابر (Détail)': 'Client de passage (Détail)',
       'تم حذفه من السلة': 'supprimé du panier',
@@ -1569,6 +1568,7 @@ Voulez-vous enregistrer la vente sans ticket papier ?',
       'تمت إضافة المنتج بنجاح': 'Product added successfully',
       'تم الحذف بنجاح': 'Deleted successfully',
       'هل أنت متأكد؟': 'Are you sure?',
+      'إضافة مادة ميزان جديدة وتفاصيل المخزون': 'New Scale Item & Stock Details',
     },
   };
 

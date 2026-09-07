@@ -442,10 +442,11 @@ class LocalSyncServer {
 
     // 1. If an encrypted offline key was passed, verify and apply
     if (rawKey.isNotEmpty) {
-      success = await LicenseService.verifyAndApplyOfflineKey(rawKey, storeName: storeName);
-      message = success
+      final keyResult = await LicenseService.verifyAndApplyOfflineKey(rawKey, storeName: storeName);
+      success = keyResult['success'] == true;
+      message = keyResult['message']?.toString() ?? (success
           ? '🎉 تم تفعيل حاسوب الكاشير بنجاح عبر كود الترخيص المشفر من الهاتف!'
-          : 'كود الترخيص المشفر غير صالح لعتاد هذا الحاسوب.';
+          : 'كود الترخيص المشفر غير صالح لعتاد هذا الحاسوب.');
     } else {
       // 2. Direct companion relay: grant permanent/plan license
       if (storeName.isNotEmpty) {

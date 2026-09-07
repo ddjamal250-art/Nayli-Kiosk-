@@ -54,7 +54,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   String _selectedCategoryKey = 'all';
   String? _selectedCustomerId;
-  String _selectedCustomerName = context.tr('walk_in_customer');
+  String _selectedCustomerName = 'زبون عادي';
   double _customerCreditBalance = 0.0;
 
   // Operating Modes
@@ -828,10 +828,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(10)),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.amber, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       context.tr('transferred_cart_desc'),
@@ -905,10 +905,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.swap_horizontal_circle_rounded, color: Colors.indigo, size: 28),
-            SizedBox(width: 8),
+            const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.indigo, size: 28),
+            const SizedBox(width: 8),
             Text(context.tr('transfer_cart_title'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
@@ -923,10 +923,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             const SizedBox(height: 6),
             TextField(
               controller: ipController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: context.tr('peer_ip_label'),
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.computer_rounded),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.computer_rounded),
                 hintText: '192.168.1.50',
               ),
             ),
@@ -1014,10 +1014,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.chat_bubble_outline_rounded, color: Colors.green, size: 26),
-            SizedBox(width: 8),
+            const Icon(Icons.chat_bubble_outline_rounded, color: Colors.green, size: 26),
+            const SizedBox(width: 8),
             Text(context.tr('send_digital_receipt_wa'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
@@ -1031,11 +1031,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             TextField(
               controller: phoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: context.tr('customer_phone'),
                 hintText: '0661234567 / 0550123456',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.phone_iphone_rounded),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.phone_iphone_rounded),
               ),
             ),
           ],
@@ -2210,10 +2210,10 @@ $itemsSummary
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.teal.shade200),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
-                        SizedBox(width: 4),
+                        const Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
+                        const SizedBox(width: 4),
                         Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
                       ],
                     ),
@@ -2333,13 +2333,13 @@ $itemsSummary
                     child: const Icon(Icons.add_rounded, size: 28, color: Colors.teal),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     context.tr('add_quick_product'),
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal),
                   ),
-                  const Text(
+                  Text(
                     context.tr('free_item_f7'),
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ],
               ),

@@ -8,6 +8,7 @@ import '../../../product/data/models/product_model.dart';
 import '../../../product/domain/usecases/product_usecases.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/scale_barcode_parser.dart';
+import '../../../../core/utils/barcode_normalizer.dart';
 import '../../../../core/data/hive_database.dart';
 
 part 'billing_event.dart';
@@ -103,7 +104,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       (failure) =>
           emit(state.copyWith(error: 'Product not found: ${event.barcode}')),
       (product) {
-        if (product.packBarcode.isNotEmpty && BarcodeNormalizer.matches(product.packBarcode, event.barcode)) {
+        if ((product.packBarcode?.isNotEmpty ?? false) && BarcodeNormalizer.matches(product.packBarcode!, event.barcode)) {
           add(AddProductToCartEvent(product, unitLevel: 'carton'));
         } else {
           add(AddProductToCartEvent(product, unitLevel: 'pack'));

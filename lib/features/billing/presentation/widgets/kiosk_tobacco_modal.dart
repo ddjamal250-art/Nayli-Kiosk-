@@ -385,7 +385,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
                   labelColor: Colors.white,
                   unselectedLabelColor: Colors.black87,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  tabs: const [
+                  tabs: [
                     Tab(text: context.tr('pack_box_tab')),
                     Tab(text: context.tr('carton_10_tab')),
                     Tab(text: context.tr('single_piece_tab')),

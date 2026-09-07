@@ -253,11 +253,11 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.add_shopping_cart, color: AppTheme.primaryColor),
-              SizedBox(width: 8),
-              Text('إضافة مادة ميزان جديدة وتفاصيل المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const Icon(Icons.add_shopping_cart, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              Text(context.tr('إضافة مادة ميزان جديدة وتفاصيل المخزون'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           content: SingleChildScrollView(
@@ -268,10 +268,10 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 TextField(
                   controller: nameCtrl,
                   autofocus: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: context.tr('item_name'),
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -279,10 +279,10 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 // Category Dropdown
                 DropdownButtonFormField<String>(
                   value: selectedCat,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: context.tr('category'),
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
                   items: _categories.where((c) => c != 'الكل').map((cat) {
                     return DropdownMenuItem(value: cat, child: Text(cat, style: const TextStyle(fontSize: 12)));
@@ -351,11 +351,11 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                         child: TextField(
                           controller: bagsCountCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: context.tr('sacks_count'),
                             suffixText: 'شكارة',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           ),
                           onChanged: (_) => setDialogState(() {}),
                         ),
@@ -365,11 +365,11 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                         child: TextField(
                           controller: bagWeightCtrl,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: context.tr('sack_weight'),
                             suffixText: 'كغ',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           ),
                           onChanged: (_) => setDialogState(() {}),
                         ),
@@ -396,11 +396,11 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   TextField(
                     controller: directKgCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: context.tr('direct_total_stock_kg'),
                       suffixText: 'كغ',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     ),
                   ),
                 ],
@@ -408,10 +408,10 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
 
                 TextField(
                   controller: supplierCtrl,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: context.tr('supplier_optional'),
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
                 ),
               ],
