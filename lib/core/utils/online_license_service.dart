@@ -12,6 +12,7 @@ class OnlineActivationResult {
   final String? plan;
   final String? storeName;
   final int maxDevices;
+  final bool telegramDirectSent;
 
   OnlineActivationResult({
     required this.isSuccess,
@@ -19,6 +20,7 @@ class OnlineActivationResult {
     this.plan,
     this.storeName,
     this.maxDevices = 1,
+    this.telegramDirectSent = false,
   });
 }
 
@@ -136,7 +138,7 @@ class OnlineLicenseService {
   }) async {
     final deviceId = LicenseService.getDeviceId();
 
-    // 1. Send interactive inline button message directly to Developer's Telegram (fast 4s timeout)
+    // 1. Send interactive inline button message directly to Developer's Telegram (10s timeout)
     bool directTelegramSent = false;
     try {
       directTelegramSent = await notifyDeveloperTelegram(
@@ -144,7 +146,8 @@ class OnlineLicenseService {
         storeName: storeName.isEmpty ? 'متجر كاشير' : storeName,
         phone: phone,
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[OnlineLicenseService] Direct Telegram notify error: $e');
       directTelegramSent = false;
     }
 
@@ -160,7 +163,7 @@ class OnlineLicenseService {
         '&phone=${Uri.encodeComponent(cleanPhone)}'
         '&deviceType=${Uri.encodeComponent(deviceType)}'
         '&action=check_or_join'
-        '${directTelegramSent ? '' : '&notifyTelegram=1'}',
+        '&notifyTelegram=1',
       );
 
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
@@ -196,28 +199,33 @@ class OnlineLicenseService {
             plan: plan,
             storeName: serverStoreName,
             maxDevices: maxDevices,
+            telegramDirectSent: directTelegramSent,
           );
         } else if (data is Map && data['error'] == 'quota_exceeded') {
           return OnlineActivationResult(
             isSuccess: false,
             message: '❌ تم استهلاك كامل حصة الأجهزة المسموح بها لهذا المتجر. يرجى التواصل مع المطور لترقية الباقة.',
+            telegramDirectSent: directTelegramSent,
           );
         } else {
           return OnlineActivationResult(
             isSuccess: false,
             message: 'طلبك قيد المراجعة في السيرفر. وصل إشعار تفاعلي لهاتف المطور بأزرار التفعيل الفوري وسعة الأجهزة!',
+            telegramDirectSent: directTelegramSent,
           );
         }
       } else {
         return OnlineActivationResult(
           isSuccess: false,
           message: 'تعذر الاتصال بالسيرفر السحابي (كود: ${response.statusCode}). تأكد من اتصال الإنترنت.',
+          telegramDirectSent: directTelegramSent,
         );
       }
     } catch (e) {
       return OnlineActivationResult(
         isSuccess: false,
         message: 'حدث خطأ في الاتصال: $e. تأكد من اتصال الإنترنت وحاول مجدداً.',
+        telegramDirectSent: directTelegramSent,
       );
     }
   }

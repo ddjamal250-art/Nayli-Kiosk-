@@ -53,6 +53,14 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    if (action === 'test_alert') {
+      sendTelegramActivationAlert('TEST-ALERT-001', 'متجر تجريبي للاختبار', '0555000000', 'PC');
+      return ContentService.createTextOutput(JSON.stringify({
+        ok: true,
+        message: 'تم إرسال إشعار تيليجرام تجريبي بنجاح إلى حساب المطور!'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // إذا لم يكن مسجلاً، نسجله في الجدول كـ غير مفعل (قيد المراجعة)
     var isNewDevice = false;
     if (!rowData) {
@@ -69,8 +77,8 @@ function doGet(e) {
       isNewDevice = true;
     }
 
-    // إرسال إشعار التيليجرام إذا كان جهازاً جديداً أو طُلب ذلك بسبب حجب التلغرام محلياً
-    if (isNewDevice || notifyTelegram === '1') {
+    // إرسال إشعار التيليجرام إذا كان جهازاً جديداً أو طُلب ذلك أو إذا لم يكن مفعلاً بعد
+    if (isNewDevice || notifyTelegram === '1' || (rowData && !rowData.isActivated)) {
       sendTelegramActivationAlert(deviceId, storeName, phone, deviceType);
     }
 
@@ -139,7 +147,7 @@ function sendTelegramActivationAlert(deviceId, storeName, phone, deviceType) {
     chat_id: DEVELOPER_CHAT_ID,
     text: text,
     parse_mode: 'HTML',
-    reply_markup: JSON.stringify(keyboard)
+    reply_markup: keyboard
   };
 
   var options = {

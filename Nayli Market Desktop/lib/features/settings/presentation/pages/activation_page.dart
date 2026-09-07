@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/license_service.dart';
@@ -173,88 +174,158 @@ class _ActivationPageState extends State<ActivationPage> {
           if (mounted) context.go('/');
         });
       } else {
+        final deviceId = LicenseService.getDeviceId();
+        final cleanStore = fullStoreInfo;
+        final cleanPhone = phone;
+        final directTelegramSent = res.telegramDirectSent;
+
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             backgroundColor: const Color(0xFF1E293B),
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.send_rounded, color: Color(0xFF38BDF8), size: 24),
-                SizedBox(width: 8),
-                Text('تم إرسال طلب التفعيل بنجاح 📡', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                Icon(
+                  directTelegramSent ? Icons.cloud_done_rounded : Icons.send_rounded,
+                  color: directTelegramSent ? const Color(0xFF34D399) : const Color(0xFF38BDF8),
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'طلب تفعيل النسخة 📡',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
               ],
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'تم تسجيل معلومات المحل وكود الجهاز وإرسالها مباشرة إلى سيرفر التراخيص والمطور.',
-                  style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF334155)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    directTelegramSent
+                        ? '✅ تم إرسال بيانات المتجر ومعرف الجهاز آلياً إلى خادم وتيليجرام المطور.'
+                        : 'تم تسجيل طلبك في السيرفر السحابي. لتسريع الاعتماد الفوري في ثانية، اضغط أدناه لإرسال الكود للمطور عبر تيليجرام:',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.4),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.fingerprint, color: Color(0xFF38BDF8), size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: SelectableText(
-                          LicenseService.getDeviceId(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.fingerprint, color: Color(0xFF38BDF8), size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SelectableText(
+                            deviceId,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        tooltip: 'نسخ الكود',
-                        icon: const Icon(Icons.copy, size: 16, color: Color(0xFF38BDF8)),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: LicenseService.getDeviceId()));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('📋 تم نسخ كود الجهاز بنجاح!'),
-                              backgroundColor: Colors.teal,
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF334155)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 20),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'بمجرد أن يوافق المطور على طلبك، اضغط على زر "تفعيل وترخيص النسخة أونلاين" مرة أخرى وسيتم الدخول فوراً!',
-                          style: TextStyle(fontSize: 12, color: Color(0xFF38BDF8), fontWeight: FontWeight.bold),
+                        IconButton(
+                          tooltip: 'نسخ الكود',
+                          icon: const Icon(Icons.copy, size: 16, color: Color(0xFF38BDF8)),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: deviceId));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('📋 تم نسخ كود الجهاز بنجاح!'),
+                                backgroundColor: Colors.teal,
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+
+                  // 1-Click Telegram Direct Launch Button
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0088CC),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.send_rounded, size: 18),
+                    label: const Text(
+                      'إرسال للمطور عبر تيليجرام 📱',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                    ),
+                    onPressed: () async {
+                      final text = '🔔 طلب تفعيل ترخيص جديد (Nayli POS)\n'
+                          '━━━━━━━━━━━━━━━━━\n'
+                          '🏬 المحل: ${cleanStore.isEmpty ? "متجر تجاري" : cleanStore}\n'
+                          '📱 الهاتف: ${cleanPhone.isEmpty ? "غير مسجل" : cleanPhone}\n'
+                          '💻 كود الجهاز: $deviceId\n'
+                          '━━━━━━━━━━━━━━━━━\n'
+                          'أرجو تفعيل هذا الجهاز.';
+                      final uri = Uri.parse('https://t.me/MARKI_JW0?text=${Uri.encodeComponent(text)}');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Bot Direct Link
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF38BDF8),
+                      side: const BorderSide(color: Color(0xFF38BDF8)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.smart_toy_rounded, size: 18),
+                    label: const Text(
+                      'أو فتح بوت التفعيل الرسمي 🤖',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    onPressed: () async {
+                      final uri = Uri.parse('https://t.me/nayli_pos_dz_bot?start=act_${Uri.encodeComponent(deviceId)}');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'بمجرد أن يوافق المطور على طلبك، اضغط على زر "تفعيل وترخيص النسخة أونلاين" مرة أخرى وسيتم الدخول فوراً!',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF38BDF8), fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
