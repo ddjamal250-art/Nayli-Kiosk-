@@ -27,6 +27,7 @@ import '../bloc/billing_bloc.dart';
 import '../widgets/quick_amount_modal.dart';
 import '../widgets/smart_scale_modal.dart';
 import '../widgets/held_carts_modal.dart';
+import '../widgets/universal_unit_selector_dialog.dart';
 
 class QuickItem {
   final String id;
@@ -607,17 +608,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
           children: [
             Icon(Icons.delete_sweep_outlined, color: Colors.red),
             SizedBox(width: 8),
-            Text('إفراغ السلة الحالية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(context.tr('إفراغ السلة الحالية'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         content: const Text(
-          'هل أنت متأكد من حذف جميع السلع الممسوحة في هذه السلة والبدء من جديد؟',
+          context.tr('هل أنت متأكد من حذف جميع السلع الممسوحة في هذه السلة والبدء من جديد؟'),
           style: TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child: Text(context.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -630,7 +631,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 backgroundColor: Colors.red[800]!,
               );
             },
-            child: const Text('تأكيد الإفراغ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(context.tr('تأكيد الإفراغ'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -647,7 +648,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
           children: [
             Icon(Icons.pause_circle_filled, color: Colors.orange),
             SizedBox(width: 8),
-            Text('تعليق السلة الحالية (Panier en attente)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(context.tr('تعليق السلة الحالية (Panier en attente)'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -660,7 +661,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             TextField(
               controller: controller,
               decoration: const InputDecoration(
-                labelText: 'اسم الزبون أو وصف السلة (اختياري)',
+                labelText: context.tr('اسم الزبون أو وصف السلة (اختياري)'),
                 hintText: 'مثال: الشاب ذو القميص الأزرق',
               ),
             ),
@@ -669,7 +670,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child: Text(context.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[800]),
@@ -681,7 +682,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 backgroundColor: Colors.orange[800]!,
               );
             },
-            child: const Text('تعليق الفاتورة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(context.tr('تعليق الفاتورة'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -714,7 +715,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               children: [
                 Icon(Icons.percent_rounded, color: AppTheme.primaryColor),
                 SizedBox(width: 8),
-                Text('تطبيق تخفيض / Remise', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(context.tr('تطبيق تخفيض / Remise'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
             content: Column(
@@ -724,7 +725,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   children: [
                     Expanded(
                       child: ChoiceChip(
-                        label: const Center(child: Text('نسبة مئوية %')),
+                        label: Center(child: Text(context.tr('نسبة مئوية %'))),
                         selected: isPercent,
                         onSelected: (val) => setDlgState(() => isPercent = true),
                         selectedColor: AppTheme.primaryColor.withOpacity(0.2),
@@ -733,7 +734,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     const SizedBox(width: 8),
                     Expanded(
                       child: ChoiceChip(
-                        label: Center(child: Text('مبلغ (${AppConstants.currencySymbol})')),
+                        label: Center(child: Text(context.tr('amount') + ' (' + context.tr('currency_symbol') + ')')),
                         selected: !isPercent,
                         onSelected: (val) => setDlgState(() => isPercent = false),
                         selectedColor: AppTheme.primaryColor.withOpacity(0.2),
@@ -747,7 +748,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: isPercent ? 'نسبة الخصم (%)' : 'مبلغ الخصم (${AppConstants.currencySymbol})',
+                    labelText: isPercent ? context.tr('discount_percentage') : context.tr('discount_amount'),
                     suffixText: isPercent ? '%' : AppConstants.currencySymbol,
                   ),
                   onChanged: (_) => setDlgState(() {}),
@@ -762,7 +763,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('المجموع بعد التخفيض:', style: TextStyle(fontSize: 13)),
+                      Text(context.tr('المجموع بعد التخفيض:'), style: const TextStyle(fontSize: 13)),
                       Text(
                         '${previewTotal.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green),
@@ -779,11 +780,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     context.read<BillingBloc>().add(RemoveDiscountEvent());
                     Navigator.pop(ctx);
                   },
-                  child: const Text('إلغاء التخفيض', style: TextStyle(color: Colors.red)),
+                  child: Text(context.tr('إلغاء التخفيض'), style: const TextStyle(color: Colors.red)),
                 ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child: Text(context.tr('cancel')),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
@@ -796,7 +797,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   }
                   Navigator.pop(ctx);
                 },
-                child: const Text('تطبيق', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(context.tr('تطبيق'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -852,7 +853,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         children: [
                           Icon(Icons.bolt, color: Colors.amber),
                           SizedBox(width: 6),
-                          Text('إضافة سلعة لشريط البيع السريع ⚡', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(context.tr('إضافة سلعة لشريط البيع السريع ⚡'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
@@ -867,13 +868,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     alignment: WrapAlignment.center,
                     children: [
                       ChoiceChip(
-                        label: const Text('📦 تثبيت من المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        label: Text('📦 ' + context.tr('تثبيت من المخزون'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                         selected: selectedTab == 0,
                         selectedColor: AppTheme.primaryColor.withOpacity(0.18),
                         onSelected: (v) => setDlgState(() => selectedTab = 0),
                       ),
                       ChoiceChip(
-                        label: const Text('✏️ سلعة مخصصة جديدة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        label: Text('✏️ ' + context.tr('سلعة مخصصة جديدة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                         selected: selectedTab == 1,
                         selectedColor: AppTheme.primaryColor.withOpacity(0.18),
                         onSelected: (v) => setDlgState(() => selectedTab = 1),
@@ -887,7 +888,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     TextField(
                       controller: searchStockController,
                       decoration: InputDecoration(
-                        hintText: 'ابحث عن سلعة في المخزون...',
+                        hintText: context.tr('ابحث عن سلعة في المخزون...'),
                         prefixIcon: const Icon(Icons.search, size: 20),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -935,7 +936,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                       if (mounted) Navigator.pop(ctx);
                                       context.showAppSnackBar('⚡ تم تثبيت (${p.name}) في شريط البيع السريع بنجاح!', backgroundColor: Colors.teal[800]!);
                                     },
-                                    child: const Text('تثبيت ⚡', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    child: Text(context.tr('تثبيت ⚡'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                   ),
                                 );
                               },
@@ -1066,7 +1067,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('✏️ تعديل السلعة السريعة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(context.tr('تعديل السلعة السريعة'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                   ],
                 ),
@@ -1128,7 +1129,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         icon: const Icon(Icons.save, color: Colors.white),
-                        label: const Text('حفظ التعديل', style: TextStyle(color: Colors.white)),
+                        label: Text(context.tr('حفظ التعديل'), style: const TextStyle(color: Colors.white)),
                         onPressed: () async {
                           final name = nameController.text.trim();
                           final price = double.tryParse(priceController.text.trim()) ?? item.price;
@@ -1708,7 +1709,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 18),
-                    label: const Text('قائمة النواقص 🛒', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    label: Text(context.tr('قائمة النواقص 🛒'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push('/products/shopping-list');
@@ -1725,7 +1726,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.inventory_2_outlined, size: 18),
-                    label: const Text('كامل المخزن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    label: Text(context.tr('كامل المخزن'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push('/products');
@@ -1967,7 +1968,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                       children: [
                                         Icon(Icons.delete_outline, size: 12, color: Colors.red),
                                         SizedBox(width: 2),
-                                        Text('إفراغ', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
+                                        Text(context.tr('clear'), style: const TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
@@ -1986,7 +1987,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                       children: [
                                         Icon(Icons.pause_circle_outline, size: 12, color: Colors.orange),
                                         SizedBox(width: 2),
-                                        Text('تعليق', style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
+                                        Text(context.tr('hold'), style: const TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
@@ -2376,8 +2377,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
   }
 
   Widget _buildCartItemCard(BuildContext context, CartItem item) {
+    final hasMulti = item.product.hasMultiUnit;
+
     return Dismissible(
-      key: ValueKey('cart_item_${item.product.id}_${item.quantity}'),
+      key: ValueKey('cart_item_${item.cartKey}_${item.quantity}'),
       direction: DismissDirection.horizontal,
       background: Container(
         alignment: Alignment.centerRight,
@@ -2416,7 +2419,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
           // Swipe Right -> +1
           context.read<BillingBloc>().add(
                 UpdateQuantityEvent(
-                  item.product.id,
+                  item.cartKey,
                   item.quantity + 1,
                 ),
               );
@@ -2428,7 +2431,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
           final newQty = item.quantity - 1;
           context.read<BillingBloc>().add(
                 UpdateQuantityEvent(
-                  item.product.id,
+                  item.cartKey,
                   newQty,
                 ),
               );
@@ -2453,15 +2456,66 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.product.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (hasMulti) ...[
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () => UniversalUnitSelectorDialog.showForCartItem(context, item),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: item.unitLevel == 'piece'
+                                  ? Colors.amber.shade50
+                                  : item.unitLevel == 'carton'
+                                      ? Colors.purple.shade50
+                                      : Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: item.unitLevel == 'piece'
+                                    ? Colors.amber.shade400
+                                    : item.unitLevel == 'carton'
+                                        ? Colors.purple.shade400
+                                        : Colors.blue.shade400,
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  item.unitDisplayName,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: item.unitLevel == 'piece'
+                                        ? Colors.amber.shade900
+                                        : item.unitLevel == 'carton'
+                                            ? Colors.purple.shade900
+                                            : Colors.blue.shade900,
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_drop_down, size: 13, color: Colors.black54),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${item.product.price.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
+                    '${item.unitPrice.toStringAsFixed(2)} ${AppConstants.currencySymbol}' +
+                        (item.unitLevel != 'pack' ? ' [${item.unitDisplayName}]' : ''),
                     style: TextStyle(color: Colors.grey[600], fontSize: 11),
                   ),
                 ],
@@ -2474,7 +2528,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   onPressed: () {
                     context.read<BillingBloc>().add(
                           UpdateQuantityEvent(
-                            item.product.id,
+                            item.cartKey,
                             item.quantity - 1,
                           ),
                         );
@@ -2494,7 +2548,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   onPressed: () {
                     context.read<BillingBloc>().add(
                           UpdateQuantityEvent(
-                            item.product.id,
+                            item.cartKey,
                             item.quantity + 1,
                           ),
                         );
@@ -2513,7 +2567,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             IconButton(
               icon: const Icon(Icons.close, size: 16, color: Colors.grey),
               onPressed: () {
-                context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.product.id));
+                context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.cartKey));
               },
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

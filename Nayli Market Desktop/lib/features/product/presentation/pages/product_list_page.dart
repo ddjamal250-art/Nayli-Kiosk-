@@ -110,11 +110,11 @@ class _ProductListPageState extends State<ProductListPage> {
         ),
         content: Text('هل أنت متأكد من رغبتك في حذف $count سلع نهائياً من المخزون؟ لا يمكن التراجع عن هذه العملية.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('نعم، حذف الكل', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(context.tr('yes_delete_all'), style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -172,11 +172,11 @@ class _ProductListPageState extends State<ProductListPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(ctx, targetCat),
-              child: const Text('نقل السلع الآن 💾', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(context.tr('transfer_items_now'), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -266,7 +266,7 @@ class _ProductListPageState extends State<ProductListPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(ctx, addQty),
@@ -790,12 +790,12 @@ class _ProductListPageState extends State<ProductListPage> {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.checklist_rounded, color: AppTheme.primaryColor),
-                  tooltip: 'تحديد متعدد للسلع ☑️',
+                  tooltip: context.tr('multi_select_tooltip'),
                   onPressed: () => setState(() => _isMultiSelectMode = true),
                 ),
                 IconButton(
                   icon: const Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
-                  tooltip: 'تصدير وحفظ ملف Excel 📊',
+                  tooltip: context.tr('export_excel_tooltip'),
                   onPressed: () {
                     final productState = context.read<ProductBloc>().state;
                     _exportAndSaveExcel(context, productState.products);
@@ -939,7 +939,7 @@ class _ProductListPageState extends State<ProductListPage> {
                           controller: _searchController,
                           textCapitalization: TextCapitalization.words,
                           decoration: InputDecoration(
-                            hintText: 'ابحث بالاسم أو الباركود...',
+                            hintText: context.tr('search_name_or_barcode'),
                             prefixIcon: Icon(
                               Icons.search,
                               color: Colors.grey[400],
@@ -1270,7 +1270,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                 } else if (action == 'edit') {
                                   final auth = await SecurityPinHelper.authenticate(
                                     context,
-                                    title: 'تعديل السلعة والأسعار',
+                                    title: context.tr('edit_product_and_prices'),
                                   );
                                   if (auth && context.mounted) {
                                     context.push('/products/edit/${product.id}', extra: product);
@@ -1280,54 +1280,54 @@ class _ProductListPageState extends State<ProductListPage> {
                                 }
                               },
                               itemBuilder: (ctx) => [
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'restock',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('استلام شحنة جديدة 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      const Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('quick_restock_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'edit',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('تعديل السلعة والأسعار ✏️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      const Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('edit_product_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'label',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('طباعة ملصق السعر 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      const Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('shelf_label_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'pin',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('تثبيت في البيع السريع ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      const Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('pin_to_quick_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
                                 const PopupMenuDivider(),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'delete',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                                      SizedBox(width: 10),
-                                      Text('حذف من المخزون 🗑️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
+                                      const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                      const SizedBox(width: 10),
+                                      Text(context.tr('delete_product_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
                                     ],
                                   ),
                                 ),
@@ -1368,13 +1368,13 @@ class _ProductListPageState extends State<ProductListPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'إجراءات مجمعة ($selectedCount سلع محددة):',
+                              '${context.tr('batch_actions_title')} ($selectedCount):',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                             ),
                             TextButton(
                               onPressed: _clearSelection,
                               style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                              child: const Text('إلغاء التحديد ✖', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              child: Text(context.tr('clear_selection'), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                             ),
                           ],
                         ),
@@ -1392,7 +1392,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
                                 icon: const Icon(Icons.add_shopping_cart, size: 16),
-                                label: const Text('استلام شحنة 📦', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                label: Text(context.tr('receive_shipment'), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () => _batchRestock(context, state.products),
                               ),
                               const SizedBox(width: 8),
@@ -1406,7 +1406,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
                                 icon: const Icon(Icons.drive_file_move_outlined, size: 16),
-                                label: const Text('نقل لقسم 📂', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                label: Text(context.tr('move_to_category'), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () => _batchMoveCategory(context, state.products),
                               ),
                               const SizedBox(width: 8),
@@ -1420,7 +1420,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
                                 icon: const Icon(Icons.label_outline, size: 16),
-                                label: const Text('طباعة ملصقات 🏷️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                label: Text(context.tr('print_labels'), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () => context.push('/products/shelf-labels'),
                               ),
                               const SizedBox(width: 8),
@@ -1451,7 +1451,7 @@ class _ProductListPageState extends State<ProductListPage> {
         onPressed: () async {
           final auth = await SecurityPinHelper.authenticate(
             context,
-            title: 'إضافة سلعة جديدة',
+            title: context.tr('add_new_product'),
           );
           if (auth && context.mounted) {
             context.push('/products/add');
@@ -1468,7 +1468,7 @@ class _ProductListPageState extends State<ProductListPage> {
   void _confirmDelete(BuildContext context, Product product) async {
     final auth = await SecurityPinHelper.authenticate(
       context,
-      title: 'حذف السلعة نهائياً',
+      title: context.tr('delete_product_permanently'),
     );
     if (!auth || !context.mounted) return;
 
@@ -1476,19 +1476,19 @@ class _ProductListPageState extends State<ProductListPage> {
       context: context,
       builder: (innerContext) {
         return AlertDialog(
-          title: const Text('حذف السلعة'),
+          title: Text(context.tr('delete_product')),
           content: Text('هل أنت متأكد من حذف ${product.name} نهائياً؟'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(innerContext),
-              child: const Text('إلغاء'),
+              child: Text(context.tr('cancel')),
             ),
             TextButton(
               onPressed: () {
                 context.read<ProductBloc>().add(DeleteProduct(product.id));
                 Navigator.pop(innerContext);
               },
-              child: const Text('حذف', style: TextStyle(color: Colors.red)),
+              child: Text(context.tr('delete'), style: const TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -1575,7 +1575,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   // Template Selection
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Text('النموذج:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
+                    child: Text(context.tr('template_label'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
                   ),
                   const SizedBox(height: 4),
                   SingleChildScrollView(
@@ -1583,7 +1583,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     child: Row(
                       children: [
                         ChoiceChip(
-                          label: const Text('بطاقة رف', style: TextStyle(fontSize: 10.5)),
+                          label: Text(context.tr('shelf_tag'), style: const TextStyle(fontSize: 10.5)),
                           selected: selectedTemplate == ShelfLabelTemplate.shelfTag,
                           onSelected: (v) {
                             if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.shelfTag);
@@ -1591,7 +1591,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         ),
                         const SizedBox(width: 4),
                         ChoiceChip(
-                          label: const Text('لاصقة باركود', style: TextStyle(fontSize: 10.5)),
+                          label: Text(context.tr('barcode_sticker'), style: const TextStyle(fontSize: 10.5)),
                           selected: selectedTemplate == ShelfLabelTemplate.productSticker,
                           onSelected: (v) {
                             if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.productSticker);
@@ -1600,7 +1600,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         if (product.isWeighted || product.barcode.startsWith('SCALE_')) ...[
                           const SizedBox(width: 4),
                           ChoiceChip(
-                            label: const Text('ملصق ميزان', style: TextStyle(fontSize: 10.5)),
+                            label: Text(context.tr('scale_sticker'), style: const TextStyle(fontSize: 10.5)),
                             selected: selectedTemplate == ShelfLabelTemplate.scaleWeight,
                             onSelected: (v) {
                               if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.scaleWeight);
@@ -1615,7 +1615,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   // Size Selection
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Text('المقاس:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
+                    child: Text(context.tr('size_label'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
                   ),
                   const SizedBox(height: 4),
                   SingleChildScrollView(
@@ -1654,7 +1654,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   // Quantity Selector Row
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Text('عدد النسخ:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
+                    child: Text(context.tr('copies_count_label'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -1677,7 +1677,7 @@ class _ProductListPageState extends State<ProductListPage> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

@@ -14,11 +14,16 @@ import '../features/settings/data/repositories/printer_repository_impl.dart';
 import '../features/settings/domain/repositories/printer_repository.dart';
 import '../features/settings/presentation/bloc/printer_bloc.dart';
 
+import 'theme/theme_cubit.dart';
+import 'theme/header_branding_cubit.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // Localization
+  // Localization & Theme Branding
   sl.registerLazySingleton<LanguageCubit>(() => LanguageCubit());
+  sl.registerLazySingleton<ThemeCubit>(() => ThemeCubit());
+  sl.registerLazySingleton<HeaderBrandingCubit>(() => HeaderBrandingCubit());
 
   // Features - Product
   // Bloc

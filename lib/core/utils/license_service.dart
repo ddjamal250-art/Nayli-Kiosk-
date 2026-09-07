@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import '../data/hive_database.dart';
 
 class LicenseService {
@@ -276,13 +277,102 @@ class LicenseService {
         };
       }
 
-      // Short PIN bypass removed for security reasons - it allowed any 6-digit number to grant a permanent license.
-      // Activation must now strictly use the cryptographically signed barcode.
+      // Check if it matches a 19-character encrypted offline key
+      final clean = input.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+      if (clean.length == 19 && clean.startsWith('NK')) {
+        return await verifyAndApplyOfflineKey(clean);
+      }
 
-      return {'success': false, 'message': '❌ صيغة الكود غير معترف بها. يرجى مسح رمز الـ QR للتفعيل.'};
+      return {'success': false, 'message': '❌ صيغة الكود غير معترف بها. يرجى إدخال مفتاح ترخيص صالح أو مسح رمز التفعيل.'};
     } catch (e) {
       return {'success': false, 'message': '❌ خطأ أثناء معالجة الرمز: $e'};
     }
+  }
+
+  /// Generates a clean 12-character alphanumeric hardware code (no spaces, no dashes) for offline activation
+  static String getCleanMachineId() {
+    final raw = getDeviceId().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (raw.length >= 12) {
+      return raw.substring(0, 12);
+    }
+    return raw.padRight(12, '0');
+  }
+
+  /// Cryptographic signature for offline alphanumeric activation key using HMAC-SHA256
+  static String _computeOfflineSignature(String cleanMachineId, String planCode) {
+    final key = utf8.encode(_salt);
+    final bytes = utf8.encode('$cleanMachineId:$planCode:NAYLI_OFFLINE_SECRET_2026');
+    final hmac = Hmac(sha256, key);
+    final digest = hmac.convert(bytes);
+    return digest.toString().toUpperCase().substring(0, 16);
+  }
+
+  /// Generates a valid 19-character alphanumeric offline activation key (no dashes, no spaces)
+  static String generateOfflineKey(String cleanMachineId, {String plan = 'P'}) {
+    final cleanId = cleanMachineId.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    final effectiveId = cleanId.length >= 12 ? cleanId.substring(0, 12) : cleanId.padRight(12, '0');
+    final p = plan.trim().toUpperCase();
+    final planCode = (p == 'Y' || p == 'S' || p == 'M') ? p : 'P';
+    final sig = _computeOfflineSignature(effectiveId, planCode);
+    return 'NK$planCode$sig';
+  }
+
+  /// Verifies a 19-character alphanumeric offline key and activates this device immediately
+  static Future<Map<String, dynamic>> verifyAndApplyOfflineKey(String rawKey, {String? storeName}) async {
+    final key = rawKey.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (key.length != 19 || !key.startsWith('NK')) {
+      return {
+        'success': false,
+        'message': '❌ صيغة المفتاح غير صحيحة. يجب أن يتكون من 19 حرف ورقم يبدأ بـ NK.',
+      };
+    }
+
+    final planCode = key[2];
+    if (planCode != 'P' && planCode != 'Y' && planCode != 'S' && planCode != 'M') {
+      return {
+        'success': false,
+        'message': '❌ نوع الباقة في المفتاح غير معترف به.',
+      };
+    }
+
+    final signature = key.substring(3);
+    final myMachineId = getCleanMachineId();
+    final expectedSig = _computeOfflineSignature(myMachineId, planCode);
+
+    if (signature != expectedSig) {
+      return {
+        'success': false,
+        'message': '❌ مفتاح التفعيل غير مطابق لهذا الجهاز أو غير صالح!',
+      };
+    }
+
+    // Apply the plan
+    String planLabel = 'دائم مدى الحياة';
+    if (planCode == 'P') {
+      await grantPermanentLicense();
+      planLabel = 'نسخة أصلية دائمة مدى الحياة 👑';
+    } else if (planCode == 'Y') {
+      await grantCustomPlan(days: 365, isSubscription: true);
+      planLabel = 'اشتراك سنوي (365 يوم) 📅';
+    } else if (planCode == 'S') {
+      await grantCustomPlan(days: 180, isSubscription: true);
+      planLabel = 'اشتراك 6 أشهر (180 يوم) ⏳';
+    } else if (planCode == 'M') {
+      await grantCustomPlan(days: 30, planType: 'trial_month');
+      planLabel = 'فترة شهر تجريبي (30 يوم) ⏱️';
+    }
+
+    if (storeName != null && storeName.trim().isNotEmpty) {
+      await HiveDatabase.settingsBox.put('licensed_store_name', storeName.trim());
+      await HiveDatabase.settingsBox.put('shop_name', storeName.trim());
+    }
+
+    return {
+      'success': true,
+      'message': '🎉 تم تفعيل البرنامج بنجاح بدون إنترنت!\nنوع الترخيص: $planLabel',
+      'plan': planCode,
+      'planLabel': planLabel,
+    };
   }
 
   /// Local bypass is strictly disabled - all activations must pass through cloud or Master pairing

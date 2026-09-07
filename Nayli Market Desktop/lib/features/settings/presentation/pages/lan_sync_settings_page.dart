@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,10 +9,12 @@ import 'package:http/http.dart' as http;
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_client.dart';
 import '../../../../core/data/local_sync_server.dart';
+import '../../../../core/data/cloud_sync_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/license_service.dart';
+import '../../../../core/utils/merchant_context_service.dart';
 import '../widgets/pc_douchette_activation_modal.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 
@@ -68,17 +69,21 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
       _masterPingResult = 'جاري الاتصال والتحقق من كاشير الكمبيوتر...';
     });
 
-    try {
-      String ip = '';
-      String port = '8080';
-      String shopName = 'كاشير الكمبيوتر الرئيسي';
+    String ip = '';
+    String port = '8080';
+    String shopName = 'كاشير الكمبيوتر الرئيسي';
+    String merchantId = '';
+    String masterDeviceId = '';
 
+    try {
       final trimmed = rawCode.trim();
       if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
         final data = jsonDecode(trimmed) as Map<String, dynamic>;
         ip = data['ip']?.toString() ?? '';
         port = data['port']?.toString() ?? '8080';
         shopName = data['name']?.toString() ?? data['shopName']?.toString() ?? 'Nayli POS Master';
+        merchantId = data['merchantId']?.toString() ?? '';
+        masterDeviceId = data['deviceId']?.toString() ?? '';
       } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
         final uri = Uri.tryParse(trimmed);
         if (uri != null) {
@@ -94,11 +99,26 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
       ip = ip.trim();
       port = port.trim();
 
+      if (merchantId.isNotEmpty) {
+        await MerchantContextService.setMerchantId(merchantId);
+      }
+
       if (ip.isNotEmpty && ip != '127.0.0.1') {
         final url = Uri.parse('http://$ip:$port/api/status');
         final res = await http.get(url).timeout(const Duration(seconds: 4));
 
         if (res.statusCode == 200) {
+          final data = jsonDecode(res.body) as Map<String, dynamic>;
+          final bool isMasterActivated = data['isActivated'] == true;
+
+          if (!isMasterActivated && LicenseService.isActivated()) {
+            await LocalSyncClient.sendReverseActivationToMaster(
+              masterIp: ip,
+              masterPort: int.tryParse(port) ?? 8080,
+              masterMachineCode: masterDeviceId,
+            );
+          }
+
           await HiveDatabase.settingsBox.put('master_pos_ip', ip);
           await HiveDatabase.settingsBox.put('master_pos_port', port);
           await HiveDatabase.settingsBox.put('sync_server_ip', '$ip:$port');
@@ -147,10 +167,41 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
         SoundService.playVoidWarning();
       }
     } catch (e) {
-      setState(() {
-        _masterPingResult = '❌ تعذر الوصول لكاشير الكمبيوتر: تأكد من اتصالهما بنفس شبكة الواي فاي (Wi-Fi).';
-      });
-      SoundService.playVoidWarning();
+      debugPrint('Direct LAN ping error: $e');
+      if (ip.isNotEmpty || merchantId.isNotEmpty) {
+        // Fallback: If direct local ping is blocked by Windows Firewall or AP isolation,
+        // use CloudSyncService to grant companion license & pair to isolated merchant channel!
+        final result = await CloudSyncService.pairDeviceViaCloud(
+          merchantId: merchantId.isNotEmpty ? merchantId : MerchantContextService.getMerchantId(),
+          masterDeviceId: masterDeviceId,
+          storeName: shopName,
+          masterIp: ip,
+          port: port,
+        );
+
+        setState(() {
+          _connectedMasterIp = ip;
+          _connectedMasterPort = port;
+          _connectedShopName = shopName;
+          _masterPingResult = '⚡ ${result.message}';
+        });
+
+        SoundService.playCheckoutSuccess();
+        HapticFeedback.heavyImpact();
+
+        if (mounted) {
+          context.showAppSnackBar(
+            '🎉 تم التفعيل والربط السحابي للمتجر ($shopName)!',
+            backgroundColor: Colors.teal.shade800,
+            icon: Icons.cloud_done_rounded,
+          );
+        }
+      } else {
+        setState(() {
+          _masterPingResult = '❌ تعذر الوصول لكاشير الكمبيوتر: تأكد من اتصالهما بنفس الشبكة.';
+        });
+        SoundService.playVoidWarning();
+      }
     } finally {
       if (mounted) setState(() => _isTestingMaster = false);
     }
@@ -283,32 +334,14 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
     }
   }
 
-  Future<void> _fixWindowsFirewall() async {
-    if (!Platform.isWindows) return;
-    try {
-      final port = LocalSyncServer.port;
-      final command = 'Start-Process powershell -ArgumentList "-Command \\"netsh advfirewall firewall add rule name=\'Nayli POS Sync\' dir=in action=allow protocol=TCP localport=$port\\"" -Verb RunAs';
-      await Process.run('powershell', ['-c', command]);
-      setState(() {
-        _pingStatus = '✅ تم إرسال طلب فتح منفذ $port في جدار الحماية (وافق على صلاحيات الإدارة إذا ظهرت لك).';
-      });
-    } catch (e) {
-      setState(() {
-        _pingStatus = '❌ فشل في تعديل جدار الحماية، يرجى فتحه يدوياً. خطأ: $e';
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final qrPayload = jsonEncode({
-      'app': 'nayli_pos',
-      'action': 'pair',
-      'ip': _localIp,
-      'port': LocalSyncServer.port,
-      'name': 'Nayli POS Master',
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    });
+    final qrPayload = jsonEncode(
+      MerchantContextService.generatePairingPayload(
+        localIp: _localIp,
+        port: LocalSyncServer.port,
+      ),
+    );
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isWide = screenWidth >= 720;
@@ -588,23 +621,6 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
                 ),
                 onPressed: _isTestingPing || !_isServerRunning ? null : _testPing,
               ),
-              if (Platform.isWindows && _isServerRunning) ...[
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  icon: const Icon(Icons.security, size: 18),
-                  label: const Text(
-                    'إصلاح جدار الحماية (Windows Firewall)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                  ),
-                  onPressed: _fixWindowsFirewall,
-                ),
-              ],
               if (_pingStatus.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(

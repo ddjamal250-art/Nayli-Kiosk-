@@ -51,6 +51,8 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
   int _mobileSelectedPathway = 0;
   int _standaloneSubTab = 0; // 0: Online Cloud, 1: Offline License Key
 
+  StreamSubscription? _masterActivationSub;
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +60,44 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
     _loadExistingShopInfo();
     _loadLocalIp();
     HardwareKeyboard.instance.addHandler(_handleDouchetteHardwareKey);
+
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      _masterActivationSub = LocalSyncServer.masterActivationStream.listen((data) {
+        if (mounted) {
+          SoundService.playCheckoutSuccess();
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: const Color(0xFF1E293B),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.verified_rounded, color: Colors.greenAccent, size: 28),
+                  SizedBox(width: 8),
+                  Text('تم تفعيل الحاسوب بنجاح! 🎉', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: Text(
+                'تهانينا! تم تفعيل هذا الحاسوب رسمياً أوفلاين بواسطة هاتف المتجر:\n${data['storeName'] ?? ''}',
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.go('/');
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  child: const Text('دخول لنقطة البيع 🚀', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
         _douchetteFocusNode.requestFocus();
@@ -99,6 +139,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
 
   @override
   void dispose() {
+    _masterActivationSub?.cancel();
     HardwareKeyboard.instance.removeHandler(_handleDouchetteHardwareKey);
     _tabController.dispose();
     _storeNameController.dispose();
@@ -467,6 +508,38 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                 context.go('/');
                 return;
               }
+            } else if (LicenseService.isActivated()) {
+              // REVERSE ACTIVATION: Phone is activated, Master PC is NOT activated!
+              setState(() {
+                _pairingStatusMessage = 'جاري تفعيل كمبيوتر الكاشير أوفلاين عبر رخصة هاتفك ⚡...';
+              });
+
+              final revRes = await LocalSyncClient.sendReverseActivationToMaster(
+                masterIp: ip,
+                masterPort: int.tryParse(port) ?? 8080,
+                masterMachineCode: masterDeviceId,
+              );
+
+              if (revRes['success'] == true) {
+                await LicenseService.grantCompanionLicense(
+                  storeName: masterShopName,
+                  masterIp: ip,
+                );
+                await LocalSyncClient.setServerIp('$ip:$port');
+
+                SoundService.playCheckoutSuccess();
+                HapticFeedback.heavyImpact();
+
+                if (mounted) {
+                  context.showAppSnackBar(
+                    '🎉 تم تفعيل كمبيوتر الكاشير بنجاح عبر هاتفك بدون نت!',
+                    backgroundColor: Colors.green.shade800,
+                    icon: Icons.flash_on_rounded,
+                  );
+                  context.go('/');
+                  return;
+                }
+              }
             }
           }
         } catch (_) {
@@ -612,16 +685,13 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                     Container(
                       width: 80,
                       height: 80,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF4F46E5), AppTheme.primaryColor],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: Colors.white,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.45),
+                            color: const Color(0xFF4F46E5).withOpacity(0.35),
                             blurRadius: 24,
                             spreadRadius: 4,
                           ),
@@ -630,12 +700,10 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                       child: Center(
                         child: Image.asset(
                           'assets/images/app_logo.png',
-                          width: 48,
-                          height: 48,
                           fit: BoxFit.contain,
                           errorBuilder: (_, __, ___) => const Icon(
                             Icons.point_of_sale_rounded,
-                            color: Colors.white,
+                            color: Color(0xFF06325C),
                             size: 40,
                           ),
                         ),
@@ -1555,102 +1623,195 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
     return isScrollable ? SingleChildScrollView(child: content) : content;
   }
 
-  /// TAB 3: Offline Barcode Gun & Manual Key Tab
+  /// TAB 3: Offline Machine-Bound Encrypted Key & Barcode Gun Tab
   Widget _buildOfflineDouchetteTab({bool isScrollable = true}) {
+    final cleanMachineId = LicenseService.getCleanMachineId();
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'تفعيل فوري بقارئ الباركود (Douchette) 🔫',
-            style: TextStyle(color: Color(0xFF818CF8), fontWeight: FontWeight.bold, fontSize: 13.5),
+      children: [
+        // Machine Code Card (for offline activation)
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF6366F1), width: 1.5),
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'إذا وصلتك بطاقة التفعيل المطبوعة، امسح الباركود مباشرة بقارئ الباركود لتفعيل البرنامج في ثانية:',
-            style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.4),
-          ),
-          const SizedBox(height: 10),
-
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _douchetteController,
-                  focusNode: _douchetteFocusNode,
-                  textInputAction: TextInputAction.done,
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
-                  onSubmitted: (val) => _handleDouchetteActivation(val),
-                  decoration: InputDecoration(
-                    hintText: 'امسح بالدوشيت أو اكتب الكود (مثال: NY-123456)...',
-                    hintStyle: const TextStyle(color: Colors.white38, fontSize: 11.5),
-                    prefixIcon: const Icon(Icons.qr_code_rounded, color: Color(0xFF818CF8), size: 18),
-                    filled: true,
-                    fillColor: const Color(0xFF0F172A),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    isDense: true,
-                  ),
+              Row(
+                children: const [
+                  Icon(Icons.computer_rounded, color: Color(0xFF818CF8), size: 18),
+                  SizedBox(width: 8),
+                  Text('كود تعريف جهازك (Machine Code) 💻',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF334155)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SelectableText(
+                      cleanMachineId,
+                      style: const TextStyle(
+                        color: Color(0xFF38BDF8),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF334155),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      ),
+                      icon: const Icon(Icons.copy_rounded, size: 14),
+                      label: const Text('نسخ الكود 📋', style: TextStyle(fontSize: 11)),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: cleanMachineId));
+                        context.showAppSnackBar('✅ تم نسخ كود الجهاز ($cleanMachineId) بنجاح!');
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                icon: const Icon(Icons.check_rounded, size: 16),
-                label: const Text('تفعيل ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                onPressed: () => _handleDouchetteActivation(_douchetteController.text),
+              const SizedBox(height: 6),
+              const Text(
+                'انسخ هذا الكود وأرسله للمطور لاستلام مفتاح التفعيل المشفر الخاص بهذا الجهاز بدون الحاجة للإنترنت.',
+                style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.3),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+        ),
+        const SizedBox(height: 14),
 
-          const Divider(color: Color(0xFF334155)),
-          const SizedBox(height: 10),
-
-          const Text(
-            'أو كتابة كود التفعيل السري يدوياً ✍️',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _manualKeyController,
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
-                  onSubmitted: (val) => _handleDouchetteActivation(val),
-                  decoration: InputDecoration(
-                    hintText: 'أدخل مفتاح الترخيص (Licence Key)...',
-                    hintStyle: const TextStyle(color: Colors.white38, fontSize: 11.5),
-                    prefixIcon: const Icon(Icons.key_rounded, color: Color(0xFF818CF8), size: 18),
-                    filled: true,
-                    fillColor: const Color(0xFF0F172A),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    isDense: true,
+        // 19-Character Encrypted Key Input
+        const Text(
+          'أدخل مفتاح التفعيل المشفر المستلم من المطور 🔑',
+          style: TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 12.5),
+        ),
+        const SizedBox(height: 3),
+        const Text(
+          'كود مشفر من 19 حرف ورقم بدون فراغات أو مطات (مثال: NKP9F4B2C8D1E3A706)',
+          style: TextStyle(color: Colors.white60, fontSize: 11),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _manualKeyController,
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                  LengthLimitingTextInputFormatter(19),
+                ],
+                style: const TextStyle(
+                  color: Color(0xFF34D399),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                  letterSpacing: 1.5,
+                ),
+                onSubmitted: (val) => _handleDouchetteActivation(val),
+                decoration: InputDecoration(
+                  hintText: 'NKP9F4B2C8D1E3A706...',
+                  hintStyle: const TextStyle(color: Colors.white38, fontSize: 12, letterSpacing: 0),
+                  prefixIcon: const Icon(Icons.vpn_key_rounded, color: Color(0xFFFBBF24), size: 18),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.paste_rounded, color: Colors.white70, size: 18),
+                    tooltip: 'لصق',
+                    onPressed: () async {
+                      final data = await Clipboard.getData('text/plain');
+                      if (data?.text != null) {
+                        final clean = data!.text!.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+                        _manualKeyController.text = clean;
+                      }
+                    },
                   ),
+                  filled: true,
+                  fillColor: const Color(0xFF0F172A),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFFBBF24))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  isDense: true,
                 ),
               ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF334155),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                icon: const Icon(Icons.verified_user_rounded, size: 16),
-                label: const Text('تحقق 🔑', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                onPressed: () => _handleDouchetteActivation(_manualKeyController.text),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF059669),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-            ],
-          ),
+              icon: const Icon(Icons.bolt_rounded, size: 16),
+              label: const Text('تفعيل أوفلاين ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              onPressed: () => _handleDouchetteActivation(_manualKeyController.text),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        const Divider(color: Color(0xFF334155)),
+        const SizedBox(height: 8),
+
+        // Douchette Scanner Input
+        const Text(
+          'أو امسح باركود التفعيل بقارئ الباركود (Douchette) 🔫',
+          style: TextStyle(color: Color(0xFF818CF8), fontWeight: FontWeight.bold, fontSize: 12),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _douchetteController,
+                focusNode: _douchetteFocusNode,
+                textInputAction: TextInputAction.done,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
+                onSubmitted: (val) => _handleDouchetteActivation(val),
+                decoration: InputDecoration(
+                  hintText: 'امسح بالدوشيت مباشرة...',
+                  hintStyle: const TextStyle(color: Colors.white38, fontSize: 11.5),
+                  prefixIcon: const Icon(Icons.qr_code_rounded, color: Color(0xFF818CF8), size: 18),
+                  filled: true,
+                  fillColor: const Color(0xFF0F172A),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF475569))),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  isDense: true,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.check_rounded, size: 16),
+              label: const Text('تحقق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              onPressed: () => _handleDouchetteActivation(_douchetteController.text),
+            ),
+          ],
+        ),
 
           if (_pairingStatusMessage != null) ...[
             const SizedBox(height: 12),

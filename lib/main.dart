@@ -19,6 +19,9 @@ import 'features/settings/presentation/bloc/printer_bloc.dart';
 import 'features/settings/presentation/bloc/printer_event.dart';
 import 'core/data/local_sync_server.dart';
 
+import 'core/theme/theme_cubit.dart';
+import 'core/theme/header_branding_cubit.dart';
+
 class TouchAndMouseScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
@@ -54,6 +57,8 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<LanguageCubit>(create: (context) => di.sl<LanguageCubit>()),
+        BlocProvider<ThemeCubit>(create: (context) => di.sl<ThemeCubit>()),
+        BlocProvider<HeaderBrandingCubit>(create: (context) => di.sl<HeaderBrandingCubit>()),
         BlocProvider<CustomerCubit>(create: (context) => di.sl<CustomerCubit>()..loadCustomers()),
         BlocProvider<ProductBloc>(
             create: (context) => di.sl<ProductBloc>()..add(LoadProducts())),
@@ -65,26 +70,32 @@ class MyApp extends StatelessWidget {
         BlocProvider<PrinterBloc>(
             create: (context) => di.sl<PrinterBloc>()..add(InitPrinterEvent())),
       ],
-      child: BlocBuilder<LanguageCubit, Locale>(
-        builder: (context, locale) {
-          return MaterialApp.router(
-            title: 'Nayli Kiosk',
-            theme: AppTheme.lightTheme,
-            routerConfig: router,
-            scrollBehavior: TouchAndMouseScrollBehavior(),
-            debugShowCheckedModeBanner: false,
-            locale: locale,
-            supportedLocales: const [
-              Locale('ar'),
-              Locale('fr'),
-              Locale('en'),
-            ],
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return BlocBuilder<LanguageCubit, Locale>(
+            builder: (context, locale) {
+              return MaterialApp.router(
+                title: 'Nayli Kiosk',
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.amoledDarkTheme,
+                themeMode: themeMode,
+                routerConfig: router,
+                scrollBehavior: TouchAndMouseScrollBehavior(),
+                debugShowCheckedModeBanner: false,
+                locale: locale,
+                supportedLocales: const [
+                  Locale('ar'),
+                  Locale('fr'),
+                  Locale('en'),
+                ],
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+              );
+            },
           );
         },
       ),

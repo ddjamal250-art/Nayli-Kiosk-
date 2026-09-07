@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:app_settings/app_settings.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_cubit.dart';
+import '../../../billing/presentation/widgets/header_color_dialog.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/backup_helper.dart';
 import '../../../../core/utils/excel_export_helper.dart';
@@ -51,8 +53,8 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'الإعدادات والإدارة الشاملة ⚙️',
+        title: Text(
+          context.tr('settings_comprehensive_title'),
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: true,
@@ -80,8 +82,13 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 18),
 
             // 2. Business Operations Hubs (3 Smart Hubs)
-            _buildSectionHeader('مراكز إدارة الأعمال والنشاط التجاري 🗂️'),
+            _buildSectionHeader(context.tr('business_hubs_title')),
             _buildBusinessHubsGrid(context),
+
+            const SizedBox(height: 18),
+
+            // 2.1 Master Catalog & Instant Setup Banner
+            _buildMasterCatalogHeroBanner(context),
 
             const SizedBox(height: 20),
 
@@ -100,6 +107,12 @@ class _SettingsPageState extends State<SettingsPage> {
             // 5. Security & Data Backup Center
             _buildSectionHeader('الأمان والنسخ الاحتياطي 🔒💾'),
             _buildSecurityAndBackupSection(context, isPinEnabled),
+
+            const SizedBox(height: 20),
+
+            // 5.5 Appearance & Theme Center
+            _buildSectionHeader('المظهر والسمات (Thème & Apparence) 🎨🌙'),
+            _buildAppearanceAndThemeSection(context),
 
             const SizedBox(height: 20),
 
@@ -122,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, right: 4, left: 4),
       child: Text(
-        title,
+        context.tr(title),
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.bold,
@@ -319,6 +332,134 @@ class _SettingsPageState extends State<SettingsPage> {
           onTap: () => _showPartnersHubSheet(context),
         ),
       ],
+    );
+  }
+
+  /// Master Catalog & Instant Setup Banner
+  Widget _buildMasterCatalogHeroBanner(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF1E293B),
+            Color(0xFF0F172A),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.amber.shade400, Colors.amber.shade700],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            context.tr('master_catalog_title'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade700,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            '+100,000',
+                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      context.tr('master_catalog_subtitle'),
+                      style: TextStyle(color: Colors.grey.shade300, fontSize: 11.5, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber.shade600,
+                    foregroundColor: Colors.black87,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.flash_on_rounded, size: 16),
+                  label: Text(
+                    context.tr('setup_wizard_btn'),
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onPressed: () => context.push('/master-catalog'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.search_rounded, size: 16),
+                  label: Text(
+                    context.tr('browse_catalog_btn'),
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onPressed: () => context.push('/master-catalog'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -652,7 +793,61 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   /// Language & App Info Card
-  Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
+    Widget _buildAppearanceAndThemeSection(BuildContext context) {
+    return _buildCardGroup([
+      BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          final isDark = themeMode == ThemeMode.dark;
+          return SwitchListTile(
+            secondary: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.amber : Colors.blueGrey).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                color: isDark ? Colors.amber.shade800 : Colors.blueGrey,
+                size: 20,
+              ),
+            ),
+            title: Text(
+              context.tr('dark_amoled_mode'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+            ),
+            subtitle: Text(
+              context.tr('dark_amoled_desc'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ),
+            value: isDark,
+            activeColor: Colors.teal,
+            onChanged: (_) {
+              context.read<ThemeCubit>().toggleTheme();
+            },
+          );
+        },
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.palette_rounded,
+        iconColor: Colors.deepPurple,
+        title: context.tr('header_branding_title'),
+        subtitle: context.tr('header_branding_desc'),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.deepPurple.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold, fontSize: 11)),
+        ),
+        onTap: () => HeaderColorDialog.show(context),
+      ),
+    ]);
+  }
+
+Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
     return _buildCardGroup([
       BlocBuilder<LanguageCubit, Locale>(
         builder: (context, currentLocale) {
@@ -1043,10 +1238,10 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Icon(icon, color: iconColor ?? AppTheme.primaryColor, size: 18),
       ),
       title: Text(
-        title,
+        context.tr(title),
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
       ),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))) : null,
+      subtitle: subtitle != null ? Text(context.tr(subtitle), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))) : null,
       trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 13, color: Color(0xFF94A3B8)),
       onTap: onTap,
     );

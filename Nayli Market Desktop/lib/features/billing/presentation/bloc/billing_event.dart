@@ -15,9 +15,34 @@ class ScanBarcodeEvent extends BillingEvent {
 
 class AddProductToCartEvent extends BillingEvent {
   final Product product;
-  const AddProductToCartEvent(this.product);
+  final String unitLevel; // 'pack', 'piece', 'carton'
+  final int quantity;
+  final double? customPrice;
+
+  const AddProductToCartEvent(
+    this.product, {
+    this.unitLevel = 'pack',
+    this.quantity = 1,
+    this.customPrice,
+  });
+
   @override
-  List<Object> get props => [product];
+  List<Object> get props => [product, unitLevel, quantity, customPrice ?? 0.0];
+}
+
+class SwitchCartItemUnitEvent extends BillingEvent {
+  final String cartKey;
+  final String targetUnit; // 'piece', 'pack', 'carton'
+  final int? newQuantity;
+
+  const SwitchCartItemUnitEvent({
+    required this.cartKey,
+    required this.targetUnit,
+    this.newQuantity,
+  });
+
+  @override
+  List<Object> get props => [cartKey, targetUnit, newQuantity ?? 0];
 }
 
 class AddCustomItemEvent extends BillingEvent {

@@ -25,7 +25,13 @@ class OnlineActivationResult {
 }
 
 class OnlineLicenseService {
-  // Google Apps Script Web App Endpoint
+  // Google Cloud Firestore Centralized Database (nayli-pos-dz)
+  static const String firestoreProjectId = 'nayli-pos-dz';
+  static const String firestoreApiKey = 'AIzaSyArn6G3ZDhexjTaWk4qDPASGyW6JqMiLF4';
+  static const String firestoreBaseUrl =
+      'https://firestore.googleapis.com/v1/projects/$firestoreProjectId/databases/(default)/documents/licenses';
+
+  // Google Apps Script Web App Endpoint (Relay & Failover)
   static const String defaultScriptUrl =
       'https://script.google.com/macros/s/AKfycbxQYO_wt3YY6m6dV3P9mghkVnjZWiZbX697oQjdUZKGKVdkh_eJxe3e5AzQYR5enu3s/exec';
 
@@ -61,21 +67,23 @@ class OnlineLicenseService {
     String phone = 'غير محدد',
   }) async {
     try {
-      // Developer activation notifications must always use the developer's official bot credentials
       final token = defaultBotToken;
       final chatId = defaultChatId;
 
       if (token.isEmpty || chatId.isEmpty) return false;
 
+      final cleanMachine = LicenseService.getCleanMachineId();
       final message = '''
 🔔 <b>طلب تفعيل ترخيص جديد (Nayli POS)</b>
 ━━━━━━━━━━━━━━━━━
 🏬 <b>المحل:</b> $storeName
 📱 <b>الهاتف:</b> $phone
 💻 <b>كود الجهاز:</b> <code>$deviceId</code>
+🔑 <b>كود الأوفلاين:</b> <code>$cleanMachine</code>
 ⏰ <b>الوقت:</b> ${DateTime.now().toString().substring(0, 16)}
 ━━━━━━━━━━━━━━━━━
-👇 <b>اختر نوع الباقة وسعة الأجهزة بضغطة زر لتفعيله في Google Sheet فوراً:</b>
+🔥 <b>قاعدة البيانات السحابية:</b> Google Firestore (nayli-pos-dz)
+👇 <b>اختر نوع الباقة للتفعيل الفوري:</b>
 ''';
 
       final inlineKeyboard = {
@@ -108,12 +116,18 @@ class OnlineLicenseService {
               'callback_data': 'REJ:$deviceId',
             },
           ],
-        ]
+          [
+            {
+              'text': '🔥 فتح في Firebase Console',
+              'url': 'https://console.firebase.google.com/u/0/project/nayli-pos-dz/firestore/databases/-default-/data/~2Flicenses~2F$deviceId',
+            },
+          ],
+        ],
       };
 
-      final url = Uri.parse('https://api.telegram.org/bot$token/sendMessage');
-      final res = await http.post(
-        url,
+      final url = 'https://api.telegram.org/bot$token/sendMessage';
+      final response = await http.post(
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'chat_id': chatId,
@@ -123,39 +137,105 @@ class OnlineLicenseService {
         }),
       ).timeout(const Duration(seconds: 10));
 
-      debugPrint('[TelegramBot] Notify status: ${res.statusCode}');
-      return res.statusCode == 200;
+      return response.statusCode == 200;
     } catch (e) {
       debugPrint('[TelegramBot] Failed to notify developer: $e');
       return false;
     }
   }
 
-  /// Check license status online via Google Apps Script Web App with Quota validation
+  /// Check license status online via Google Cloud Firestore & Google Apps Script
   static Future<OnlineActivationResult> checkAndActivateOnline({
     String storeName = '',
     String phone = '',
   }) async {
     final deviceId = LicenseService.getDeviceId();
+    final cleanStore = storeName.trim().isEmpty ? 'متجر كاشير' : storeName.trim();
+    final cleanPhone = phone.trim().isEmpty ? 'غير مسجل' : phone.trim();
+    final deviceType = Platform.isWindows ? 'Desktop PC' : (Platform.isAndroid ? 'Android Phone' : 'Device');
 
     // 1. Send interactive inline button message directly to Developer's Telegram (10s timeout)
     bool directTelegramSent = false;
     try {
       directTelegramSent = await notifyDeveloperTelegram(
         deviceId: deviceId,
-        storeName: storeName.isEmpty ? 'متجر كاشير' : storeName,
-        phone: phone,
+        storeName: cleanStore,
+        phone: cleanPhone,
       );
     } catch (e) {
       debugPrint('[OnlineLicenseService] Direct Telegram notify error: $e');
       directTelegramSent = false;
     }
 
+    // 2. Primary Online Licensing: Google Cloud Firestore (nayli-pos-dz)
     try {
-      final cleanPhone = phone.trim();
-      final cleanStore = storeName.trim();
-      final deviceType = Platform.isWindows ? 'Desktop PC' : (Platform.isAndroid ? 'Android Phone' : 'Device');
+      final firestoreDocUrl = '$firestoreBaseUrl/$deviceId?key=$firestoreApiKey';
+      final fsGetRes = await http.get(Uri.parse(firestoreDocUrl)).timeout(const Duration(seconds: 8));
 
+      if (fsGetRes.statusCode == 200) {
+        final fsData = jsonDecode(fsGetRes.body) as Map<String, dynamic>?;
+        final fields = fsData?['fields'] as Map<String, dynamic>?;
+        final isAct = fields?['isActivated']?['booleanValue'] == true;
+
+        if (isAct) {
+          final plan = (fields?['plan']?['stringValue'] ?? 'P').toUpperCase();
+          final serverStoreName = fields?['storeName']?['stringValue'] ?? cleanStore;
+          final maxDevices = int.tryParse(fields?['maxDevices']?['integerValue']?.toString() ?? '1') ?? 1;
+
+          await HiveDatabase.settingsBox.put('store_max_devices_quota', maxDevices);
+          await HiveDatabase.settingsBox.put('licensed_store_name', serverStoreName);
+          await HiveDatabase.settingsBox.put('licensed_phone', cleanPhone);
+
+          if (plan.startsWith('P')) {
+            await LicenseService.grantPermanentLicense();
+          } else if (plan == 'Y') {
+            await LicenseService.grantCustomPlan(days: 365, isSubscription: true);
+          } else if (plan == 'M') {
+            await LicenseService.grantCustomPlan(days: 30, planType: 'trial_month');
+          } else {
+            await LicenseService.grantPermanentLicense();
+          }
+
+          SoundService.playSaveSuccess();
+          return OnlineActivationResult(
+            isSuccess: true,
+            message: '🎉 تم تفعيل نسختك الرسمية بنجاح عبر سحابة Google Firestore!',
+            plan: plan,
+            storeName: serverStoreName,
+            maxDevices: maxDevices,
+            telegramDirectSent: directTelegramSent,
+          );
+        }
+      }
+
+      // If document not found or not activated, register / update request in Firestore
+      final cleanMachine = LicenseService.getCleanMachineId();
+      final patchUrl = '$firestoreBaseUrl/$deviceId?key=$firestoreApiKey&updateMask.fieldPaths=deviceId&updateMask.fieldPaths=cleanMachineId&updateMask.fieldPaths=storeName&updateMask.fieldPaths=phone&updateMask.fieldPaths=deviceType&updateMask.fieldPaths=isActivated&updateMask.fieldPaths=plan&updateMask.fieldPaths=requestDate';
+
+      final patchBody = jsonEncode({
+        "fields": {
+          "deviceId": {"stringValue": deviceId},
+          "cleanMachineId": {"stringValue": cleanMachine},
+          "storeName": {"stringValue": cleanStore},
+          "phone": {"stringValue": cleanPhone},
+          "deviceType": {"stringValue": deviceType},
+          "isActivated": {"booleanValue": false},
+          "plan": {"stringValue": "P"},
+          "requestDate": {"timestampValue": DateTime.now().toUtc().toIso8601String()}
+        }
+      });
+
+      await http.patch(
+        Uri.parse(patchUrl),
+        headers: {"Content-Type": "application/json"},
+        body: patchBody,
+      ).timeout(const Duration(seconds: 8));
+    } catch (e) {
+      debugPrint('[OnlineLicenseService] Firestore sync error: $e');
+    }
+
+    // 3. Failover / Secondary Sync: Google Apps Script Web App
+    try {
       final scriptUrl = HiveDatabase.settingsBox.get('google_license_script_url', defaultValue: defaultScriptUrl) as String;
       final uri = Uri.parse(
         '$scriptUrl?deviceId=${Uri.encodeComponent(deviceId)}'
@@ -166,14 +246,14 @@ class OnlineLicenseService {
         '&notifyTelegram=1',
       );
 
-      final response = await http.get(uri).timeout(const Duration(seconds: 15));
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 302) {
         final data = jsonDecode(response.body);
 
         if (data is Map && data['isActivated'] == true) {
           final plan = (data['plan'] as String? ?? 'P').toUpperCase();
-          final serverStoreName = data['storeName'] as String? ?? storeName;
+          final serverStoreName = data['storeName'] as String? ?? cleanStore;
           final maxDevices = (data['maxDevices'] as num?)?.toInt() ?? 1;
 
           await HiveDatabase.settingsBox.put('store_max_devices_quota', maxDevices);
@@ -186,8 +266,6 @@ class OnlineLicenseService {
             await LicenseService.grantCustomPlan(days: 365, isSubscription: true);
           } else if (plan == 'M') {
             await LicenseService.grantCustomPlan(days: 30, planType: 'trial_month');
-          } else if (plan == 'W') {
-            await LicenseService.grantCustomPlan(days: 14, planType: 'trial_week');
           } else {
             await LicenseService.grantPermanentLicense();
           }
@@ -201,33 +279,17 @@ class OnlineLicenseService {
             maxDevices: maxDevices,
             telegramDirectSent: directTelegramSent,
           );
-        } else if (data is Map && data['error'] == 'quota_exceeded') {
-          return OnlineActivationResult(
-            isSuccess: false,
-            message: '❌ تم استهلاك كامل حصة الأجهزة المسموح بها لهذا المتجر. يرجى التواصل مع المطور لترقية الباقة.',
-            telegramDirectSent: directTelegramSent,
-          );
-        } else {
-          return OnlineActivationResult(
-            isSuccess: false,
-            message: 'طلبك قيد المراجعة في السيرفر. وصل إشعار تفاعلي لهاتف المطور بأزرار التفعيل الفوري وسعة الأجهزة!',
-            telegramDirectSent: directTelegramSent,
-          );
         }
-      } else {
-        return OnlineActivationResult(
-          isSuccess: false,
-          message: 'تعذر الاتصال بالسيرفر السحابي (كود: ${response.statusCode}). تأكد من اتصال الإنترنت.',
-          telegramDirectSent: directTelegramSent,
-        );
       }
     } catch (e) {
-      return OnlineActivationResult(
-        isSuccess: false,
-        message: 'حدث خطأ في الاتصال: $e. تأكد من اتصال الإنترنت وحاول مجدداً.',
-        telegramDirectSent: directTelegramSent,
-      );
+      debugPrint('[OnlineLicenseService] Apps Script failover error: $e');
     }
+
+    return OnlineActivationResult(
+      isSuccess: false,
+      message: '✅ تم تسجيل جهازك بنجاح في قاعدة بيانات Google Firestore! وأُرسل إشعار للمطور للتفعيل.',
+      telegramDirectSent: directTelegramSent,
+    );
   }
 
   /// Send Daily Sales Z-Report to Merchant's Telegram

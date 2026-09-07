@@ -134,5 +134,60 @@ class Product extends Equatable {
         cartonCostPrice,
         unitType,
       ];
+
+  // --- Universal 3-Tier Multi-Unit Packaging Helpers ---
+  bool get hasSubUnit => (piecesPerPack > 1 && singlePiecePrice > 0) || isTobacco || singlePiecePrice > 0;
+  bool get hasCarton => (packsPerCarton > 1 && cartonPrice > 0) || (packMultiplier > 1 && packPrice > 0) || isTobacco || cartonPrice > 0;
+  bool get hasMultiUnit => hasSubUnit || hasCarton;
+
+  String get resolvedSubUnitName {
+    if (isTobacco || category.contains('تبغ') || category.contains('سجائر')) return 'سيجارة';
+    if (category.contains('ماء') || category.contains('مشروبات') || category.contains('عصائر')) return 'قارورة';
+    if (category.contains('جبن') || category.contains('أجبان') || category.toLowerCase().contains('fromage')) return 'مثلث / حبة';
+    if (category.contains('بيض')) return 'بيضة';
+    if (category.contains('قهوة') || category.contains('شاي')) return 'ساشي';
+    return 'حبة';
+  }
+
+  String get resolvedPackName {
+    if (category.contains('ماء') || category.contains('مشروبات')) return 'قارورة';
+    if (category.contains('جبن') || category.contains('أجبان')) return 'علبة / بواطة';
+    if (category.contains('بيض')) return 'بلاطو';
+    return 'علبة';
+  }
+
+  String get resolvedCartonName {
+    if (packName != null && packName!.trim().isNotEmpty) return packName!.trim();
+    if (isTobacco || category.contains('تبغ') || category.contains('سجائر')) return 'كرطوشة';
+    if (category.contains('ماء') || category.contains('مشروبات')) return 'فاردو (Fardou)';
+    if (category.contains('بيض')) return 'كرتونة بيض';
+    if (category.contains('علك') || category.contains('حلويات')) return 'شكارة / كرتونة';
+    return 'كرتونة / فاردو';
+  }
+
+  double get resolvedPiecePrice {
+    if (singlePiecePrice > 0) return singlePiecePrice;
+    if (piecesPerPack > 1) return (price / piecesPerPack).ceilToDouble();
+    return price;
+  }
+
+  double get resolvedCartonPrice {
+    if (cartonPrice > 0) return cartonPrice;
+    if (packPrice > 0) return packPrice;
+    final mult = packsPerCarton > 1 ? packsPerCarton : (packMultiplier > 1 ? packMultiplier : 10);
+    return (price * mult).roundToDouble();
+  }
+
+  double get resolvedPieceCost {
+    if (piecesPerPack > 1) return costPrice / piecesPerPack;
+    return costPrice;
+  }
+
+  double get resolvedCartonCost {
+    if (cartonCostPrice > 0) return cartonCostPrice;
+    final mult = packsPerCarton > 1 ? packsPerCarton : (packMultiplier > 1 ? packMultiplier : 10);
+    return costPrice * mult;
+  }
 }
+
 

@@ -101,6 +101,7 @@ class LocalSyncServer {
   static final StreamController<int> _clientsController = StreamController<int>.broadcast();
   static final StreamController<RemoteIncomingCart> _remoteCartStreamController = StreamController<RemoteIncomingCart>.broadcast();
   static final StreamController<RemoteIncomingCart> _posHandoffStreamController = StreamController<RemoteIncomingCart>.broadcast();
+  static final StreamController<Map<String, dynamic>> _masterActivationStreamController = StreamController<Map<String, dynamic>>.broadcast();
   
   static final List<RemoteIncomingCart> pendingRemoteCarts = [];
   static int _connectedClients = 0;
@@ -110,6 +111,7 @@ class LocalSyncServer {
   static Stream<int> get clientsStream => _clientsController.stream;
   static Stream<RemoteIncomingCart> get remoteCartStream => _remoteCartStreamController.stream;
   static Stream<RemoteIncomingCart> get posHandoffStream => _posHandoffStreamController.stream;
+  static Stream<Map<String, dynamic>> get masterActivationStream => _masterActivationStreamController.stream;
   static int get connectedClients => _connectedClients;
 
   static Future<String> getLocalIp() async {
@@ -217,6 +219,8 @@ class LocalSyncServer {
             await _handlePostDocument(request);
           } else if (path == '/api/sales' && request.method == 'POST') {
             await _handlePostSale(request);
+          } else if (path == '/api/reverse-activation' && request.method == 'POST') {
+            await _handleReverseActivation(request);
           } else if (path == '/api/remote-cart' && request.method == 'POST') {
             await _handlePostRemoteCart(request);
           } else if (path == '/api/pos-handoff' && request.method == 'POST') {
@@ -419,6 +423,67 @@ class LocalSyncServer {
     _logController.add('Received completed sale $invoiceId from mobile terminal');
     request.response.headers.contentType = ContentType.json;
     request.response.write(jsonEncode({'success': true, 'invoiceId': invoiceId}));
+    await request.response.close();
+  }
+
+  /// Handle reverse activation sent from an authorized companion mobile phone (4G -> PC LAN)
+  static Future<void> _handleReverseActivation(HttpRequest request) async {
+    final body = await utf8.decoder.bind(request).join();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+
+    final rawKey = data['offlineKey']?.toString() ?? '';
+    final storeName = data['storeName']?.toString() ?? '';
+    final phone = data['phone']?.toString() ?? '';
+    final companionDeviceId = data['companionDeviceId']?.toString() ?? '';
+    final plan = data['plan']?.toString() ?? 'P';
+
+    bool success = false;
+    String message = '';
+
+    // 1. If an encrypted offline key was passed, verify and apply
+    if (rawKey.isNotEmpty) {
+      success = await LicenseService.verifyAndApplyOfflineKey(rawKey, storeName: storeName);
+      message = success
+          ? '🎉 تم تفعيل حاسوب الكاشير بنجاح عبر كود الترخيص المشفر من الهاتف!'
+          : 'كود الترخيص المشفر غير صالح لعتاد هذا الحاسوب.';
+    } else {
+      // 2. Direct companion relay: grant permanent/plan license
+      if (storeName.isNotEmpty) {
+        await HiveDatabase.settingsBox.put('licensed_store_name', storeName);
+        await HiveDatabase.settingsBox.put('shop_name', storeName);
+      }
+      if (phone.isNotEmpty) {
+        await HiveDatabase.settingsBox.put('licensed_phone', phone);
+      }
+
+      if (plan == 'Y') {
+        await LicenseService.grantCustomPlan(days: 365, isSubscription: true);
+      } else if (plan == 'M') {
+        await LicenseService.grantCustomPlan(days: 30, planType: 'trial_month');
+      } else {
+        await LicenseService.grantPermanentLicense();
+      }
+      success = true;
+      message = '🎉 تم تفعيل حاسوب الكاشير بنجاح عبر هاتف المتجر المرخص!';
+    }
+
+    if (success) {
+      _masterActivationStreamController.add({
+        'storeName': storeName,
+        'phone': phone,
+        'companionDeviceId': companionDeviceId,
+        'plan': plan,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+      _logController.add('Master POS successfully activated via Companion Phone ($storeName)');
+    }
+
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode({
+      'success': success,
+      'message': message,
+      'isActivated': LicenseService.isActivated(),
+    }));
     await request.response.close();
   }
 

@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:app_settings/app_settings.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_cubit.dart';
+import '../../../billing/presentation/widgets/header_color_dialog.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/backup_helper.dart';
 import '../../../../core/utils/excel_export_helper.dart';
@@ -51,8 +53,8 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'الإعدادات والإدارة الشاملة ⚙️',
+        title: Text(
+          context.tr('settings_comprehensive_title'),
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: true,
@@ -108,6 +110,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 20),
 
+            // 5.5 Appearance & Theme Center
+            _buildSectionHeader('المظهر والسمات (Thème & Apparence) 🎨🌙'),
+            _buildAppearanceAndThemeSection(context),
+
+            const SizedBox(height: 20),
+
             // 6. Language & App Info
             _buildSectionHeader('اللغة ومعلومات التطبيق 🌐✨'),
             _buildLanguageAndInfoSection(context, isActivated),
@@ -127,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, right: 4, left: 4),
       child: Text(
-        title,
+        context.tr(title),
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.bold,
@@ -785,7 +793,61 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   /// Language & App Info Card
-  Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
+    Widget _buildAppearanceAndThemeSection(BuildContext context) {
+    return _buildCardGroup([
+      BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          final isDark = themeMode == ThemeMode.dark;
+          return SwitchListTile(
+            secondary: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.amber : Colors.blueGrey).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                color: isDark ? Colors.amber.shade800 : Colors.blueGrey,
+                size: 20,
+              ),
+            ),
+            title: Text(
+              context.tr('dark_amoled_mode'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+            ),
+            subtitle: Text(
+              context.tr('dark_amoled_desc'),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ),
+            value: isDark,
+            activeColor: Colors.teal,
+            onChanged: (_) {
+              context.read<ThemeCubit>().toggleTheme();
+            },
+          );
+        },
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.palette_rounded,
+        iconColor: Colors.deepPurple,
+        title: context.tr('header_branding_title'),
+        subtitle: context.tr('header_branding_desc'),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.deepPurple.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold, fontSize: 11)),
+        ),
+        onTap: () => HeaderColorDialog.show(context),
+      ),
+    ]);
+  }
+
+Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
     return _buildCardGroup([
       BlocBuilder<LanguageCubit, Locale>(
         builder: (context, currentLocale) {
@@ -1176,10 +1238,10 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Icon(icon, color: iconColor ?? AppTheme.primaryColor, size: 18),
       ),
       title: Text(
-        title,
+        context.tr(title),
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
       ),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))) : null,
+      subtitle: subtitle != null ? Text(context.tr(subtitle), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))) : null,
       trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 13, color: Color(0xFF94A3B8)),
       onTap: onTap,
     );

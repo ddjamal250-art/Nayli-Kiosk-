@@ -113,7 +113,7 @@ class PosPaymentModal {
                       final isSelected = paymentMethod == method;
                       return ChoiceChip(
                         selected: isSelected,
-                        label: Text('${method.icon} ${method.titleAr}'),
+                        label: Text('${method.icon} ${method.title(context)}'),
                         selectedColor: Colors.teal,
                         labelStyle: TextStyle(
                           color: isSelected ? Colors.white : Colors.black87,
@@ -301,13 +301,13 @@ class PosPaymentModal {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('طباعة وصل الكاشير:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              Text(context.tr('receipt_print_title'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                               Text(
                                 !shouldPrintReceipt
-                                    ? 'تم تعطيل الطباعة الورقية (تسجيل البيع في النظام فقط)'
+                                    ? context.tr('paper_print_disabled')
                                     : (PrinterHelper.defaultThermalPrinter.isNotEmpty
-                                        ? 'الطابعة: ${PrinterHelper.defaultThermalPrinter}'
-                                        : '⚠️ لم تحدد طابعة إيصالات (انقر لتحديدها)'),
+                                        ? '${context.tr("printer")}: ${PrinterHelper.defaultThermalPrinter}'
+                                        : context.tr('no_printer_selected_warning')),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: !shouldPrintReceipt
@@ -328,7 +328,7 @@ class PosPaymentModal {
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             icon: const Icon(Icons.tune_rounded, size: 14),
-                            label: const Text('تغيير الطابعة', style: TextStyle(fontSize: 11)),
+                            label: Text(context.tr('change_printer'), style: const TextStyle(fontSize: 11)),
                             onPressed: () async {
                               final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
                               if (chosen != null) {
@@ -351,7 +351,7 @@ class PosPaymentModal {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
                 icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.green, size: 18),
-                label: const Text('واتساب 💬', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: Text('${context.tr("whatsapp")} 💬', style: const TextStyle(fontWeight: FontWeight.bold)),
                 onPressed: () => onSendWhatsAppReceipt(total, state),
               ),
               ElevatedButton.icon(
@@ -361,7 +361,7 @@ class PosPaymentModal {
                 ),
                 icon: Icon(shouldPrintReceipt ? Icons.print_rounded : Icons.check_circle_outline, color: Colors.white),
                 label: Text(
-                  shouldPrintReceipt ? context.tr('confirm_and_print') : 'تأكيد وحفظ البيع',
+                  shouldPrintReceipt ? context.tr('confirm_and_print') : context.tr('confirm_and_save_sale'),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 onPressed: () async {
@@ -375,10 +375,10 @@ class PosPaymentModal {
                     if (projectedDebt > maxLimit) {
                       final authorized = await SecurityPinHelper.authenticate(
                         context,
-                        title: '⚠️ تجاوز سقف الدين (${maxLimit.toStringAsFixed(0)} DA) - إذن المشرف',
+                        title: '${context.tr("debt_limit_exceeded")} (${maxLimit.toStringAsFixed(0)} DA)',
                       );
                       if (!authorized) {
-                        SnackbarHelper.showError(context, '❌ تم إلغاء البيع: رُفض تجاوز سقف الدين بدون إذن المشرف.');
+                        SnackbarHelper.showError(context, '❌ ' + context.tr('sale_cancelled_debt_refused'));
                         return;
                       }
                     }
@@ -393,11 +393,11 @@ class PosPaymentModal {
                         final proceed = await showDialog<bool>(
                           context: context,
                           builder: (c) => AlertDialog(
-                            title: const Text('لم يتم تحديد طابعة إيصالات'),
-                            content: const Text('لم يتم اختيار طابعة الوصولات الحرارية.\nهل ترغب في تسجيل البيع في النظام بدون طباعة ورقية لتفادي الطباعة على الطابعة الكبيرة؟'),
+                            title: Text(context.tr('no_printer_selected_title')),
+                            content: Text(context.tr('no_printer_selected_body')),
                             actions: [
-                              TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('إلغاء')),
-                              ElevatedButton(onPressed: () => Navigator.pop(c, true), child: const Text('نعم، حفظ بدون طباعة')),
+                              TextButton(onPressed: () => Navigator.pop(c, false), child: Text(context.tr('cancel'))),
+                              ElevatedButton(onPressed: () => Navigator.pop(c, true), child: Text(context.tr('save_without_printing'))),
                             ],
                           ),
                         );

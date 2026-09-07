@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nayli POS - مولد مفاتيح الترخيص الرسمي 🔑</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #38bdf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #6366f1, #38bdf8);
+      border-radius: 16px;
+      font-size: 28px;
+      margin-bottom: 12px;
+      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      background-color: #0f172a;
+      border: 1.5px solid var(--card-border);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      font-family: monospace;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+    .paste-btn {
+      position: absolute;
+      left: 8px;
+      background-color: #334155;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .paste-btn:hover {
+      background-color: #475569;
+    }
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .plan-card {
+      background-color: #0f172a;
+      border: 1.5px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .plan-card:hover {
+      border-color: var(--primary);
+    }
+    .plan-card.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.12);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+    .plan-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .plan-desc {
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+    .btn-generate {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+      transition: all 0.2s;
+    }
+    .btn-generate:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .result-box {
+      display: none;
+      margin-top: 20px;
+      background-color: #0f172a;
+      border: 2px dashed var(--success);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+    }
+    .key-display {
+      font-size: 20px;
+      font-weight: 900;
+      font-family: monospace;
+      letter-spacing: 2px;
+      color: #34d399;
+      margin: 10px 0;
+      word-break: break-all;
+      user-select: all;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .act-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+      color: #fff;
+    }
+    .btn-copy { background-color: #2563eb; }
+    .btn-copy:hover { background-color: #1d4ed8; }
+    .btn-whatsapp { background-color: #16a34a; }
+    .btn-whatsapp:hover { background-color: #15803d; }
+    .btn-telegram { background-color: #0284c7; }
+    .btn-telegram:hover { background-color: #0369a1; }
+    .history-card {
+      margin-top: 14px;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background-color: #0f172a;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .history-key {
+      font-family: monospace;
+      color: #38bdf8;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">⚡</div>
+      <h1>مولد تراخيص نايلي ماركت (Nayli Keygen)</h1>
+      <p class="subtitle">توليد مفاتيح تفعيل مشفرة أوفلاين مربوطة بعتاد الزبون 100%</p>
+    </div>
+
+    <div class="card">
+      <div class="form-group">
+        <label>كود جهاز الزبون (Machine Code) *</label>
+        <div class="input-wrapper">
+          <input type="text" id="machineCode" placeholder="مثال: NK7B2F9A4C1E" maxlength="20" autocomplete="off">
+          <button class="paste-btn" onclick="pasteFromClipboard()">لصق 📋</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>اسم المتجر / الزبون (اختياري للسجل)</label>
+        <input type="text" id="storeName" placeholder="مثال: سوبرماركت الهناء" maxlength="50">
+      </div>
+
+      <div class="form-group">
+        <label>نوع باقة الترخيص:</label>
+        <div class="plans-grid">
+          <div class="plan-card active" onclick="selectPlan('P', this)">
+            <div class="plan-title">👑 دائم مدى الحياة</div>
+            <div class="plan-desc">ترخيص كامل للأبد (P)</div>
+          </div>
+          <div class="plan-card" onclick="selectPlan('Y', this)">
+            <div class="plan-title">📅 اشتراك سنوي</div>
+            <div class="plan-desc">صلاحية 365 يوم (Y)</div>
+          </div>
+          <div class="plan-card" onclick="selectPlan('S', this)">
+            <div class="plan-title">⏳ 6 أشهر</div>
+            <div class="plan-desc">صلاحية 180 يوم (S)</div>
+          </div>
+          <div class="plan-card" onclick="selectPlan('M', this)">
+            <div class="plan-title">⏱️ شهر واحد</div>
+            <div class="plan-desc">فترة تجريبية 30 يوم (M)</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-generate" onclick="generateKey()">⚡ توليد مفتاح التفعيل</button>
+
+      <div class="result-box" id="resultBox">
+        <div style="font-size: 12px; color: #94a3b8;">مفتاح التفعيل المشفر الخاص بهذا الجهاز:</div>
+        <div class="key-display" id="keyDisplay">NKP...</div>
+        <div style="font-size: 11px; color: #10b981;">✅ مفتاح معتمد ومربوط بعتاد هذا الجهاز فقط (19 حرف ورقم)</div>
+
+        <div class="action-buttons">
+          <button class="act-btn btn-copy" onclick="copyKey()">نسخ المفتاح 📋</button>
+          <a class="act-btn btn-whatsapp" id="whatsappLink" target="_blank">واتساب 💬</a>
+          <a class="act-btn btn-telegram" id="telegramLink" target="_blank">تيليجرام ✈️</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Card -->
+    <div class="card history-card">
+      <div class="history-header">
+        <span style="font-weight: bold; font-size: 13px;">📜 سجل المفاتيح المولدة محلياً</span>
+        <button onclick="clearHistory()" style="background: none; border: none; color: #ef4444; font-size: 11px; cursor: pointer;">مسح السجل</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <div style="color: var(--text-muted); font-size: 11.5px; text-align: center; padding: 10px;">لا توجد مفاتيح مسجلة بعد.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedPlan = 'P';
+    const SALT = 'NAYLA_@OS_ULTRA_SICURI_202:_@#';
+    const SECRET_SUFFIX = ':NAYLI_OFFLINE_SECRET_2026';
+
+    function selectPlan(plan, el) {
+      selectedPlan = plan;
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    async function pasteFromClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          document.getElementById('machineCode').value = text.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+      } catch (err) {
+        alert('يرجى السماح بصلاحية اللصق في المتصفح');
+      }
+    }
+
+    // Standard Pure JS HMAC-SHA256 implementation (100% offline, zero dependencies)
+    async function hmacSha256(keyStr, messageStr) {
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(keyStr);
+      const msgData = encoder.encode(messageStr);
+
+      const cryptoKey = await window.crypto.subtle.importKey(
+        'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+      );
+
+      const signature = await window.crypto.subtle.sign('HMAC', cryptoKey, msgData);
+      const hashArray = Array.from(new Uint8Array(signature));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    async function generateKey() {
+      const machineInput = document.getElementById('machineCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const storeName = document.getElementById('storeName').value.trim() || 'متجر كاشير';
+
+      if (!machineInput) {
+        alert('يرجى إدخال كود جهاز الزبون (Machine Code)');
+        return;
+      }
+
+      // Format clean machine ID to at least 12 chars
+      let cleanId = machineInput;
+      if (cleanId.length > 12) cleanId = cleanId.substring(0, 12);
+      if (cleanId.length < 12) cleanId = cleanId.padEnd(12, '0');
+
+      const messageToSign = cleanId + ':' + selectedPlan + SECRET_SUFFIX;
+      const fullDigest = await hmacSha256(SALT, messageToSign);
+      const sig16 = fullDigest.substring(0, 16);
+
+      const generatedKey = 'NK' + selectedPlan + sig16;
+
+      document.getElementById('keyDisplay').innerText = generatedKey;
+      document.getElementById('resultBox').style.display = 'block';
+
+      // Setup Social Share Links
+      const planNameAr = selectedPlan === 'P' ? 'دائم مدى الحياة' : (selectedPlan === 'Y' ? 'سنوي (سنة)' : (selectedPlan === 'S' ? '6 أشهر' : 'شهري'));
+      const shareMsg = `مرحباً بك في برنامج Nayli Kiosk 🛍️\nتم إصدار ترخيص برنامجك بنجاح:\n\n🏬 المحل: ${storeName}\n🔑 مفتاح التفعيل: ${generatedKey}\n⭐ نوع الباقة: ${planNameAr}\n\nيرجى فتح شاشة التفعيل أوفلاين ولصق المفتاح. شكراً لثقتكم!`;
+
+      document.getElementById('whatsappLink').href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(shareMsg);
+      document.getElementById('telegramLink').href = 'https://t.me/share/url?url=' + encodeURIComponent(generatedKey) + '&text=' + encodeURIComponent(shareMsg);
+
+      // Save to local history
+      saveToHistory(generatedKey, cleanId, storeName, planNameAr);
+    }
+
+    function copyKey() {
+      const key = document.getElementById('keyDisplay').innerText;
+      navigator.clipboard.writeText(key).then(() => {
+        alert('✅ تم نسخ مفتاح التفعيل: ' + key);
+      });
+    }
+
+    function saveToHistory(key, machineId, store, plan) {
+      let history = JSON.parse(localStorage.getItem('nayli_keygen_history') || '[]');
+      history.unshift({
+        key: key,
+        machineId: machineId,
+        store: store,
+        plan: plan,
+        date: new Date().toLocaleDateString('ar-DZ') + ' ' + new Date().toLocaleTimeString('ar-DZ', {hour: '2-digit', minute:'2-digit'})
+      });
+      if (history.length > 30) history = history.slice(0, 30);
+      localStorage.setItem('nayli_keygen_history', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = JSON.parse(localStorage.getItem('nayli_keygen_history') || '[]');
+      const listEl = document.getElementById('historyList');
+      if (history.length === 0) {
+        listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 11.5px; text-align: center; padding: 10px;">لا توجد مفاتيح مسجلة بعد.</div>';
+        return;
+      }
+      listEl.innerHTML = history.map(h => `
+        <div class="history-item">
+          <div>
+            <div class="history-key">${h.key}</div>
+            <div style="color: #94a3b8; font-size: 10.5px;">${h.store} (${h.plan}) - ${h.date}</div>
+          </div>
+          <button onclick="navigator.clipboard.writeText('${h.key}'); alert('تم النسخ!');" style="background: #334155; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:11px; cursor:pointer;">نسخ</button>
+        </div>
+      `).join('');
+    }
+
+    function clearHistory() {
+      if (confirm('هل تريد مسح سجل المفاتيح المحفوظة؟')) {
+        localStorage.removeItem('nayli_keygen_history');
+        renderHistory();
+      }
+    }
+
+    // Initial render
+    window.addEventListener('DOMContentLoaded', renderHistory);
+  </script>
+</body>
+</html>

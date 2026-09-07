@@ -108,6 +108,17 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
         final res = await http.get(url).timeout(const Duration(seconds: 4));
 
         if (res.statusCode == 200) {
+          final data = jsonDecode(res.body) as Map<String, dynamic>;
+          final bool isMasterActivated = data['isActivated'] == true;
+
+          if (!isMasterActivated && LicenseService.isActivated()) {
+            await LocalSyncClient.sendReverseActivationToMaster(
+              masterIp: ip,
+              masterPort: int.tryParse(port) ?? 8080,
+              masterMachineCode: masterDeviceId,
+            );
+          }
+
           await HiveDatabase.settingsBox.put('master_pos_ip', ip);
           await HiveDatabase.settingsBox.put('master_pos_port', port);
           await HiveDatabase.settingsBox.put('sync_server_ip', '$ip:$port');

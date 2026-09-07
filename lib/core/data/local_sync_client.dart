@@ -6,6 +6,8 @@ import 'hive_database.dart';
 import 'cloud_sync_service.dart';
 import '../../features/product/data/models/product_model.dart';
 import '../utils/sound_service.dart';
+import '../utils/merchant_context_service.dart';
+import '../utils/license_service.dart';
 
 class LocalSyncClient {
   static const String _serverIpKey = 'sync_server_ip';
@@ -139,5 +141,58 @@ class LocalSyncClient {
 
     // Cloud Fallback: If phone is outside shop (on 4G) or LAN is blocked, push via Cloud!
     return await CloudSyncService.pushSaleToCloud(saleData);
+  }
+
+  /// Send Reverse Activation from an Activated Mobile Companion to an unactivated Desktop Master (4G -> PC LAN)
+  static Future<Map<String, dynamic>> sendReverseActivationToMaster({
+    required String masterIp,
+    int masterPort = 8080,
+    String? masterMachineCode,
+  }) async {
+    try {
+      String url = masterIp.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://$url';
+      }
+      if (!url.contains(':$masterPort') && !url.substring(7).contains(':')) {
+        url = '$url:$masterPort';
+      }
+
+      final uri = Uri.parse('$url/api/reverse-activation');
+      final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 5);
+
+      final storeName = MerchantContextService.getStoreName();
+      final phone = HiveDatabase.settingsBox.get('licensed_phone', defaultValue: '') as String;
+      final companionId = LicenseService.getDeviceId();
+
+      // If master's clean machine code is known (e.g. from scanned QR), generate 19-char offline key for it!
+      String offlineKey = '';
+      if (masterMachineCode != null && masterMachineCode.trim().isNotEmpty) {
+        offlineKey = LicenseService.generateOfflineKey(masterMachineCode.trim(), plan: 'P');
+      }
+
+      final payload = {
+        'action': 'reverse_activation',
+        'companionDeviceId': companionId,
+        'storeName': storeName,
+        'phone': phone,
+        'plan': 'P',
+        'offlineKey': offlineKey,
+      };
+
+      final request = await client.postUrl(uri);
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(payload));
+
+      final response = await request.close();
+      if (response.statusCode == 200) {
+        final body = await utf8.decoder.bind(response).join();
+        return jsonDecode(body) as Map<String, dynamic>;
+      }
+      return {'success': false, 'message': 'استجاب سيرفر الحاسوب برمز (${response.statusCode})'};
+    } catch (e) {
+      return {'success': false, 'message': 'تعذر الاتصال بحاسوب الكاشير: $e'};
+    }
   }
 }

@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'hive_database.dart';
+import 'cloud_sync_service.dart';
 import '../../features/product/data/models/product_model.dart';
 import '../utils/sound_service.dart';
+import '../utils/merchant_context_service.dart';
+import '../utils/license_service.dart';
 
 class LocalSyncClient {
   static const String _serverIpKey = 'sync_server_ip';
@@ -75,63 +78,121 @@ class LocalSyncClient {
   /// Pull latest products from Master Desktop Server to Mobile
   static Future<int> pullProductsFromMaster() async {
     final serverIp = getServerIp();
-    if (serverIp.isEmpty) return 0;
+    if (serverIp.isNotEmpty) {
+      try {
+        String url = serverIp;
+        if (!url.startsWith('http://')) url = 'http://$url';
+        if (!url.contains(':8080') && !url.contains(':')) url = '$url:8080';
 
-    try {
-      String url = serverIp;
-      if (!url.startsWith('http://')) url = 'http://$url';
-      if (!url.contains(':8080') && !url.contains(':')) url = '$url:8080';
+        final uri = Uri.parse('$url/api/products');
+        final client = HttpClient();
+        client.connectionTimeout = const Duration(seconds: 6);
 
-      final uri = Uri.parse('$url/api/products');
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 6);
+        final request = await client.getUrl(uri);
+        final response = await request.close();
 
-      final request = await client.getUrl(uri);
-      final response = await request.close();
+        if (response.statusCode == 200) {
+          final body = await utf8.decoder.bind(response).join();
+          final List list = jsonDecode(body) as List;
 
-      if (response.statusCode == 200) {
-        final body = await utf8.decoder.bind(response).join();
-        final List list = jsonDecode(body) as List;
-
-        int updatedCount = 0;
-        for (var item in list) {
-          final p = ProductModel.fromJson(item as Map<String, dynamic>);
-          await HiveDatabase.productBox.put(p.barcode, p);
-          updatedCount++;
+          int updatedCount = 0;
+          for (var item in list) {
+            final p = ProductModel.fromJson(item as Map<String, dynamic>);
+            await HiveDatabase.productBox.put(p.barcode, p);
+            updatedCount++;
+          }
+          await SoundService.playRestockSound();
+          return updatedCount;
         }
-        await SoundService.playRestockSound();
-        return updatedCount;
+      } catch (e) {
+        debugPrint('Error pulling products from master LAN: $e');
       }
-    } catch (e) {
-      debugPrint('Error pulling products from master: $e');
     }
-    return 0;
+
+    // Cloud Fallback: Pull from isolated merchant cloud channel
+    return await CloudSyncService.pullProductsFromCloud();
   }
 
-  /// Push a completed mobile sale to Master Desktop Server
+  /// Push a completed mobile sale to Master Desktop Server (with Cloud Fallback)
   static Future<bool> pushSaleToMaster(Map<String, dynamic> saleData) async {
     final serverIp = getServerIp();
-    if (serverIp.isEmpty) return false;
+    if (serverIp.isNotEmpty) {
+      try {
+        String url = serverIp;
+        if (!url.startsWith('http://')) url = 'http://$url';
+        if (!url.contains(':8080') && !url.contains(':')) url = '$url:8080';
 
+        final uri = Uri.parse('$url/api/sales');
+        final client = HttpClient();
+        client.connectionTimeout = const Duration(seconds: 3);
+
+        final request = await client.postUrl(uri);
+        request.headers.contentType = ContentType.json;
+        request.write(jsonEncode(saleData));
+
+        final response = await request.close();
+        if (response.statusCode == 200) {
+          return true;
+        }
+      } catch (e) {
+        debugPrint('LAN push sale failed, attempting Cloud fallback: $e');
+      }
+    }
+
+    // Cloud Fallback: If phone is outside shop (on 4G) or LAN is blocked, push via Cloud!
+    return await CloudSyncService.pushSaleToCloud(saleData);
+  }
+
+  /// Send Reverse Activation from an Activated Mobile Companion to an unactivated Desktop Master (4G -> PC LAN)
+  static Future<Map<String, dynamic>> sendReverseActivationToMaster({
+    required String masterIp,
+    int masterPort = 8080,
+    String? masterMachineCode,
+  }) async {
     try {
-      String url = serverIp;
-      if (!url.startsWith('http://')) url = 'http://$url';
-      if (!url.contains(':8080') && !url.contains(':')) url = '$url:8080';
+      String url = masterIp.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://$url';
+      }
+      if (!url.contains(':$masterPort') && !url.substring(7).contains(':')) {
+        url = '$url:$masterPort';
+      }
 
-      final uri = Uri.parse('$url/api/sales');
+      final uri = Uri.parse('$url/api/reverse-activation');
       final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 6);
+      client.connectionTimeout = const Duration(seconds: 5);
+
+      final storeName = MerchantContextService.getStoreName();
+      final phone = HiveDatabase.settingsBox.get('licensed_phone', defaultValue: '') as String;
+      final companionId = LicenseService.getDeviceId();
+
+      // If master's clean machine code is known (e.g. from scanned QR), generate 19-char offline key for it!
+      String offlineKey = '';
+      if (masterMachineCode != null && masterMachineCode.trim().isNotEmpty) {
+        offlineKey = LicenseService.generateOfflineKey(masterMachineCode.trim(), plan: 'P');
+      }
+
+      final payload = {
+        'action': 'reverse_activation',
+        'companionDeviceId': companionId,
+        'storeName': storeName,
+        'phone': phone,
+        'plan': 'P',
+        'offlineKey': offlineKey,
+      };
 
       final request = await client.postUrl(uri);
       request.headers.contentType = ContentType.json;
-      request.write(jsonEncode(saleData));
+      request.write(jsonEncode(payload));
 
       final response = await request.close();
-      return (response.statusCode == 200);
+      if (response.statusCode == 200) {
+        final body = await utf8.decoder.bind(response).join();
+        return jsonDecode(body) as Map<String, dynamic>;
+      }
+      return {'success': false, 'message': 'استجاب سيرفر الحاسوب برمز (${response.statusCode})'};
     } catch (e) {
-      debugPrint('Error pushing sale to master: $e');
+      return {'success': false, 'message': 'تعذر الاتصال بحاسوب الكاشير: $e'};
     }
-    return false;
   }
 }
-

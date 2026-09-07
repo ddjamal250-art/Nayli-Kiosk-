@@ -20,6 +20,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       : super(const BillingState()) {
     on<ScanBarcodeEvent>(_onScanBarcode);
     on<AddProductToCartEvent>(_onAddProductToCart);
+    on<SwitchCartItemUnitEvent>(_onSwitchCartItemUnit);
     on<AddCustomItemEvent>(_onAddCustomItem);
     on<RemoveProductFromCartEvent>(_onRemoveProductFromCart);
     on<UpdateQuantityEvent>(_onUpdateQuantity);
@@ -102,7 +103,11 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       (failure) =>
           emit(state.copyWith(error: 'Product not found: ${event.barcode}')),
       (product) {
-        add(AddProductToCartEvent(product));
+        if (product.packBarcode.isNotEmpty && BarcodeNormalizer.matches(product.packBarcode, event.barcode)) {
+          add(AddProductToCartEvent(product, unitLevel: 'carton'));
+        } else {
+          add(AddProductToCartEvent(product, unitLevel: 'pack'));
+        }
       },
     );
   }
@@ -129,26 +134,69 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     // Clear error when adding
     final cleanState = state.copyWith(error: null);
 
+    final targetKey = '${event.product.id}_${event.unitLevel}';
     final existingIndex = cleanState.cartItems
-        .indexWhere((item) => item.product.id == event.product.id);
+        .indexWhere((item) => item.cartKey == targetKey);
     if (existingIndex >= 0) {
       final existingItem = cleanState.cartItems[existingIndex];
       final backendItems = List<CartItem>.from(cleanState.cartItems);
-      backendItems[existingIndex] =
-          existingItem.copyWith(quantity: existingItem.quantity + 1);
+      backendItems[existingIndex] = existingItem.copyWith(
+        quantity: existingItem.quantity + event.quantity,
+        customUnitPrice: event.customPrice ?? existingItem.customUnitPrice,
+      );
       emit(cleanState.copyWith(cartItems: backendItems, error: null));
     } else {
-      final newItem = CartItem(product: event.product);
+      final newItem = CartItem(
+        product: event.product,
+        quantity: event.quantity,
+        unitLevel: event.unitLevel,
+        customUnitPrice: event.customPrice,
+      );
       emit(cleanState.copyWith(
           cartItems: [...cleanState.cartItems, newItem], error: null));
     }
   }
 
+  void _onSwitchCartItemUnit(
+      SwitchCartItemUnitEvent event, Emitter<BillingState> emit) {
+    final index = state.cartItems.indexWhere((item) => item.cartKey == event.cartKey);
+    if (index < 0) return;
+
+    final currentItem = state.cartItems[index];
+    if (currentItem.unitLevel == event.targetUnit) return;
+
+    final targetKey = '${currentItem.product.id}_${event.targetUnit}';
+    final targetExistingIndex = state.cartItems.indexWhere((item) => item.cartKey == targetKey);
+
+    final updatedCart = List<CartItem>.from(state.cartItems);
+    final targetQuantity = event.newQuantity ?? currentItem.quantity;
+
+    if (targetExistingIndex >= 0 && targetExistingIndex != index) {
+      final existingTarget = updatedCart[targetExistingIndex];
+      updatedCart[targetExistingIndex] = existingTarget.copyWith(
+        quantity: existingTarget.quantity + targetQuantity,
+      );
+      updatedCart.removeAt(index);
+    } else {
+      updatedCart[index] = currentItem.copyWith(
+        unitLevel: event.targetUnit,
+        quantity: targetQuantity,
+        customUnitPrice: null, // Reset custom price when changing units
+      );
+    }
+
+    emit(state.copyWith(cartItems: updatedCart));
+  }
+
   void _onRemoveProductFromCart(
       RemoveProductFromCartEvent event, Emitter<BillingState> emit) {
-    final updatedList = state.cartItems
-        .where((item) => item.product.id != event.productId)
-        .toList();
+    final hasExactCartKey = state.cartItems.any((item) => item.cartKey == event.productId);
+    final updatedList = state.cartItems.where((item) {
+      if (hasExactCartKey) {
+        return item.cartKey != event.productId;
+      }
+      return item.product.id != event.productId;
+    }).toList();
     emit(state.copyWith(cartItems: updatedList));
   }
 
@@ -159,8 +207,12 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       return;
     }
 
-    final index = state.cartItems
-        .indexWhere((item) => item.product.id == event.productId);
+    int index = state.cartItems
+        .indexWhere((item) => item.cartKey == event.productId);
+    if (index < 0) {
+      index = state.cartItems
+          .indexWhere((item) => item.product.id == event.productId);
+    }
     if (index >= 0) {
       final items = List<CartItem>.from(state.cartItems);
       items[index] = items[index].copyWith(quantity: event.quantity);
@@ -286,14 +338,17 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final items = state.cartItems
           .map((item) => {
                 'id': item.product.id,
-                'name': item.product.name,
+                'cartKey': item.cartKey,
+                'name': item.displayNameWithUnit,
+                'unitLevel': item.unitLevel,
+                'unitName': item.unitDisplayName,
                 'qty': item.quantity,
-                'price': item.product.price,
-                'costPrice': item.product.costPrice,
+                'price': item.unitPrice,
+                'costPrice': item.unitCost,
                 'isTobacco': item.product.isTobacco || item.product.category.contains('تبغ') || item.product.category.contains('سجائر'),
                 'category': item.product.category,
                 'total': item.total,
-                'profit': (item.product.price - item.product.costPrice) * item.quantity,
+                'profit': (item.unitPrice - item.unitCost) * item.quantity,
               })
           .toList();
 
@@ -316,11 +371,15 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         final productModel = productBox.get(originalId);
         if (productModel != null) {
           int deductAmount = 1;
-          if (cartItem.product.id.contains('_carton_')) {
-            deductAmount = cartItem.quantity * (productModel.packsPerCarton > 0 ? productModel.packsPerCarton : 10);
-          } else if (cartItem.product.id.contains('_piece_')) {
-            deductAmount = (cartItem.quantity / (productModel.piecesPerPack > 0 ? productModel.piecesPerPack : 20)).ceil();
-            if (deductAmount < 1) deductAmount = 1;
+          if (cartItem.unitLevel == 'carton' || cartItem.product.id.contains('_carton_')) {
+            final multiplier = productModel.packsPerCarton > 0
+                ? productModel.packsPerCarton
+                : (productModel.packMultiplier > 0 ? productModel.packMultiplier : 10);
+            deductAmount = cartItem.quantity * multiplier;
+          } else if (cartItem.unitLevel == 'piece' || cartItem.product.id.contains('_piece_')) {
+            final pPerPack = productModel.piecesPerPack > 0 ? productModel.piecesPerPack : 20;
+            deductAmount = (cartItem.quantity / pPerPack).ceil();
+            if (deductAmount < 1 && cartItem.quantity > 0) deductAmount = 1;
           } else if (cartItem.product.id.endsWith('_pack')) {
             deductAmount = cartItem.quantity * (cartItem.product.packMultiplier > 0 ? cartItem.product.packMultiplier : 1);
           } else {
@@ -358,7 +417,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
       final totalCost = state.cartItems.fold<double>(
         0.0,
-        (sum, i) => sum + (i.product.costPrice * i.quantity),
+        (sum, i) => sum + (i.unitCost * i.quantity),
       );
 
       final subtotal = state.subTotalAmount;
@@ -369,7 +428,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       final rawTobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
       final tobaccoSales = rawTobaccoSales * discountRatio;
-      final tobaccoCost = tobaccoItems.fold<double>(0.0, (sum, i) => sum + (i.product.costPrice * i.quantity));
+      final tobaccoCost = tobaccoItems.fold<double>(0.0, (sum, i) => sum + (i.unitCost * i.quantity));
       final tobaccoProfit = tobaccoSales - tobaccoCost;
 
       final generalSales = (state.totalAmount - tobaccoSales).clamp(0.0, double.infinity);

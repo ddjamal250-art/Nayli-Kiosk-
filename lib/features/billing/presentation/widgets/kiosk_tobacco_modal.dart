@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../product/domain/entities/product.dart';
@@ -139,70 +140,43 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
   // --- Add Actions ---
   void _addPackToCart() {
     final p = widget.product;
-    final itemProduct = Product(
-      id: p.id,
-      name: _isWholesale ? '${p.name} (جملة)' : p.name,
-      barcode: p.barcode,
-      price: _packPrice,
-      costPrice: p.costPrice,
-      stock: p.stock,
-      category: p.category,
-      isTobacco: true,
-    );
-
-    for (int i = 0; i < _packQty; i++) {
-      context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
-    }
+    context.read<BillingBloc>().add(AddProductToCartEvent(
+      p,
+      unitLevel: 'pack',
+      quantity: _packQty,
+      customPrice: _isWholesale ? _packPrice : null,
+    ));
 
     SoundService.playScanBeep();
     Navigator.pop(context);
-    SnackbarHelper.showSuccess(context, '✅ تمت إضافة $_packQty علبة "${p.name}" ${_isWholesale ? "بسعر الجملة" : ""} للسلة');
+    SnackbarHelper.showSuccess(context, '✅ $_packQty ${context.tr("pack")} "${p.name}" ' + (_isWholesale ? context.tr('wholesale_badge') : '') + ' ' + context.tr('added_to_cart'));
   }
 
   void _addCartonToCart() {
     final p = widget.product;
-    final multiplier = p.packsPerCarton > 0 ? p.packsPerCarton : 10;
-    final itemProduct = Product(
-      id: '${p.id}_carton_${DateTime.now().millisecondsSinceEpoch}',
-      name: _isWholesale ? '${p.name} [كرطوشة جملة $multiplier علب]' : '${p.name} [كرطوشة $multiplier علب]',
-      barcode: p.packBarcode ?? p.barcode,
-      price: _cartonPrice,
-      costPrice: _cartonCost,
-      stock: p.stock ~/ multiplier,
-      category: 'تبغ وسجائر',
-      isTobacco: true,
-      packMultiplier: multiplier,
-    );
-
-    for (int i = 0; i < _cartonQty; i++) {
-      context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
-    }
+    context.read<BillingBloc>().add(AddProductToCartEvent(
+      p,
+      unitLevel: 'carton',
+      quantity: _cartonQty,
+      customPrice: _isWholesale ? _cartonPrice : null,
+    ));
 
     SoundService.playScanBeep();
     Navigator.pop(context);
-    SnackbarHelper.showSuccess(context, '📦 تمت إضافة $_cartonQty كرطوشة "${p.name}" ${_isWholesale ? "بسعر الجملة" : ""} للسلة');
+    SnackbarHelper.showSuccess(context, '📦 $_cartonQty ${context.tr("carton")} "${p.name}" ' + (_isWholesale ? context.tr('wholesale_badge') : '') + ' ' + context.tr('added_to_cart'));
   }
 
   void _addCigarettesToCart() {
     final p = widget.product;
-    final totalPrice = (_cigaretteCount * _singlePiecePrice).roundToDouble();
-    final totalCost = (_cigaretteCount * _singlePieceCost);
+    context.read<BillingBloc>().add(AddProductToCartEvent(
+      p,
+      unitLevel: 'piece',
+      quantity: _cigaretteCount,
+    ));
 
-    final itemProduct = Product(
-      id: '${p.id}_piece_${DateTime.now().millisecondsSinceEpoch}',
-      name: '${p.name} ($_cigaretteCount سجائر)',
-      barcode: p.barcode,
-      price: totalPrice,
-      costPrice: totalCost,
-      stock: p.stock,
-      category: 'تبغ وسجائر',
-      isTobacco: true,
-    );
-
-    context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
     SoundService.playScanBeep();
     Navigator.pop(context);
-    SnackbarHelper.showSuccess(context, '🚬 تمت إضافة $_cigaretteCount سجائر "${p.name}" للسلة');
+    SnackbarHelper.showSuccess(context, '🚬 $_cigaretteCount ${context.tr("cigarettes")} "${p.name}" ' + context.tr('added_to_cart'));
   }
 
   void _addMeterToCart() {
@@ -224,7 +198,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
     context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
     SoundService.playScanBeep();
     Navigator.pop(context);
-    SnackbarHelper.showSuccess(context, '📏 تمت إضافة ${_meterLength.toStringAsFixed(1)} متر "${p.name}" للسلة');
+    SnackbarHelper.showSuccess(context, '📏 ${_meterLength.toStringAsFixed(1)} ${context.tr("meter")} "${p.name}" ' + context.tr('added_to_cart'));
   }
 
   void _addMlToCart() {
@@ -246,7 +220,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
     context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
     SoundService.playScanBeep();
     Navigator.pop(context);
-    SnackbarHelper.showSuccess(context, '💧 تمت إضافة ${_mlVolume.toStringAsFixed(0)} مل "${p.name}" للسلة');
+    SnackbarHelper.showSuccess(context, '💧 ${_mlVolume.toStringAsFixed(0)} ${context.tr("ml")} "${p.name}" ' + context.tr('added_to_cart'));
   }
 
   @override
@@ -299,9 +273,9 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               margin: const EdgeInsets.only(left: 6),
                               decoration: BoxDecoration(color: Colors.indigo, borderRadius: BorderRadius.circular(6)),
-                              child: const Text('سعر الجملة 📦', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                              child: Text(context.tr('wholesale_badge'), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
-                          Text('الباركود: ${p.barcode} • المخزون: ${p.stock}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                          Text('${context.tr("barcode")}: ${p.barcode} • ${context.tr("stock")}: ${p.stock}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
                         ],
                       ),
                     ],
@@ -346,7 +320,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
                             Icon(Icons.storefront_outlined, size: 15, color: !_isWholesale ? Colors.white : Colors.black87),
                             const SizedBox(width: 5),
                             Text(
-                              'بيع بالتجزئة (Détail)',
+                              context.tr('retail_detail'),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: !_isWholesale ? FontWeight.bold : FontWeight.normal,
@@ -378,7 +352,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
                             Icon(Icons.inventory_2_outlined, size: 15, color: _isWholesale ? Colors.white : Colors.black87),
                             const SizedBox(width: 5),
                             Text(
-                              'بيع بالجملة (Gros)',
+                              context.tr('wholesale_gros'),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: _isWholesale ? FontWeight.bold : FontWeight.normal,
@@ -412,9 +386,9 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
                   unselectedLabelColor: Colors.black87,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   tabs: const [
-                    Tab(text: 'باكي (علبة 🟫)'),
-                    Tab(text: 'كرطوشة (10 علب 📦)'),
-                    Tab(text: 'بالسيجارة (Détail 🚬)'),
+                    Tab(text: context.tr('pack_box_tab')),
+                    Tab(text: context.tr('carton_10_tab')),
+                    Tab(text: context.tr('single_piece_tab')),
                   ],
                 ),
               ),
@@ -457,16 +431,16 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('سعر العلبة (باكي 20 سيجارة):', style: TextStyle(fontSize: 12, color: Colors.black54)),
-                  SizedBox(height: 4),
-                  Text('البيع العادي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(context.tr('pack_price_label'), style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                  const SizedBox(height: 4),
+                  Text(context.tr('regular_sale'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ],
               ),
               Text(
-                '${_packPrice.toStringAsFixed(0)} دج',
+                '${_packPrice.toStringAsFixed(0)} ' + context.tr('currency_symbol'),
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.amber.shade900),
               ),
             ],
@@ -482,7 +456,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text('$_packQty باكي', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text('$_packQty ' + context.tr('pack'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
             IconButton.filledTonal(
               icon: const Icon(Icons.add),
@@ -500,7 +474,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           ),
           icon: const Icon(Icons.add_shopping_cart),
           label: Text(
-            'إضافة $_packQty باكي بالسعر الإجمالي (${(_packQty * _packPrice).toStringAsFixed(0)} دج)',
+            '${context.tr("add")} $_packQty ' + context.tr('pack') + ' (${(_packQty * _packPrice).toStringAsFixed(0)} ' + context.tr('currency_symbol') + ')',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           onPressed: _addPackToCart,
@@ -528,13 +502,13 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('سعر الكرطوشة ($multiplier علب):', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                  Text('${context.tr("carton_price_label")} ($multiplier ' + context.tr('packs') + '):', style: const TextStyle(fontSize: 12, color: Colors.black54)),
                   const SizedBox(height: 4),
-                  Text(widget.isWholesale ? 'سعر جملة' : 'سعر تجزئة', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(widget.isWholesale ? context.tr('wholesale_price') : context.tr('retail_price'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ],
               ),
               Text(
-                '${_cartonPrice.toStringAsFixed(0)} دج',
+                '${_cartonPrice.toStringAsFixed(0)} ' + context.tr('currency_symbol'),
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.blue.shade900),
               ),
             ],
@@ -550,7 +524,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text('$_cartonQty كرطوشة', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text('$_cartonQty ' + context.tr('carton'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
             IconButton.filledTonal(
               icon: const Icon(Icons.add),
@@ -568,7 +542,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           ),
           icon: const Icon(Icons.inventory_2_outlined),
           label: Text(
-            'إضافة $_cartonQty كرطوشة (${(_cartonQty * _cartonPrice).toStringAsFixed(0)} دج)',
+            '${context.tr("add")} $_cartonQty ' + context.tr('carton') + ' (${(_cartonQty * _cartonPrice).toStringAsFixed(0)} ' + context.tr('currency_symbol') + ')',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           onPressed: _addCartonToCart,
@@ -598,12 +572,12 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('سعر السيجارة الواحدة:', style: TextStyle(fontSize: 11, color: Colors.black54)),
-                  Text('${singlePrice.toStringAsFixed(0)} دج / حبة', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(context.tr('single_piece_price'), style: const TextStyle(fontSize: 11, color: Colors.black54)),
+                  Text('${singlePrice.toStringAsFixed(0)} ' + context.tr('currency_symbol') + ' / ' + context.tr('piece'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ],
               ),
               Text(
-                'المجموع: ${total.toStringAsFixed(0)} دج',
+                '${context.tr("total")}: ${total.toStringAsFixed(0)} ' + context.tr('currency_symbol'),
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.deepOrange.shade900),
               ),
             ],
@@ -618,7 +592,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           children: [1, 2, 3, 4, 5, 10].map((c) {
             final isSelected = _cigaretteCount == c;
             return ChoiceChip(
-              label: Text('$c حبات', style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black87)),
+              label: Text('$c ' + context.tr('pieces'), style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black87)),
               selected: isSelected,
               selectedColor: Colors.deepOrange.shade700,
               backgroundColor: Colors.grey.shade100,
@@ -635,7 +609,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
         // Custom Count Row
         Row(
           children: [
-            const Text('عدد مخصص:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            Text(context.tr('custom_count'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(width: 8),
             Expanded(
               child: TextFormField(
@@ -643,7 +617,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
-                  hintText: 'عدد السجائر',
+                  hintText: context.tr('count_cigarettes'),
                   isDense: true,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -662,7 +636,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           ),
           icon: const Icon(Icons.smoking_rooms_rounded),
           label: Text(
-            'إضافة $_cigaretteCount سجائر (${total.toStringAsFixed(0)} دج)',
+            '${context.tr("add")} $_cigaretteCount ' + context.tr('cigarettes') + ' (${total.toStringAsFixed(0)} ' + context.tr('currency_symbol') + ')',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           onPressed: _addCigarettesToCart,
@@ -692,12 +666,12 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('سعر المتر الواحد:', style: TextStyle(fontSize: 11, color: Colors.black54)),
-                  Text('${p.price.toStringAsFixed(0)} دج / م', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(context.tr('meter_price_label'), style: const TextStyle(fontSize: 11, color: Colors.black54)),
+                  Text('${p.price.toStringAsFixed(0)} ' + context.tr('currency_symbol') + ' / ' + context.tr('meter'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ],
               ),
               Text(
-                'المجموع: ${total.toStringAsFixed(0)} دج',
+                '${context.tr("total")}: ${total.toStringAsFixed(0)} ' + context.tr('currency_symbol'),
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.teal.shade900),
               ),
             ],
@@ -712,7 +686,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           children: [0.5, 1.0, 1.5, 2.0, 3.0, 5.0].map((m) {
             final isSelected = (_meterLength - m).abs() < 0.05;
             return ChoiceChip(
-              label: Text('$m م', style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black87)),
+              label: Text('$m ' + context.tr('meter'), style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black87)),
               selected: isSelected,
               selectedColor: Colors.teal.shade700,
               backgroundColor: Colors.grey.shade100,
@@ -728,7 +702,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
 
         Row(
           children: [
-            const Text('طول مخصص (بالمتر):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            Text(context.tr('custom_length'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(width: 8),
             Expanded(
               child: TextFormField(
@@ -755,7 +729,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           ),
           icon: const Icon(Icons.straighten_rounded),
           label: Text(
-            'إضافة ${_meterLength.toStringAsFixed(1)} متر (${total.toStringAsFixed(0)} دج)',
+            '${context.tr("add")} ${_meterLength.toStringAsFixed(1)} ' + context.tr('meter') + ' (${total.toStringAsFixed(0)} ' + context.tr('currency_symbol') + ')',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           onPressed: _addMeterToCart,
@@ -785,12 +759,12 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('سعر الزجاجة القياسية (100 مل):', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                  Text(context.tr('bottle_price_label'), style: const TextStyle(fontSize: 11, color: Colors.black54)),
                   Text('${p.price.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ],
               ),
               Text(
-                'المجموع: ${total.toStringAsFixed(0)} دج',
+                '${context.tr("total")}: ${total.toStringAsFixed(0)} ' + context.tr('currency_symbol'),
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.purple.shade900),
               ),
             ],
@@ -805,7 +779,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           children: [10.0, 20.0, 30.0, 50.0, 100.0].map((v) {
             final isSelected = (_mlVolume - v).abs() < 0.5;
             return ChoiceChip(
-              label: Text('${v.toInt()} مل', style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black87)),
+              label: Text('${v.toInt()} ' + context.tr('ml'), style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black87)),
               selected: isSelected,
               selectedColor: Colors.purple.shade700,
               backgroundColor: Colors.grey.shade100,
@@ -821,7 +795,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
 
         Row(
           children: [
-            const Text('سعة مخصصة (بالملل):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            Text(context.tr('custom_volume'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(width: 8),
             Expanded(
               child: TextFormField(
@@ -848,7 +822,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
           ),
           icon: const Icon(Icons.water_drop_outlined),
           label: Text(
-            'إضافة ${_mlVolume.toStringAsFixed(0)} مل (${total.toStringAsFixed(0)} دج)',
+            '${context.tr("add")} ${_mlVolume.toStringAsFixed(0)} ' + context.tr('ml') + ' (${total.toStringAsFixed(0)} ' + context.tr('currency_symbol') + ')',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           onPressed: _addMlToCart,

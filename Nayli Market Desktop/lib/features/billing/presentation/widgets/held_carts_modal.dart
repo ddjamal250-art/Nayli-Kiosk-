@@ -2,6 +2,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../bloc/billing_bloc.dart';
 import '../../domain/entities/held_cart.dart';
 
@@ -40,11 +41,11 @@ class HeldCartsModal extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'السلات المعلقة المؤقتة (${activeCarts.length})',
+                          '${context.tr("held_carts_title")} (${activeCarts.length})',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                        const Text(
-                          'تحذف تلقائياً بعد 20 دقيقة إذا لم يعد الزبون',
+                        Text(
+                          context.tr('held_carts_desc'),
                           style: TextStyle(fontSize: 11, color: Colors.grey),
                         ),
                       ],
@@ -66,7 +67,7 @@ class HeldCartsModal extends StatelessWidget {
                     children: [
                       Icon(Icons.remove_shopping_cart_outlined, size: 40, color: Colors.grey[300]),
                       const SizedBox(height: 8),
-                      const Text('لا توجد أي سلات معلقة حالياً', style: TextStyle(color: Colors.grey)),
+                      Text(context.tr('no_held_carts'), style: const TextStyle(color: Colors.grey)),
                     ],
                   ),
                 )
@@ -117,7 +118,7 @@ class HeldCartsModal extends StatelessWidget {
                                       Icon(Icons.timer_outlined, size: 12, color: remainingMin <= 5 ? Colors.red : Colors.orange[800]),
                                       const SizedBox(width: 4),
                                       Text(
-                                        'متبقي $remainingMin د',
+                                        '${context.tr("remaining")} $remainingMin ' + context.tr('min'),
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
@@ -154,7 +155,7 @@ class HeldCartsModal extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(vertical: 8),
                                     ),
                                     icon: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
-                                    label: const Text('استرجاع السلة للكاسة', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                    label: Text(context.tr('restore_cart_btn'), style: const TextStyle(color: Colors.white, fontSize: 12)),
                                     onPressed: () {
                                       context.read<BillingBloc>().add(ResumeHeldCartEvent(cart.id));
                                       Navigator.pop(context);
@@ -164,7 +165,7 @@ class HeldCartsModal extends StatelessWidget {
                                 const SizedBox(width: 8),
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                  tooltip: 'حذف السلة',
+                                  tooltip: context.tr('delete_cart_tooltip'),
                                   onPressed: () {
                                     context.read<BillingBloc>().add(DeleteHeldCartEvent(cart.id));
                                   },

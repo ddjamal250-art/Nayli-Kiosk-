@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart' as file_picker;
+import 'package:file_selector/file_selector.dart';
 
 import '../../../../core/data/hive_database.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/telegram_service.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../data/backup_service.dart';
+import 'package:file_picker/file_picker.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -213,8 +215,25 @@ class _BackupPageState extends State<BackupPage> {
       }
 
       await _loadBackups();
+      
       if (mounted) {
-        SnackbarHelper.showSuccess(context, '✅ تم إنشاء وحفظ النسخة الاحتياطية بنجاح!');
+        SnackbarHelper.showSuccess(context, '✅ تم إنشاء النسخة الاحتياطية بنجاح!');
+        
+        // Prompt user to choose where to save or share it
+        if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+          try {
+            final fileName = file.uri.pathSegments.last;
+            final saveLocation = await getSaveLocation(suggestedName: fileName);
+            if (saveLocation != null) {
+              await file.copy(saveLocation.path);
+              SnackbarHelper.showSuccess(context, '✅ تم حفظ النسخة في المكان المحدد!');
+            }
+          } catch (e) {
+            debugPrint('Save location error: $e');
+          }
+        } else {
+          Share.shareXFiles([XFile(file.path)], text: 'نسخة احتياطية نايل ماركت');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -225,36 +244,44 @@ class _BackupPageState extends State<BackupPage> {
     }
   }
 
-  Future<void> _handleExportBackup() async {
-    SoundService.playTabSwitch();
-    setState(() => _isLoading = true);
+  Future<void> _handlePickAndAnalyzeFile() async {
     try {
-      final file = await BackupService.createFullBackupZip();
-      
-      final dateStr = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
-      final defaultName = 'Backup_NayliMarket_$dateStr.nbak';
-      
-      final String? outputFile = await file_picker.FilePicker.platform.saveFile(
-        dialogTitle: 'تصدير النسخة الاحتياطية',
-        fileName: defaultName,
-        type: file_picker.FileType.any,
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        dialogTitle: 'اختر ملف قاعدة البيانات أو الكتالوج (.nbak, .zip, .json, .csv, .txt)',
       );
-
-      if (outputFile != null) {
-        await file.copy(outputFile);
-        SoundService.playSaveSuccess();
-        if (mounted) {
-          SnackbarHelper.showSuccess(context, '✅ تم تصدير النسخة بنجاح إلى:\n$outputFile');
-        }
-      } else {
-        // User cancelled
+      if (result != null && result.files.isNotEmpty && result.files.first.path != null) {
+        final file = File(result.files.first.path!);
+        await _analyzeAndShowRestoreDialog(file);
       }
     } catch (e) {
-      if (mounted) {
-        SnackbarHelper.showError(context, 'فشل التصدير: ' + e.toString());
+      if (mounted) SnackbarHelper.showError(context, 'تعذر فتح مستعرض الملفات: $e');
+    }
+  }
+
+  Future<void> _handlePickDirectoryToScan(StateSetter setModalState, void Function(List<BackupSnapshotInfo>) updateDiscovered) async {
+    try {
+      final selectedDirectory = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: 'اختر مجلد الفلاش ديسك أو القرص الخارجي لفحصه',
+      );
+      if (selectedDirectory != null) {
+        final dir = Directory(selectedDirectory);
+        final found = await BackupService.scanDirectoryForBackups(dir);
+        setModalState(() {
+          updateDiscovered(found);
+        });
+        if (mounted) {
+          if (found.isNotEmpty) {
+            SoundService.playCheckoutSuccess();
+            SnackbarHelper.showSuccess(context, '✅ تم العثور على ${found.length} ملفات صالحة في المجلد!');
+          } else {
+            SoundService.playWarning();
+            SnackbarHelper.showWarning(context, 'لم يتم العثور على ملفات نسخ احتياطي صالحة في المجلد المحدد.');
+          }
+        }
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      if (mounted) SnackbarHelper.showError(context, 'تعذر قراءة المجلد: $e');
     }
   }
 
@@ -271,7 +298,7 @@ class _BackupPageState extends State<BackupPage> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           return Container(
-            height: MediaQuery.of(context).size.height * 0.85,
+            height: MediaQuery.of(context).size.height * 0.88,
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -300,10 +327,10 @@ class _BackupPageState extends State<BackupPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('استرجاع واستيراد قاعدة البيانات 📥',
+                          Text('استرجاع واستيراد قاعدة البيانات الشامل 📥',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text('استرجاع المنتجات، الفواتير، الزبائن، والديون من ملف .nbak أو .zip',
-                              style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          Text('يقبل جميع الملفات (.nbak, .zip, .json, .csv, .txt) من أي برنامج كاشير أو قرص USB',
+                              style: TextStyle(fontSize: 11, color: Colors.blueGrey)),
                         ],
                       ),
                     ),
@@ -311,6 +338,44 @@ class _BackupPageState extends State<BackupPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // Action Buttons Row: Pick File + Scan Folder
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.file_open_rounded, size: 18),
+                      label: const Text('تصفح واختيار ملف من القرص / USB 📁', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _handlePickAndAnalyzeFile();
+                      },
+                    ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.blue.shade800,
+                        side: BorderSide(color: Colors.blue.shade300),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.usb_rounded, size: 18),
+                      label: const Text('فحص مجلد مخصص في فلاش ديسك 🔍', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        _handlePickDirectoryToScan(setModalState, (updated) {
+                          discovered = updated;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
 
                 // Manual Path Input
                 Container(
@@ -323,43 +388,20 @@ class _BackupPageState extends State<BackupPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('اكتب أو الصق مسار ملف النسخة الاحتياطية:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      const Text('أو اكتب/الصق مسار الملف يدوياً:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.blueGrey,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(color: Colors.grey.shade300),
-                                ),
+                            child: TextField(
+                              controller: customPathCtrl,
+                              style: const TextStyle(fontSize: 12.5),
+                              decoration: InputDecoration(
+                                hintText: 'مثال: E:\\backup.zip أو F:\\products.csv',
+                                isDense: true,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                               ),
-                              icon: const Icon(Icons.folder_open_rounded, size: 20),
-                              label: Text(
-                                customPathCtrl.text.isEmpty ? 'تصفح لاختيار ملف النسخة الاحتياطية (.nbak / .zip)' : customPathCtrl.text.split(RegExp(r'[\\/]')).last,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              onPressed: () async {
-                                try {
-                                  // We use file_picker to let user select
-                                  final result = await file_picker.FilePicker.platform.pickFiles(
-                                    type: file_picker.FileType.any,
-                                    allowMultiple: false,
-                                  );
-                                  if (result != null && result.files.single.path != null) {
-                                    setModalState(() {
-                                      customPathCtrl.text = result.files.single.path!;
-                                    });
-                                  }
-                                } catch (e) {
-                                  debugPrint('FilePicker error: $e');
-                                }
-                              },
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -367,16 +409,16 @@ class _BackupPageState extends State<BackupPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange.shade700,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                            label: const Text('استرجاع'),
+                            icon: const Icon(Icons.search_rounded, size: 18),
+                            label: const Text('فحص ومعاينة'),
                             onPressed: () {
                               final p = customPathCtrl.text.trim();
                               if (p.isNotEmpty) {
                                 Navigator.pop(ctx);
-                                _confirmAndRestoreFile(File(p));
+                                _analyzeAndShowRestoreDialog(File(p));
                               }
                             },
                           ),
@@ -391,7 +433,7 @@ class _BackupPageState extends State<BackupPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('ملفات النسخ الاحتياطي المكتشفة في الجهاز والـ USB:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const Text('الملفات المكتشفة تلقائياً في الجهاز والأقراص المتصلة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     IconButton(
                       icon: const Icon(Icons.refresh, size: 20),
                       tooltip: 'إعادة المسح',
@@ -412,9 +454,9 @@ class _BackupPageState extends State<BackupPage> {
                             children: [
                               Icon(Icons.folder_off_outlined, size: 48, color: Colors.grey.shade400),
                               const SizedBox(height: 8),
-                              const Text('لم يتم العثور على ملفات .nbak تلقائياً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              const Text('لم يتم العثور على ملفات نسخ احتياطي تلقائياً', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               const SizedBox(height: 4),
-                              const Text('يمكنك كتابة مسار الملف في الحقل أعلاه والضغط على استرجاع', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              const Text('اضغط "تصفح واختيار ملف" أعلاه لاختيار الملف من الفلاش ديسك مباشرة', style: TextStyle(fontSize: 11, color: Colors.grey)),
                             ],
                           ),
                         )
@@ -442,10 +484,10 @@ class _BackupPageState extends State<BackupPage> {
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                child: const Text('استرجاع 🔄', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                child: const Text('استرجاع ومعاينة 🔄', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  _confirmAndRestoreFile(File(b.filePath));
+                                  _analyzeAndShowRestoreDialog(File(b.filePath));
                                 },
                               ),
                             );
@@ -460,71 +502,266 @@ class _BackupPageState extends State<BackupPage> {
     );
   }
 
-  Future<void> _confirmAndRestoreFile(File file) async {
+  Future<void> _analyzeAndShowRestoreDialog(File file) async {
     if (!await file.exists()) {
       SoundService.playWarning();
       if (mounted) {
-        SnackbarHelper.showError(context, '❌ الملف غير موجود في المسار المحدد: ${file.path}');
+        SnackbarHelper.showError(context, '❌ الملف غير موجود في المسار: ${file.path}');
       }
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    // Show loading indicator
+    showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 8),
-            Text('تأكيد استرجاع البيانات ⚠️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'هل أنت متأكد من استرجاع البيانات من هذا الملف؟',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 14),
+                Text('جاري فحص وتحليل بنية الملف والبيانات... 🔍', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              ],
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-              child: Text(file.path, style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              '⚠️ تنبيه: سيتم استبدال المنتجات والفواتير الحالية بالبيانات المسترجعة من الملف.',
-              style: TextStyle(color: Colors.red, fontSize: 11.5, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('تأكيد الاسترجاع الآن 🚀'),
           ),
-        ],
+        ),
       ),
     );
 
-    if (confirmed != true) return;
+    ParsedDatabaseData data;
+    try {
+      data = await UniversalDatabaseImporter.analyzeFile(file);
+    } catch (e) {
+      data = ParsedDatabaseData(
+        fileFormat: 'error',
+        fileName: file.path,
+        fileSize: 0,
+        products: [],
+        isValid: false,
+        errorMessage: e.toString(),
+      );
+    }
 
+    if (mounted) Navigator.pop(context); // dismiss loading
+    if (!mounted) return;
+
+    bool isMergeMode = false;
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: data.isValid ? Colors.teal.shade50 : Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    data.isValid ? Icons.analytics_outlined : Icons.error_outline,
+                    color: data.isValid ? Colors.teal : Colors.red,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    data.isValid ? 'معاينة وتحليل البيانات 📊' : 'تعذر قراءة الملف ⚠️',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 520,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // File info summary card
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(data.fileName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          const SizedBox(height: 4),
+                          Text(
+                            'الصيغة: ${data.fileFormat.toUpperCase()} • الحجم: ${data.readableSize}',
+                            style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    if (!data.isValid) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Text(
+                          data.errorMessage ?? 'الملف لا يحتوي على بيانات صالحة للاستيراد.',
+                          style: TextStyle(color: Colors.red.shade900, fontSize: 12),
+                        ),
+                      ),
+                    ] else ...[
+                      // Stats Row
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildAnalysisStatBadge(Icons.inventory_2_rounded, '${data.products.length} منتج', Colors.teal),
+                          _buildAnalysisStatBadge(Icons.receipt_rounded, '${data.invoices.length} فاتورة', Colors.blue),
+                          _buildAnalysisStatBadge(Icons.groups_rounded, '${data.customers.length} زبون', Colors.orange),
+                          _buildAnalysisStatBadge(Icons.description_rounded, '${data.documents.length} وثيقة', Colors.purple),
+                          if (data.imagesDiscoveredCount > 0)
+                            _buildAnalysisStatBadge(Icons.image_rounded, '${data.imagesDiscoveredCount} صورة مطابقة 🖼️', Colors.green),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text('اختر طريقة الاسترجاع المناسبة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(height: 8),
+
+                      // Mode 1: Full Replace
+                      InkWell(
+                        onTap: () => setDialogState(() => isMergeMode = false),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: !isMergeMode ? Colors.red.shade50 : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: !isMergeMode ? Colors.red.shade400 : Colors.grey.shade300, width: !isMergeMode ? 2 : 1),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(!isMergeMode ? Icons.radio_button_checked : Icons.radio_button_off, color: Colors.red),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('استبدال شامل (مسح وإعادة ضبط كاملة) 🔄', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.red)),
+                                    SizedBox(height: 2),
+                                    Text('مسح المنتجات والفواتير الحالية واستبدالها بما هو موجود بالملف.', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Mode 2: Smart Merge
+                      InkWell(
+                        onTap: () => setDialogState(() => isMergeMode = true),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isMergeMode ? Colors.green.shade50 : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: isMergeMode ? Colors.green.shade600 : Colors.grey.shade300, width: isMergeMode ? 2 : 1),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(isMergeMode ? Icons.radio_button_checked : Icons.radio_button_off, color: Colors.green.shade700),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('دمج وإضافة ذكية (الحفاظ على بياناتك) ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
+                                    SizedBox(height: 2),
+                                    Text('تحديث السلع الحالية وإضافة السلع والزبائن الجدد دون حذف فواتيرك أو ديونك.', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('إلغاء')),
+              if (data.isValid)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isMergeMode ? Colors.green.shade700 : Colors.red.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.check_circle_outline, size: 18),
+                  label: Text(isMergeMode ? 'تأكيد الدمج الذكي ⚡' : 'تأكيد الاستبدال الشامل 🚀'),
+                  onPressed: () async {
+                    Navigator.pop(dialogCtx);
+                    await _executeRestoreOperation(data, isMergeMode);
+                  },
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAnalysisStatBadge(IconData icon, String text, MaterialColor color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.shade200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color.shade700),
+          const SizedBox(width: 6),
+          Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color.shade800)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeRestoreOperation(ParsedDatabaseData data, bool isMergeMode) async {
     setState(() => _isLoading = true);
     SoundService.playTabSwitch();
 
     try {
-      final ok = await BackupService.restoreDatabaseFromFile(file);
+      final ok = await UniversalDatabaseImporter.executeRestore(data: data, isMergeMode: isMergeMode);
       if (ok) {
         if (mounted) {
           context.read<ProductBloc>().add(LoadProducts());
         }
         await _loadBackups();
         SoundService.playCheckoutSuccess();
+
         if (mounted) {
           final count = HiveDatabase.productBox.length;
           showDialog(
@@ -535,13 +772,14 @@ class _BackupPageState extends State<BackupPage> {
                 children: [
                   Icon(Icons.check_circle, color: Colors.green, size: 28),
                   SizedBox(width: 8),
-                  Text('نجح الاسترجاع! 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text('اكتمل الاستيراد بنجاح! 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ],
               ),
               content: Text(
-                'تم استرجاع وتفريغ قاعدة البيانات بنجاح!\n\n'
-                '📦 عدد المنتجات المسترجعة: $count منتج\n'
-                'البيانات جاهزة وظاهرة الآن في جميع شاشات البيع والمخزون.',
+                'تم تنفيذ عملية ${isMergeMode ? "الدمج الذكي" : "الاستبدال الشامل"} بنجاح!\n\n'
+                '📦 إجمالي المنتجات في المحل الآن: $count منتج\n'
+                '${data.imagesDiscoveredCount > 0 ? "🖼️ تم ربط ${data.imagesDiscoveredCount} صورة بنجاح في مجلد الصور\n" : ""}'
+                'البيانات متزامنة وظاهرة الآن في جميع شاشات البيع والمخزون.',
                 style: const TextStyle(fontSize: 13, height: 1.5),
               ),
               actions: [
@@ -557,13 +795,13 @@ class _BackupPageState extends State<BackupPage> {
       } else {
         SoundService.playWarning();
         if (mounted) {
-          SnackbarHelper.showError(context, '❌ فشل الاسترجاع. تأكد من أن الملف هو نسخة احتياطية صالحة وغير تالفة.');
+          SnackbarHelper.showError(context, '❌ فشل تطبيق البيانات في قاعدة البيانات.');
         }
       }
     } catch (e) {
       SoundService.playWarning();
       if (mounted) {
-        SnackbarHelper.showError(context, 'حدث خطأ أثناء الاسترجاع: $e');
+        SnackbarHelper.showError(context, 'حدث خطأ أثناء تنفيذ الاسترجاع: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -624,17 +862,6 @@ class _BackupPageState extends State<BackupPage> {
                             icon: const Icon(Icons.save_rounded),
                             label: const Text('أخذ نسخة احتياطية الآن 💾', style: TextStyle(fontWeight: FontWeight.bold)),
                             onPressed: _handleCreateBackup,
-                          ),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade50,
-                              foregroundColor: Colors.blue.shade800,
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            icon: const Icon(Icons.drive_folder_upload_rounded),
-                            label: const Text('تصدير النسخة (Save As) 📤', style: TextStyle(fontWeight: FontWeight.bold)),
-                            onPressed: _handleExportBackup,
                           ),
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(

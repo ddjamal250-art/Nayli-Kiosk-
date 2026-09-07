@@ -36,6 +36,7 @@ import '../widgets/quick_items_manager_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
+import '../widgets/universal_unit_selector_dialog.dart';
 
 enum PosPriceTier { detail, demiGros, gros }
 
@@ -53,7 +54,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   String _selectedCategoryKey = 'all';
   String? _selectedCustomerId;
-  String _selectedCustomerName = 'زبون عابر (Détail)';
+  String _selectedCustomerName = context.tr('walk_in_customer');
   double _customerCreditBalance = 0.0;
 
   // Operating Modes
@@ -284,7 +285,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               : (scaleResult.totalPrice ?? effectiveUnitPrice);
 
           final double finalPrice = _isReturnMode ? -calculatedTotal.abs() : calculatedTotal;
-          final weightDisplay = scaleResult.isWeightBased ? ' (${scaleResult.weightKg.toStringAsFixed(3)} كغ)' : '';
+          final weightDisplay = scaleResult.isWeightBased ? ' (${scaleResult.weightKg.toStringAsFixed(3)} ' + context.tr('kg') + ')' : '';
 
           final scaleCartProduct = Product(
             id: 'scale_${scaleProduct.id}_${DateTime.now().millisecondsSinceEpoch}',
@@ -436,13 +437,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     final lastItem = items.last;
     if (StaffPermissionsService.requirePinForVoid) {
-      final auth = await SecurityPinHelper.authenticate(context, title: 'إلغاء سلعة: ${lastItem.product.name}');
+      final auth = await SecurityPinHelper.authenticate(context, title: '${context.tr("cancel")} ${lastItem.product.name}');
       if (!auth || !mounted) return;
     }
 
     billingBloc.add(RemoveProductFromCartEvent(lastItem.product.id));
     SoundService.playDeleteSound();
-    SnackbarHelper.showInfo(context, 'تم حذف "${lastItem.product.name}" من السلة (Delete)');
+    SnackbarHelper.showInfo(context, '✅ ${lastItem.product.name} ' + context.tr('item_deleted_msg'));
   }
 
   void _adjustLastItemQuantity(int delta) {
@@ -492,7 +493,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   Future<void> _showDiscountModal() async {
     if (StaffPermissionsService.requirePinForDiscount) {
-      final auth = await SecurityPinHelper.authenticate(context, title: 'إجراء تخفيض على الفاتورة');
+      final auth = await SecurityPinHelper.authenticate(context, title: context.tr('apply_discount'));
       if (!auth || !mounted) return;
     }
     SoundService.playTabSwitch();
@@ -522,12 +523,12 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     runSpacing: 8,
                     children: [
                       ChoiceChip(
-                        label: const Text('نسبة %'),
+                        label: Text(context.tr('percent_discount')),
                         selected: isPercent,
                         onSelected: (val) => setModalState(() => isPercent = true),
                       ),
                       ChoiceChip(
-                        label: const Text('مبلغ د.ج'),
+                        label: Text(context.tr('amount_discount')),
                         selected: !isPercent,
                         onSelected: (val) => setModalState(() => isPercent = false),
                       ),
@@ -539,7 +540,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     autofocus: true,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: isPercent ? 'نسبة الخصم (%)' : 'مبلغ الخصم (DA)',
+                      labelText: isPercent ? context.tr('discount_percentage') : context.tr('discount_amount'),
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.discount_outlined),
                     ),
@@ -810,7 +811,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           children: [
             const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.orange, size: 30),
             const SizedBox(width: 8),
-            Text('سلة محولة من زميلك (${cart.senderName}) 🔀',
+            Text('${context.tr("transferred_cart_from")} (${cart.senderName}) 🔀',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
@@ -818,10 +819,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('تذكرة: ${cart.token}  •  المبلغ: ${cart.totalAmount.toStringAsFixed(2)} DA',
+            Text('${context.tr("ticket")}: ${cart.token}  •  ${context.tr("amount")}: ${cart.totalAmount.toStringAsFixed(2)} DA',
                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.teal)),
             const SizedBox(height: 8),
-            Text('تحتوي على (${cart.items.length} سلع): ${cart.items.map((i) => i.name).join(", ")}',
+            Text('${context.tr("contains_items")} (${cart.items.length}): ${cart.items.map((i) => i.name).join(", ")}',
                 style: const TextStyle(fontSize: 12, color: Colors.black87)),
             const SizedBox(height: 12),
             Container(
@@ -833,7 +834,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'قام زميلك بتحويل هذه السلة لتخليص الزبون بسبب نفاد الصرف لديه.',
+                      context.tr('transferred_cart_desc'),
                       style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -845,7 +846,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('تأجيل في القائمة (F9)'),
+            child: Text(context.tr('postpone_f9')),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
@@ -853,7 +854,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
             icon: const Icon(Icons.download_rounded, color: Colors.white),
-            label: const Text('فتح السلة والمحاسبة الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: Text(context.tr('checkout_now_btn'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: () {
               Navigator.pop(ctx);
               _loadRemoteCartIntoActive(cart);
@@ -886,13 +887,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
     });
     SoundService.playCheckoutSuccess();
-    SnackbarHelper.showSuccess(context, '✅ تم استلام سلة ${cart.token} بنجاح!');
+    SnackbarHelper.showSuccess(context, '✅ ${cart.token} ' + context.tr('cart_received_success'));
     _barcodeFocusNode.requestFocus();
   }
 
   void _showRegisterHandoffModal(BillingState state) {
     if (state.cartItems.isEmpty) {
-      SnackbarHelper.showWarning(context, 'السلة فارغة! لا توجد سلع لتحويلها.');
+      SnackbarHelper.showWarning(context, context.tr('cart_empty_warning'));
       return;
     }
 
@@ -908,22 +909,22 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           children: [
             Icon(Icons.swap_horizontal_circle_rounded, color: Colors.indigo, size: 28),
             SizedBox(width: 8),
-            Text('تحويل السلة لكاشير آخر (خلاصلك الصرف؟) 🔀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(context.tr('transfer_cart_title'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('السلة الحالية: ${state.cartItems.length} سلع • المجموع: ${state.totalAmount.toStringAsFixed(2)} DA',
+            Text('${context.tr("current_cart")}: ${state.cartItems.length} ${context.tr("items")} • ${context.tr("total")}: ${state.totalAmount.toStringAsFixed(2)} DA',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.teal)),
             const SizedBox(height: 12),
-            const Text('أدخل عنوان IP لجهاز الكاشير الثاني في الشبكة المحلية:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(context.tr('enter_peer_ip_hint'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
             const SizedBox(height: 6),
             TextField(
               controller: ipController,
               decoration: const InputDecoration(
-                labelText: 'عنوان IP لجهاز الزميل (Peer IP)',
+                labelText: context.tr('peer_ip_label'),
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.computer_rounded),
                 hintText: '192.168.1.50',
@@ -934,11 +935,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               spacing: 6,
               children: [
                 ActionChip(
-                  label: const Text('كاشير 2 (192.168.1.15)'),
+                  label: Text('${context.tr("cashier")} 2 (192.168.1.15)'),
                   onPressed: () => ipController.text = '192.168.1.15',
                 ),
                 ActionChip(
-                  label: const Text('كاشير 3 (192.168.1.20)'),
+                  label: Text('${context.tr("cashier")} 3 (192.168.1.20)'),
                   onPressed: () => ipController.text = '192.168.1.20',
                 ),
               ],
@@ -946,11 +947,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
             icon: const Icon(Icons.send_rounded, color: Colors.white),
-            label: const Text('تحويل السلة لزميلك الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: Text(context.tr('transfer_cart_btn'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: () async {
               final targetIp = ipController.text.trim();
               if (targetIp.isEmpty) return;
@@ -962,7 +963,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               final handoffCart = RemoteIncomingCart(
                 id: 'handoff_${DateTime.now().millisecondsSinceEpoch}',
                 token: token,
-                senderName: 'كاشير 1 (نفاد الصرف)',
+                senderName: '${context.tr("cashier")} 1',
                 timestamp: DateTime.now(),
                 customerName: _selectedCustomerName,
                 items: state.cartItems.map((ci) => RemoteCartItem(
@@ -986,10 +987,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   _cartDiscountValue = 0.0;
                 });
                 SoundService.playCheckoutSuccess();
-                SnackbarHelper.showSuccess(context, '✅ تم تحويل السلة $token بنجاح إلى كاشير ($targetIp)! يمكنك استقبال الزبون التالي.');
+                SnackbarHelper.showSuccess(context, '✅ ' + context.tr('cart_transferred_success') + ' ($targetIp)');
                 _barcodeFocusNode.requestFocus();
               } else {
-                SnackbarHelper.showError(context, '❌ تعذر إرسال السلة إلى ($targetIp). تأكد من تشغيل البرنامج لدى زميلك.');
+                SnackbarHelper.showError(context, '❌ ' + context.tr('cart_transfer_failed') + ' ($targetIp)');
               }
             },
           ),
@@ -1017,22 +1018,22 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           children: [
             Icon(Icons.chat_bubble_outline_rounded, color: Colors.green, size: 26),
             SizedBox(width: 8),
-            Text('إرسال الوصل الرقمي عبر WhatsApp 💬', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(context.tr('send_digital_receipt_wa'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('الزبون: $_selectedCustomerName  •  المبلغ: ${total.toStringAsFixed(2)} DA',
+            Text('${context.tr("customer")}: $_selectedCustomerName  •  ${context.tr("amount")}: ${total.toStringAsFixed(2)} DA',
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
             const SizedBox(height: 12),
             TextField(
               controller: phoneController,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
-                labelText: 'رقم هاتف الزبون (الجزائر)',
-                hintText: '0661234567 أو 0550123456',
+                labelText: context.tr('customer_phone'),
+                hintText: '0661234567 / 0550123456',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.phone_iphone_rounded),
               ),
@@ -1040,11 +1041,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10)),
             icon: const Icon(Icons.send_rounded, color: Colors.white),
-            label: const Text('إرسال الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: Text(context.tr('send_now_btn'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: () => Navigator.pop(ctx, true),
           ),
         ],
@@ -1061,7 +1062,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
 
     if (rawPhone.length < 11) {
-      SnackbarHelper.showError(context, 'رقم الهاتف غير صالح!');
+      SnackbarHelper.showError(context, context.tr('invalid_phone'));
       return;
     }
 
@@ -1092,9 +1093,9 @@ $itemsSummary
     if (mounted) {
       if (success) {
         SoundService.playCheckoutSuccess();
-        SnackbarHelper.showSuccess(context, '✅ تم فتح تطبيق WhatsApp مباشرة وإرسال الوصل!');
+        SnackbarHelper.showSuccess(context, context.tr('receipt_sent_wa'));
       } else {
-        SnackbarHelper.showWarning(context, 'تعذر فتح WhatsApp، تم نسخ نص الوصل إلى الحافظة تلقائياً');
+        SnackbarHelper.showWarning(context, context.tr('receipt_copied_clipboard'));
       }
     }
   }
@@ -1166,7 +1167,7 @@ $itemsSummary
       SoundService.playSaveSuccess();
       SnackbarHelper.showSuccess(
         context,
-        '⏸️ تم تعليق السلة بنجاح وحفظها مؤقتاً (F2)',
+        context.tr('cart_held_success'),
       );
       setState(() {
         _cartDiscountValue = 0.0;
@@ -1240,9 +1241,9 @@ $itemsSummary
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('منتجات صنف: $catName (${productsInCat.length})',
+                              Text('${context.tr("category_products")}: $catName (${productsInCat.length})',
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              const Text('انقر على أي منتج لإضافته مباشرة إلى السلة الحالية',
+                              Text(context.tr('click_to_add_cart'),
                                   style: TextStyle(color: Colors.grey, fontSize: 11)),
                             ],
                           ),
@@ -1254,7 +1255,7 @@ $itemsSummary
                     TextField(
                       controller: searchController,
                       decoration: InputDecoration(
-                        hintText: 'بحث في هذا الصنف بالاسم أو الباركود...',
+                        hintText: context.tr('search_category_items'),
                         prefixIcon: const Icon(Icons.search, color: Colors.teal),
                         suffixIcon: searchController.text.isNotEmpty
                             ? IconButton(
@@ -1275,7 +1276,7 @@ $itemsSummary
                     Expanded(
                       child: productsInCat.isEmpty
                           ? Center(
-                              child: Text('لا توجد منتجات مسجلة في صنف $catName',
+                              child: Text('${context.tr("no_products_in_cat")} $catName',
                                   style: const TextStyle(color: Colors.grey, fontSize: 13)),
                             )
                           : GridView.builder(
@@ -1292,8 +1293,12 @@ $itemsSummary
                                   borderRadius: BorderRadius.circular(10),
                                   onTap: () {
                                     SoundService.playScanBeep();
-                                    context.read<BillingBloc>().add(AddProductToCartEvent(prod));
-                                    SnackbarHelper.showSuccess(context, 'تمت إضافة ${prod.name} للسلة');
+                                    if (prod.hasMultiUnit || prod.isTobacco) {
+                                      UniversalUnitSelectorDialog.showForProduct(context, prod);
+                                    } else {
+                                      context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+                                      SnackbarHelper.showSuccess(context, '✅ ${prod.name} ' + context.tr('added_to_cart'));
+                                    }
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
@@ -1326,7 +1331,7 @@ $itemsSummary
                                                 children: [
                                                   Text('${prod.price.toStringAsFixed(2)} DA',
                                                       style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
-                                                  Text('مخزون: ${prod.stock}',
+                                                  Text('${context.tr("stock")}: ${prod.stock}',
                                                       style: TextStyle(
                                                           fontSize: 10,
                                                           fontWeight: FontWeight.w600,
@@ -1584,7 +1589,7 @@ $itemsSummary
       setState(() {
         _cartDiscountValue = 0.0;
         _selectedCustomerId = null;
-        _selectedCustomerName = 'زبون عابر (Détail)';
+        _selectedCustomerName = context.tr('walk_in_customer');
         _customerCreditBalance = 0.0;
       });
       SnackbarHelper.showSuccess(context, context.tr('printed_success'));
@@ -1763,7 +1768,7 @@ $itemsSummary
                     IconButton.filled(
                       style: IconButton.styleFrom(backgroundColor: _showTouchNumpad ? Colors.teal : Colors.grey.shade200),
                       icon: Icon(Icons.dialpad_rounded, color: _showTouchNumpad ? Colors.white : Colors.black87),
-                      tooltip: 'لوحة الأرقام اللمسية (Touch Numpad)',
+                      tooltip: context.tr('touch_numpad'),
                       onPressed: () {
                         setState(() {
                           _showTouchNumpad = !_showTouchNumpad;
@@ -1814,16 +1819,77 @@ $itemsSummary
                         separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
                         itemBuilder: (context, index) {
                           final item = state.cartItems[index];
+                          final hasMulti = item.product.hasMultiUnit;
                           return ListTile(
                             dense: true,
+                            onTap: hasMulti ? () => UniversalUnitSelectorDialog.showForCartItem(context, item) : null,
                             leading: ProductImageDisplay(
                               imageUrl: item.product.imageUrl,
                               width: 36,
                               height: 36,
                               borderRadius: 6,
                             ),
-                            title: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            subtitle: Text('${item.product.price.toStringAsFixed(2)} DA', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    item.product.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (hasMulti) ...[
+                                  const SizedBox(width: 6),
+                                  InkWell(
+                                    onTap: () => UniversalUnitSelectorDialog.showForCartItem(context, item),
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: item.unitLevel == 'piece'
+                                            ? Colors.amber.shade50
+                                            : item.unitLevel == 'carton'
+                                                ? Colors.purple.shade50
+                                                : Colors.blue.shade50,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: item.unitLevel == 'piece'
+                                              ? Colors.amber.shade400
+                                              : item.unitLevel == 'carton'
+                                                  ? Colors.purple.shade400
+                                                  : Colors.blue.shade400,
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            item.unitDisplayName,
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: item.unitLevel == 'piece'
+                                                  ? Colors.amber.shade900
+                                                  : item.unitLevel == 'carton'
+                                                      ? Colors.purple.shade900
+                                                      : Colors.blue.shade900,
+                                            ),
+                                          ),
+                                          const Icon(Icons.arrow_drop_down, size: 14, color: Colors.black54),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            subtitle: Text(
+                              '${item.unitPrice.toStringAsFixed(2)} DA' +
+                                  (item.unitLevel != 'pack' ? ' [${item.unitDisplayName}]' : ''),
+                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
                             trailing: SizedBox(
                               width: 230,
                               child: Row(
@@ -1834,7 +1900,7 @@ $itemsSummary
                                     borderRadius: BorderRadius.circular(20),
                                     onTap: () {
                                       SoundService.playTabSwitch();
-                                      context.read<BillingBloc>().add(UpdateQuantityEvent(item.product.id, item.quantity - 1));
+                                      context.read<BillingBloc>().add(UpdateQuantityEvent(item.cartKey, item.quantity - 1));
                                     },
                                     child: Container(
                                       width: 34,
@@ -1854,7 +1920,7 @@ $itemsSummary
                                     borderRadius: BorderRadius.circular(20),
                                     onTap: () {
                                       SoundService.playScanBeep();
-                                      context.read<BillingBloc>().add(UpdateQuantityEvent(item.product.id, item.quantity + 1));
+                                      context.read<BillingBloc>().add(UpdateQuantityEvent(item.cartKey, item.quantity + 1));
                                     },
                                     child: Container(
                                       width: 34,
@@ -1872,7 +1938,7 @@ $itemsSummary
                                     icon: const Icon(Icons.delete_outline, size: 20, color: Colors.grey),
                                     onPressed: () {
                                       SoundService.playVoidWarning();
-                                      context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.product.id));
+                                      context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.cartKey));
                                     },
                                   ),
                                 ],
@@ -1964,8 +2030,8 @@ $itemsSummary
                                   icon: const Icon(Icons.pause_circle_outline, color: Colors.indigo, size: 18),
                                   label: Text(
                                     state.activeHeldCarts.isNotEmpty
-                                        ? 'تعليق (${state.activeHeldCarts.length})'
-                                        : 'تعليق (F2)',
+                                        ? '${context.tr("hold")} (${state.activeHeldCarts.length})'
+                                        : '${context.tr("btn_hold")}',
                                     style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12),
                                   ),
                                   onPressed: _handleHoldOrResumeCart,
@@ -1997,7 +2063,7 @@ $itemsSummary
                             side: const BorderSide(color: Colors.deepOrange, width: 1.2),
                           ),
                           icon: const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.deepOrange, size: 18),
-                          label: const Text('تحويل (F11)', style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12)),
+                          label: Text(context.tr('transfer_f11_btn'), style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12)),
                           onPressed: () => _showRegisterHandoffModal(state),
                         ),
                         const SizedBox(width: 6),
@@ -2148,7 +2214,7 @@ $itemsSummary
                       children: [
                         Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
                         SizedBox(width: 4),
-                        Text('ترتيب وتخصيص ⚙️', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
+                        Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
                       ],
                     ),
                   ),
@@ -2157,7 +2223,7 @@ $itemsSummary
 
                 // Tobacco Products Category Quick Access Button
                 InkWell(
-                  onTap: () => _showCategoryProductsModal('tobacco', 'المواد التبغية والسجائر 🚬'),
+                  onTap: () => _showCategoryProductsModal('tobacco', context.tr('tobacco_btn')),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -2268,11 +2334,11 @@ $itemsSummary
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    '+ إضافة منتج سريع',
+                    context.tr('add_quick_product'),
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal),
                   ),
                   const Text(
-                    'سلعة حرة بدون باركود (F7)',
+                    context.tr('free_item_f7'),
                     style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ],
@@ -2336,7 +2402,7 @@ $itemsSummary
                         color: Colors.teal.shade50,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text('سريع ⚡', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.teal)),
+                      child: Text(context.tr('quick_badge'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.teal)),
                     ),
                   ],
                 ),

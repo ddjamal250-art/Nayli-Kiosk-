@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
@@ -268,7 +269,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   controller: nameCtrl,
                   autofocus: true,
                   decoration: const InputDecoration(
-                    labelText: 'اسم المادة (مثال: عدس تركي، كاشير حار...)',
+                    labelText: context.tr('item_name'),
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
@@ -279,7 +280,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 DropdownButtonFormField<String>(
                   value: selectedCat,
                   decoration: const InputDecoration(
-                    labelText: 'التصنيف / القسم',
+                    labelText: context.tr('category'),
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
@@ -299,7 +300,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                         controller: priceCtrl,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
-                          labelText: 'سعر البيع (دج/كغ)',
+                          labelText: context.tr('selling_price_per_kg'),
                           suffixText: AppConstants.currencySymbol,
                           border: const OutlineInputBorder(),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -312,7 +313,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                         controller: costCtrl,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
-                          labelText: 'سعر الشراء (التكلفة)',
+                          labelText: context.tr('cost_price'),
                           suffixText: AppConstants.currencySymbol,
                           border: const OutlineInputBorder(),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -329,13 +330,13 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 Row(
                   children: [
                     ChoiceChip(
-                      label: const Text('بالأكياس / الشكاير 🌾', style: TextStyle(fontSize: 11)),
+                      label: Text(context.tr('by_bags_sacks'), style: const TextStyle(fontSize: 11)),
                       selected: isBagsMode,
                       onSelected: (v) => setDialogState(() => isBagsMode = true),
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
-                      label: const Text('بالكيلوغرام المباشر ⚖️', style: TextStyle(fontSize: 11)),
+                      label: Text(context.tr('by_direct_kg'), style: const TextStyle(fontSize: 11)),
                       selected: !isBagsMode,
                       onSelected: (v) => setDialogState(() => isBagsMode = false),
                     ),
@@ -351,7 +352,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                           controller: bagsCountCtrl,
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
-                            labelText: 'عدد الشكاير',
+                            labelText: context.tr('sacks_count'),
                             suffixText: 'شكارة',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -365,7 +366,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                           controller: bagWeightCtrl,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: const InputDecoration(
-                            labelText: 'وزن الشكارة',
+                            labelText: context.tr('sack_weight'),
                             suffixText: 'كغ',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -396,7 +397,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                     controller: directKgCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
-                      labelText: 'المخزون الإجمالي المباشر (كغ)',
+                      labelText: context.tr('direct_total_stock_kg'),
                       suffixText: 'كغ',
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -408,7 +409,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 TextField(
                   controller: supplierCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'اسم المورد / شركة التوزيع (اختياري)',
+                    labelText: context.tr('supplier_optional'),
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
@@ -417,7 +418,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
               onPressed: () {
@@ -471,7 +472,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   backgroundColor: Colors.green[800]!,
                 );
               },
-              child: const Text('حفظ وإدراج', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(context.tr('save_and_insert'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -606,7 +607,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'ابحث عن مادة ميزان (بالأحرف أو الاسم)... 🔍',
+                      hintText: context.tr('search_scale_item_hint'),
                       prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.primaryColor),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
@@ -628,7 +629,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   ),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('إضافة مادة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  label: Text(context.tr('add_item_btn'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: _showAddScaleProductDialog,
                 ),
               ],
@@ -729,7 +730,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   child: TextField(
                     controller: _nameController,
                     decoration: InputDecoration(
-                      labelText: 'المادة المختارة',
+                      labelText: context.tr('selected_item'),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     ),
@@ -742,7 +743,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                     controller: _pricePerKgController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
-                      labelText: 'السعر/كغ',
+                      labelText: context.tr('price_per_kg'),
                       suffixText: AppConstants.currencySymbol,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -759,7 +760,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
               children: [
                 Expanded(
                   child: ChoiceChip(
-                    label: const Center(child: Text('البيع بالوزن (غرام / كغ) ⚖️')),
+                    label: Center(child: Text(context.tr('sell_by_weight_kg'))),
                     selected: _isByWeight,
                     onSelected: (val) {
                       setState(() {
@@ -772,7 +773,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ChoiceChip(
-                    label: const Center(child: Text('البيع بالمبلغ (قيس دراهم) 💰')),
+                    label: Center(child: Text(context.tr('sell_by_amount_money'))),
                     selected: !_isByWeight,
                     onSelected: (val) {
                       setState(() {
@@ -793,7 +794,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'الوزن بالغرام (غ)',
+                  labelText: context.tr('weight_in_grams'),
                   hintText: 'مثال: 500 للرطل، 1000 للكيلو، 250 للربع...',
                   suffixText: 'غرام',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -819,7 +820,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'المبلغ المطلوب بالدينار (${AppConstants.currencySymbol})',
+                  labelText: '${context.tr("amount")} (${context.tr("currency_symbol")})',
                   hintText: 'مثال: اعطيني قيس 100 دج أو 200 دج...',
                   suffixText: AppConstants.currencySymbol,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -855,7 +856,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('الوزن المحسوب:', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      Text(context.tr('calculated_weight_label'), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                       Text(
                         grams >= 1000 ? '${(grams / 1000).toStringAsFixed(2)} كغ' : '${grams.toInt()} غرام',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
@@ -866,7 +867,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text('المبلغ الإجمالي:', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      Text(context.tr('total_amount_label'), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                       Text(
                         '${total.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),

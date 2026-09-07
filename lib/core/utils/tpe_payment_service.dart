@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'package:intl/intl.dart';
+import 'package:flutter/widgets.dart';
+import '../localization/app_localizations.dart';
 import '../data/hive_database.dart';
 import 'sound_service.dart';
 
@@ -12,6 +14,21 @@ enum PosPaymentMethod {
 }
 
 extension PosPaymentMethodExt on PosPaymentMethod {
+  String title(BuildContext context) {
+    switch (this) {
+      case PosPaymentMethod.cash:
+        return context.tr('pay_cash');
+      case PosPaymentMethod.tpeCard:
+        return context.tr('pay_card');
+      case PosPaymentMethod.baridiPayQr:
+        return context.tr('pay_qr');
+      case PosPaymentMethod.customerCredit:
+        return context.tr('pay_credit');
+      case PosPaymentMethod.split:
+        return context.tr('pay_split');
+    }
+  }
+
   String get titleAr {
     switch (this) {
       case PosPaymentMethod.cash:

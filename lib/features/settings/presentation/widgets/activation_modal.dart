@@ -378,42 +378,50 @@ class _ActivationModalState extends State<ActivationModal> {
             ),
             const SizedBox(height: 14),
 
-            // Device ID Box
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('معرّف هذا الجهاز (Hardware ID):', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.grey)),
-                TextButton.icon(
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
-                  icon: const Icon(Icons.copy, size: 13),
-                  label: const Text('نسخ الكود', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: deviceId));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('📋 تم نسخ معرّف الجهاز!'), backgroundColor: Colors.teal),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
+            // Device ID & Offline Machine Code Box
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF6366F1)),
               ),
-              child: Text(
-                deviceId,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.1,
-                  color: Color(0xFF0F172A),
-                ),
-                textAlign: TextAlign.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'كود تعريف جهازك (Machine Code):',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white70),
+                      ),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                        icon: const Icon(Icons.copy, size: 13, color: Color(0xFF38BDF8)),
+                        label: const Text('نسخ كود الجهاز 📋', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8))),
+                        onPressed: () {
+                          final cleanId = LicenseService.getCleanMachineId();
+                          Clipboard.setData(ClipboardData(text: cleanId));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('📋 تم نسخ كود الجهاز ($cleanId)!'), backgroundColor: Colors.teal),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  SelectableText(
+                    LicenseService.getCleanMachineId(),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                      color: Color(0xFF38BDF8),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 14),
