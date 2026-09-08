@@ -420,8 +420,7 @@ class _StockInPageState extends State<StockInPage> {
         : null;
 
     // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
-    double effectiveCost = costPrice;
-    if (_isExistingInShop && _currentStock > 0 && costPrice > 0) {
+    if (_isExistingInShop && _currentStock > 0 && costPrice > 0 && _unitMode != ArrivageUnitMode.coffeeMachine) {
       final oldCost = (existingProduct != null && existingProduct.costPrice > 0)
           ? existingProduct.costPrice
           : costPrice;
