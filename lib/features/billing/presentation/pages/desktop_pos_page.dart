@@ -14,6 +14,7 @@ import '../../../../core/data/local_sync_server.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
+import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
