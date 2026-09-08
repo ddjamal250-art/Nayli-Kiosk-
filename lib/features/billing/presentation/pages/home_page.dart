@@ -28,6 +28,9 @@ import '../widgets/quick_amount_modal.dart';
 import '../widgets/smart_scale_modal.dart';
 import '../widgets/held_carts_modal.dart';
 import '../widgets/universal_unit_selector_dialog.dart';
+import '../widgets/session_lock_overlay.dart';
+import '../../../../core/utils/security_pin_helper.dart';
+import '../../../../core/utils/category_taxonomy.dart';
 
 class QuickItem {
   final String id;
@@ -182,47 +185,91 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     SoundService.playScanBeep();
   }
 
-  void _addQuickItem(QuickItem item) {
+  Product _resolveProductForQuickItem(QuickItem item) {
+    // 1. Try finding in productBox or state
+    Product? matched;
     if (item.linkedProductId != null && item.linkedProductId!.isNotEmpty) {
-      final productState = context.read<ProductBloc>().state;
-      final matched = productState.products
-          .where((p) => p.id == item.linkedProductId)
-          .firstOrNull;
-      if (matched != null) {
-        context.read<BillingBloc>().add(AddProductToCartEvent(matched));
-        SoundService.playScanBeep();
-        if (_currentSheetSize < 0.35) {
-          _sheetController.animateTo(
-            0.52,
-            duration: Duration(milliseconds: 280),
-            curve: Curves.easeOutCubic,
-          );
-        }
-        context.showAppSnackBar(
-          '✅ تمت إضافة ${matched.name} (${matched.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
-          icon: Icons.add_shopping_cart,
-        );
-        return;
+      if (HiveDatabase.productBox.containsKey(item.linkedProductId!)) {
+        final p = HiveDatabase.productBox.get(item.linkedProductId!);
+        if (p is Product) matched = p;
       }
     }
+    if (matched == null && item.name.isNotEmpty) {
+      for (var p in HiveDatabase.productBox.values) {
+        if (p is Product && p.name.trim().toLowerCase() == item.name.trim().toLowerCase()) {
+          matched = p;
+          break;
+        }
+      }
+    }
+    if (matched != null) return matched;
 
-    final double effectiveCost = item.costPrice > 0 ? item.costPrice : (item.price * 0.8);
-    context.read<BillingBloc>().add(AddCustomItemEvent(
-          name: item.name,
-          price: item.price,
-          costPrice: effectiveCost,
-          quantity: 1,
-        ));
+    // 2. Smart detection for tobacco/beverage/category
+    final detectedSub = CategoryTaxonomy.smartDetect(item.name);
+    final nameL = item.name.toLowerCase();
+    final isTob = detectedSub.domainId == 'tobacco' ||
+        detectedSub.id == 'cigarettes' ||
+        nameL.contains('مارلبورو') ||
+        nameL.contains('marlboro') ||
+        nameL.contains('ريم') ||
+        nameL.contains('rym') ||
+        nameL.contains('جولواز') ||
+        nameL.contains('gauloises') ||
+        nameL.contains('سجائر') ||
+        nameL.contains('دخان') ||
+        nameL.contains('شمة');
+    final isBev = detectedSub.id == 'beverages' ||
+        nameL.contains('ماء') ||
+        nameL.contains('مشروب') ||
+        nameL.contains('كوكا') ||
+        nameL.contains('عصير') ||
+        nameL.contains('حمود') ||
+        nameL.contains('رويبة') ||
+        nameL.contains('إفري') ||
+        nameL.contains('رامي');
+
+    final effectivePacksPerCarton = isTob ? 10 : (isBev ? 6 : 10);
+    final effectivePiecesPerPack = isTob ? 20 : 1;
+    final singlePiecePrice = isTob ? (item.price / 20).ceilToDouble() : 0.0;
+    final cartonPrice = item.price * effectivePacksPerCarton;
+
+    return Product(
+      id: item.linkedProductId ?? item.id,
+      name: item.name,
+      barcode: 'QUICK_${item.id}',
+      price: item.price,
+      costPrice: item.costPrice > 0 ? item.costPrice : (item.price * 0.8),
+      stock: 999,
+      category: isTob ? 'المواد التبغية' : (isBev ? 'المشروبات' : detectedSub.titleAr),
+      isTobacco: isTob,
+      packsPerCarton: effectivePacksPerCarton,
+      piecesPerPack: effectivePiecesPerPack,
+      singlePiecePrice: singlePiecePrice,
+      cartonPrice: cartonPrice,
+      packPrice: cartonPrice,
+      packMultiplier: effectivePacksPerCarton,
+      packName: isTob ? 'كرطوشة' : (isBev ? 'فاردو' : null),
+    );
+  }
+
+  void _addQuickItem(QuickItem item) {
+    final prod = _resolveProductForQuickItem(item);
+    if (prod.hasMultiUnitPricing || prod.isTobaccoProduct || prod.isBeverage) {
+      UniversalUnitSelectorDialog.showForProduct(context, prod);
+      return;
+    }
+
+    context.read<BillingBloc>().add(AddProductToCartEvent(prod));
     SoundService.playScanBeep();
     if (_currentSheetSize < 0.35) {
       _sheetController.animateTo(
         0.52,
-        duration: Duration(milliseconds: 280),
+        duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
       );
     }
     context.showAppSnackBar(
-      '✅ تمت إضافة ${item.name} (${item.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
+      '✅ تمت إضافة ${prod.name} (${prod.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})',
       icon: Icons.add_shopping_cart,
     );
   }
@@ -1139,8 +1186,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                           backgroundColor: AppTheme.primaryColor,
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
-                        icon: Icon(Icons.save, color: Colors.white),
-                        label: Text(context.tr('حفظ التعديل'), style: TextStyle(color: Colors.white)),
+                        icon: const Icon(Icons.save, color: Colors.white),
+                        label: const Text('حفظ التعديل', style: TextStyle(color: Colors.white)),
                         onPressed: () async {
                           final name = nameController.text.trim();
                           final price = double.tryParse(priceController.text.trim()) ?? item.price;
@@ -1172,11 +1219,74 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     );
   }
 
-  void _navigateToSettings() {
+  void _showQuickItemOptions(QuickItem item) {
+    final prod = _resolveProductForQuickItem(item);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Text(item.icon, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              ListTile(
+                leading: const Icon(Icons.layers_rounded, color: Colors.teal),
+                title: const Text('اختيار الوحدة والكمية (كرتون / فاردو / علبة / حبة)'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  UniversalUnitSelectorDialog.showForProduct(context, prod);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: Colors.blue),
+                title: const Text('تعديل السعر والاسم'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showEditQuickItemDialog(item);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('حذف من الشريط السريع', style: TextStyle(color: Colors.red)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _deleteQuickItem(item.id);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToSettings() async {
+    if (SecurityPinHelper.isPinEnabled()) {
+      final auth = await SecurityPinHelper.authenticate(
+        context,
+        title: 'الدخول إلى إدارة المتجر والإعدادات',
+      );
+      if (!auth) return;
+    }
     setState(() => _isScanningPaused = true);
     try {
       _scannerController.stop();
     } catch (_) {}
+    if (!mounted) return;
     context.push('/settings').then((_) {
       if (mounted) {
         if (_isCameraOn) {
@@ -1341,21 +1451,65 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   ],
                 ),
 
-                // Full-Screen Settings & Management Hamburger Button
-                InkWell(
-                  onTap: _navigateToSettings,
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white70),
-                      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Quick Session Pause Button (إيقاف مؤقت للجلسة / استراحة)
+                    Tooltip(
+                      message: 'إيقاف مؤقت للجلسة / استراحة',
+                      child: InkWell(
+                        onTap: () {
+                          setState(() => _isScanningPaused = true);
+                          try {
+                            _scannerController.stop();
+                          } catch (_) {}
+                          SessionLockOverlay.show(context).then((_) {
+                            if (mounted) {
+                              if (_isCameraOn) {
+                                try {
+                                  _scannerController.start();
+                                } catch (_) {}
+                              }
+                              setState(() {
+                                _isScanningPaused = false;
+                                _lastScanTimes.clear();
+                              });
+                            }
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(24),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.25),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.amber, width: 1.5),
+                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                          ),
+                          child: const Icon(Icons.pause_circle_filled_rounded, color: Colors.amber, size: 24),
+                        ),
+                      ),
                     ),
-                    child: Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-                  ),
+                    const SizedBox(width: 8),
+
+                    // Full-Screen Settings & Management Hamburger Button
+                    InkWell(
+                      onTap: _navigateToSettings,
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white70),
+                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                        ),
+                        child: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -2234,7 +2388,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         margin: EdgeInsets.only(left: 8),
                         child: InkWell(
                           onTap: () => _addQuickItem(item),
-                          onLongPress: () => _showEditQuickItemDialog(item),
+                          onLongPress: () => _showQuickItemOptions(item),
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             constraints: BoxConstraints(minWidth: 85),

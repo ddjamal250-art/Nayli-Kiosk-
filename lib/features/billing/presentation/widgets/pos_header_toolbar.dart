@@ -214,7 +214,7 @@ class PosHeaderToolbar extends StatelessWidget {
               // 0. Session Pause (Break Mode) Quick Button
               Tooltip(
                 message: Localizations.localeOf(context).languageCode == 'ar'
-                    ? 'إيقاف مؤقت للجلسة / استراحة (Pause/Break)'
+                    ? 'إيقاف مؤقت للجلسة / استراحة الكاشير'
                     : 'Session Pause / Break Mode',
                 child: InkWell(
                   onTap: () => SessionLockOverlay.show(context),
