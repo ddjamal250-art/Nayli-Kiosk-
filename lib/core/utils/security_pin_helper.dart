@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -155,6 +156,58 @@ class _PinAuthDialog extends StatefulWidget {
 class _PinAuthDialogState extends State<_PinAuthDialog> {
   String _enteredPin = '';
   String? _errorMessage;
+  final FocusNode _keyboardFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _keyboardFocusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _keyboardFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is! KeyDownEvent) return;
+    final char = event.character;
+    if (char != null && RegExp(r'^[0-9]$').hasMatch(char)) {
+      _onKeyPress(char);
+      return;
+    }
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
+      _onDelete();
+    } else if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+      if (_enteredPin.length == 4) _verify();
+    } else if (key == LogicalKeyboardKey.escape) {
+      Navigator.pop(context, false);
+    } else if (key == LogicalKeyboardKey.numpad0) {
+      _onKeyPress('0');
+    } else if (key == LogicalKeyboardKey.numpad1) {
+      _onKeyPress('1');
+    } else if (key == LogicalKeyboardKey.numpad2) {
+      _onKeyPress('2');
+    } else if (key == LogicalKeyboardKey.numpad3) {
+      _onKeyPress('3');
+    } else if (key == LogicalKeyboardKey.numpad4) {
+      _onKeyPress('4');
+    } else if (key == LogicalKeyboardKey.numpad5) {
+      _onKeyPress('5');
+    } else if (key == LogicalKeyboardKey.numpad6) {
+      _onKeyPress('6');
+    } else if (key == LogicalKeyboardKey.numpad7) {
+      _onKeyPress('7');
+    } else if (key == LogicalKeyboardKey.numpad8) {
+      _onKeyPress('8');
+    } else if (key == LogicalKeyboardKey.numpad9) {
+      _onKeyPress('9');
+    }
+  }
 
   void _onKeyPress(String val) {
     setState(() {
@@ -441,9 +494,13 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Theme.of(context).cardColor,
-      child: Container(
-        width: 340,
-        padding: const EdgeInsets.all(24),
+      child: KeyboardListener(
+        focusNode: _keyboardFocusNode,
+        autofocus: true,
+        onKeyEvent: _handleKeyEvent,
+        child: Container(
+          width: 340,
+          padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -526,8 +583,9 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildRow(List<String> keys) {
     return Row(

@@ -193,8 +193,31 @@ class Product extends Equatable {
         n.contains('سيكار');
   }
 
+  bool get isCoffeeMachineProduct {
+    if (isTobaccoProduct) return false;
+    final cat = category.toLowerCase();
+    final n = name.toLowerCase();
+    return cat.contains('ماكينة') ||
+        cat.contains('آلة القهوة') ||
+        cat.contains('قهوة وشاي') ||
+        cat.contains('كافيتيريا') ||
+        n.contains('إكسبريسو') ||
+        n.contains('اسبريسو') ||
+        n.contains('كأس قهوة') ||
+        n.contains('كاس قهوة') ||
+        n.contains('قهوة كبريس') ||
+        n.contains('قهوة حليب') ||
+        n.contains('كأس شاي') ||
+        n.contains('كاس شاي') ||
+        n.contains('شاي بالنعناع') ||
+        n.contains('حبوب بن') ||
+        n.contains('مسحوق قهوة');
+  }
+
+  int get cupsYield => piecesPerPack > 0 ? piecesPerPack : 100;
+
   bool get hasSubUnit {
-    if (isTobaccoProduct) return true;
+    if (isTobaccoProduct || isCoffeeMachineProduct) return true;
     if (isBeverage) return false; // Water/Drinks never sold by 1/20th of a bottle!
     return singlePiecePrice > 0;
   }
@@ -219,11 +242,13 @@ class Product extends Equatable {
   int get effectivePiecesPerPack {
     if (piecesPerPack > 0) return piecesPerPack;
     if (isTobaccoProduct) return 20;
+    if (isCoffeeMachineProduct) return 100;
     return 1;
   }
 
   String get resolvedSubUnitName {
     if (isTobaccoProduct) return 'سيجارة';
+    if (isCoffeeMachineProduct) return 'كأس / كوب';
     if (category.contains('جبن') || category.contains('أجبان') || category.toLowerCase().contains('fromage')) return 'مثلث / حبة';
     if (category.contains('بيض')) return 'بيضة';
     if (category.contains('قهوة') || category.contains('شاي')) return 'ساشي';
@@ -232,6 +257,7 @@ class Product extends Equatable {
 
   String get resolvedPackName {
     if (isBeverage) return 'قارورة';
+    if (isCoffeeMachineProduct) return 'علبة / 1 كغ بن';
     if (category.contains('جبن') || category.contains('أجبان')) return 'علبة / بواطة';
     if (category.contains('بيض')) return 'بلاطو';
     if (isTobaccoProduct) return 'علبة / باكي';
@@ -242,6 +268,7 @@ class Product extends Equatable {
     if (packName != null && packName!.trim().isNotEmpty) return packName!.trim();
     if (isTobaccoProduct) return 'كرطوشة';
     if (isBeverage) return 'فاردو';
+    if (isCoffeeMachineProduct) return 'كرتونة بن / شاي';
     if (category.contains('بيض')) return 'كرتونة بيض';
     if (category.contains('علك') || category.contains('حلويات')) return 'شكارة / كرتونة';
     return 'كرتونة / فاردو';

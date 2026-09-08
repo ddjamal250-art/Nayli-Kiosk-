@@ -323,6 +323,53 @@ class CategoryTaxonomy {
         ),
       ],
     ),
+
+    // 8. ماكينة القهوة والشاي والمشروبات الساخنة (صنف معزول ومستقل)
+    CategoryDomain(
+      id: 'coffee_tea',
+      titleAr: 'ماكينة القهوة والشاي',
+      titleFr: 'Machine à Café & Thé',
+      titleEn: 'Coffee & Tea Machine',
+      icon: '☕',
+      subcategories: [
+        CategorySub(
+          id: 'coffee_beans_ground',
+          domainId: 'coffee_tea',
+          titleAr: 'حبوب بن ومسحوق قهوة',
+          titleFr: 'Café en grains & moulu',
+          titleEn: 'Coffee Beans & Ground',
+          icon: '☕',
+          tags: ['بن', 'قهوة', 'اسبريسو', 'اكسبريسو', 'حبوب بن', 'قهوة مطحونة', 'لافيستا', 'فاميكو', 'بونال', 'cafe', 'espresso', 'grain', 'moulu', 'illy', 'lavazza'],
+        ),
+        CategorySub(
+          id: 'tea_infusions',
+          domainId: 'coffee_tea',
+          titleAr: 'شاي وأعشاب وتجهيز',
+          titleFr: 'Thé & Infusions',
+          titleEn: 'Tea & Herbs',
+          icon: '🍵',
+          tags: ['شاي', 'شاي أخضر', 'شاي أحمر', 'نعناع', 'أتاي', 'بارود', 'the', 'infusion', 'menthe'],
+        ),
+        CategorySub(
+          id: 'cups_machine_supplies',
+          domainId: 'coffee_tea',
+          titleAr: 'كؤوس ومستلزمات التقديم',
+          titleFr: 'Gobelets & Consommables',
+          titleEn: 'Cups & Serving Supplies',
+          icon: '🥤',
+          tags: ['كؤوس', 'كوب', 'كاس', 'خلط', 'ملاعق صغيرة', 'سكر ساشي', 'gobelet', 'palet'],
+        ),
+        CategorySub(
+          id: 'prepared_hot_drinks',
+          domainId: 'coffee_tea',
+          titleAr: 'مشروبات ساخنة محضرة',
+          titleFr: 'Boissons Chaudes Servies',
+          titleEn: 'Prepared Hot Drinks',
+          icon: '☕',
+          tags: ['كأس قهوة', 'كاس قهوة', 'قهوة حليب', 'كابوتشينو', 'كأس شاي', 'كاس شاي', 'شاي بالنعناع', 'قهوة كبريس', 'espresso servi', 'cafe au lait'],
+        ),
+      ],
+    ),
   ];
 
   /// Flat list of all subcategory names for legacy dropdown and fast selection
@@ -405,6 +452,7 @@ class CategoryTaxonomy {
     if (clean.contains('حلو') || clean.contains('شوكولا')) return '🍫';
     if (clean.contains('ميزان')) return '⚖️';
     if (clean.contains('تنظيف')) return '🧼';
+    if (clean.contains('قهوة') || clean.contains('شاي') || clean.contains('كافيتيريا') || clean.contains('اسبريسو')) return '☕';
     return '📦';
   }
 }

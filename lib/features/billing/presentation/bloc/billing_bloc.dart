@@ -346,7 +346,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                 'qty': item.quantity,
                 'price': item.unitPrice,
                 'costPrice': item.unitCost,
-                'isTobacco': item.product.isTobacco || item.product.category.contains('تبغ') || item.product.category.contains('سجائر'),
+                'isTobacco': item.product.isTobaccoProduct,
+                'isCoffeeMachine': item.product.isCoffeeMachineProduct,
                 'category': item.product.category,
                 'total': item.total,
                 'profit': (item.unitPrice - item.unitCost) * item.quantity,
@@ -378,7 +379,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
             newStock = (productModel.stock - deductAmount).clamp(0, 999999);
             productBox.put(originalId, productModel.copyWith(stock: newStock));
           } else if (cartItem.unitLevel == 'piece' || cartItem.product.id.contains('_piece_')) {
-            // Smart Break-Case Logic (Walmart UOM style)
+            // Smart Break-Case Logic (UOM Multi-tier style)
             final pPerPack = productModel.effectivePiecesPerPack > 1 ? productModel.effectivePiecesPerPack : 20;
             final qtyToDeduct = cartItem.quantity;
             int currentLoose = (HiveDatabase.loosePiecesBox.get(originalId, defaultValue: 0) as num).toInt();
@@ -433,15 +434,24 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final discountRatio = (subtotal > 0) ? (state.totalAmount / subtotal) : 1.0;
 
       final tobaccoItems = state.cartItems.where(
-        (i) => i.product.isTobacco || i.product.category.contains('تبغ') || i.product.category.contains('سجائر'),
+        (i) => i.product.isTobaccoProduct,
       );
       final rawTobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
       final tobaccoSales = rawTobaccoSales * discountRatio;
       final tobaccoCost = tobaccoItems.fold<double>(0.0, (sum, i) => sum + (i.unitCost * i.quantity));
       final tobaccoProfit = tobaccoSales - tobaccoCost;
 
-      final generalSales = (state.totalAmount - tobaccoSales).clamp(0.0, double.infinity);
-      final generalCost = (totalCost - tobaccoCost).clamp(0.0, double.infinity);
+      final coffeeItems = state.cartItems.where(
+        (i) => i.product.isCoffeeMachineProduct,
+      );
+      final rawCoffeeSales = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.total);
+      final coffeeSales = rawCoffeeSales * discountRatio;
+      final coffeeCost = coffeeItems.fold<double>(0.0, (sum, i) => sum + (i.unitCost * i.quantity));
+      final coffeeProfit = coffeeSales - coffeeCost;
+      final coffeeCupsCount = coffeeItems.fold<int>(0, (sum, i) => sum + i.quantity);
+
+      final generalSales = (state.totalAmount - tobaccoSales - coffeeSales).clamp(0.0, double.infinity);
+      final generalCost = (totalCost - tobaccoCost - coffeeCost).clamp(0.0, double.infinity);
       final generalProfit = generalSales - generalCost;
       final netProfit = state.totalAmount - totalCost;
 
@@ -454,6 +464,10 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'tobaccoSales': tobaccoSales,
         'tobaccoCost': tobaccoCost,
         'tobaccoProfit': tobaccoProfit,
+        'coffeeSales': coffeeSales,
+        'coffeeCost': coffeeCost,
+        'coffeeProfit': coffeeProfit,
+        'coffeeCupsCount': coffeeCupsCount,
         'generalSales': generalSales,
         'generalCost': generalCost,
         'generalProfit': generalProfit,

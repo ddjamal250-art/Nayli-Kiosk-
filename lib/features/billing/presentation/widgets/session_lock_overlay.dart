@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/security_pin_helper.dart';
@@ -31,6 +32,7 @@ class _SessionLockOverlayState extends State<SessionLockOverlay> {
   Timer? _timer;
   String _enteredPin = '';
   String? _errorMessage;
+  final FocusNode _keyboardFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -41,11 +43,17 @@ class _SessionLockOverlayState extends State<SessionLockOverlay> {
         setState(() => _secondsPassed++);
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _keyboardFocusNode.requestFocus();
+      }
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _keyboardFocusNode.dispose();
     super.dispose();
   }
 
@@ -75,6 +83,43 @@ class _SessionLockOverlayState extends State<SessionLockOverlay> {
         _enteredPin = _enteredPin.substring(0, _enteredPin.length - 1);
       });
       SoundService.playKeyTap();
+    }
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is! KeyDownEvent) return;
+    final char = event.character;
+    if (char != null && RegExp(r'^[0-9]$').hasMatch(char)) {
+      _onNumberTap(char);
+      return;
+    }
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
+      _onBackspace();
+    } else if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+      if (_enteredPin.isNotEmpty) _checkUnlock();
+    } else if (key == LogicalKeyboardKey.escape) {
+      setState(() => _enteredPin = '');
+    } else if (key == LogicalKeyboardKey.numpad0) {
+      _onNumberTap('0');
+    } else if (key == LogicalKeyboardKey.numpad1) {
+      _onNumberTap('1');
+    } else if (key == LogicalKeyboardKey.numpad2) {
+      _onNumberTap('2');
+    } else if (key == LogicalKeyboardKey.numpad3) {
+      _onNumberTap('3');
+    } else if (key == LogicalKeyboardKey.numpad4) {
+      _onNumberTap('4');
+    } else if (key == LogicalKeyboardKey.numpad5) {
+      _onNumberTap('5');
+    } else if (key == LogicalKeyboardKey.numpad6) {
+      _onNumberTap('6');
+    } else if (key == LogicalKeyboardKey.numpad7) {
+      _onNumberTap('7');
+    } else if (key == LogicalKeyboardKey.numpad8) {
+      _onNumberTap('8');
+    } else if (key == LogicalKeyboardKey.numpad9) {
+      _onNumberTap('9');
     }
   }
 
@@ -120,8 +165,12 @@ class _SessionLockOverlayState extends State<SessionLockOverlay> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xEE090D16),
-      body: Center(
-        child: Container(
+      body: KeyboardListener(
+        focusNode: _keyboardFocusNode,
+        autofocus: true,
+        onKeyEvent: _handleKeyEvent,
+        child: Center(
+          child: Container(
           width: 440,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
           decoration: BoxDecoration(
@@ -247,8 +296,9 @@ class _SessionLockOverlayState extends State<SessionLockOverlay> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNumpad() {
     return Column(

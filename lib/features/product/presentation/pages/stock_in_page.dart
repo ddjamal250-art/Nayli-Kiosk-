@@ -27,7 +27,7 @@ import '../../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart'
 import '../../../../core/utils/receipt_ocr_parser.dart';
 import '../widgets/product_image_picker_field.dart';
 
-enum ArrivageUnitMode { cartons, vracSacs, singleUnits }
+enum ArrivageUnitMode { cartons, vracSacs, singleUnits, coffeeMachine }
 
 class StockInPage extends StatefulWidget {
   final ParsedReceiptResult? initialReceiptResult;
@@ -192,6 +192,20 @@ class _StockInPageState extends State<StockInPage> {
   }
 
   void _onSacInputsChanged() {
+    if (_unitMode == ArrivageUnitMode.coffeeMachine && !_isUpdatingFromCalculation) {
+      final bags = int.tryParse(_sacCountController.text.trim()) ?? 0;
+      final yieldPerBag = int.tryParse(_unitsPerCartonController.text.trim()) ?? 100;
+      final totalCups = bags * yieldPerBag;
+      _qtyController.text = totalCups.toString();
+      final sacCost = double.tryParse(_sacCostController.text.trim()) ?? 0.0;
+      if (yieldPerBag > 0 && sacCost > 0) {
+        _isUpdatingFromCalculation = true;
+        _costPriceController.text = (sacCost / yieldPerBag).toStringAsFixed(2);
+        _isUpdatingFromCalculation = false;
+      }
+      setState(() {});
+      return;
+    }
     if (_unitMode != ArrivageUnitMode.vracSacs || _isUpdatingFromCalculation) return;
     final sacs = int.tryParse(_sacCountController.text.trim()) ?? 0;
     final kgPerSac = double.tryParse(_kgPerSacController.text.trim()) ?? 0.0;
@@ -210,6 +224,17 @@ class _StockInPageState extends State<StockInPage> {
   }
 
   void _onSacCostChanged() {
+    if (_unitMode == ArrivageUnitMode.coffeeMachine && !_isUpdatingFromCalculation) {
+      final yieldPerBag = int.tryParse(_unitsPerCartonController.text.trim()) ?? 100;
+      final sacCost = double.tryParse(_sacCostController.text.trim()) ?? 0.0;
+      if (yieldPerBag > 0 && sacCost > 0) {
+        _isUpdatingFromCalculation = true;
+        _costPriceController.text = (sacCost / yieldPerBag).toStringAsFixed(2);
+        _isUpdatingFromCalculation = false;
+      }
+      setState(() {});
+      return;
+    }
     if (_unitMode != ArrivageUnitMode.vracSacs || _isUpdatingFromCalculation) return;
     final kgPerSac = double.tryParse(_kgPerSacController.text.trim()) ?? 0.0;
     final sacCost = double.tryParse(_sacCostController.text.trim()) ?? 0.0;
@@ -374,6 +399,19 @@ class _StockInPageState extends State<StockInPage> {
     }
 
     final isWeighted = _unitMode == ArrivageUnitMode.vracSacs;
+    int effectiveQty = qty;
+    double effectiveCost = costPrice;
+
+    if (_unitMode == ArrivageUnitMode.coffeeMachine) {
+      final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
+      final yieldPerBag = int.tryParse(_unitsPerCartonController.text.trim()) ?? 100;
+      final bagCost = double.tryParse(_sacCostController.text.trim()) ?? 0.0;
+      effectiveQty = bags * yieldPerBag;
+      if (yieldPerBag > 0 && bagCost > 0) {
+        effectiveCost = bagCost / yieldPerBag;
+      }
+      _selectedCategory = 'ماكينة القهوة والشاي';
+    }
 
     final productBloc = context.read<ProductBloc>();
     final products = productBloc.state.products;
@@ -421,7 +459,7 @@ class _StockInPageState extends State<StockInPage> {
         category: effectiveCategory,
         price: price,
         costPrice: effectiveCost,
-        stock: _currentStock + qty,
+        stock: _currentStock + effectiveQty,
         isWeighted: isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
@@ -440,7 +478,7 @@ class _StockInPageState extends State<StockInPage> {
         category: effectiveCategory,
         price: price,
         costPrice: effectiveCost,
-        stock: qty,
+        stock: effectiveQty,
         isWeighted: isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
@@ -1013,12 +1051,19 @@ class _StockInPageState extends State<StockInPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     padding: const EdgeInsets.all(4),
-                    child: Row(
-                      children: [
-                        _buildModeTab('📦 كراتين وصناديق', ArrivageUnitMode.cartons),
-                        _buildModeTab('🛍️ شكاير وميزان (قهوة، سكر...)', ArrivageUnitMode.vracSacs),
-                        _buildModeTab('🏷️ حبة منفردة', ArrivageUnitMode.singleUnits),
-                      ],
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildModeTab('📦 كراتين وصناديق', ArrivageUnitMode.cartons),
+                          const SizedBox(width: 4),
+                          _buildModeTab('☕ ماكينة القهوة (حساب الأكواب)', ArrivageUnitMode.coffeeMachine),
+                          const SizedBox(width: 4),
+                          _buildModeTab('🛍️ شكاير وميزان', ArrivageUnitMode.vracSacs),
+                          const SizedBox(width: 4),
+                          _buildModeTab('🏷️ حبة منفردة', ArrivageUnitMode.singleUnits),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1049,6 +1094,58 @@ class _StockInPageState extends State<StockInPage> {
                       controller: _cartonCostController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(labelText: 'سعر شراء الكرتونة الواحدة', suffixText: 'DA/كرتونة', border: OutlineInputBorder()),
+                    ),
+                  ] else if (_unitMode == ArrivageUnitMode.coffeeMachine) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _sacCountController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'عدد أكياس البن (1 كغ)', suffixText: 'كيس', border: OutlineInputBorder()),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _unitsPerCartonController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'إنتاجية الكيس من الأكواب', suffixText: 'كأس/كغ', border: OutlineInputBorder()),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _sacCostController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'سعر شراء الكيس الواحد', suffixText: 'DA/كيس', border: OutlineInputBorder()),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              final bags = int.tryParse(_sacCountController.text.trim()) ?? 0;
+                              final yieldPerBag = int.tryParse(_unitsPerCartonController.text.trim()) ?? 100;
+                              final totalCups = bags * yieldPerBag;
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.brown.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.brown.shade200),
+                                ),
+                                child: Text('إجمالي الأكواب: $totalCups كأس ☕',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.brown)),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ] else if (_unitMode == ArrivageUnitMode.vracSacs) ...[
                     Row(
@@ -1114,7 +1211,7 @@ class _StockInPageState extends State<StockInPage> {
                           onSubmitted: (_) => _costPriceFocusNode.requestFocus(),
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'سعر بيع الكيلوغرام *' : 'سعر بيع الحبة *',
+                            labelText: _unitMode == ArrivageUnitMode.coffeeMachine ? 'سعر بيع الكأس المحضر *' : (_unitMode == ArrivageUnitMode.vracSacs ? 'سعر بيع الكيلوغرام *' : 'سعر بيع الحبة *'),
                             suffixText: 'DA',
                             border: const OutlineInputBorder(),
                           ),
@@ -1129,7 +1226,7 @@ class _StockInPageState extends State<StockInPage> {
                           onSubmitted: (_) => _qtyFocusNode.requestFocus(),
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'تكلفة الكيلوغرام المتوسطة' : 'سعر التكلفة المتوسط للحبة',
+                            labelText: _unitMode == ArrivageUnitMode.coffeeMachine ? 'تكلفة الكأس الواحد (Achat) *' : (_unitMode == ArrivageUnitMode.vracSacs ? 'تكلفة الكيلوغرام المتوسطة' : 'سعر التكلفة المتوسط للحبة'),
                             suffixText: 'DA',
                             border: const OutlineInputBorder(),
                           ),

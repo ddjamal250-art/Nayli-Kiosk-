@@ -50,6 +50,9 @@ class _EditProductPageState extends State<EditProductPage> {
   late String _selectedCategory;
   String? _imageUrl;
   late bool _isTobacco;
+  late bool _hasCartonLevel;
+  late bool _hasPackLevel;
+  late bool _hasPieceLevel;
   late bool _allowPieceSale;
   late String _unitType; // 'piece', 'meter', 'ml'
   late bool _isWeighted;
@@ -63,9 +66,11 @@ class _EditProductPageState extends State<EditProductPage> {
     'ورق لف وفلاتر',
     'معسل وشيشة',
     'ولاعات وغاز',
+    'ماكينة القهوة والشاي',
     'عطور زيتية وبالمتر',
     'مواد غذائية ومعلبات',
     'حليب ومشتقاته',
+    'أجبان ومشتقات الحليب',
     'مخبوزات وعجائن',
     'مشروبات ومياه',
     'نظافة وتجميل',
@@ -90,8 +95,11 @@ class _EditProductPageState extends State<EditProductPage> {
         widget.product.category.contains('شمة') ||
         widget.product.category.contains('معسل') ||
         widget.product.hasMultiUnit;
+    _hasCartonLevel = widget.product.hasCarton || widget.product.cartonPrice > 0 || widget.product.packsPerCarton > 1;
+    _hasPieceLevel = widget.product.hasSubUnit || widget.product.singlePiecePrice > 0 || (widget.product.piecesPerPack > 1 && !widget.product.isBeverage);
+    _hasPackLevel = true;
     _unitType = widget.product.unitType.isNotEmpty ? widget.product.unitType : 'piece';
-    _allowPieceSale = widget.product.singlePiecePrice > 0;
+    _allowPieceSale = widget.product.singlePiecePrice > 0 || _hasPieceLevel;
     _cartonPriceCtrl = TextEditingController(text: widget.product.cartonPrice > 0 ? widget.product.cartonPrice.toStringAsFixed(0) : '');
     _wholesaleCartonPriceCtrl = TextEditingController(text: widget.product.wholesaleCartonPrice > 0 ? widget.product.wholesaleCartonPrice.toStringAsFixed(0) : '');
     _wholesalePackPriceCtrl = TextEditingController(text: widget.product.wholesalePackPrice > 0 ? widget.product.wholesalePackPrice.toStringAsFixed(0) : '');
@@ -105,6 +113,65 @@ class _EditProductPageState extends State<EditProductPage> {
     _isWeighted = widget.product.isWeighted || widget.product.barcode.startsWith('SCALE_') || widget.product.name.contains('ميزان') || widget.product.name.contains('كغ');
     if (widget.product.expiryDate != null && widget.product.expiryDate!.isNotEmpty) {
       _expiryDate = DateTime.tryParse(widget.product.expiryDate!);
+    }
+  }
+
+  void _applyCategoryConfig(String cat, {bool userOverride = false}) {
+    final lower = cat.toLowerCase();
+    final isTob = lower.contains('تبغ') || lower.contains('سجائر') || lower.contains('شمة') || lower.contains('معسل') || lower.contains('ولاع') || lower.contains('ورق لف');
+    final isCheese = lower.contains('جبن') || lower.contains('حليب') || lower.contains('مشتقات') || lower.contains('fromage');
+    final isDrink = lower.contains('مشروب') || lower.contains('ماء') || lower.contains('عصير') || lower.contains('boisson') || lower.contains('soda');
+    final isCoffee = lower.contains('ماكينة') || lower.contains('قهوة') || lower.contains('شاي') || lower.contains('cafe') || lower.contains('tea');
+    final isProduce = lower.contains('خضر') || lower.contains('فواكه') || lower.contains('ميزان') || lower.contains('legume') || lower.contains('fruit');
+
+    setState(() {
+      _isTobacco = isTob;
+      if (isTob) {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
+        _isWeighted = false;
+        _packsPerCartonCtrl.text = '10';
+        _piecesPerPackCtrl.text = '20';
+        _packNameCtrl.text = 'علبة';
+      } else if (isCheese) {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
+        _packsPerCartonCtrl.text = '12';
+        _piecesPerPackCtrl.text = '16';
+        _packNameCtrl.text = 'علبة';
+      } else if (isDrink) {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = false;
+        _allowPieceSale = false;
+        _isWeighted = false;
+        _packsPerCartonCtrl.text = '6';
+        _piecesPerPackCtrl.text = '1';
+        _packNameCtrl.text = 'قارورة';
+      } else if (isCoffee) {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
+        _isWeighted = false;
+        _packsPerCartonCtrl.text = '10';
+        _piecesPerPackCtrl.text = '100'; // 100 cups yield per kg
+        _packNameCtrl.text = 'كيس 1 كغ بن';
+      } else if (isProduce) {
+        _isWeighted = true;
+        _hasCartonLevel = false;
+        _hasPackLevel = false;
+        _hasPieceLevel = false;
+        _allowPieceSale = false;
+      }
+    });
+
+    if (_priceCtrl.text.isNotEmpty) {
+      _onPackPriceChanged(_priceCtrl.text);
     }
   }
 
@@ -386,7 +453,7 @@ class _EditProductPageState extends State<EditProductPage> {
     );
   }
 
-  Widget _buildTobaccoProfitCard() {
+  Widget _buildMultiUnitProfitCard() {
     final cartonPrice = double.tryParse(_cartonPriceCtrl.text.trim()) ?? 0.0;
     final packPrice = double.tryParse(_priceCtrl.text.trim()) ?? 0.0;
     final piecePrice = double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? 0.0;
@@ -398,13 +465,16 @@ class _EditProductPageState extends State<EditProductPage> {
     final cartonCost = packCost * packs;
     final pieceCost = (pieces > 0 && packCost > 0) ? (packCost / pieces) : 0.0;
 
-    final cartonProfit = (cartonPrice > 0 && cartonCost > 0) ? (cartonPrice - cartonCost) : 0.0;
-    final packProfit = (packPrice > 0 && packCost > 0) ? (packPrice - packCost) : 0.0;
-    final pieceProfit = (piecePrice > 0 && pieceCost > 0) ? (piecePrice - pieceCost) : 0.0;
+    final cartonProfit = (_hasCartonLevel && cartonPrice > 0 && cartonCost > 0) ? (cartonPrice - cartonCost) : 0.0;
+    final packProfit = (_hasPackLevel && packPrice > 0 && packCost > 0) ? (packPrice - packCost) : 0.0;
+    final pieceProfit = (_hasPieceLevel && piecePrice > 0 && pieceCost > 0) ? (piecePrice - pieceCost) : 0.0;
 
     final cartonProfitPercent = cartonCost > 0 ? ((cartonProfit / cartonCost) * 100).toStringAsFixed(1) : '0';
     final packProfitPercent = packCost > 0 ? ((packProfit / packCost) * 100).toStringAsFixed(1) : '0';
     final pieceProfitPercent = pieceCost > 0 ? ((pieceProfit / pieceCost) * 100).toStringAsFixed(1) : '0';
+
+    final isCoffee = _selectedCategory.contains('ماكينة') || _selectedCategory.contains('قهوة') || _selectedCategory.contains('شاي');
+    final pieceTitle = isCoffee ? 'ربح الكوب / الفنجان' : (_selectedCategory.contains('تبغ') ? 'ربح السيجارة' : 'ربح الحبة / القطعة');
 
     return Container(
       margin: const EdgeInsets.only(top: 14, bottom: 6),
@@ -430,35 +500,38 @@ class _EditProductPageState extends State<EditProductPage> {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(
-                child: _buildProfitPill(
-                  title: 'ربح الكرطوشة',
-                  profit: cartonProfit,
-                  percent: cartonProfitPercent,
-                  color: const Color(0xFF0D9488),
-                  icon: Icons.inventory_2_outlined,
+              if (_hasCartonLevel)
+                Expanded(
+                  child: _buildProfitPill(
+                    title: 'ربح الكرتونة',
+                    profit: cartonProfit,
+                    percent: cartonProfitPercent,
+                    color: const Color(0xFF0D9488),
+                    icon: Icons.inventory_2_outlined,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildProfitPill(
-                  title: 'ربح العلبة',
-                  profit: packProfit,
-                  percent: packProfitPercent,
-                  color: const Color(0xFF2563EB),
-                  icon: Icons.crop_portrait_rounded,
+              if (_hasCartonLevel && (_hasPackLevel || _hasPieceLevel)) const SizedBox(width: 8),
+              if (_hasPackLevel)
+                Expanded(
+                  child: _buildProfitPill(
+                    title: 'ربح العلبة / الوحدة',
+                    profit: packProfit,
+                    percent: packProfitPercent,
+                    color: const Color(0xFF2563EB),
+                    icon: Icons.crop_portrait_rounded,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildProfitPill(
-                  title: 'ربح السيجارة (الحبة)',
-                  profit: pieceProfit,
-                  percent: pieceProfitPercent,
-                  color: const Color(0xFFD97706),
-                  icon: Icons.smoking_rooms_rounded,
+              if (_hasPackLevel && _hasPieceLevel) const SizedBox(width: 8),
+              if (_hasPieceLevel)
+                Expanded(
+                  child: _buildProfitPill(
+                    title: pieceTitle,
+                    profit: pieceProfit,
+                    percent: pieceProfitPercent,
+                    color: const Color(0xFFD97706),
+                    icon: isCoffee ? Icons.coffee_rounded : Icons.pie_chart_rounded,
+                  ),
                 ),
-              ),
             ],
           ),
         ],
@@ -520,24 +593,52 @@ class _EditProductPageState extends State<EditProductPage> {
   void _applyMultiUnitPreset(String type) {
     SoundService.playTabSwitch();
     setState(() {
-      _isTobacco = true;
+      _isTobacco = type == 'tobacco';
       if (type == 'tobacco') {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
         _piecesPerPackCtrl.text = '20';
         _packsPerCartonCtrl.text = '10';
         _packNameCtrl.text = 'علبة';
       } else if (type == 'cheese') {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
         _piecesPerPackCtrl.text = '16';
         _packsPerCartonCtrl.text = '12';
         _packNameCtrl.text = 'علبة';
+      } else if (type == 'coffee') {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
+        _piecesPerPackCtrl.text = '100';
+        _packsPerCartonCtrl.text = '10';
+        _packNameCtrl.text = 'كيس 1 كغ بن';
       } else if (type == 'water') {
-        _piecesPerPackCtrl.text = '0';
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = false;
+        _allowPieceSale = false;
+        _piecesPerPackCtrl.text = '1';
         _packsPerCartonCtrl.text = '6';
         _packNameCtrl.text = 'قارورة';
       } else if (type == 'gum') {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
         _piecesPerPackCtrl.text = '20';
         _packsPerCartonCtrl.text = '24';
         _packNameCtrl.text = 'علبة';
       } else if (type == 'eggs') {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
         _piecesPerPackCtrl.text = '30';
         _packsPerCartonCtrl.text = '12';
         _packNameCtrl.text = 'بلاطو 30';
@@ -584,27 +685,39 @@ class _EditProductPageState extends State<EditProductPage> {
     if (_isSaving) return;
     if (_formKey.currentState!.validate()) {
       setState(() => _isSaving = true);
+      double retailPrice = double.tryParse(_priceCtrl.text.trim()) ?? widget.product.price;
+      double singlePiecePrice = _hasPieceLevel ? (double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? widget.product.singlePiecePrice) : 0.0;
+      // Loose pieces handling: if user disabled pack level and is selling loose pieces only
+      if (!_hasPackLevel && _hasPieceLevel) {
+        if (retailPrice == 0.0 && singlePiecePrice > 0.0) {
+          retailPrice = singlePiecePrice;
+        }
+        if (singlePiecePrice == 0.0 && retailPrice > 0.0) {
+          singlePiecePrice = retailPrice;
+        }
+      }
+
       final updatedProduct = Product(
         id: widget.product.id,
         name: _nameCtrl.text.trim(),
         barcode: _barcodeCtrl.text.trim(),
-        price: double.tryParse(_priceCtrl.text.trim()) ?? widget.product.price,
+        price: retailPrice,
         costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? widget.product.costPrice,
-        wholesalePrice: double.tryParse(_wholesalePriceCtrl.text.trim()) ?? (double.tryParse(_wholesalePackPriceCtrl.text.trim()) ?? widget.product.wholesalePrice),
+        wholesalePrice: _hasPackLevel ? (double.tryParse(_wholesalePriceCtrl.text.trim()) ?? (double.tryParse(_wholesalePackPriceCtrl.text.trim()) ?? widget.product.wholesalePrice)) : 0.0,
         stock: int.tryParse(_stockCtrl.text.trim()) ?? widget.product.stock,
         category: _selectedCategory,
         isWeighted: _isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: _imageUrl,
-        isTobacco: _isTobacco,
-        cartonPrice: double.tryParse(_cartonPriceCtrl.text.trim()) ?? widget.product.cartonPrice,
-        wholesaleCartonPrice: double.tryParse(_wholesaleCartonPriceCtrl.text.trim()) ?? widget.product.wholesaleCartonPrice,
-        wholesalePackPrice: double.tryParse(_wholesalePackPriceCtrl.text.trim()) ?? widget.product.wholesalePackPrice,
-        singlePiecePrice: _allowPieceSale ? (double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? widget.product.singlePiecePrice) : 0.0,
-        piecesPerPack: int.tryParse(_piecesPerPackCtrl.text.trim()) ?? widget.product.piecesPerPack,
-        packsPerCarton: int.tryParse(_packsPerCartonCtrl.text.trim()) ?? widget.product.packsPerCarton,
-        packBarcode: _packBarcodeCtrl.text.trim().isNotEmpty ? _packBarcodeCtrl.text.trim() : null,
-        packName: _packNameCtrl.text.trim().isNotEmpty ? _packNameCtrl.text.trim() : null,
+        isTobacco: _isTobacco || _selectedCategory.contains('تبغ') || _selectedCategory.contains('سجائر') || _selectedCategory.contains('شمة') || _selectedCategory.contains('معسل'),
+        cartonPrice: _hasCartonLevel ? (double.tryParse(_cartonPriceCtrl.text.trim()) ?? widget.product.cartonPrice) : 0.0,
+        wholesaleCartonPrice: _hasCartonLevel ? (double.tryParse(_wholesaleCartonPriceCtrl.text.trim()) ?? widget.product.wholesaleCartonPrice) : 0.0,
+        wholesalePackPrice: _hasPackLevel ? (double.tryParse(_wholesalePackPriceCtrl.text.trim()) ?? widget.product.wholesalePackPrice) : 0.0,
+        singlePiecePrice: singlePiecePrice,
+        piecesPerPack: _hasPieceLevel ? (int.tryParse(_piecesPerPackCtrl.text.trim()) ?? widget.product.piecesPerPack) : 1,
+        packsPerCarton: _hasCartonLevel ? (int.tryParse(_packsPerCartonCtrl.text.trim()) ?? widget.product.packsPerCarton) : 1,
+        packBarcode: (_hasCartonLevel && _packBarcodeCtrl.text.trim().isNotEmpty) ? _packBarcodeCtrl.text.trim() : null,
+        packName: _hasPackLevel && _packNameCtrl.text.trim().isNotEmpty ? _packNameCtrl.text.trim() : null,
         unitType: _unitType,
       );
 
@@ -891,10 +1004,8 @@ class _EditProductPageState extends State<EditProductPage> {
                     if (val != null) {
                       setState(() {
                         _selectedCategory = val;
-                        if (val.contains('تبغ') || val.contains('شمة') || val.contains('معسل') || val.contains('ولاع') || val.contains('ورق لف')) {
-                          _isTobacco = true;
-                        }
                       });
+                      _applyCategoryConfig(val, userOverride: true);
                     }
                   },
                 ),
@@ -925,13 +1036,16 @@ class _EditProductPageState extends State<EditProductPage> {
                   ),
                 const SizedBox(height: 16),
 
-                // Universal Multi-Unit Packaging Card (Piece / Pack / Carton)
+                // Universal Multi-Unit Packaging Card (Independent Levels Architecture)
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: _isTobacco ? Colors.teal.withOpacity(0.06) : Colors.grey[50],
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _isTobacco ? Colors.teal : Colors.grey[300]!),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.teal.shade300, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -941,200 +1055,375 @@ class _EditProductPageState extends State<EditProductPage> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.layers_rounded, color: _isTobacco ? Colors.teal : Colors.grey),
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(8)),
+                                child: const Icon(Icons.layers_rounded, color: Colors.teal, size: 22),
+                              ),
                               const SizedBox(width: 8),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(context.tr('multi_unit_packaging_system'),
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isTobacco ? Colors.teal[900] : Colors.black87)),
-                                  const Text('للسجائر، قوارير وفاردو الماء، مثلثات الجبن، العلك، البيض، إلخ', style: TextStyle(fontSize: 10.5, color: Colors.grey)),
+                                children: const [
+                                  Text('نظام التعبئة والتجزئة متعدد المستويات 📦📏',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Colors.black87)),
+                                  Text('أزرار تفعيل/تعطيل مستقلة لكل مستوى: كرتونة، علبة، وحبة/كوب', style: TextStyle(fontSize: 10.5, color: Colors.blueGrey)),
                                 ],
                               ),
                             ],
-                          ),
-                          Switch(
-                            value: _isTobacco,
-                            activeColor: Colors.teal,
-                            onChanged: (v) => setState(() {
-                              _isTobacco = v;
-                            }),
                           ),
                         ],
                       ),
-                      if (_isTobacco) ...[
-                        const Divider(height: 18),
-                        const Text('قوالب سريعة للأصناف الشائعة ⚡:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal)),
-                        const SizedBox(height: 6),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _buildPresetChip('🚬 سجائر وتبغ', 'tobacco'),
-                              const SizedBox(width: 6),
-                              _buildPresetChip('🧀 جبن ومثلثات', 'cheese'),
-                              const SizedBox(width: 6),
-                              _buildPresetChip('💧 ماء وعصائر', 'water'),
-                              const SizedBox(width: 6),
-                              _buildPresetChip('🍬 علك وحلويات', 'gum'),
-                              const SizedBox(width: 6),
-                              _buildPresetChip('🥚 بيض وبلاطو', 'eggs'),
+                      const Divider(height: 18),
+                      const Text('قوالب سريعة للأصناف الشائعة ⚡:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal)),
+                      const SizedBox(height: 6),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildPresetChip('🚬 سجائر وتبغ', 'tobacco'),
+                            const SizedBox(width: 6),
+                            _buildPresetChip('🧀 جبن ومثلثات', 'cheese'),
+                            const SizedBox(width: 6),
+                            _buildPresetChip('☕ ماكينة قهوة وشاي', 'coffee'),
+                            const SizedBox(width: 6),
+                            _buildPresetChip('💧 ماء وعصائر', 'water'),
+                            const SizedBox(width: 6),
+                            _buildPresetChip('🍬 علك وحلويات', 'gum'),
+                            const SizedBox(width: 6),
+                            _buildPresetChip('🥚 بيض وبلاطو', 'eggs'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // LEVEL 1: CARTON / FARDEAU
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _hasCartonLevel ? Colors.teal.withOpacity(0.06) : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _hasCartonLevel ? Colors.teal.shade400 : Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.inventory_2_outlined, color: _hasCartonLevel ? Colors.teal : Colors.grey, size: 18),
+                                    const SizedBox(width: 6),
+                                    Text('مستوى 1: الكرتونة أو الفاردو / الكرطوشة',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _hasCartonLevel ? Colors.teal.shade900 : Colors.grey.shade700)),
+                                  ],
+                                ),
+                                Switch(
+                                  value: _hasCartonLevel,
+                                  activeColor: Colors.teal,
+                                  onChanged: (v) => setState(() {
+                                    _hasCartonLevel = v;
+                                    if (!v) {
+                                      _cartonPriceCtrl.clear();
+                                      _wholesaleCartonPriceCtrl.clear();
+                                      _packsPerCartonCtrl.text = '1';
+                                    } else {
+                                      if (_packsPerCartonCtrl.text == '1' || _packsPerCartonCtrl.text.isEmpty) {
+                                        _packsPerCartonCtrl.text = '10';
+                                      }
+                                      if (_priceCtrl.text.isNotEmpty) {
+                                        _onPackPriceChanged(_priceCtrl.text);
+                                      }
+                                    }
+                                  }),
+                                ),
+                              ],
+                            ),
+                            if (_hasCartonLevel) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const InputLabel(text: 'عدد العلب في الكرتونة / الفاردو *'),
+                                        TextFormField(
+                                          controller: _packsPerCartonCtrl,
+                                          keyboardType: TextInputType.number,
+                                          decoration: const InputDecoration(hintText: '10', prefixIcon: Icon(Icons.numbers, size: 18)),
+                                          onChanged: (v) {
+                                            if (_priceCtrl.text.isNotEmpty) _onPackPriceChanged(_priceCtrl.text);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const InputLabel(text: 'باركود الكرتونة (اختياري)'),
+                                        TextFormField(
+                                          controller: _packBarcodeCtrl,
+                                          decoration: const InputDecoration(hintText: 'امسح باركود الكرتونة', prefixIcon: Icon(Icons.qr_code, size: 18)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const InputLabel(text: 'سعر بيع الكرتونة (تجزئة)'),
+                                        TextFormField(
+                                          controller: _cartonPriceCtrl,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          decoration: InputDecoration(hintText: '4100', suffixText: context.tr('currency_symbol')),
+                                          onChanged: _onCartonPriceChanged,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const InputLabel(text: 'سعر بيع الكرتونة (جملة)'),
+                                        TextFormField(
+                                          controller: _wholesaleCartonPriceCtrl,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          decoration: InputDecoration(hintText: '3950', suffixText: context.tr('currency_symbol')),
+                                          onChanged: _onWholesaleCartonPriceChanged,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  InputLabel(text: context.tr('carton_retail_price')),
-                                  TextFormField(
-                                    controller: _cartonPriceCtrl,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: InputDecoration(hintText: '4100', suffixText: context.tr('currency_symbol')),
-                                    onChanged: _onCartonPriceChanged,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  InputLabel(text: context.tr('carton_wholesale_price')),
-                                  TextFormField(
-                                    controller: _wholesaleCartonPriceCtrl,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: InputDecoration(hintText: '3950', suffixText: context.tr('currency_symbol')),
-                                    onChanged: _onWholesaleCartonPriceChanged,
-                                  ),
-                                ],
-                              ),
-                            ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Row(
+                      ),
+                      const SizedBox(height: 10),
+
+                      // LEVEL 2: PACK / UNIT
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _hasPackLevel ? Colors.indigo.withOpacity(0.05) : Colors.amber.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _hasPackLevel ? Colors.indigo.shade300 : Colors.amber.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.crop_portrait_rounded, color: _hasPackLevel ? Colors.indigo : Colors.amber.shade800, size: 18),
+                                    const SizedBox(width: 6),
+                                    Text('مستوى 2: العلبة / الوحدة الأساسية (Pack)',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _hasPackLevel ? Colors.indigo.shade900 : Colors.amber.shade900)),
+                                  ],
+                                ),
+                                Switch(
+                                  value: _hasPackLevel,
+                                  activeColor: Colors.indigo,
+                                  onChanged: (v) => setState(() {
+                                    _hasPackLevel = v;
+                                    if (!v) {
+                                      _hasPieceLevel = true;
+                                      _allowPieceSale = true;
+                                    }
+                                  }),
+                                ),
+                              ],
+                            ),
+                            if (_hasPackLevel) ...[
+                              const SizedBox(height: 8),
+                              Row(
                                 children: [
-                                  InputLabel(text: context.tr('pack_wholesale_price')),
-                                  TextFormField(
-                                    controller: _wholesalePackPriceCtrl,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: InputDecoration(hintText: '400', suffixText: context.tr('currency_symbol')),
-                                    onChanged: _onWholesalePackPriceChanged,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const InputLabel(text: 'اسم العبوة الأساسية'),
+                                        TextFormField(
+                                          controller: _packNameCtrl,
+                                          decoration: InputDecoration(hintText: context.tr('box_bottle_pack')),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const InputLabel(text: 'سعر بيع العلبة (جملة)'),
+                                        TextFormField(
+                                          controller: _wholesalePackPriceCtrl,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          decoration: InputDecoration(hintText: '400', suffixText: context.tr('currency_symbol')),
+                                          onChanged: _onWholesalePackPriceChanged,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  InputLabel(text: context.tr('single_piece_price')),
-                                  TextFormField(
-                                    controller: _singlePiecePriceCtrl,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: InputDecoration(hintText: '25', suffixText: context.tr('currency_symbol')),
-                                    onChanged: _onSinglePiecePriceChanged,
-                                  ),
-                                ],
+                            ] else ...[
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(color: Colors.amber.shade100, borderRadius: BorderRadius.circular(8)),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.info_outline, size: 16, color: Colors.brown),
+                                    SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'تم تعطيل مستوى العلبة: يتم بيع وتتبع السلعة كحبات فردية مستوردة أو حبات مباشرة.',
+                                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.brown),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Row(
+                      ),
+                      const SizedBox(height: 10),
+
+                      // LEVEL 3: PIECE / SUB-UNIT / CUP
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _hasPieceLevel ? Colors.deepOrange.withOpacity(0.06) : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _hasPieceLevel ? Colors.deepOrange.shade300 : Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  InputLabel(text: context.tr('pieces_per_pack')),
-                                  TextFormField(
-                                    controller: _piecesPerPackCtrl,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(hintText: '20'),
-                                    onChanged: (v) {
-                                      if (_cartonPriceCtrl.text.isNotEmpty) {
-                                        _onCartonPriceChanged(_cartonPriceCtrl.text);
-                                      } else if (_priceCtrl.text.isNotEmpty) {
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _selectedCategory.contains('ماكينة') || _selectedCategory.contains('قهوة')
+                                          ? Icons.coffee_rounded
+                                          : Icons.pie_chart_rounded,
+                                      color: _hasPieceLevel ? Colors.deepOrange : Colors.grey,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _selectedCategory.contains('ماكينة') || _selectedCategory.contains('قهوة')
+                                          ? 'مستوى 3: تحضير وبيع الكؤوس (إنتاجية الأكواب ☕)'
+                                          : 'مستوى 3: البيع بالحبة / المثلث / القطعة الفردية',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: _hasPieceLevel ? Colors.deepOrange.shade900 : Colors.grey.shade700),
+                                    ),
+                                  ],
+                                ),
+                                Switch(
+                                  value: _hasPieceLevel,
+                                  activeColor: Colors.deepOrange,
+                                  onChanged: (v) => setState(() {
+                                    _hasPieceLevel = v;
+                                    _allowPieceSale = v;
+                                    if (!v) {
+                                      _singlePiecePriceCtrl.clear();
+                                      _piecesPerPackCtrl.text = '1';
+                                    } else {
+                                      if (_piecesPerPackCtrl.text == '1' || _piecesPerPackCtrl.text.isEmpty) {
+                                        _piecesPerPackCtrl.text = _selectedCategory.contains('قهوة') ? '100' : '20';
+                                      }
+                                      if (_priceCtrl.text.isNotEmpty) {
                                         _onPackPriceChanged(_priceCtrl.text);
                                       }
-                                    },
-                                  ),
-                                ],
-                              ),
+                                    }
+                                  }),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            if (_hasPieceLevel) ...[
+                              const SizedBox(height: 8),
+                              Row(
                                 children: [
-                                  InputLabel(text: context.tr('packs_per_carton')),
-                                  TextFormField(
-                                    controller: _packsPerCartonCtrl,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(hintText: '10'),
-                                    onChanged: (v) {
-                                      if (_cartonPriceCtrl.text.isNotEmpty) {
-                                        _onCartonPriceChanged(_cartonPriceCtrl.text);
-                                      } else if (_priceCtrl.text.isNotEmpty) {
-                                        _onPackPriceChanged(_priceCtrl.text);
-                                      }
-                                    },
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        InputLabel(
+                                          text: _selectedCategory.contains('ماكينة') || _selectedCategory.contains('قهوة')
+                                              ? 'إنتاجية الكؤوس للكيس/الكغ *'
+                                              : (_selectedCategory.contains('جبن') ? 'مثلثات/قطع في العلبة *' : 'حبات/سجائر في العلبة *'),
+                                        ),
+                                        TextFormField(
+                                          controller: _piecesPerPackCtrl,
+                                          keyboardType: TextInputType.number,
+                                          decoration: InputDecoration(
+                                            hintText: _selectedCategory.contains('قهوة') ? '100' : '20',
+                                            prefixIcon: const Icon(Icons.layers, size: 18),
+                                          ),
+                                          onChanged: (v) {
+                                            if (_priceCtrl.text.isNotEmpty) _onPackPriceChanged(_priceCtrl.text);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        InputLabel(
+                                          text: _selectedCategory.contains('ماكينة') || _selectedCategory.contains('قهوة')
+                                              ? 'سعر بيع الكأس/الفنجان (دج)'
+                                              : 'سعر بيع الحبة للعموم (دج)',
+                                        ),
+                                        TextFormField(
+                                          controller: _singlePiecePriceCtrl,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          decoration: InputDecoration(hintText: '25', suffixText: context.tr('currency_symbol')),
+                                          onChanged: _onSinglePiecePriceChanged,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
+                            ],
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const InputLabel(text: 'اسم العبوة الأساسية (علبة/قارورة/بلاطو)'),
-                                  TextFormField(
-                                    controller: _packNameCtrl,
-                                    decoration: InputDecoration(hintText: context.tr('box_bottle_pack')),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const InputLabel(text: 'باركود الكرتونة / الفاردو (اختياري)'),
-                                  TextFormField(
-                                    controller: _packBarcodeCtrl,
-                                    decoration: InputDecoration(hintText: context.tr('scan_carton_barcode')),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        _buildPieceSaleToggle(),
-                        if (_isTobacco && _piecesPerPackCtrl.text != '0') _buildBreakCaseCard(),
-                        _buildTobaccoProfitCard(),
-                      ],
+                      ),
+
+                      // BREAK CASE CARD (If item has piece/loose management)
+                      if (_hasPieceLevel || _isTobacco) _buildBreakCaseCard(),
+
+                      // PROFIT ANALYTICS CARD
+                      _buildMultiUnitProfitCard(),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 // Weighted Item Switch
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
