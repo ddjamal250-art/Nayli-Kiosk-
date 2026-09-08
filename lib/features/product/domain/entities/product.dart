@@ -206,6 +206,7 @@ class Product extends Equatable {
   }
 
   bool get hasMultiUnit => hasSubUnit || hasCarton;
+  bool get hasMultiUnitPricing => hasMultiUnit;
 
   int get effectivePacksPerCarton {
     if (packsPerCarton > 0) return packsPerCarton;

@@ -254,7 +254,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
 
   void _addQuickItem(QuickItem item) {
     final prod = _resolveProductForQuickItem(item);
-    if (prod.hasMultiUnitPricing || prod.isTobaccoProduct || prod.isBeverage) {
+    if (prod.hasMultiUnit || prod.isTobaccoProduct || prod.isBeverage) {
       UniversalUnitSelectorDialog.showForProduct(context, prod);
       return;
     }
