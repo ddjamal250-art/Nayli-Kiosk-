@@ -2193,6 +2193,7 @@ $itemsSummary
   }
 
   Widget _buildRightCatalogPane() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.all(12),
@@ -2268,17 +2269,17 @@ $itemsSummary
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: isDark ? const Color(0xFF1E293B) : Colors.blue.shade50,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade400),
+                        border: Border.all(color: isDark ? Colors.white24 : Colors.blue.shade400),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Text('🥤', style: TextStyle(fontSize: 14)),
-                          SizedBox(width: 4),
+                          const Text('🥤', style: TextStyle(fontSize: 14)),
+                          const SizedBox(width: 4),
                           Text(
                             'مشروبات 🥤',
-                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.lightBlueAccent : const Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontSize: 11),
+                            style: TextStyle(color: isDark ? Colors.lightBlueAccent : const Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontSize: 11),
                           ),
                         ],
                       ),
@@ -2293,17 +2294,17 @@ $itemsSummary
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.brown.shade50,
+                        color: isDark ? const Color(0xFF1E293B) : Colors.brown.shade50,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.brown.shade400),
+                        border: Border.all(color: isDark ? Colors.white24 : Colors.brown.shade400),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Text('☕', style: TextStyle(fontSize: 14)),
-                          SizedBox(width: 4),
+                          const Text('☕', style: TextStyle(fontSize: 14)),
+                          const SizedBox(width: 4),
                           Text(
                             'القهوة والشاي ☕',
-                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.orange.shade200 : const Color(0xFF4E342E), fontWeight: FontWeight.bold, fontSize: 11),
+                            style: TextStyle(color: isDark ? Colors.orange.shade200 : const Color(0xFF4E342E), fontWeight: FontWeight.bold, fontSize: 11),
                           ),
                         ],
                       ),
@@ -2318,17 +2319,17 @@ $itemsSummary
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
+                      color: isDark ? const Color(0xFF1E293B) : Colors.amber.shade50,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber.shade400),
+                      border: Border.all(color: isDark ? Colors.white24 : Colors.amber.shade400),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Text('🚬', style: TextStyle(fontSize: 14)),
-                        SizedBox(width: 4),
+                        const Text('🚬', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 4),
                         Text(
                           'المواد التبغية 🚬',
-                          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.amberAccent : const Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11),
+                          style: TextStyle(color: isDark ? Colors.amberAccent : const Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11),
                         ),
                       ],
                     ),
