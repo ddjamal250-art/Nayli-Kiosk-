@@ -24,7 +24,7 @@ import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
 
 class ProductListPage extends StatefulWidget {
-  const ProductListPage({super.key});
+  ProductListPage({super.key});
 
   @override
   State<ProductListPage> createState() => _ProductListPageState();
@@ -103,9 +103,9 @@ class _ProductListPageState extends State<ProductListPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 24),
-            const SizedBox(width: 8),
-            Text('حذف $count سلع محددة؟', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Icon(Icons.delete_forever_rounded, color: Colors.red, size: 24),
+            SizedBox(width: 8),
+            Text('حذف $count سلع محددة؟', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         content: Text('هل أنت متأكد من رغبتك في حذف $count سلع نهائياً من المخزون؟ لا يمكن التراجع عن هذه العملية.'),
@@ -114,7 +114,7 @@ class _ProductListPageState extends State<ProductListPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(context.tr('yes_delete_all'), style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(context.tr('yes_delete_all'), style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -145,25 +145,25 @@ class _ProductListPageState extends State<ProductListPage> {
           title: Row(
             children: [
               Icon(Icons.drive_file_move_rounded, color: AppTheme.primaryColor, size: 24),
-              const SizedBox(width: 8),
-              Text('نقل $count سلع لقسم آخر 📂', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              SizedBox(width: 8),
+              Text('نقل $count سلع لقسم آخر 📂', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('اختر القسم المستهدف لنقل السلع المحددة إليه:', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 12),
+              Text('اختر القسم المستهدف لنقل السلع المحددة إليه:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: targetCat,
                 isExpanded: true,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: _categoryTabs.where((c) => c != 'الكل' && c != '⚖️ مواد الميزان').map((cat) {
-                  return DropdownMenuItem(value: cat, child: Text(cat, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)));
+                  return DropdownMenuItem(value: cat, child: Text(cat, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)));
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) setDialogState(() => targetCat = val);
@@ -176,7 +176,7 @@ class _ProductListPageState extends State<ProductListPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(ctx, targetCat),
-              child: Text(context.tr('transfer_items_now'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(context.tr('transfer_items_now'), style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -220,44 +220,44 @@ class _ProductListPageState extends State<ProductListPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: Row(
             children: [
-              const Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 24),
-              const SizedBox(width: 8),
-              Text('استلام شحنة لـ $count سلع 📦', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 24),
+              SizedBox(width: 8),
+              Text('استلام شحنة لـ $count سلع 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('اختر الكمية المضافة لكل سلعة من السلع المحددة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 14),
+              Text('اختر الكمية المضافة لكل سلعة من السلع المحددة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              SizedBox(height: 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton.filledTonal(
-                    icon: const Icon(Icons.remove),
+                    icon: Icon(Icons.remove),
                     onPressed: addQty > 1 ? () => setDialogState(() => addQty--) : null,
                   ),
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    margin: EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text('+$addQty', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                    child: Text('+$addQty', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
                   ),
                   IconButton.filledTonal(
-                    icon: const Icon(Icons.add),
+                    icon: Icon(Icons.add),
                     onPressed: () => setDialogState(() => addQty++),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Wrap(
                 spacing: 6,
                 children: [5, 10, 24, 50, 100].map((amt) {
                   return ActionChip(
-                    label: Text('+$amt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    label: Text('+$amt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                     backgroundColor: addQty == amt ? Colors.green.withOpacity(0.2) : Colors.grey[100],
                     onPressed: () => setDialogState(() => addQty = amt),
                   );
@@ -270,7 +270,7 @@ class _ProductListPageState extends State<ProductListPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(ctx, addQty),
-              child: Text('إضافة +$addQty للكل 🚀', style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('إضافة +$addQty للكل 🚀', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -347,7 +347,7 @@ class _ProductListPageState extends State<ProductListPage> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: const Row(
+        content: Row(
           children: [
             CircularProgressIndicator(),
             SizedBox(width: 16),
@@ -445,41 +445,41 @@ class _ProductListPageState extends State<ProductListPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
+                      Row(
                         children: [
                           Icon(Icons.scale_rounded, color: Colors.teal, size: 24),
                           SizedBox(width: 8),
                           Text('استلام شحنة بالميزان ⚖️📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                      IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  SizedBox(height: 4),
+                  Text(product.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   Text('المخزون الحالي: ${product.stock} كغ • سعر البيع: ${product.price.toStringAsFixed(0)} دج/كغ',
-                      style: const TextStyle(fontSize: 11.5, color: Colors.grey)),
-                  const SizedBox(height: 14),
+                      style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+                  SizedBox(height: 14),
 
                   // Gross Weight Input & Presets
-                  const Text('الوزن الإجمالي المستلم (بالكيلوغرام):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                  const SizedBox(height: 6),
+                  Text('الوزن الإجمالي المستلم (بالكيلوغرام):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                  SizedBox(height: 6),
                   TextFormField(
                     controller: grossWeightCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
                       hintText: '0.0',
                       suffixText: 'كغ (Kg)',
                       prefixIcon: Icon(Icons.fitness_center),
                     ),
                     onChanged: (_) => setModalState(() {}),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
                     children: [2.5, 5.0, 10.0, 25.0, 50.0].map((amt) {
                       return ActionChip(
-                        label: Text('+$amt كغ', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: Text('+$amt كغ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         backgroundColor: Colors.teal.withOpacity(0.1),
                         side: BorderSide(color: Colors.teal.withOpacity(0.3)),
                         onPressed: () {
@@ -490,7 +490,7 @@ class _ProductListPageState extends State<ProductListPage> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
 
                   // Cost & Tare Row
                   Row(
@@ -499,28 +499,28 @@ class _ProductListPageState extends State<ProductListPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('سعر تكلفة الكيلو (Achat):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
-                            const SizedBox(height: 4),
+                            Text('سعر تكلفة الكيلو (Achat):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                            SizedBox(height: 4),
                             TextFormField(
                               controller: costCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              decoration: const InputDecoration(hintText: '0', suffixText: 'دج/كغ'),
+                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(hintText: '0', suffixText: 'دج/كغ'),
                               onChanged: (_) => setModalState(() {}),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('نسبة الفاقد/الرطوبة (Tare):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
-                            const SizedBox(height: 4),
+                            Text('نسبة الفاقد/الرطوبة (Tare):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                            SizedBox(height: 4),
                             TextFormField(
                               controller: tareCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              decoration: const InputDecoration(hintText: '0', suffixText: '%'),
+                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(hintText: '0', suffixText: '%'),
                               onChanged: (_) => setModalState(() {}),
                             ),
                           ],
@@ -528,11 +528,11 @@ class _ProductListPageState extends State<ProductListPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
 
                   // Financial Breakdown Card
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.teal.withOpacity(0.06),
                       borderRadius: BorderRadius.circular(12),
@@ -543,44 +543,44 @@ class _ProductListPageState extends State<ProductListPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('الوزن الصافي المضاف للستوك:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text('الوزن الصافي المضاف للستوك:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                             Text('${netWeight.toStringAsFixed(2)} كغ',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal)),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal)),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('إجمالي تكلفة الشحنة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            Text('إجمالي تكلفة الشحنة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
                             Text('${totalBatchCost.toStringAsFixed(0)} دج',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('الربح الصافي المتوقع:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
+                            Text('الربح الصافي المتوقع:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
                             Text('+${estimatedProfit.toStringAsFixed(0)} دج',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal[700],
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    icon: const Icon(Icons.check_circle_outline),
+                    icon: Icon(Icons.check_circle_outline),
                     label: Text('تأكيد استلام ${netWeight.toStringAsFixed(1)} كغ (المجموع: ${(product.stock + netWeight).toStringAsFixed(1)} كغ)',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       final updated = Product(
@@ -621,7 +621,7 @@ class _ProductListPageState extends State<ProductListPage> {
       desktopMaxWidth: 540,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -629,65 +629,65 @@ class _ProductListPageState extends State<ProductListPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 24),
                       SizedBox(width: 8),
                       Text('استلام شحنة جديدة 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ],
                   ),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                  IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              Text('المخزون الحالي: ${product.stock} قطعة', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 16),
-              const Text('اختر الكمية المضافة للشحنة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-              const SizedBox(height: 10),
+              SizedBox(height: 6),
+              Text(product.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('المخزون الحالي: ${product.stock} قطعة', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              SizedBox(height: 16),
+              Text('اختر الكمية المضافة للشحنة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+              SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton.filledTonal(
-                    icon: const Icon(Icons.remove),
+                    icon: Icon(Icons.remove),
                     onPressed: addQty > 1 ? () => setModalState(() => addQty--) : null,
                   ),
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    margin: EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text('+$addQty', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                    child: Text('+$addQty', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
                   ),
                   IconButton.filledTonal(
-                    icon: const Icon(Icons.add),
+                    icon: Icon(Icons.add),
                     onPressed: () => setModalState(() => addQty++),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Wrap(
                 spacing: 6,
                 children: [5, 10, 24, 50, 100].map((amt) {
                   return ActionChip(
-                    label: Text('+$amt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    label: Text('+$amt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                     backgroundColor: addQty == amt ? Colors.green.withOpacity(0.2) : Colors.grey[100],
                     onPressed: () => setModalState(() => addQty = amt),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green[700],
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                icon: const Icon(Icons.check_circle_outline),
-                label: Text('تأكيد إضافة +$addQty إلى المخزن (المجموع: ${product.stock + addQty})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                icon: Icon(Icons.check_circle_outline),
+                label: Text('تأكيد إضافة +$addQty إلى المخزن (المجموع: ${product.stock + addQty})', style: TextStyle(fontWeight: FontWeight.bold)),
                 onPressed: () {
                   Navigator.pop(ctx);
                   final updated = Product(
@@ -745,12 +745,12 @@ class _ProductListPageState extends State<ProductListPage> {
               backgroundColor: AppTheme.primaryColor,
               elevation: 2,
               leading: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
+                icon: Icon(Icons.close, color: Colors.white),
                 onPressed: _clearSelection,
               ),
               title: Text(
                 'المحدد: ${_selectedProductIds.length}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
               ),
               actions: [
                 BlocBuilder<ProductBloc, ProductState>(
@@ -770,7 +770,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
                     return TextButton(
                       onPressed: () => _selectAllFiltered(filtered),
-                      child: const Text('تحديد الكل', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: Text('تحديد الكل', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                     );
                   },
                 ),
@@ -785,7 +785,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 onPressed: () => context.pop(),
               ),
               title: Text(context.tr('products_management'),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               centerTitle: true,
               actions: [
                 IconButton(
@@ -812,12 +812,12 @@ class _ProductListPageState extends State<ProductListPage> {
         children: [
           // Master Catalog Quick Banner
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
             child: InkWell(
               onTap: () => context.push('/products/catalog'),
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [AppTheme.primaryColor.withOpacity(0.12), AppTheme.primaryColor.withOpacity(0.04)],
@@ -828,8 +828,8 @@ class _ProductListPageState extends State<ProductListPage> {
                 child: Row(
                   children: [
                     Icon(Icons.menu_book_rounded, color: AppTheme.primaryColor, size: 22),
-                    const SizedBox(width: 10),
-                    const Expanded(
+                    SizedBox(width: 10),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -849,7 +849,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
           // Quick Tools Row (Shelf Price Tags, Inventory Audit & Invoices)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
                 Expanded(
@@ -857,13 +857,13 @@ class _ProductListPageState extends State<ProductListPage> {
                     onTap: () => context.push('/products/inventory-audit'),
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.teal.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.teal.withOpacity(0.4)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.inventory_rounded, size: 15, color: Colors.teal),
@@ -874,19 +874,19 @@ class _ProductListPageState extends State<ProductListPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Expanded(
                   child: InkWell(
                     onTap: () => context.push('/products/shelf-labels'),
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.amber.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.amber.withOpacity(0.4)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.label_important_outline, size: 15, color: Colors.amber),
@@ -897,19 +897,19 @@ class _ProductListPageState extends State<ProductListPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Expanded(
                   child: InkWell(
                     onTap: () => context.push('/products/supplier-invoices'),
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.blue.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.blue.withOpacity(0.3)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.receipt_long_outlined, size: 15, color: Colors.blue),
@@ -926,7 +926,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
           // Search Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: BlocBuilder<ProductBloc, ProductState>(
                 builder: (context, state) {
               return Column(
@@ -947,17 +947,17 @@ class _ProductListPageState extends State<ProductListPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10),
                       Container(
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.qr_code_scanner,
+                          icon: Icon(Icons.qr_code_scanner,
                               color: AppTheme.primaryColor),
                           onPressed: () => _scanQR(state.products),
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(12),
                         ),
                       ),
                     ],
@@ -972,13 +972,13 @@ class _ProductListPageState extends State<ProductListPage> {
             builder: (context, state) {
               return Container(
                 height: 42,
-                margin: const EdgeInsets.symmetric(vertical: 4),
+                margin: EdgeInsets.symmetric(vertical: 4),
                 child: ListView.separated(
-                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                  physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   itemCount: _categoryTabsDef.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (_, __) => SizedBox(width: 8),
                   itemBuilder: (ctx, idx) {
                     final catDef = _categoryTabsDef[idx];
                     final isSelected = _selectedCategoryIndex == idx;
@@ -1056,14 +1056,14 @@ class _ProductListPageState extends State<ProductListPage> {
               builder: (context, state) {
                 if (state.status == ProductStatus.loading &&
                     state.products.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(child: CircularProgressIndicator());
                 }
 
                 if (state.products.isEmpty) {
                   if (state.status == ProductStatus.error) {
                     return Center(child: Text('Error: ${state.message}'));
                   }
-                  return const Center(
+                  return Center(
                       child: Text('No products found. Add some!'));
                 }
 
@@ -1095,20 +1095,20 @@ class _ProductListPageState extends State<ProductListPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
-                        const SizedBox(height: 8),
-                        Text('لا توجد سلع في قسم "$_selectedCategoryFilter"', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                        Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
+                        SizedBox(height: 8),
+                        Text('لا توجد سلع في قسم "$_selectedCategoryFilter"', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                       ],
                     ),
                   );
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.only(
+                  padding: EdgeInsets.only(
                       left: 16, right: 16, top: 4, bottom: 100),
                   itemCount: filteredProducts.length,
                   separatorBuilder: (context, index) =>
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final product = filteredProducts[index];
                     final isWeighable = product.isWeighted || product.barcode.startsWith('SCALE_') || product.name.contains('ميزان') || product.name.contains('كغ');
@@ -1134,14 +1134,14 @@ class _ProductListPageState extends State<ProductListPage> {
                             color: isSelected ? AppTheme.primaryColor : borderColor,
                             width: isSelected ? 1.8 : 1.0,
                           ),
-                          boxShadow: const [
+                          boxShadow: [
                             BoxShadow(
                                 color: Colors.black12,
                                 blurRadius: 4,
                                 offset: Offset(0, 2))
                           ],
                         ),
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(12),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -1151,7 +1151,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                 activeColor: AppTheme.primaryColor,
                                 onChanged: (_) => _toggleProductSelection(product.id),
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                             ],
                             ProductImageDisplay(
                               imageUrl: product.imageUrl,
@@ -1159,7 +1159,7 @@ class _ProductListPageState extends State<ProductListPage> {
                               height: 48,
                               borderRadius: 8,
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1169,38 +1169,38 @@ class _ProductListPageState extends State<ProductListPage> {
                                       Expanded(
                                         child: Text(
                                           product.name,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 14.5),
                                         ),
                                       ),
                                       if (isWeighable) ...[
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
                                             color: Colors.teal.withOpacity(0.12),
                                             borderRadius: BorderRadius.circular(6),
                                             border: Border.all(color: Colors.teal.withOpacity(0.3)),
                                           ),
-                                          child: const Text('⚖️ ميزان', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.teal)),
+                                          child: Text('⚖️ ميزان', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.teal)),
                                         ),
-                                        const SizedBox(width: 4),
+                                        SizedBox(width: 4),
                                       ],
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: 4),
                                   Row(
                                     children: [
                                       Text(
                                         '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13.5,
                                             color: AppTheme.primaryColor),
                                       ),
-                                      const SizedBox(width: 8),
+                                      SizedBox(width: 8),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
                                           color: product.stock > 5
                                               ? Colors.green.withOpacity(0.1)
@@ -1225,14 +1225,14 @@ class _ProductListPageState extends State<ProductListPage> {
                                         ),
                                       ),
                                       if (product.category.isNotEmpty && product.category != 'عام') ...[
-                                        const SizedBox(width: 6),
+                                        SizedBox(width: 6),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
                                             color: Colors.grey[100],
                                             borderRadius: BorderRadius.circular(6),
                                           ),
-                                          child: Text(product.category, style: const TextStyle(fontSize: 9.5, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                          child: Text(product.category, style: TextStyle(fontSize: 9.5, color: Colors.grey, fontWeight: FontWeight.bold)),
                                         ),
                                       ],
                                     ],
@@ -1244,13 +1244,13 @@ class _ProductListPageState extends State<ProductListPage> {
                             PopupMenuButton<String>(
                               tooltip: 'خيارات وإدارة السلعة',
                               icon: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[100],
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: Colors.grey[300]!),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.more_horiz_rounded, size: 18, color: Color(0xFF1E293B)),
@@ -1284,9 +1284,9 @@ class _ProductListPageState extends State<ProductListPage> {
                                   value: 'restock',
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
-                                      const SizedBox(width: 10),
-                                      Text(context.tr('quick_restock_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
+                                      SizedBox(width: 10),
+                                      Text(context.tr('quick_restock_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
@@ -1295,8 +1295,8 @@ class _ProductListPageState extends State<ProductListPage> {
                                   child: Row(
                                     children: [
                                       Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
-                                      const SizedBox(width: 10),
-                                      Text(context.tr('edit_product_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      SizedBox(width: 10),
+                                      Text(context.tr('edit_product_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
@@ -1304,9 +1304,9 @@ class _ProductListPageState extends State<ProductListPage> {
                                   value: 'label',
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
-                                      const SizedBox(width: 10),
-                                      Text(context.tr('shelf_label_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
+                                      SizedBox(width: 10),
+                                      Text(context.tr('shelf_label_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
@@ -1314,20 +1314,20 @@ class _ProductListPageState extends State<ProductListPage> {
                                   value: 'pin',
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
-                                      const SizedBox(width: 10),
-                                      Text(context.tr('pin_to_quick_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
+                                      SizedBox(width: 10),
+                                      Text(context.tr('pin_to_quick_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],
                                   ),
                                 ),
-                                const PopupMenuDivider(),
+                                PopupMenuDivider(),
                                 PopupMenuItem(
                                   value: 'delete',
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                                      const SizedBox(width: 10),
-                                      Text(context.tr('delete_product_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
+                                      Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                      SizedBox(width: 10),
+                                      Text(context.tr('delete_product_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
                                     ],
                                   ),
                                 ),
@@ -1349,14 +1349,14 @@ class _ProductListPageState extends State<ProductListPage> {
               builder: (context, state) {
                 final selectedCount = _selectedProductIds.length;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.12),
                         blurRadius: 10,
-                        offset: const Offset(0, -4),
+                        offset: Offset(0, -4),
                       ),
                     ],
                   ),
@@ -1369,16 +1369,16 @@ class _ProductListPageState extends State<ProductListPage> {
                           children: [
                             Text(
                               '${context.tr('batch_actions_title')} ($selectedCount):',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                             ),
                             TextButton(
                               onPressed: _clearSelection,
                               style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                              child: Text(context.tr('clear_selection'), style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                              child: Text(context.tr('clear_selection'), style: TextStyle(fontSize: 11, color: Colors.grey)),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
@@ -1389,13 +1389,13 @@ class _ProductListPageState extends State<ProductListPage> {
                                   backgroundColor: Colors.green[700],
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
-                                icon: const Icon(Icons.add_shopping_cart, size: 16),
-                                label: Text(context.tr('receive_shipment'), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                icon: Icon(Icons.add_shopping_cart, size: 16),
+                                label: Text(context.tr('receive_shipment'), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () => _batchRestock(context, state.products),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
 
                               // Batch Move Category
                               ElevatedButton.icon(
@@ -1403,13 +1403,13 @@ class _ProductListPageState extends State<ProductListPage> {
                                   backgroundColor: AppTheme.primaryColor,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
-                                icon: const Icon(Icons.drive_file_move_outlined, size: 16),
-                                label: Text(context.tr('move_to_category'), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                icon: Icon(Icons.drive_file_move_outlined, size: 16),
+                                label: Text(context.tr('move_to_category'), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () => _batchMoveCategory(context, state.products),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
 
                               // Batch Shelf Labels
                               ElevatedButton.icon(
@@ -1417,13 +1417,13 @@ class _ProductListPageState extends State<ProductListPage> {
                                   backgroundColor: Colors.amber[800],
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
-                                icon: const Icon(Icons.label_outline, size: 16),
-                                label: Text(context.tr('print_labels'), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                icon: Icon(Icons.label_outline, size: 16),
+                                label: Text(context.tr('print_labels'), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () => context.push('/products/shelf-labels'),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
 
                               // Batch Delete
                               ElevatedButton.icon(
@@ -1431,10 +1431,10 @@ class _ProductListPageState extends State<ProductListPage> {
                                   backgroundColor: Colors.red[700],
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
-                                icon: const Icon(Icons.delete_forever, size: 16),
-                                label: Text('حذف ($selectedCount) 🗑️', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                icon: Icon(Icons.delete_forever, size: 16),
+                                label: Text('حذف ($selectedCount) 🗑️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () => _batchDelete(context),
                               ),
                             ],
@@ -1459,8 +1459,8 @@ class _ProductListPageState extends State<ProductListPage> {
         },
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, size: 32),
+        shape: CircleBorder(),
+        child: Icon(Icons.add, size: 32),
       ),
     );
   }
@@ -1488,7 +1488,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 context.read<ProductBloc>().add(DeleteProduct(product.id));
                 Navigator.pop(innerContext);
               },
-              child: Text(context.tr('delete'), style: const TextStyle(color: Colors.red)),
+              child: Text(context.tr('delete'), style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -1522,7 +1522,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            title: const Row(
+            title: Row(
               children: [
                 Icon(Icons.label_important_rounded, color: Colors.amber),
                 SizedBox(width: 8),
@@ -1536,7 +1536,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   // Live Tag Preview Card
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -1545,62 +1545,62 @@ class _ProductListPageState extends State<ProductListPage> {
                     ),
                     child: Column(
                       children: [
-                        Text('🏪 $shopName', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-                        const SizedBox(height: 2),
-                        Text(product.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                        const SizedBox(height: 4),
+                        Text('🏪 $shopName', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                        SizedBox(height: 2),
+                        Text(product.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                        SizedBox(height: 4),
                         Text(
                           '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
                         ),
                         if (product.barcode.isNotEmpty) ...[
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               'كود: ${product.barcode}',
-                              style: const TextStyle(fontSize: 10, fontFamily: 'monospace', fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 10, fontFamily: 'monospace', fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
 
                   // Template Selection
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(context.tr('template_label'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
                         ChoiceChip(
-                          label: Text(context.tr('shelf_tag'), style: const TextStyle(fontSize: 10.5)),
+                          label: Text(context.tr('shelf_tag'), style: TextStyle(fontSize: 10.5)),
                           selected: selectedTemplate == ShelfLabelTemplate.shelfTag,
                           onSelected: (v) {
                             if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.shelfTag);
                           },
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         ChoiceChip(
-                          label: Text(context.tr('barcode_sticker'), style: const TextStyle(fontSize: 10.5)),
+                          label: Text(context.tr('barcode_sticker'), style: TextStyle(fontSize: 10.5)),
                           selected: selectedTemplate == ShelfLabelTemplate.productSticker,
                           onSelected: (v) {
                             if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.productSticker);
                           },
                         ),
                         if (product.isWeighted || product.barcode.startsWith('SCALE_')) ...[
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           ChoiceChip(
-                            label: Text(context.tr('scale_sticker'), style: const TextStyle(fontSize: 10.5)),
+                            label: Text(context.tr('scale_sticker'), style: TextStyle(fontSize: 10.5)),
                             selected: selectedTemplate == ShelfLabelTemplate.scaleWeight,
                             onSelected: (v) {
                               if (v) setDialogState(() => selectedTemplate = ShelfLabelTemplate.scaleWeight);
@@ -1610,14 +1610,14 @@ class _ProductListPageState extends State<ProductListPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
 
                   // Size Selection
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(context.tr('size_label'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -1637,39 +1637,39 @@ class _ProductListPageState extends State<ProductListPage> {
                                       : sz == ShelfLabelSize.mini38x25
                                           ? '38×25 مم'
                                           : 'رول 80 مم',
-                              style: const TextStyle(fontSize: 10.5),
+                              style: TextStyle(fontSize: 10.5),
                             ),
                             selected: selectedSize == sz,
                             onSelected: (v) {
                               if (v) setDialogState(() => selectedSize = sz);
                             },
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                         ],
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
 
                   // Quantity Selector Row
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(context.tr('copies_count_label'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       for (final count in [1, 2, 3, 5, 10]) ...[
                         ChoiceChip(
-                          label: Text('$count', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                          label: Text('$count', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                           selected: copies == count,
                           selectedColor: AppTheme.primaryColor.withOpacity(0.2),
                           onSelected: (v) {
                             if (v) setDialogState(() => copies = count);
                           },
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                       ],
                     ],
                   ),
@@ -1681,10 +1681,10 @@ class _ProductListPageState extends State<ProductListPage> {
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 ),
-                icon: const Icon(Icons.bluetooth_connected, size: 16),
-                label: Text('بلوتوث ($copies)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                icon: Icon(Icons.bluetooth_connected, size: 16),
+                label: Text('بلوتوث ($copies)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                 onPressed: () async {
                   Navigator.pop(ctx);
                   bool isConnected = false;
@@ -1729,10 +1729,10 @@ class _ProductListPageState extends State<ProductListPage> {
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 ),
-                icon: const Icon(Icons.print_rounded, size: 16),
-                label: Text('ويندوز/PDF ($copies)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                icon: Icon(Icons.print_rounded, size: 16),
+                label: Text('ويندوز/PDF ($copies)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                 onPressed: () async {
                   Navigator.pop(ctx);
                   await Printing.layoutPdf(

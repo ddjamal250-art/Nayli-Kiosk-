@@ -13,7 +13,7 @@ import '../../../../core/utils/app_validators.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 class ShopDetailsPage extends StatefulWidget {
-  const ShopDetailsPage({super.key});
+  ShopDetailsPage({super.key});
 
   @override
   State<ShopDetailsPage> createState() => _ShopDetailsPageState();
@@ -69,31 +69,31 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               '???? ????? ?????? ??????',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.photo_library_outlined, color: Colors.blue),
+                child: Icon(Icons.photo_library_outlined, color: Colors.blue),
               ),
-              title: const Text('?????? ?? ?????? (Gallery)'),
+              title: Text('?????? ?? ?????? (Gallery)'),
               onTap: () async {
                 Navigator.pop(ctx);
                 final picker = ImagePicker();
@@ -107,7 +107,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   setState(() => _logoPath = picked.path);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('?? ?? ????? ???? ?????? ?????!'),
                         backgroundColor: Colors.green,
                       ),
@@ -118,14 +118,14 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
             ),
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.teal.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.camera_alt_outlined, color: Colors.teal),
+                child: Icon(Icons.camera_alt_outlined, color: Colors.teal),
               ),
-              title: const Text('?????? ???? ????????? (Camera)'),
+              title: Text('?????? ???? ????????? (Camera)'),
               onTap: () async {
                 Navigator.pop(ctx);
                 final picker = ImagePicker();
@@ -139,7 +139,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   setState(() => _logoPath = picked.path);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('?? ?? ?????? ???? ???? ??????!'),
                         backgroundColor: Colors.green,
                       ),
@@ -149,24 +149,24 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
               },
             ),
             if (_logoPath != null) ...[
-              const Divider(),
+              Divider(),
               ListTile(
                 leading: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.delete_outline, color: Colors.red),
+                  child: Icon(Icons.delete_outline, color: Colors.red),
                 ),
-                title: const Text('??? ?????? ??????', style: TextStyle(color: Colors.red)),
+                title: Text('??? ?????? ??????', style: TextStyle(color: Colors.red)),
                 onTap: () async {
                   Navigator.pop(ctx);
                   await HiveDatabase.settingsBox.delete('shop_logo_path');
                   setState(() => _logoPath = null);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('??? ?? ??? ???? ??????')),
+                      SnackBar(content: Text('??? ?? ??? ???? ??????')),
                     );
                   }
                 },
@@ -200,10 +200,10 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.tr('shop_details'),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, size: 28),
+          icon: Icon(Icons.chevron_left, size: 28),
           onPressed: () => context.pop(),
         ),
       ),
@@ -213,7 +213,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
             _updateControllers(state.shop);
           } else if (state is ShopOperationSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('? ?? ??? ??????? ?????? ?????!'), backgroundColor: Colors.green),
+              SnackBar(content: Text('? ?? ??? ??????? ?????? ?????!'), backgroundColor: Colors.green),
             );
             context.pop();
           } else if (state is ShopError) {
@@ -225,11 +225,11 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
         buildWhen: (previous, current) => current is ShopLoading || current is ShopLoaded,
         builder: (context, state) {
           if (state is ShopLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 120),
             child: Form(
               key: _formKey,
               child: Column(
@@ -257,7 +257,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.06),
                                       blurRadius: 10,
-                                      offset: const Offset(0, 4),
+                                      offset: Offset(0, 4),
                                     ),
                                   ],
                                 ),
@@ -269,7 +269,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                                           width: 96,
                                           height: 96,
                                         )
-                                      : const Icon(
+                                      : Icon(
                                           Icons.storefront_rounded,
                                           size: 48,
                                           color: AppTheme.primaryColor,
@@ -280,13 +280,13 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                                 bottom: 0,
                                 right: 0,
                                 child: Container(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: EdgeInsets.all(6),
                                   decoration: BoxDecoration(
                                     color: AppTheme.primaryColor,
                                     shape: BoxShape.circle,
                                     border: Border.all(color: Colors.white, width: 2),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.camera_alt,
                                     size: 14,
                                     color: Colors.white,
@@ -296,48 +296,48 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         TextButton.icon(
                           onPressed: _pickImage,
-                          icon: const Icon(Icons.add_photo_alternate_outlined, size: 16),
+                          icon: Icon(Icons.add_photo_alternate_outlined, size: 16),
                           label: Text(
                             hasValidLogo ? '????? ???? ??????' : '??? ???? ?????? (Logo)',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
-                  const InputLabel(text: '??? ????? / ?????? ???????'),
+                  InputLabel(text: '??? ????? / ?????? ???????'),
                   _buildTextField(
                     controller: _nameController,
                     hint: '????: ????????? ?????? / Superette El Baraka',
                     validator: AppValidators.required(context.tr('required')),
                   ),
-                  const SizedBox(height: 15),
-                  const InputLabel(text: '??????? - ????? 1'),
+                  SizedBox(height: 15),
+                  InputLabel(text: '??????? - ????? 1'),
                   _buildTextField(
                     controller: _address1Controller,
                     hint: '????: ?? 1000 ????? ??? ??????',
                     validator: AppValidators.required(context.tr('required')),
                   ),
-                  const SizedBox(height: 15),
-                  const InputLabel(text: '??????? / ???????'),
+                  SizedBox(height: 15),
+                  InputLabel(text: '??????? / ???????'),
                   _buildTextField(
                     controller: _address2Controller,
                     hint: '????: ??????? ??????? / ????? / ????',
                   ),
-                  const SizedBox(height: 15),
-                  const InputLabel(text: '??? ???? ??????'),
+                  SizedBox(height: 15),
+                  InputLabel(text: '??? ???? ??????'),
                   _buildTextField(
                     controller: _phoneController,
                     hint: '????: 0550 12 34 56',
                     keyboardType: TextInputType.phone,
                   ),
-                  const SizedBox(height: 15),
-                  const InputLabel(text: '????? ????? ????? (Footer)'),
+                  SizedBox(height: 15),
+                  InputLabel(text: '????? ????? ????? (Footer)'),
                   _buildTextField(
                     controller: _footerController,
                     hint: '????: ????? ???????? ?????? ??????? - Merci pour votre visite',
@@ -350,7 +350,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
         },
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: BlocBuilder<ShopBloc, ShopState>(
           builder: (context, state) {
             return PrimaryButton(
@@ -379,7 +379,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }

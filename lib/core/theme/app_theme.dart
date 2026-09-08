@@ -2,7 +2,7 @@
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static Color primaryColor = const Color(0xFF6C63FF);
+  static Color primaryColor = Color(0xFF6C63FF);
   static const Color secondaryColor = Color(0xFF03DAC6);
   static const Color backgroundColor = Color(0xFFF2F2F7);
   static const Color surfaceColor = Colors.white;
@@ -37,7 +37,7 @@ class AppTheme {
       brightness: Brightness.light,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: Colors.transparent,
       ),
       colorScheme: ColorScheme.fromSeed(
@@ -60,7 +60,7 @@ class AppTheme {
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: Colors.black),
       ),
       cardTheme: CardTheme(
         elevation: 3,
@@ -82,13 +82,13 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: errorColor, width: 2),
+          borderSide: BorderSide(color: errorColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -96,7 +96,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 4,
           shadowColor: primaryColor.withOpacity(0.4),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
@@ -111,10 +111,10 @@ class AppTheme {
       primaryColor: primaryColor,
       scaffoldBackgroundColor: amoledBlack,
       canvasColor: amoledBlack,
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: amoledSurface,
       ),
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: primaryColor,
         secondary: Color(0xFF38BDF8),
         surface: amoledSurface,
@@ -125,7 +125,7 @@ class AppTheme {
         onError: Colors.white,
       ),
       textTheme: darkTextTheme.apply(
-        bodyColor: const Color(0xFFF1F5F9),
+        bodyColor: Color(0xFFF1F5F9),
         displayColor: Colors.white,
       ),
       appBarTheme: AppBarTheme(
@@ -137,51 +137,51 @@ class AppTheme {
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       cardTheme: CardTheme(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: amoledBorder, width: 1),
+          side: BorderSide(color: amoledBorder, width: 1),
         ),
         color: amoledCard,
       ),
-      dialogTheme: const DialogTheme(
+      dialogTheme: DialogTheme(
         backgroundColor: amoledCard,
       ),
-      dividerTheme: const DividerThemeData(
+      dividerTheme: DividerThemeData(
         color: amoledBorder,
         thickness: 1,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: amoledInput,
-        hintStyle: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.normal, fontSize: 13),
+        hintStyle: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.normal, fontSize: 13),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: amoledBorder),
+          borderSide: BorderSide(color: amoledBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: amoledBorder),
+          borderSide: BorderSide(color: amoledBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2),
+          borderSide: BorderSide(color: Color(0xFF38BDF8), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFF43F5E), width: 2),
+          borderSide: BorderSide(color: Color(0xFFF43F5E), width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           elevation: 2,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: darkTextTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
         ),

@@ -195,12 +195,12 @@ class PrinterHelper {
                     ),
                   );
                 }),
-                if (coffeeTeaTotal > 0) ...[
+                if (coffeeAndTeaTotal > 0) ...[
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text('S/Total (Café/Thé):', style: const pw.TextStyle(fontSize: 8.5)),
-                      pw.Text('${coffeeTeaTotal.toStringAsFixed(2)} DA', style: const pw.TextStyle(fontSize: 8.5)),
+                      pw.Text('${coffeeAndTeaTotal.toStringAsFixed(2)} DA', style: const pw.TextStyle(fontSize: 8.5)),
                     ],
                   ),
                   pw.SizedBox(height: 2),

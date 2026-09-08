@@ -14,7 +14,7 @@ import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 
 class NewSupplierInvoicePage extends StatefulWidget {
-  const NewSupplierInvoicePage({super.key});
+  NewSupplierInvoicePage({super.key});
 
   @override
   State<NewSupplierInvoicePage> createState() => _NewSupplierInvoicePageState();
@@ -138,7 +138,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى كتابة اسم السلعة أو مسح الباركود'), backgroundColor: Colors.red),
+        SnackBar(content: Text('يرجى كتابة اسم السلعة أو مسح الباركود'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -181,7 +181,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       SnackBar(
         content: Text('✅ تمت إضافة "$name" للفاتورة ($totalUnits حبة)'),
         backgroundColor: Colors.green,
-        duration: const Duration(milliseconds: 1000),
+        duration: Duration(milliseconds: 1000),
       ),
     );
   }
@@ -197,7 +197,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
   Future<void> _submitInvoice() async {
     if (_invoiceItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الفاتورة فارغة! أضف سلعة واحدة على الأقل.'), backgroundColor: Colors.orange),
+        SnackBar(content: Text('الفاتورة فارغة! أضف سلعة واحدة على الأقل.'), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -259,7 +259,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
         CatalogCrowdsourceHelper.silentHarvest(p, category: p.category);
       } else {
         final p = Product(
-          id: const Uuid().v4(),
+          id: Uuid().v4(),
           name: name,
           barcode: barcode,
           category: category,
@@ -295,7 +295,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       SnackBar(
         content: Text('✅ تم حفظ فاتورة المورد وزيادة المخزون بنجاح ($_totalUnitsCount حبة)!'),
         backgroundColor: Colors.green,
-        duration: const Duration(milliseconds: 1500),
+        duration: Duration(milliseconds: 1500),
       ),
     );
 
@@ -308,7 +308,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('فاتورة شراء جديدة من مورد 🚚', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        title: Text('فاتورة شراء جديدة من مورد 🚚', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -318,13 +318,13 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Supplier Details Card
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(16),
@@ -333,21 +333,21 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.business_rounded, color: AppTheme.primaryColor, size: 20),
                       SizedBox(width: 8),
                       Text('بيانات المورد وشركة التوزيع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
                         flex: 3,
                         child: TextField(
                           controller: _supplierNameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'اسم المورد / الشركة',
                             hintText: 'مثال: سفيان للمشروبات',
                             border: OutlineInputBorder(),
@@ -355,12 +355,12 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         flex: 2,
                         child: TextField(
                           controller: _invoiceNumberController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'رقم الفاتورة',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -369,14 +369,14 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _supplierPhoneController,
                           keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'هاتف الموزع (اختياري)',
                             prefixIcon: Icon(Icons.phone, size: 16),
                             border: OutlineInputBorder(),
@@ -384,7 +384,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       InkWell(
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -396,7 +396,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           if (picked != null) setState(() => _invoiceDate = picked);
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
@@ -405,8 +405,8 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           child: Row(
                             children: [
                               Icon(Icons.calendar_today, size: 16, color: AppTheme.primaryColor),
-                              const SizedBox(width: 6),
-                              Text(dateFormat.format(_invoiceDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              SizedBox(width: 6),
+                              Text(dateFormat.format(_invoiceDate), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                             ],
                           ),
                         ),
@@ -416,11 +416,11 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Add Product to Invoice Section
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.blue.withOpacity(0.04),
                 borderRadius: BorderRadius.circular(16),
@@ -451,7 +451,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         flex: 2,
                         child: TextField(
                           controller: _barcodeController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'الباركود (مسح أو كتابة)',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -459,12 +459,12 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           onSubmitted: _onBarcodeScanned,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         flex: 3,
                         child: TextField(
                           controller: _nameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'اسم السلعة',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -473,13 +473,13 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
 
                   // Category Badge & Selector
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
@@ -490,15 +490,15 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           children: [
                             Text(
                               CategoryTaxonomy.resolveDomain(_activeCategory).icon,
-                              style: const TextStyle(fontSize: 14),
+                              style: TextStyle(fontSize: 14),
                             ),
-                            const SizedBox(width: 6),
+                            SizedBox(width: 6),
                             Text(
                               _activeCategory,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                             if (!_isCategoryUserSelected) ...[
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text('(ذكي)', style: TextStyle(fontSize: 9, color: Colors.blue.shade700)),
                             ],
                           ],
@@ -519,33 +519,33 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           child: Row(
                             children: [
                               Text(d.icon),
-                              const SizedBox(width: 8),
-                              Text(d.titleAr, style: const TextStyle(fontSize: 12)),
+                              SizedBox(width: 8),
+                              Text(d.titleAr, style: TextStyle(fontSize: 12)),
                             ],
                           ),
                         )).toList(),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
 
                   // Mode Selector
                   Row(
                     children: [
                       ChoiceChip(
-                        label: const Text('📦 بالكرتونة', style: TextStyle(fontSize: 12)),
+                        label: Text('📦 بالكرتونة', style: TextStyle(fontSize: 12)),
                         selected: _isCartonMode,
                         onSelected: (v) => setState(() => _isCartonMode = true),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('🏷️ بالحبة', style: TextStyle(fontSize: 12)),
+                        label: Text('🏷️ بالحبة', style: TextStyle(fontSize: 12)),
                         selected: !_isCartonMode,
                         onSelected: (v) => setState(() => _isCartonMode = false),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
 
                   if (_isCartonMode) ...[
                     Row(
@@ -554,7 +554,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           child: TextField(
                             controller: _cartonCountController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'عدد الكراتين',
                               suffixText: 'كرتونة',
                               border: OutlineInputBorder(),
@@ -562,12 +562,12 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Expanded(
                           child: TextField(
                             controller: _unitsPerCartonController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'سعة الكرتونة',
                               suffixText: 'حبة',
                               border: OutlineInputBorder(),
@@ -575,12 +575,12 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Expanded(
                           child: TextField(
                             controller: _cartonCostController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
+                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
                               labelText: 'سعر الكرتونة',
                               suffixText: 'دج',
                               border: OutlineInputBorder(),
@@ -597,7 +597,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           child: TextField(
                             controller: _unitQtyController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'الكمية المستلمة',
                               suffixText: 'حبة',
                               border: OutlineInputBorder(),
@@ -605,12 +605,12 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Expanded(
                           child: TextField(
                             controller: _unitCostController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
+                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
                               labelText: 'سعر الشراء (التكلفة)',
                               suffixText: 'دج',
                               border: OutlineInputBorder(),
@@ -621,15 +621,15 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                       ],
                     ),
                   ],
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
 
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _sellPriceController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(
+                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(
                             labelText: 'سعر البيع للزبون (دج)',
                             suffixText: 'دج',
                             border: OutlineInputBorder(),
@@ -637,11 +637,11 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
-                        icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                        label: const Text('إدراج بالفاتورة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        icon: Icon(Icons.add, color: Colors.white, size: 18),
+                        label: Text('إدراج بالفاتورة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         onPressed: _addItemToInvoice,
                       ),
                     ],
@@ -649,34 +649,34 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Invoice Items Table
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('قائمة سلع الفاتورة (${_invoiceItems.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text('المجموع: ${_totalInvoiceCost.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue)),
+                Text('قائمة سلع الفاتورة (${_invoiceItems.length})', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text('المجموع: ${_totalInvoiceCost.toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue)),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
 
             if (_invoiceItems.isEmpty)
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text('لم تتم إضافة أي سلعة للفاتورة بعد.\nامسح الباركود أو اكتب اسم السلعة أعلاه.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                child: Text('لم تتم إضافة أي سلعة للفاتورة بعد.\nامسح الباركود أو اكتب اسم السلعة أعلاه.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
               )
             else
               ListView.separated(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+                physics: NeverScrollableScrollPhysics(),
                 itemCount: _invoiceItems.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 6),
+                separatorBuilder: (_, __) => SizedBox(height: 6),
                 itemBuilder: (ctx, i) {
                   final item = _invoiceItems[i];
                   return Card(
@@ -688,19 +688,19 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                         child: Text('${i + 1}', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                       ),
-                      title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(item['name'], style: TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(
                         item['isCarton']
                             ? '${item['cartons']} كرتونة × ${item['perCarton']} = ${item['totalUnits']} حبة (تكلفة: ${item['unitCost']} دج | بيع: ${item['sellPrice']} دج)'
                             : '${item['totalUnits']} حبة (تكلفة: ${item['unitCost']} دج | بيع: ${item['sellPrice']} دج)',
-                        style: const TextStyle(fontSize: 11),
+                        style: TextStyle(fontSize: 11),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('${(item['totalCost'] as double).toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                          Text('${(item['totalCost'] as double).toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                            icon: Icon(Icons.delete_outline, color: Colors.red, size: 20),
                             onPressed: () => setState(() => _invoiceItems.removeAt(i)),
                           ),
                         ],
@@ -709,11 +709,11 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                   );
                 },
               ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Payment Mode Section
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(16),
@@ -722,31 +722,31 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('طريقة دفع الفاتورة للمورد:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
+                  Text('طريقة دفع الفاتورة للمورد:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: ChoiceChip(
-                          label: const Text('💵 كاش كامل', style: TextStyle(fontSize: 11)),
+                          label: Text('💵 كاش كامل', style: TextStyle(fontSize: 11)),
                           selected: _paymentMode == 0,
                           selectedColor: Colors.green.withOpacity(0.2),
                           onSelected: (v) => setState(() => _paymentMode = 0),
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Expanded(
                         child: ChoiceChip(
-                          label: const Text('📜 كريدي كامل', style: TextStyle(fontSize: 11)),
+                          label: Text('📜 كريدي كامل', style: TextStyle(fontSize: 11)),
                           selected: _paymentMode == 1,
                           selectedColor: Colors.red.withOpacity(0.2),
                           onSelected: (v) => setState(() => _paymentMode = 1),
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Expanded(
                         child: ChoiceChip(
-                          label: const Text('⚖️ تسبيق + دين', style: TextStyle(fontSize: 11)),
+                          label: Text('⚖️ تسبيق + دين', style: TextStyle(fontSize: 11)),
                           selected: _paymentMode == 2,
                           selectedColor: Colors.orange.withOpacity(0.2),
                           onSelected: (v) => setState(() => _paymentMode = 2),
@@ -755,11 +755,11 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                     ],
                   ),
                   if (_paymentMode == 2) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     TextField(
                       controller: _acompteController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
                         labelText: 'المبلغ المدفوع كاش للمورد (دج)',
                         suffixText: 'دج',
                         border: OutlineInputBorder(),
@@ -769,19 +769,19 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Final Submit Button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: _submitInvoice,
               child: Text(
                 'تأكيد وحفظ الفاتورة وإضافة المخزون (${_totalUnitsCount} حبة) 📦',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ],

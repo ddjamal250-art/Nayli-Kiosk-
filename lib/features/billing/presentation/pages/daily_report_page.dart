@@ -13,7 +13,7 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 class DailyReportPage extends StatefulWidget {
-  const DailyReportPage({super.key});
+  DailyReportPage({super.key});
 
   @override
   State<DailyReportPage> createState() => _DailyReportPageState();
@@ -45,7 +45,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
   }
 
   void _startLiveRefreshTimer() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _refreshTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
           if (_secondsRemaining <= 1) {
@@ -289,7 +289,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.point_of_sale, color: AppTheme.primaryColor),
             SizedBox(width: 8),
@@ -309,7 +309,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 TextField(
                   controller: floatController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'الخردة الافتتاحية (الصرف)',
                     hintText: 'كم كان في الصندوق صباحاً؟',
                     prefixText: 'دج ',
@@ -321,24 +321,24 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     setModalState(() {});
                   },
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('المال المفترض:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      Text('${expectedCash.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue)),
+                      Text('المال المفترض:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('${expectedCash.toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue)),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 TextField(
                   controller: actualController,
                   keyboardType: TextInputType.number,
                   autofocus: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'المال الحقيقي في الصندوق',
                     hintText: 'احسب النقود وأدخل المبلغ',
                     prefixText: 'دج ',
@@ -346,9 +346,9 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   onChanged: (v) => setModalState(() {}),
                 ),
                 if (actualController.text.isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: hasShortage ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -360,7 +360,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           hasShortage ? '⚠️ يوجد عجز في الصندوق!' : '✅ يوجد زيادة/تطابق في الصندوق',
                           style: TextStyle(fontWeight: FontWeight.bold, color: hasShortage ? Colors.red : Colors.green),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           'الفارق: ${diff.abs().toStringAsFixed(0)} دج',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: hasShortage ? Colors.red : Colors.green),
@@ -374,7 +374,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
           },
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إغلاق')),
         ],
       ),
     );
@@ -448,18 +448,18 @@ class _DailyReportPageState extends State<DailyReportPage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCashReconciliationDialog(_cashFloat + netCashFlow),
-        icon: const Icon(Icons.calculate, color: Colors.white),
-        label: const Text('تقفيل لاكيس', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: Icon(Icons.calculate, color: Colors.white),
+        label: Text('تقفيل لاكيس', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.primaryColor,
       ),
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('الداشبورد المالي 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(width: 8),
+            Text('الداشبورد المالي 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: Colors.green.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
@@ -468,9 +468,9 @@ class _DailyReportPageState extends State<DailyReportPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
-                  const SizedBox(width: 4),
-                  Text('${_secondsRemaining}ث', style: const TextStyle(color: Colors.green, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                  Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                  SizedBox(width: 4),
+                  Text('${_secondsRemaining}ث', style: TextStyle(color: Colors.green, fontSize: 10.5, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -495,7 +495,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.table_chart_outlined, color: Colors.green),
+            icon: Icon(Icons.table_chart_outlined, color: Colors.green),
             tooltip: 'تصدير جدول المبيعات كـ Excel',
             onPressed: () {
               final csvData = ExcelExportHelper.exportSalesLogToCsv(invoices);
@@ -515,19 +515,19 @@ class _DailyReportPageState extends State<DailyReportPage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Cross-Department Financial Health Overview Grid
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey[200]!),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -536,7 +536,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
+                      Row(
                         children: [
                           Icon(Icons.hub_outlined, size: 16, color: AppTheme.primaryColor),
                           SizedBox(width: 6),
@@ -552,15 +552,15 @@ class _DailyReportPageState extends State<DailyReportPage> {
                         },
                         child: Row(
                           children: [
-                            const Icon(Icons.sync, size: 13, color: Colors.grey),
-                            const SizedBox(width: 2),
-                            Text('تحديث ($_secondsRemaining ث)', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            Icon(Icons.sync, size: 13, color: Colors.grey),
+                            SizedBox(width: 2),
+                            Text('تحديث ($_secondsRemaining ث)', style: TextStyle(fontSize: 10, color: Colors.grey)),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
@@ -572,7 +572,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           onTap: () => context.push('/customers'),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         child: _buildMiniStatTile(
                           icon: Icons.local_shipping_outlined,
@@ -584,7 +584,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
@@ -596,7 +596,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           onTap: () => context.push('/products/inventory-audit'),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         child: _buildMiniStatTile(
                           icon: Icons.remove_shopping_cart_rounded,
@@ -611,7 +611,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
 
             // Period Filter Chips
             SizedBox(
@@ -620,35 +620,35 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 scrollDirection: Axis.horizontal,
                 children: [
                   ChoiceChip(
-                    label: const Text('اليوم', style: TextStyle(fontSize: 12)),
+                    label: Text('اليوم', style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 0,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 0),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   ChoiceChip(
-                    label: const Text('7 أيام', style: TextStyle(fontSize: 12)),
+                    label: Text('7 أيام', style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 1,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 1),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   ChoiceChip(
-                    label: const Text('30 يوم', style: TextStyle(fontSize: 12)),
+                    label: Text('30 يوم', style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 2,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 2),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   ChoiceChip(
-                    label: const Text('هذا الشهر', style: TextStyle(fontSize: 12)),
+                    label: Text('هذا الشهر', style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 3,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 3),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   ChoiceChip(
-                    label: const Text('الكل', style: TextStyle(fontSize: 12)),
+                    label: Text('الكل', style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 4,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 4),
@@ -656,7 +656,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
 
             // Date Picker Banner if Today mode
             if (_selectedPeriod == 0) ...[
@@ -672,7 +672,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.blue.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(12),
@@ -684,8 +684,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       Row(
                         children: [
                           Icon(Icons.calendar_month, color: AppTheme.primaryColor, size: 20),
-                          const SizedBox(width: 8),
-                          Text('تاريخ التقرير: ${DateFormat('yyyy/MM/dd').format(_customDate)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          SizedBox(width: 8),
+                          Text('تاريخ التقرير: ${DateFormat('yyyy/MM/dd').format(_customDate)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         ],
                       ),
                       Text('تغيير التاريخ ✏️', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
@@ -693,13 +693,13 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
             ],
 
             // Department Filter Tabs (الإجمالي الشامل vs قسم التبغ والسجائر vs المواد العامة)
             Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              padding: const EdgeInsets.all(4),
+              margin: EdgeInsets.only(bottom: 14),
+              padding: EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(14),
@@ -741,11 +741,11 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   _reportCategoryTab == 1
                       ? 'أرباح ومبيعات قسم التبغ والسجائر 🚬'
                       : (_reportCategoryTab == 2 ? 'أرباح ومبيعات المواد الغذائية والعامة 🛒' : 'الإيرادات والأرباح الإجمالية 📈'),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 if (_reportCategoryTab != 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: _reportCategoryTab == 1 ? Colors.amber.shade100 : Colors.blue.shade100,
                       borderRadius: BorderRadius.circular(8),
@@ -763,7 +763,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -774,7 +774,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     color: _reportCategoryTab == 1 ? Colors.amber.shade800 : Colors.blue,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: _buildMetricCard(
                     title: _reportCategoryTab == 1 ? 'تكلفة شراء التبغ' : (_reportCategoryTab == 2 ? 'تكلفة العامة' : 'تكلفة المبيعات'),
@@ -785,7 +785,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -796,7 +796,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     color: Colors.teal,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: _buildMetricCard(
                     title: _reportCategoryTab == 1 ? 'قطع التبغ المباعة' : (_reportCategoryTab == 2 ? 'سلع عامة مباعة' : 'متوسط السلة (Panier)'),
@@ -809,22 +809,22 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
 
             // Net Profit Banner (Final Profit = Gross Profit - Expenses)
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: _reportCategoryTab == 1
-                      ? [const Color(0xFFD97706), const Color(0xFFB45309)]
+                      ? [Color(0xFFD97706), Color(0xFFB45309)]
                       : (_reportCategoryTab == 2
-                          ? [const Color(0xFF2563EB), const Color(0xFF1D4ED8)]
+                          ? [Color(0xFF2563EB), Color(0xFF1D4ED8)]
                           : [Colors.green[700]!, Colors.teal[600]!]),
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 4)),
+                  BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8, offset: Offset(0, 4)),
                 ],
               ),
               child: Row(
@@ -837,17 +837,17 @@ class _DailyReportPageState extends State<DailyReportPage> {
                         _reportCategoryTab == 1
                             ? 'صافي أرباح قسم التبغ والسجائر 🚬'
                             : (_reportCategoryTab == 2 ? 'صافي أرباح المواد الغذائية والعامة 🛒' : 'صافي الربح النهائي الشامل (Net)'),
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         '${(_reportCategoryTab == 1 ? tobaccoProfit : (_reportCategoryTab == 2 ? generalProfit : netProfit)).toStringAsFixed(0)} دج',
-                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(10),
@@ -858,7 +858,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           : (_reportCategoryTab == 1
                               ? 'هامش التبغ: ${(tobaccoRevenue > 0 ? (tobaccoProfit / tobaccoRevenue * 100) : 0).toStringAsFixed(1)}%'
                               : 'هامش العامة: ${(generalRevenue > 0 ? (generalProfit / generalRevenue * 100) : 0).toStringAsFixed(1)}%'),
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -867,9 +867,9 @@ class _DailyReportPageState extends State<DailyReportPage> {
 
             // If Total View, show the side-by-side Tobacco vs General breakdown card
             if (_reportCategoryTab == 0) ...[
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
@@ -878,7 +878,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
                         Icon(Icons.pie_chart_outline_rounded, size: 16, color: Colors.indigo),
                         SizedBox(width: 6),
@@ -888,7 +888,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
@@ -896,7 +896,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                             onTap: () => setState(() => _reportCategoryTab = 1),
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 color: Colors.amber.shade50,
                                 borderRadius: BorderRadius.circular(10),
@@ -908,26 +908,26 @@ class _DailyReportPageState extends State<DailyReportPage> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text('🚬 التبغ والسجائر', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                      Text('🚬 التبغ والسجائر', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                                       Text('${(grossProfit > 0 ? (tobaccoProfit / grossProfit * 100) : 0).toStringAsFixed(0)}%',
                                           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber.shade900, fontSize: 11)),
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text('مبيعات: ${tobaccoRevenue.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 10, color: Colors.black87)),
+                                  SizedBox(height: 4),
+                                  Text('مبيعات: ${tobaccoRevenue.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 10, color: Colors.black87)),
                                   Text('ربح: +${tobaccoProfit.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
                                 ],
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
                           child: InkWell(
                             onTap: () => setState(() => _reportCategoryTab = 2),
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 color: Colors.blue.shade50,
                                 borderRadius: BorderRadius.circular(10),
@@ -939,13 +939,13 @@ class _DailyReportPageState extends State<DailyReportPage> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text('🛒 السلع العامة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                      Text('🛒 السلع العامة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                                       Text('${(grossProfit > 0 ? (generalProfit / grossProfit * 100) : 0).toStringAsFixed(0)}%',
                                           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade900, fontSize: 11)),
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text('مبيعات: ${generalRevenue.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 10, color: Colors.black87)),
+                                  SizedBox(height: 4),
+                                  Text('مبيعات: ${generalRevenue.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 10, color: Colors.black87)),
                                   Text('ربح: +${generalProfit.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
                                 ],
                               ),
@@ -958,13 +958,13 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 ),
               ),
             ],
-            const SizedBox(height: 18),
+            SizedBox(height: 18),
 
             // Section 2: Cash Flow (التدفق النقدي للكاسة)
-            const Text('حركة الكاش والصندوق (Cash Flow) 💵', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const SizedBox(height: 8),
+            Text('حركة الكاش والصندوق (Cash Flow) 💵', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(16),
@@ -977,33 +977,33 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.arrow_downward, color: Colors.green, size: 18),
-                          const SizedBox(width: 6),
-                          const Text('CASH IN (محصل كاش):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          Icon(Icons.arrow_downward, color: Colors.green, size: 18),
+                          SizedBox(width: 6),
+                          Text('CASH IN (محصل كاش):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                         ],
                       ),
-                      Text('+${cashIn.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 14)),
+                      Text('+${cashIn.toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 14)),
                     ],
                   ),
-                  const Divider(height: 14),
+                  Divider(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.arrow_upward, color: Colors.red, size: 18),
-                          const SizedBox(width: 6),
-                          const Text('CASH OUT (مصاريف + موردين):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          Icon(Icons.arrow_upward, color: Colors.red, size: 18),
+                          SizedBox(width: 6),
+                          Text('CASH OUT (مصاريف + موردين):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                         ],
                       ),
-                      Text('-${cashOut.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 14)),
+                      Text('-${cashOut.toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 14)),
                     ],
                   ),
-                  const Divider(height: 14),
+                  Divider(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('صافي حركة الدرج (Net Cash):', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      Text('صافي حركة الدرج (Net Cash):', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                       Text(
                         '${netCashFlow >= 0 ? '+' : ''}${netCashFlow.toStringAsFixed(0)} دج',
                         style: TextStyle(
@@ -1017,11 +1017,11 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: 18),
 
             // Section 3: Shop Capital Valuation
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.indigo.withOpacity(0.06),
                 borderRadius: BorderRadius.circular(14),
@@ -1030,53 +1030,53 @@ class _DailyReportPageState extends State<DailyReportPage> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: Colors.indigo.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.account_balance, color: Colors.indigo, size: 24),
+                    child: Icon(Icons.account_balance, color: Colors.indigo, size: 24),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('رأس المال المستثمر في السلع والرفوف', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                      const SizedBox(height: 2),
-                      Text('${stockCapital.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                      Text('رأس المال المستثمر في السلع والرفوف', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      SizedBox(height: 2),
+                      Text('${stockCapital.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.indigo)),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Sales Transactions Breakdown
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('سجل المبيعات (${invoices.length} عملية)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text('إجمالي القطع: $totalItemsCount', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('سجل المبيعات (${invoices.length} عملية)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text('إجمالي القطع: $totalItemsCount', style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
 
             if (invoices.isEmpty)
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text('لا توجد مبيعات مسجلة في هذه الفترة', style: TextStyle(color: Colors.grey)),
+                child: Text('لا توجد مبيعات مسجلة في هذه الفترة', style: TextStyle(color: Colors.grey)),
               )
             else
               ListView.separated(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+                physics: NeverScrollableScrollPhysics(),
                 itemCount: invoices.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, __) => SizedBox(height: 8),
                 itemBuilder: (ctx, i) {
                   final inv = invoices[i];
                   final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
@@ -1094,11 +1094,11 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       ),
                       title: Text(
                         'فاتورة #${inv['id'] ?? (i + 1)} ${isCredit ? '(كريدي)' : '(كاش)'}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       subtitle: Text(
                         'الوقت: $timeStr • ${inv['itemCount'] ?? 1} سلع • فائدة: +${profit.toStringAsFixed(0)} دج',
-                        style: const TextStyle(fontSize: 11),
+                        style: TextStyle(fontSize: 11),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -1107,8 +1107,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
                             '${total.toStringAsFixed(0)} دج',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                          SizedBox(width: 4),
+                          Icon(Icons.chevron_right, size: 18, color: Colors.grey),
                         ],
                       ),
                     ),
@@ -1138,8 +1138,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -1153,16 +1153,16 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 Row(
                   children: [
                     Icon(isCredit ? Icons.credit_card : Icons.receipt_long, color: AppTheme.primaryColor),
-                    const SizedBox(width: 8),
-                    Text('تفاصيل الفاتورة #$invoiceId', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    SizedBox(width: 8),
+                    Text('تفاصيل الفاتورة #$invoiceId', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(12),
@@ -1171,25 +1171,25 @@ class _DailyReportPageState extends State<DailyReportPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('📅 التاريخ: $dateFormatted', style: const TextStyle(fontSize: 12)),
-                  const SizedBox(height: 4),
-                  Text('💳 طريقة الدفع: ${isCredit ? 'كريدي (دين)' : 'كاش (نقداً)'}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('📅 التاريخ: $dateFormatted', style: TextStyle(fontSize: 12)),
+                  SizedBox(height: 4),
+                  Text('💳 طريقة الدفع: ${isCredit ? 'كريدي (دين)' : 'كاش (نقداً)'}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   if (customerName.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text('👤 الزبون: $customerName', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                    SizedBox(height: 4),
+                    Text('👤 الزبون: $customerName', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
                   ],
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            const Text('🛍️ السلع المشتراة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(height: 6),
+            SizedBox(height: 12),
+            Text('🛍️ السلع المشتراة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            SizedBox(height: 6),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 200),
+              constraints: BoxConstraints(maxHeight: 200),
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: rawItems.length,
-                separatorBuilder: (_, __) => const Divider(height: 8),
+                separatorBuilder: (_, __) => Divider(height: 8),
                 itemBuilder: (_, idx) {
                   final it = rawItems[idx] as Map;
                   final name = it['name']?.toString() ?? 'سلعة';
@@ -1199,33 +1199,33 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text('$name × $qty', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        child: Text('$name × $qty', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
-                      Text('${(price * qty).toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('${(price * qty).toStringAsFixed(0)} دج', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   );
                 },
               ),
             ),
-            const Divider(height: 16),
+            Divider(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('المجموع الإجمالي:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text('المجموع الإجمالي:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 Text('${total.toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primaryColor)),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    icon: const Icon(Icons.share, size: 18, color: Colors.green),
-                    label: const Text('مشاركة واتساب', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
+                    icon: Icon(Icons.share, size: 18, color: Colors.green),
+                    label: Text('مشاركة واتساب', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
                     onPressed: () {
                       final buffer = StringBuffer();
                       buffer.writeln('🧾 *فاتورة مشتريات #$invoiceId*');
@@ -1248,17 +1248,17 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    icon: const Icon(Icons.print, size: 18),
-                    label: const Text('إعادة طباعة الوصل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    icon: Icon(Icons.print, size: 18),
+                    label: Text('إعادة طباعة الوصل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       final printer = PrinterHelper();
@@ -1306,12 +1306,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
       },
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
+        padding: EdgeInsets.symmetric(vertical: 7, horizontal: 4),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: Offset(0, 2))]
               : null,
         ),
         child: Column(
@@ -1324,7 +1324,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 color: isSelected ? Colors.black87 : Colors.grey.shade700,
               ),
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
               badge,
               style: TextStyle(
@@ -1341,7 +1341,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
 
   Widget _buildMetricCard({required String title, required String value, required IconData icon, required Color color}) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.06),
         borderRadius: BorderRadius.circular(14),
@@ -1353,11 +1353,11 @@ class _DailyReportPageState extends State<DailyReportPage> {
           Row(
             children: [
               Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Expanded(child: Text(title, style: TextStyle(fontSize: 11, color: Colors.grey[700]), overflow: TextOverflow.ellipsis)),
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
         ],
       ),
@@ -1369,7 +1369,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: color.withOpacity(0.07),
           borderRadius: BorderRadius.circular(12),
@@ -1378,17 +1378,17 @@ class _DailyReportPageState extends State<DailyReportPage> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: EdgeInsets.all(6),
               decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
               child: Icon(icon, size: 16, color: color),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: TextStyle(fontSize: 10, color: Colors.grey[700], fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(value, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),

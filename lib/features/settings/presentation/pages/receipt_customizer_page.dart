@@ -11,7 +11,7 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../billing/presentation/widgets/printer_selection_dialog.dart';
 
 class ReceiptCustomizerPage extends StatefulWidget {
-  const ReceiptCustomizerPage({super.key});
+  ReceiptCustomizerPage({super.key});
 
   @override
   State<ReceiptCustomizerPage> createState() => _ReceiptCustomizerPageState();
@@ -181,16 +181,16 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('➕ إضافة سطر مخصص للوصل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text('➕ إضافة سطر مخصص للوصل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'النص المخصص (مثال: توصيل مجاني للطلبات فوق 3000 دج)',
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
             onPressed: () {
@@ -200,7 +200,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('إضافة', style: TextStyle(color: Colors.white)),
+            child: Text('إضافة', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -286,7 +286,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       appBar: AppBar(
         title: Text(
           isDesktop ? 'تخصيص وتصميم الوصل الحراري 🧾' : 'تخصيص الوصل 🧾',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         centerTitle: !isDesktop,
         backgroundColor: Theme.of(context).cardColor,
@@ -305,7 +305,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                       color: PrinterHelper.defaultThermalPrinter.isNotEmpty ? Colors.teal.shade400 : Colors.deepOrange,
                       width: 1.2,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   icon: Icon(
@@ -317,7 +317,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                     PrinterHelper.defaultThermalPrinter.isNotEmpty
                         ? 'طابعة الوصل: ${PrinterHelper.defaultThermalPrinter}'
                         : '⚠️ اختر طابعة الإيصالات',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                   onPressed: () async {
                     final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
@@ -326,36 +326,36 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                     }
                   },
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal.shade700,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  icon: const Icon(Icons.print_outlined, size: 18),
-                  label: const Text('طباعة تجريبية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  icon: Icon(Icons.print_outlined, size: 18),
+                  label: Text('طباعة تجريبية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   onPressed: _printTestReceipt,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
+                    backgroundColor: Color(0xFF4F46E5),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  icon: const Icon(Icons.save_rounded, size: 18),
-                  label: const Text('حفظ التصميم', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  icon: Icon(Icons.save_rounded, size: 18),
+                  label: Text('حفظ التصميم', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   onPressed: _saveTemplate,
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: 14),
               ]
             : [
                 IconButton(
                   tooltip: 'اختيار الطابعة',
-                  icon: const Icon(Icons.tune_rounded, color: Colors.teal),
+                  icon: Icon(Icons.tune_rounded, color: Colors.teal),
                   onPressed: () async {
                     final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
                     if (chosen != null && mounted) setState(() {});
@@ -363,15 +363,15 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                 ),
                 IconButton(
                   tooltip: 'طباعة تجريبية',
-                  icon: const Icon(Icons.print_outlined, color: Colors.teal),
+                  icon: Icon(Icons.print_outlined, color: Colors.teal),
                   onPressed: _printTestReceipt,
                 ),
                 IconButton(
                   tooltip: 'حفظ التصميم',
-                  icon: const Icon(Icons.save_rounded, color: Color(0xFF4F46E5)),
+                  icon: Icon(Icons.save_rounded, color: Color(0xFF4F46E5)),
                   onPressed: _saveTemplate,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
               ],
       ),
       body: isDesktop
@@ -382,28 +382,28 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                 Expanded(
                   flex: 6,
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24),
                     child: _buildEditorControls(),
                   ),
                 ),
-                const VerticalDivider(width: 1, color: Color(0xFFE2E8F0)),
+                VerticalDivider(width: 1, color: Color(0xFFE2E8F0)),
 
                 // Left Pane (Sticky Ticket Preview, 40% Width)
                 Container(
                   width: 420,
-                  color: const Color(0xFFF1F5F9),
+                  color: Color(0xFFF1F5F9),
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24),
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.receipt_long_rounded, color: Colors.indigo, size: 18),
@@ -415,9 +415,9 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         _buildReceiptPreview(separator),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         Text(
                           'تتحدث المعاينة مباشرة مع كل حرف تدخله في لوحة التخصيص',
                           style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
@@ -434,7 +434,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                 children: [
                   Container(
                     color: Colors.white,
-                    child: const TabBar(
+                    child: TabBar(
                       indicatorColor: AppTheme.primaryColor,
                       labelColor: AppTheme.primaryColor,
                       unselectedLabelColor: Colors.grey,
@@ -449,11 +449,11 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                     child: TabBarView(
                       children: [
                         SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(16),
                           child: _buildEditorControls(),
                         ),
                         SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(16),
                           child: Center(
                             child: _buildReceiptPreview(separator),
                           ),
@@ -471,7 +471,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
   Widget _buildReceiptPreview(String separator) {
     return Container(
       width: 360,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -480,7 +480,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
           BoxShadow(
             color: Colors.black.withOpacity(0.09),
             blurRadius: 18,
-            offset: const Offset(0, 8),
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -493,97 +493,97 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
           Text(
             _shopNameCtrl.text.isEmpty ? 'اسم المحل' : _shopNameCtrl.text,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'monospace'),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'monospace'),
           ),
 
           // Optional Slogan
           if (_showSlogan && _sloganCtrl.text.isNotEmpty) ...[
-            const SizedBox(height: 3),
+            SizedBox(height: 3),
             Text(
               _sloganCtrl.text,
-              style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, fontFamily: 'monospace', color: Colors.black87),
+              style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, fontFamily: 'monospace', color: Colors.black87),
               textAlign: TextAlign.center,
             ),
           ],
 
           // Optional Address & Phone
           if (_showAddress && _addressCtrl.text.isNotEmpty) ...[
-            const SizedBox(height: 3),
-            Text('📍 ${_addressCtrl.text}', style: const TextStyle(fontSize: 11, fontFamily: 'monospace'), textAlign: TextAlign.center),
+            SizedBox(height: 3),
+            Text('📍 ${_addressCtrl.text}', style: TextStyle(fontSize: 11, fontFamily: 'monospace'), textAlign: TextAlign.center),
           ],
           if (_showPhone && _phoneCtrl.text.isNotEmpty) ...[
-            const SizedBox(height: 3),
-            Text('📞 ${_phoneCtrl.text}', style: const TextStyle(fontSize: 11, fontFamily: 'monospace'), textAlign: TextAlign.center),
+            SizedBox(height: 3),
+            Text('📞 ${_phoneCtrl.text}', style: TextStyle(fontSize: 11, fontFamily: 'monospace'), textAlign: TextAlign.center),
           ],
           if (_showFiscalInfo && _fiscalCtrl.text.isNotEmpty) ...[
-            const SizedBox(height: 3),
-            Text(_fiscalCtrl.text, style: const TextStyle(fontSize: 9.5, color: Colors.grey, fontFamily: 'monospace'), textAlign: TextAlign.center),
+            SizedBox(height: 3),
+            Text(_fiscalCtrl.text, style: TextStyle(fontSize: 9.5, color: Colors.grey, fontFamily: 'monospace'), textAlign: TextAlign.center),
           ],
           if (_showSocialMedia && _socialCtrl.text.isNotEmpty) ...[
-            const SizedBox(height: 3),
-            Text('📱 ${_socialCtrl.text}', style: const TextStyle(fontSize: 10, color: Colors.blueGrey, fontFamily: 'monospace'), textAlign: TextAlign.center),
+            SizedBox(height: 3),
+            Text('📱 ${_socialCtrl.text}', style: TextStyle(fontSize: 10, color: Colors.blueGrey, fontFamily: 'monospace'), textAlign: TextAlign.center),
           ],
 
-          const SizedBox(height: 8),
-          Text(separator, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
-          const SizedBox(height: 6),
+          SizedBox(height: 8),
+          Text(separator, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
+          SizedBox(height: 6),
 
           // Mandatory Invoice Info
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('وصل رقم: #FAC-0089', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold)),
-              Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const TextStyle(fontFamily: 'monospace', fontSize: 10)),
+              Text('وصل رقم: #FAC-0089', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold)),
+              Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: TextStyle(fontFamily: 'monospace', fontSize: 10)),
             ],
           ),
           if (_showCashierName && _cashierCtrl.text.isNotEmpty) ...[
-            const SizedBox(height: 3),
+            SizedBox(height: 3),
             Align(
               alignment: Alignment.centerRight,
-              child: Text(_cashierCtrl.text, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.brown)),
+              child: Text(_cashierCtrl.text, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.brown)),
             ),
           ],
 
-          const SizedBox(height: 6),
-          Text(separator, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
+          Text(separator, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
+          SizedBox(height: 6),
 
           // Mandatory Items Table
-          const Row(
+          Row(
             children: [
               Expanded(flex: 5, child: Text('السلعة', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold))),
               Expanded(flex: 2, child: Text('الكمية', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold))),
               Expanded(flex: 3, child: Text('السعر', textAlign: TextAlign.end, style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold))),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
 
           // Sample items preview
           _buildItemRow('حليب كانديا 1L', '2', '260.00'),
           _buildItemRow('زيت عافية 5L', '1', '650.00'),
           _buildItemRow('شوكولاطة ماكسون', '3', '360.00'),
 
-          const SizedBox(height: 6),
-          Text(separator, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
+          Text(separator, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
+          SizedBox(height: 6),
 
           // Total & Payment info
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('المجموع الإجمالي (Total):', style: TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold)),
               Text('1,270.00 دج', style: TextStyle(fontFamily: 'monospace', fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 2),
-          const Row(
+          SizedBox(height: 2),
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('المبلغ المدفوع (Espèce):', style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey)),
               Text('1,500.00 دج', style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey)),
             ],
           ),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('المبلغ المتبقي (Rendu):', style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey)),
@@ -591,35 +591,35 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
             ],
           ),
 
-          const SizedBox(height: 6),
-          Text(separator, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
+          Text(separator, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
+          SizedBox(height: 6),
 
           // Custom Extra Lines in receipt
           if (_customExtraLines.isNotEmpty) ...[
             for (var line in _customExtraLines)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(line, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, fontWeight: FontWeight.w600)),
+                padding: EdgeInsets.symmetric(vertical: 2),
+                child: Text(line, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 10, fontWeight: FontWeight.w600)),
               ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
           ],
 
           // Optional Footer Note & Thank You
           if (_showFooterNote && _footerNoteCtrl.text.isNotEmpty) ...[
-            Text(_footerNoteCtrl.text, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Colors.black87)),
-            const SizedBox(height: 4),
+            Text(_footerNoteCtrl.text, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Colors.black87)),
+            SizedBox(height: 4),
           ],
           if (_showThankYou && _thankYouCtrl.text.isNotEmpty) ...[
-            Text(_thankYouCtrl.text, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
+            Text(_thankYouCtrl.text, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 10, fontWeight: FontWeight.bold)),
+            SizedBox(height: 6),
           ],
 
           if (_showBarcodeAtBottom) ...[
-            const SizedBox(height: 6),
-            const Center(child: Icon(Icons.qr_code_2, size: 40, color: Colors.black87)),
-            const SizedBox(height: 2),
-            const Center(
+            SizedBox(height: 6),
+            Center(child: Icon(Icons.qr_code_2, size: 40, color: Colors.black87)),
+            SizedBox(height: 2),
+            Center(
               child: Text(
                 '* FAC-0089 *',
                 style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Colors.grey),
@@ -633,12 +633,12 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
 
   Widget _buildItemRow(String name, String qty, String total) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Expanded(flex: 5, child: Text(name, style: const TextStyle(fontFamily: 'monospace', fontSize: 10.5))),
-          Expanded(flex: 2, child: Text(qty, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'monospace', fontSize: 10.5))),
-          Expanded(flex: 3, child: Text('$total دج', textAlign: TextAlign.end, style: const TextStyle(fontFamily: 'monospace', fontSize: 10.5, fontWeight: FontWeight.bold))),
+          Expanded(flex: 5, child: Text(name, style: TextStyle(fontFamily: 'monospace', fontSize: 10.5))),
+          Expanded(flex: 2, child: Text(qty, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 10.5))),
+          Expanded(flex: 3, child: Text('$total دج', textAlign: TextAlign.end, style: TextStyle(fontFamily: 'monospace', fontSize: 10.5, fontWeight: FontWeight.bold))),
         ],
       ),
     );
@@ -654,39 +654,39 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 1,
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.storefront_rounded, color: AppTheme.primaryColor, size: 22),
                     SizedBox(width: 8),
                     Text('1. هوية المتجر ورأس الوصل 🏪', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 TextField(
                   controller: _shopNameCtrl,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'اسم المحل / المتجر (الظاهر في أعلى الوصل)',
                     prefixIcon: Icon(Icons.badge_outlined),
                     border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 Row(
                   children: [
-                    const Text('محاذاة رأس الوصل:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 14),
+                    Text('محاذاة رأس الوصل:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 14),
                     ChoiceChip(
-                      label: const Text('توسيط (وسط)'),
+                      label: Text('توسيط (وسط)'),
                       selected: _headerAlignment == 'center',
                       onSelected: (v) => setState(() => _headerAlignment = 'center'),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     ChoiceChip(
-                      label: const Text('يمين'),
+                      label: Text('يمين'),
                       selected: _headerAlignment == 'right',
                       onSelected: (v) => setState(() => _headerAlignment = 'right'),
                     ),
@@ -696,25 +696,25 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // SECTION 2: OPTIONAL STORE CONTACTS & SLOGAN
         Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 1,
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.contact_phone_outlined, color: Colors.blue, size: 22),
                     SizedBox(width: 8),
                     Text('2. معلومات الاتصال والعناوين 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
 
                 _buildToggleableSection(
                   title: 'الشعار التسويقي (Slogan)',
@@ -723,7 +723,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                   onToggle: (v) => setState(() => _showSlogan = v),
                   hint: 'مثال: جودة عالية وأسعار في متناول الجميع',
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
 
                 _buildToggleableSection(
                   title: 'عنوان المتجر',
@@ -732,7 +732,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                   onToggle: (v) => setState(() => _showAddress = v),
                   hint: 'مثال: حي النور، شارع الاستقلال، الجزائر',
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
 
                 _buildToggleableSection(
                   title: 'رقم هاتف المتجر',
@@ -741,7 +741,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                   onToggle: (v) => setState(() => _showPhone = v),
                   hint: 'مثال: 0550 12 34 56',
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
 
                 _buildToggleableSection(
                   title: 'السجل التجاري والضرائب (NIF / RC)',
@@ -750,7 +750,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                   onToggle: (v) => setState(() => _showFiscalInfo = v),
                   hint: 'مثال: RC: 16/00-123456 | NIF: 0998123456789',
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
 
                 _buildToggleableSection(
                   title: 'صفحات التواصل الاجتماعي',
@@ -763,25 +763,25 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // SECTION 3: CASHIER & FOOTER
         Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 1,
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.notes_rounded, color: Colors.amber, size: 22),
                     SizedBox(width: 8),
                     Text('3. بيانات الكاشير وأسفل الوصل ✍️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
 
                 _buildToggleableSection(
                   title: 'اسم الكاشير أو المنفذ',
@@ -790,7 +790,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                   onToggle: (v) => setState(() => _showCashierName = v),
                   hint: 'مثال: الكاشير: سليم أو صندوق رقم 1',
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
 
                 _buildToggleableSection(
                   title: 'ملاحظة أسفل الوصل (سياسة الاسترجاع)',
@@ -799,7 +799,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                   onToggle: (v) => setState(() => _showFooterNote = v),
                   hint: 'مثال: السلعة المباعة لا ترد ولا تستبدل بعد 48 ساعة مع إحضار الوصل',
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
 
                 _buildToggleableSection(
                   title: 'عبارة الشكر والختام',
@@ -812,59 +812,59 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // SECTION 4: SEPARATORS & BARCODE
         Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 1,
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.tune_rounded, color: Colors.teal, size: 22),
                     SizedBox(width: 8),
                     Text('4. الخطوط الفاصلة والباركود 🎛️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
 
-                const Text('شكل الخط الفاصل بين الأقسام:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
+                Text('شكل الخط الفاصل بين الأقسام:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   children: [
                     ChoiceChip(
-                      label: const Text('شرطات (---)'),
+                      label: Text('شرطات (---)'),
                       selected: _separatorStyle == 'dashed',
                       onSelected: (v) => setState(() => _separatorStyle = 'dashed'),
                     ),
                     ChoiceChip(
-                      label: const Text('نجوم (***)'),
+                      label: Text('نجوم (***)'),
                       selected: _separatorStyle == 'stars',
                       onSelected: (v) => setState(() => _separatorStyle = 'stars'),
                     ),
                     ChoiceChip(
-                      label: const Text('مزدوج (===)'),
+                      label: Text('مزدوج (===)'),
                       selected: _separatorStyle == 'double',
                       onSelected: (v) => setState(() => _separatorStyle = 'double'),
                     ),
                     ChoiceChip(
-                      label: const Text('نقط (...)'),
+                      label: Text('نقط (...)'),
                       selected: _separatorStyle == 'dots',
                       onSelected: (v) => setState(() => _separatorStyle = 'dots'),
                     ),
                   ],
                 ),
-                const Divider(height: 24),
+                Divider(height: 24),
                 SwitchListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('إظهار باركود / QR Code أسفل الوصل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  subtitle: const Text('رمز استجابة سريعة للتحقق من صحة الفاتورة', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  title: Text('إظهار باركود / QR Code أسفل الوصل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: Text('رمز استجابة سريعة للتحقق من صحة الفاتورة', style: TextStyle(fontSize: 11, color: Colors.grey)),
                   value: _showBarcodeAtBottom,
                   onChanged: (v) => setState(() => _showBarcodeAtBottom = v),
                 ),
@@ -872,14 +872,14 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // SECTION 5: CUSTOM EXTRA LINES
         Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 1,
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -888,30 +888,30 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                   children: [
                     Text(
                       '5. أسطر حرة مخصصة إضافية (${_customExtraLines.length}) ➕',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     TextButton.icon(
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('إضافة سطر حر', style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: Icon(Icons.add, size: 18),
+                      label: Text('إضافة سطر حر', style: TextStyle(fontWeight: FontWeight.bold)),
                       onPressed: _addCustomLineDialog,
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                const Text(
+                SizedBox(height: 6),
+                Text(
                   'أضف أي نصوص إعلانية خاصة كأوقات العمل، عروض نهاية الأسبوع، أو التوصيل:',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 if (_customExtraLines.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   ListView.separated(
                     shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics: NeverScrollableScrollPhysics(),
                     itemCount: _customExtraLines.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    separatorBuilder: (_, __) => SizedBox(height: 6),
                     itemBuilder: (ctx, i) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           color: Colors.indigo.withOpacity(0.06),
                           borderRadius: BorderRadius.circular(10),
@@ -920,9 +920,9 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: Text(_customExtraLines[i], style: const TextStyle(fontSize: 13))),
+                            Expanded(child: Text(_customExtraLines[i], style: TextStyle(fontSize: 13))),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                              icon: Icon(Icons.delete_outline, color: Colors.red, size: 18),
                               tooltip: 'حذف',
                               onPressed: () => setState(() => _customExtraLines.removeAt(i)),
                             ),
@@ -936,22 +936,22 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
 
         // Bottom Save Button
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4F46E5),
+            backgroundColor: Color(0xFF4F46E5),
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             elevation: 2,
           ),
-          icon: const Icon(Icons.save_rounded, size: 20),
-          label: const Text('حفظ تصميم وتخصيص الوصل 💾', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          icon: Icon(Icons.save_rounded, size: 20),
+          label: Text('حفظ تصميم وتخصيص الوصل 💾', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           onPressed: _saveTemplate,
         ),
-        const SizedBox(height: 30),
+        SizedBox(height: 30),
       ],
     );
   }
@@ -964,7 +964,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     required String hint,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isEnabled ? Colors.white : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
@@ -984,13 +984,13 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
             ],
           ),
           if (isEnabled) ...[
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             TextField(
               controller: controller,
               decoration: InputDecoration(
                 hintText: hint,
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               ),
             ),
           ],

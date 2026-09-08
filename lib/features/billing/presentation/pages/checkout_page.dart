@@ -20,7 +20,7 @@ import '../bloc/billing_bloc.dart';
 enum PaymentMode { cash, fullCredit, acompteCredit }
 
 class CheckoutPage extends StatefulWidget {
-  const CheckoutPage({super.key});
+  CheckoutPage({super.key});
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -44,7 +44,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
@@ -62,36 +62,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
                 return Container(
                   height: MediaQuery.of(context).size.height * 0.75,
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(context.tr('select_customer'),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       TextField(
                         decoration: InputDecoration(
                           hintText: context.tr('search_customer_hint'),
-                          prefixIcon: const Icon(Icons.search),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          prefixIcon: Icon(Icons.search),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         ),
                         onChanged: (val) => setModalState(() => query = val),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Expanded(
                         child: filtered.isEmpty
                             ? Center(
                                 child: Text(context.tr('no_customers_found'),
-                                    style: const TextStyle(color: Colors.grey)),
+                                    style: TextStyle(color: Colors.grey)),
                               )
                             : ListView.separated(
                                 itemCount: filtered.length,
-                                separatorBuilder: (_, __) => const Divider(height: 1),
+                                separatorBuilder: (_, __) => Divider(height: 1),
                                 itemBuilder: (ctx, index) {
                                   final customer = filtered[index];
                                   return ListTile(
@@ -99,11 +99,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                       backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                                       child: Text(
                                         customer.name.isNotEmpty ? customer.name[0].toUpperCase() : 'C',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
                                       ),
                                     ),
-                                    title: Text(customer.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    title: Text(customer.name, style: TextStyle(fontWeight: FontWeight.bold)),
                                     subtitle: Text(
                                       '${customer.phoneNumber.isNotEmpty ? customer.phoneNumber : ""} • ${context.tr('current_debt')}: ${customer.currentDebt.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
                                       style: TextStyle(
@@ -138,7 +138,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         SnackBar(
           content: Text(context.tr('select_customer_hint')),
           backgroundColor: Colors.orange,
-          duration: const Duration(milliseconds: 1500),
+          duration: Duration(milliseconds: 1500),
         ),
       );
       return;
@@ -221,7 +221,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (mounted) {
         context.read<BillingBloc>().add(ClearCartEvent());
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('✅ تم تسجيل البيع وتحديث المخزون والأرباح بنجاح!'),
             backgroundColor: Colors.green,
             duration: Duration(milliseconds: 1200),
@@ -235,7 +235,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           SnackBar(
             content: Text('خطأ أثناء تسجيل البيع: $e'),
             backgroundColor: Colors.red,
-            duration: const Duration(milliseconds: 1500),
+            duration: Duration(milliseconds: 1500),
           ),
         );
       }
@@ -276,7 +276,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     Clipboard.setData(ClipboardData(text: buffer.toString()));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text('📋 تم نسخ نص الفاتورة لمشاركتها عبر واتساب!'),
         backgroundColor: Colors.teal,
         duration: Duration(milliseconds: 1200),
@@ -316,7 +316,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       SnackBar(
         content: Text('✅ تم حفظ عرض الأسعار (Devis) للزبون: $clientName'),
         backgroundColor: Colors.purple[700],
-        duration: const Duration(milliseconds: 1500),
+        duration: Duration(milliseconds: 1500),
       ),
     );
 
@@ -325,7 +325,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    const borderColor = Color(0xFFE5E5EA);
+    borderColor = Color(0xFFE5E5EA);
 
     return PopScope(
       canPop: true,
@@ -340,7 +340,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(context.tr('checkout'),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           centerTitle: true,
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -364,7 +364,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 SnackBar(
                   content: Text(context.tr('printed_success')),
                   backgroundColor: Colors.green,
-                  duration: const Duration(milliseconds: 1200),
+                  duration: Duration(milliseconds: 1200),
                 ),
               );
             }
@@ -374,14 +374,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   children: [
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         child: Column(
                           children: [
                             if (billingState.isReturnMode)
                               Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(12),
+                                margin: EdgeInsets.only(bottom: 12),
+                                padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: Colors.red.withOpacity(0.08),
                                   borderRadius: BorderRadius.circular(12),
@@ -389,16 +389,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.replay_circle_filled, color: Colors.red, size: 24),
-                                    const SizedBox(width: 10),
+                                    Icon(Icons.replay_circle_filled, color: Colors.red, size: 24),
+                                    SizedBox(width: 10),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(context.tr('return_mode_active'),
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.red)),
+                                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.red)),
                                           Text(context.tr('return_mode_hint'),
-                                              style: const TextStyle(fontSize: 11, color: Colors.brown)),
+                                              style: TextStyle(fontSize: 11, color: Colors.brown)),
                                         ],
                                       ),
                                     ),
@@ -416,21 +416,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.05),
                                     blurRadius: 10,
-                                    offset: const Offset(0, 3),
+                                    offset: Offset(0, 3),
                                   )
                                 ],
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Table(
-                                  border: const TableBorder(
+                                  border: TableBorder(
                                     horizontalInside:
                                         BorderSide(color: borderColor),
                                     bottom: BorderSide(color: borderColor),
                                   ),
                                   children: [
                                     TableRow(
-                                      decoration: const BoxDecoration(
+                                      decoration: BoxDecoration(
                                         color: Color(0xFFF8FAFC),
                                         border: Border(
                                             bottom:
@@ -485,11 +485,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
 
                             // Payment Mode Selector Card
                             Container(
-                              padding: const EdgeInsets.all(14),
+                              padding: EdgeInsets.all(14),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
@@ -500,9 +500,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 children: [
                                   Text(
                                     context.tr('payment_mode'),
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                   ),
-                                  const SizedBox(height: 10),
+                                  SizedBox(height: 10),
                                   Row(
                                     children: [
                                       Expanded(
@@ -512,7 +512,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                           icon: Icons.payments_outlined,
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      SizedBox(width: 8),
                                       Expanded(
                                         child: _buildPaymentModeChip(
                                           mode: PaymentMode.fullCredit,
@@ -520,7 +520,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                           icon: Icons.menu_book_rounded,
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      SizedBox(width: 8),
                                       Expanded(
                                         child: _buildPaymentModeChip(
                                           mode: PaymentMode.acompteCredit,
@@ -534,12 +534,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               ),
                             ),
 
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
 
                             // 1. CASH Change Calculator Mode
                             if (_paymentMode == PaymentMode.cash) ...[
                               Container(
-                                padding: const EdgeInsets.all(14),
+                                padding: EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
@@ -551,23 +551,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     Row(
                                       children: [
                                         Icon(Icons.calculate_outlined, color: AppTheme.primaryColor, size: 20),
-                                        const SizedBox(width: 6),
+                                        SizedBox(width: 6),
                                         Text(context.tr('change_calc'),
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                       ],
                                     ),
-                                    const SizedBox(height: 10),
+                                    SizedBox(height: 10),
                                     Row(
                                       children: [
                                         Expanded(
                                           child: TextFormField(
                                             controller: _paidController,
-                                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                            keyboardType: TextInputType.numberWithOptions(decimal: true),
                                             decoration: InputDecoration(
                                               labelText: context.tr('paid_amount'),
                                               hintText: '0.00',
                                               prefixText: '${AppConstants.currencySymbol} ',
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                             ),
                                             onChanged: (val) {
                                               final paid = double.tryParse(val) ?? 0.0;
@@ -575,24 +575,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                             },
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
+                                        SizedBox(width: 8),
                                         _buildCashChip(billingState.totalAmount, context.tr('exact_amount'), isExact: true),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: 8),
                                     Row(
                                       children: [
                                         _buildCashChip(500, '500'),
-                                        const SizedBox(width: 6),
+                                        SizedBox(width: 6),
                                         _buildCashChip(1000, '1000'),
-                                        const SizedBox(width: 6),
+                                        SizedBox(width: 6),
                                         _buildCashChip(2000, '2000'),
                                       ],
                                     ),
                                     if (billingState.paidAmount > 0) ...[
-                                      const SizedBox(height: 12),
+                                      SizedBox(height: 12),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                         decoration: BoxDecoration(
                                           color: billingState.paidAmount >= billingState.totalAmount
                                               ? Colors.green.withOpacity(0.1)
@@ -640,7 +640,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             // 2. CREDIT / ACOMPTE Customer Selector Mode
                             if (_paymentMode != PaymentMode.cash) ...[
                               Container(
-                                padding: const EdgeInsets.all(14),
+                                padding: EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
@@ -651,14 +651,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   children: [
                                     Text(
                                       context.tr('select_customer'),
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: 8),
                                     InkWell(
                                       onTap: _showCustomerPicker,
                                       borderRadius: BorderRadius.circular(8),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                         decoration: BoxDecoration(
                                           color: Colors.grey[50],
                                           borderRadius: BorderRadius.circular(8),
@@ -671,7 +671,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                               children: [
                                                 Icon(Icons.person,
                                                     color: _selectedCustomer != null ? AppTheme.primaryColor : Colors.grey),
-                                                const SizedBox(width: 8),
+                                                SizedBox(width: 8),
                                                 Text(
                                                   _selectedCustomer != null
                                                       ? _selectedCustomer!.name
@@ -683,15 +683,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                                 ),
                                               ],
                                             ),
-                                            const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                                            Icon(Icons.arrow_drop_down, color: Colors.grey),
                                           ],
                                         ),
                                       ),
                                     ),
                                     if (_selectedCustomer != null) ...[
-                                      const SizedBox(height: 10),
+                                      SizedBox(height: 10),
                                       Container(
-                                        padding: const EdgeInsets.all(10),
+                                        padding: EdgeInsets.all(10),
                                         decoration: BoxDecoration(
                                           color: Colors.red.withOpacity(0.08),
                                           borderRadius: BorderRadius.circular(8),
@@ -700,20 +700,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(context.tr('current_debt'),
-                                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                             Text(
                                               '${_selectedCustomer!.currentDebt.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                                              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
+                                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
                                             ),
                                           ],
                                         ),
                                       ),
                                     ],
                                     if (_paymentMode == PaymentMode.acompteCredit) ...[
-                                      const SizedBox(height: 12),
+                                      SizedBox(height: 12),
                                       TextFormField(
                                         controller: _acompteController,
-                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                        keyboardType: TextInputType.numberWithOptions(decimal: true),
                                         decoration: InputDecoration(
                                           labelText: context.tr('acompte_amount'),
                                           hintText: '0.00',
@@ -721,13 +721,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         ),
                                         onChanged: (v) => setState(() {}),
                                       ),
-                                      const SizedBox(height: 8),
+                                      SizedBox(height: 8),
                                       Builder(builder: (context) {
                                         final acompte = double.tryParse(_acompteController.text.trim()) ?? 0.0;
                                         final toCredit = (billingState.totalAmount - acompte).clamp(0.0, double.infinity);
                                         return Text(
                                           '${context.tr('remaining_to_credit')} ${toCredit.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+                                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
                                         );
                                       }),
                                     ],
@@ -736,7 +736,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               ),
                             ],
 
-                            const SizedBox(height: 120),
+                            SizedBox(height: 120),
                           ],
                         ),
                       ),
@@ -746,12 +746,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.08),
                             blurRadius: 10,
-                            offset: const Offset(0, -3),
+                            offset: Offset(0, -3),
                           ),
                         ],
                       ),
@@ -759,17 +759,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+                            padding: EdgeInsets.fromLTRB(20, 14, 20, 8),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   '${context.tr('total_price')}:',
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
                                 ),
                                 Text(
                                   '${billingState.totalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w900,
                                     color: Color(0xFF0F172A),
@@ -779,7 +779,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -789,18 +789,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   child: ElevatedButton.icon(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green[700],
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      padding: EdgeInsets.symmetric(vertical: 14),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     ),
-                                    icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-                                    label: const Text(
+                                    icon: Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                                    label: Text(
                                       '⚡ إتمام البيع السريع (بدون طباعة)',
                                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                                     ),
                                     onPressed: () => _completeSaleWithoutPrint(billingState),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                SizedBox(height: 8),
 
                                 // 2. SECONDARY: Thermal Bluetooth Print & WhatsApp Share
                                 Row(
@@ -808,7 +808,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          padding: EdgeInsets.symmetric(vertical: 12),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
                                         ),
@@ -884,32 +884,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         },
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          padding: EdgeInsets.symmetric(vertical: 12),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           side: BorderSide(color: Colors.teal.withOpacity(0.5)),
                                         ),
-                                        icon: const Icon(Icons.share, size: 18, color: Colors.teal),
-                                        label: const Text(
+                                        icon: Icon(Icons.share, size: 18, color: Colors.teal),
+                                        label: Text(
                                           '💬 مشاركة',
                                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal),
                                         ),
                                         onPressed: () => _shareInvoiceViaWhatsApp(billingState),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          padding: EdgeInsets.symmetric(vertical: 12),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           side: BorderSide(color: Colors.purple.withOpacity(0.5)),
                                         ),
-                                        icon: const Icon(Icons.description, size: 18, color: Colors.purple),
-                                        label: const Text(
+                                        icon: Icon(Icons.description, size: 18, color: Colors.purple),
+                                        label: Text(
                                           '📄 Devis',
                                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple),
                                         ),
@@ -942,7 +942,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       onTap: () => setState(() => _paymentMode = mode),
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey[50],
           borderRadius: BorderRadius.circular(8),
@@ -954,7 +954,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         child: Column(
           children: [
             Icon(icon, size: 18, color: isSelected ? AppTheme.primaryColor : Colors.grey[700]),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               label,
               textAlign: TextAlign.center,
@@ -978,7 +978,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       },
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: isExact ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
@@ -998,11 +998,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Widget _buildHeaderCell(String text, TextAlign align) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Text(
         text,
         textAlign: align,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Colors.grey,
@@ -1014,7 +1014,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Widget _buildDataCell(String text, TextAlign align,
       {bool isBold = false, bool isSubtitle = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       child: Text(
         text,
         textAlign: align,

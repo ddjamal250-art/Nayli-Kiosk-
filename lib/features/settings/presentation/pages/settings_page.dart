@@ -36,7 +36,7 @@ import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../customer/presentation/cubit/customer_state.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -62,7 +62,7 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: Theme.of(context).cardColor,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -73,55 +73,55 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Store Profile & License Card
             _buildStoreProfileCard(context, isActivated),
 
-            const SizedBox(height: 18),
+            SizedBox(height: 18),
 
             // 2. Business Operations Hubs (3 Smart Hubs)
             _buildSectionHeader(context.tr('business_hubs_title')),
             _buildBusinessHubsGrid(context),
 
-            const SizedBox(height: 18),
+            SizedBox(height: 18),
 
             // 2.1 Master Catalog & Instant Setup Banner
             _buildMasterCatalogHeroBanner(context),
 
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // 3. Hardware & Printing Center
             _buildSectionHeader('الأجهزة والطباعة الحرارية 🖨️'),
             _buildHardwareSection(context),
 
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // 4. Sound & Notifications Center
             _buildSectionHeader('الأصوات والإشعارات والتنبيهات 🔊🔔'),
             _buildSoundAndNotificationsSection(context, isSoundOn, isNotifOn, liveAlerts),
 
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // 5. Security & Data Backup Center
             _buildSectionHeader('الأمان والنسخ الاحتياطي 🔒💾'),
             _buildSecurityAndBackupSection(context, isPinEnabled),
 
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // 5.5 Appearance & Theme Center
             _buildSectionHeader('المظهر والسمات (Thème & Apparence) 🎨🌙'),
             _buildAppearanceAndThemeSection(context),
 
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // 6. Language & App Info
             _buildSectionHeader('اللغة ومعلومات التطبيق 🌐✨'),
             _buildLanguageAndInfoSection(context, isActivated),
 
-            const SizedBox(height: 35),
+            SizedBox(height: 35),
           ],
         ),
       ),
@@ -134,10 +134,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, right: 4, left: 4),
+      padding: EdgeInsets.only(bottom: 8, right: 4, left: 4),
       child: Text(
         context.tr(title),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.bold,
           color: Color(0xFF475569),
@@ -170,16 +170,16 @@ class _SettingsPageState extends State<SettingsPage> {
         }
 
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: Color(0xFFE2E8F0)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.03),
                 blurRadius: 10,
-                offset: const Offset(0, 3),
+                offset: Offset(0, 3),
               ),
             ],
           ),
@@ -214,7 +214,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             ? Image.file(File(logoPath), width: 58, height: 58, fit: BoxFit.cover)
                             : Text(
                                 initials,
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                       ),
                     ),
@@ -222,34 +222,34 @@ class _SettingsPageState extends State<SettingsPage> {
                       bottom: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        padding: EdgeInsets.all(3),
+                        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                         child: Container(
-                          padding: const EdgeInsets.all(3),
+                          padding: EdgeInsets.all(3),
                           decoration: BoxDecoration(color: AppTheme.primaryColor, shape: BoxShape.circle),
-                          child: const Icon(Icons.edit, size: 10, color: Colors.white),
+                          child: Icon(Icons.edit, size: 10, color: Colors.white),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       shopName,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: isActivated ? Colors.green.withOpacity(0.12) : Colors.orange.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(8),
@@ -270,7 +270,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
                 ),
@@ -306,7 +306,7 @@ class _SettingsPageState extends State<SettingsPage> {
           badgeColor: Colors.green,
           onTap: () => _showFinanceHubSheet(context),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
 
         // 2. Inventory & Supply Hub
         _buildHubCard(
@@ -319,7 +319,7 @@ class _SettingsPageState extends State<SettingsPage> {
           badgeColor: Colors.blue,
           onTap: () => _showInventoryHubSheet(context),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
 
         // 3. Partners & Customer Credit Hub
         _buildHubCard(
@@ -340,7 +340,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildMasterCatalogHeroBanner(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [
             Color(0xFF1E293B),
             Color(0xFF0F172A),
@@ -353,27 +353,27 @@ class _SettingsPageState extends State<SettingsPage> {
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
             blurRadius: 15,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Colors.amber.shade400, Colors.amber.shade700],
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
+                child: Icon(Icons.auto_awesome, color: Colors.white, size: 24),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +383,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         Expanded(
                           child: Text(
                             context.tr('master_catalog_title'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 14.5,
                               fontWeight: FontWeight.bold,
@@ -392,21 +392,21 @@ class _SettingsPageState extends State<SettingsPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.amber.shade700,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
+                          child: Text(
                             '+100,000',
                             style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    SizedBox(height: 3),
                     Text(
                       context.tr('master_catalog_subtitle'),
                       style: TextStyle(color: Colors.grey.shade300, fontSize: 11.5, height: 1.3),
@@ -416,7 +416,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -425,32 +425,32 @@ class _SettingsPageState extends State<SettingsPage> {
                     backgroundColor: Colors.amber.shade600,
                     foregroundColor: Colors.black87,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.flash_on_rounded, size: 16),
+                  icon: Icon(Icons.flash_on_rounded, size: 16),
                   label: Text(
                     context.tr('setup_wizard_btn'),
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   onPressed: () => context.push('/master-catalog'),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.search_rounded, size: 16),
+                  icon: Icon(Icons.search_rounded, size: 16),
                   label: Text(
                     context.tr('browse_catalog_btn'),
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -478,16 +478,16 @@ class _SettingsPageState extends State<SettingsPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.02),
               blurRadius: 8,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -502,7 +502,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               child: Icon(icon, color: iconColor, size: 24),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -512,11 +512,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       Expanded(
                         child: Text(
                           title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: badgeColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -525,18 +525,18 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 3),
+                  SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 6),
-            const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF94A3B8)),
+            SizedBox(width: 6),
+            Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF94A3B8)),
           ],
         ),
       ),
@@ -566,8 +566,8 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 if (isConnected)
                   Container(
-                    margin: const EdgeInsets.only(left: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    margin: EdgeInsets.only(left: 6),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: Colors.teal[50],
                       borderRadius: BorderRadius.circular(8),
@@ -576,7 +576,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Text('متصلة ⚡', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.teal[800])),
                   ),
                 IconButton(
-                  icon: const Icon(Icons.refresh, size: 20),
+                  icon: Icon(Icons.refresh, size: 20),
                   onPressed: () => context.read<PrinterBloc>().add(RefreshPrinterEvent()),
                   color: AppTheme.primaryColor,
                 ),
@@ -623,7 +623,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildDivider(),
       _buildTile(
         icon: Icons.tv_rounded,
-        iconColor: const Color(0xFF4F46E5),
+        iconColor: Color(0xFF4F46E5),
         title: 'إعدادات كشك الأسعار وشاشات العروض الترويجية ⚙️',
         subtitle: 'تخصيص مدة العرض، سهم الماسح، ورابط الشاشات الذكية (LAN Kiosk)',
         onTap: () => context.push('/kiosk-settings'),
@@ -631,7 +631,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildDivider(),
       _buildTile(
         icon: Icons.qr_code_scanner_rounded,
-        iconColor: const Color(0xFF4F46E5),
+        iconColor: Color(0xFF4F46E5),
         title: 'تشغيل كشك فاحص الأسعار للزبائن (Kiosk Mode) 🛍️',
         subtitle: 'فتح واجهة الفحص الفوري التفاعلية للزبائن على هذا الجهاز',
         onTap: () => context.push('/kiosk'),
@@ -642,7 +642,7 @@ class _SettingsPageState extends State<SettingsPage> {
         iconColor: Colors.blueGrey,
         title: 'إعدادات التشغيل المتقدمة والموازين الإلكترونية 🎛️',
         subtitle: 'تخصيص اختصارات لوحة المفاتيح والموازين الرقمية ودرج النقود',
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage())),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AdvancedPosSettingsPage())),
       ),
     ]);
   }
@@ -694,11 +694,11 @@ class _SettingsPageState extends State<SettingsPage> {
             : 'المتجر في حالة ممتازة ولا توجد نواقص',
         trailing: liveAlerts.isNotEmpty
             ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
-                child: Text('${liveAlerts.length}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                child: Text('${liveAlerts.length}', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
               )
-            : const Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
+            : Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
         onTap: () => _showNotificationsHub(context),
       ),
       _buildDivider(),
@@ -787,7 +787,7 @@ class _SettingsPageState extends State<SettingsPage> {
         title: 'إعدادات نمط التشغيل المتقدم (اختياري 100%) 🎛️',
         subtitle: 'موازين الخضر واللحوم، اختصارات الكيبورد، صلاحيات الكاشير، شاشة الزبون، وتتبع الصلاحية',
         onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedPosSettingsPage()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => AdvancedPosSettingsPage()));
         },
       ),
     ]);
@@ -815,11 +815,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             title: Text(
               context.tr('dark_amoled_mode'),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
             ),
             subtitle: Text(
               context.tr('dark_amoled_desc'),
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
             ),
             value: isDark,
             activeColor: Colors.teal,
@@ -852,7 +852,7 @@ class _SettingsPageState extends State<SettingsPage> {
                  HiveDatabase.settingsBox.put('shop_logo_path', pickedFile.path);
                  if (context.mounted) {
                      ScaffoldMessenger.of(context).showSnackBar(
-                         const SnackBar(content: Text('تم حفظ الشعار بنجاح!')),
+                         SnackBar(content: Text('تم حفظ الشعار بنجاح!')),
                      );
                  }
              }
@@ -865,12 +865,12 @@ class _SettingsPageState extends State<SettingsPage> {
         title: context.tr('header_branding_title'),
         subtitle: context.tr('header_branding_desc'),
         trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.deepPurple.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold, fontSize: 11)),
+          child: Text(context.tr('customize_toolbar_btn'), style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold, fontSize: 11)),
         ),
         onTap: () => HeaderColorDialog.show(context),
       ),
@@ -901,18 +901,18 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
         title: isActivated ? 'النسخة مفعلة بالكامل' : 'تفعيل النسخة الرسمية',
         subtitle: isActivated ? 'الترخيص نشط ويعمل على هذا الجهاز' : 'اضغط لإدخال كود التفعيل',
         trailing: isActivated
-            ? const Icon(Icons.check_circle, color: Colors.green, size: 22)
+            ? Icon(Icons.check_circle, color: Colors.green, size: 22)
             : Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(color: Colors.orange[100], borderRadius: BorderRadius.circular(8)),
-                child: const Text('تفعيل ⚡', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold, fontSize: 11)),
+                child: Text('تفعيل ⚡', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold, fontSize: 11)),
               ),
         onTap: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (_) => const ActivationModal(),
+            builder: (_) => ActivationModal(),
           );
         },
       ),
@@ -920,13 +920,13 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
         _buildDivider(),
         _buildTile(
           icon: Icons.qr_code_scanner_rounded,
-          iconColor: const Color(0xFF0284C7),
+          iconColor: Color(0xFF0284C7),
           title: 'تفعيل برنامج الحاسوب بقارئ الباركود (Douchette) 🔫 📲',
           subtitle: 'عرض رمز الاستجابة السريعة لتفعيل حاسوب الكاشير فوراً عبر الماسح',
           trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: const Color(0xFF0284C7).withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-            child: const Text('كاشير 🖥️', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 11)),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: Color(0xFF0284C7).withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+            child: Text('كاشير 🖥️', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 11)),
           ),
           onTap: () => PcDouchetteActivationModal.show(context),
         ),
@@ -952,7 +952,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       context: context,
       desktopMaxWidth: 560,
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -960,17 +960,17 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.bar_chart_rounded, color: Colors.green, size: 26),
                     SizedBox(width: 8),
                     Text('مركز المالية والتقارير والأرباح 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _buildHubActionTile(
               icon: Icons.analytics_outlined,
               iconColor: Colors.green[800]!,
@@ -982,7 +982,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 if (auth && context.mounted) context.push('/reports');
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             _buildHubActionTile(
               icon: Icons.receipt_long_outlined,
               iconColor: Colors.red[700]!,
@@ -994,7 +994,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 if (auth && context.mounted) context.push('/expenses');
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             _buildHubActionTile(
               icon: Icons.point_of_sale_rounded,
               iconColor: Colors.brown[700]!,
@@ -1005,7 +1005,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 context.push('/shifts');
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             _buildHubActionTile(
               icon: Icons.auto_stories_rounded,
               iconColor: Colors.indigo,
@@ -1016,7 +1016,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 context.push('/documents');
               },
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
           ],
         ),
       ),
@@ -1029,7 +1029,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       context: context,
       desktopMaxWidth: 560,
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1038,17 +1038,17 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.inventory_2_rounded, color: Colors.blue, size: 26),
                       SizedBox(width: 8),
                       Text('مركز المخزون والسلع والتوالف 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ],
                   ),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                  IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               _buildHubActionTile(
                 icon: Icons.qr_code_scanner,
                 iconColor: Colors.indigo,
@@ -1060,7 +1060,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   if (auth && context.mounted) context.push('/products');
                 },
               ),
-              const Divider(height: 8),
+              Divider(height: 8),
               _buildHubActionTile(
                 icon: Icons.archive_outlined,
                 iconColor: Colors.blue,
@@ -1071,7 +1071,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   context.push('/products/stock-in');
                 },
               ),
-              const Divider(height: 8),
+              Divider(height: 8),
               _buildHubActionTile(
                 icon: Icons.auto_awesome,
                 iconColor: Colors.amber[900]!,
@@ -1082,7 +1082,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   context.push('/master-catalog');
                 },
               ),
-              const Divider(height: 8),
+              Divider(height: 8),
               _buildHubActionTile(
                 icon: Icons.inventory_rounded,
                 iconColor: Colors.teal[700]!,
@@ -1094,7 +1094,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   if (auth && context.mounted) context.push('/products/inventory-audit');
                 },
               ),
-              const Divider(height: 8),
+              Divider(height: 8),
               _buildHubActionTile(
                 icon: Icons.remove_shopping_cart_rounded,
                 iconColor: Colors.red[800]!,
@@ -1106,7 +1106,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   if (auth && context.mounted) context.push('/products/losses');
                 },
               ),
-              const Divider(height: 8),
+              Divider(height: 8),
               _buildHubActionTile(
                 icon: Icons.hourglass_bottom_rounded,
                 iconColor: Colors.amber[900]!,
@@ -1117,7 +1117,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   context.push('/products/expiry-monitor');
                 },
               ),
-              const Divider(height: 8),
+              Divider(height: 8),
               _buildHubActionTile(
                 icon: Icons.shopping_cart_checkout,
                 iconColor: Colors.orange[800]!,
@@ -1128,7 +1128,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   context.push('/products/shopping-list');
                 },
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
             ],
           ),
         ),
@@ -1142,7 +1142,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       context: context,
       desktopMaxWidth: 560,
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1150,17 +1150,17 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.groups_rounded, color: Colors.orange, size: 26),
                     SizedBox(width: 8),
                     Text('مركز العلاقات والديون والموردين 👥', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _buildHubActionTile(
               icon: Icons.menu_book_rounded,
               iconColor: Colors.orange[800]!,
@@ -1172,7 +1172,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 if (auth && context.mounted) context.push('/customers');
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             _buildHubActionTile(
               icon: Icons.local_shipping_outlined,
               iconColor: Colors.deepPurple,
@@ -1184,7 +1184,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 if (auth && context.mounted) context.push('/products/supplier-invoices');
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             _buildHubActionTile(
               icon: Icons.request_quote_outlined,
               iconColor: Colors.teal[700]!,
@@ -1195,7 +1195,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 context.push('/devis');
               },
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
           ],
         ),
       ),
@@ -1217,9 +1217,9 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
         decoration: BoxDecoration(color: iconColor.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
         child: Icon(icon, color: iconColor, size: 22),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey)),
+      trailing: Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
       onTap: onTap,
     );
   }
@@ -1233,12 +1233,12 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -1269,16 +1269,16 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       ),
       title: Text(
         context.tr(title),
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
       ),
-      subtitle: subtitle != null ? Text(context.tr(subtitle), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))) : null,
-      trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 13, color: Color(0xFF94A3B8)),
+      subtitle: subtitle != null ? Text(context.tr(subtitle), style: TextStyle(fontSize: 11, color: Color(0xFF64748B))) : null,
+      trailing: trailing ?? Icon(Icons.arrow_forward_ios, size: 13, color: Color(0xFF94A3B8)),
       onTap: onTap,
     );
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9));
+    return Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9));
   }
 
   // ==========================================
@@ -1290,19 +1290,19 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       context: context,
       desktopMaxWidth: 440,
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('اختر لغة التطبيق (Language)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const SizedBox(height: 14),
+            Text('اختر لغة التطبيق (Language)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            SizedBox(height: 14),
             _buildLangChoice(ctx, 'العربية (Arabic)', '🇩🇿', 'ar', currentLocale.languageCode == 'ar'),
-            const Divider(height: 1),
+            Divider(height: 1),
             _buildLangChoice(ctx, 'Français (French)', '🇫🇷', 'fr', currentLocale.languageCode == 'fr'),
-            const Divider(height: 1),
+            Divider(height: 1),
             _buildLangChoice(ctx, 'English', '🇬🇧', 'en', currentLocale.languageCode == 'en'),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
           ],
         ),
       ),
@@ -1311,7 +1311,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
 
   Widget _buildLangChoice(BuildContext ctx, String name, String flag, String code, bool isSelected) {
     return ListTile(
-      leading: Text(flag, style: const TextStyle(fontSize: 22)),
+      leading: Text(flag, style: TextStyle(fontSize: 22)),
       title: Text(name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? AppTheme.primaryColor : Colors.black87)),
       trailing: isSelected ? Icon(Icons.check_circle, color: AppTheme.primaryColor) : null,
       onTap: () {
@@ -1328,7 +1328,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       desktopMaxWidth: 600,
       builder: (ctx) => Container(
         height: MediaQuery.of(context).size.height * 0.75,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
@@ -1337,32 +1337,32 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 10),
+              margin: EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.notifications_active, color: Colors.amber, size: 24),
+                      Icon(Icons.notifications_active, color: Colors.amber, size: 24),
                       SizedBox(width: 8),
                       Text(
                         'مركز التنبيهات والإشعارات (${alerts.length})',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                  IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            Divider(height: 1),
             Expanded(
               child: alerts.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -1375,13 +1375,13 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                       ),
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       itemCount: alerts.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (_, __) => SizedBox(height: 10),
                       itemBuilder: (ctx, index) {
                         final alert = alerts[index];
                         return Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.grey[50],
                             borderRadius: BorderRadius.circular(14),
@@ -1391,29 +1391,29 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: Colors.amber.withOpacity(0.15),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+                                child: Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(alert.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                    const SizedBox(height: 4),
-                                    Text(alert.message, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                    Text(alert.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    SizedBox(height: 4),
+                                    Text(alert.message, style: TextStyle(fontSize: 11, color: Colors.grey)),
                                     if (alert.targetRoute != null) ...[
-                                      const SizedBox(height: 8),
+                                      SizedBox(height: 8),
                                       InkWell(
                                         onTap: () {
                                           Navigator.pop(ctx);
                                           context.push(alert.targetRoute!);
                                         },
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text('معاينة القسم', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
@@ -1444,7 +1444,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.lock_outline, color: AppTheme.primaryColor),
             SizedBox(width: 8),
@@ -1455,14 +1455,14 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('اختر رمزاً من 4 أرقام لحماية حسابات المتجر والأرباح:'),
-            const SizedBox(height: 12),
+            Text('اختر رمزاً من 4 أرقام لحماية حسابات المتجر والأرباح:'),
+            SizedBox(height: 12),
             TextField(
               controller: pinController,
               keyboardType: TextInputType.number,
               maxLength: 4,
               obscureText: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'الرمز السري (4 أرقام)',
                 hintText: 'مثال: 1234',
                 border: OutlineInputBorder(),
@@ -1471,7 +1471,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
             onPressed: () async {
@@ -1488,7 +1488,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 }
               }
             },
-            child: const Text('حفظ وتفعيل', style: TextStyle(color: Colors.white)),
+            child: Text('حفظ وتفعيل', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1503,7 +1503,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('تغيير الرمز السري', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text('تغيير الرمز السري', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1512,18 +1512,18 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
               keyboardType: TextInputType.number,
               maxLength: 4,
               obscureText: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'الرمز السري القديم',
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             TextField(
               controller: newPinController,
               keyboardType: TextInputType.number,
               maxLength: 4,
               obscureText: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'الرمز السري الجديد (4 أرقام)',
                 border: OutlineInputBorder(),
               ),
@@ -1531,7 +1531,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
             onPressed: () async {
@@ -1557,7 +1557,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 }
               }
             },
-            child: const Text('تأكيد التغيير', style: TextStyle(color: Colors.white)),
+            child: Text('تأكيد التغيير', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1569,8 +1569,8 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       context: context,
       desktopMaxWidth: 560,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
@@ -1578,18 +1578,18 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.table_chart, color: Colors.green, size: 24),
                 SizedBox(width: 8),
                 Text('النسخ الاحتياطي وتصدير البيانات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0xFFE8F5E9), child: Icon(Icons.table_chart, color: Colors.green)),
-              title: const Text('تصدير المخزون العام كملف Excel (CSV)'),
-              subtitle: const Text('حفظ قائمة السلع والأسعار والكميات وقيمة رأس المال'),
+              leading: CircleAvatar(backgroundColor: Color(0xFFE8F5E9), child: Icon(Icons.table_chart, color: Colors.green)),
+              title: Text('تصدير المخزون العام كملف Excel (CSV)'),
+              subtitle: Text('حفظ قائمة السلع والأسعار والكميات وقيمة رأس المال'),
               onTap: () {
                 Navigator.pop(ctx);
                 final csv = ExcelExportHelper.exportProductsToCsv();
@@ -1601,11 +1601,11 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 );
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0xFFFFF3E0), child: Icon(Icons.people_alt_outlined, color: Colors.orange)),
-              title: const Text('تصدير دفتر ديون الزبائن كملف Excel (CSV)'),
-              subtitle: const Text('كشف حساب بالزبائن، أرقام الهواتف، والديون المعلقة'),
+              leading: CircleAvatar(backgroundColor: Color(0xFFFFF3E0), child: Icon(Icons.people_alt_outlined, color: Colors.orange)),
+              title: Text('تصدير دفتر ديون الزبائن كملف Excel (CSV)'),
+              subtitle: Text('كشف حساب بالزبائن، أرقام الهواتف، والديون المعلقة'),
               onTap: () {
                 Navigator.pop(ctx);
                 final custState = context.read<CustomerCubit>().state;
@@ -1624,11 +1624,11 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 );
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0xFFE3F2FD), child: Icon(Icons.cloud_upload, color: Colors.blue)),
-              title: const Text('إنشاء نسخة احتياطية كاملة (Backup JSON)'),
-              subtitle: const Text('حفظ قاعدة بيانات المحل بالكامل في ملف آمن'),
+              leading: CircleAvatar(backgroundColor: Color(0xFFE3F2FD), child: Icon(Icons.cloud_upload, color: Colors.blue)),
+              title: Text('إنشاء نسخة احتياطية كاملة (Backup JSON)'),
+              subtitle: Text('حفظ قاعدة بيانات المحل بالكامل في ملف آمن'),
               onTap: () {
                 Navigator.pop(ctx);
                 final json = BackupHelper.exportDatabaseToJson();
@@ -1640,27 +1640,27 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 );
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0xFFFFEBEE), child: Icon(Icons.settings_backup_restore_rounded, color: Colors.deepOrange)),
-              title: const Text('استرجاع قاعدة البيانات من ملف خارجي (.nbak / ZIP) 📥'),
-              subtitle: const Text('استيراد المنتجات والبيانات من فلاش ديسك أو قرص صلب (مثل G:\\data\\nayli_market_backup.nbak)'),
+              leading: CircleAvatar(backgroundColor: Color(0xFFFFEBEE), child: Icon(Icons.settings_backup_restore_rounded, color: Colors.deepOrange)),
+              title: Text('استرجاع قاعدة البيانات من ملف خارجي (.nbak / ZIP) 📥'),
+              subtitle: Text('استيراد المنتجات والبيانات من فلاش ديسك أو قرص صلب (مثل G:\\data\\nayli_market_backup.nbak)'),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/backups');
               },
             ),
-            const Divider(height: 8),
+            Divider(height: 8),
             ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0xFFE8EAF6), child: Icon(Icons.qr_code_scanner_rounded, color: Colors.indigo)),
-              title: const Text('ربط الهاتف والتلغرام بالباركود (QR Pairing) 📲'),
-              subtitle: const Text('استقبال تقارير المبيعات والأرباح والنسخ السحابي ومسح الباركود بالهاتف'),
+              leading: CircleAvatar(backgroundColor: Color(0xFFE8EAF6), child: Icon(Icons.qr_code_scanner_rounded, color: Colors.indigo)),
+              title: Text('ربط الهاتف والتلغرام بالباركود (QR Pairing) 📲'),
+              subtitle: Text('استقبال تقارير المبيعات والأرباح والنسخ السحابي ومسح الباركود بالهاتف'),
               onTap: () {
                 Navigator.pop(ctx);
                 DevicePairingModal.show(context);
               },
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
           ],
         ),
       ),
@@ -1676,7 +1676,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       desktopMaxWidth: 560,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1685,7 +1685,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.music_note_rounded, color: Colors.amber, size: 24),
                       SizedBox(width: 8),
@@ -1693,12 +1693,12 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                  IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
@@ -1707,9 +1707,9 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 child: Row(
                   children: [
                     Icon(Icons.volume_up, size: 20, color: Colors.grey[700]),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text('مستوى الصوت (${(currentVol * 100).toInt()}%):',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     Expanded(
                       child: Slider(
                         value: currentVol,
@@ -1724,20 +1724,20 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              const Text('اضغط على "تجربة" للاستماع ثم اختر النغمة المفضلة لك:',
+              SizedBox(height: 12),
+              Text('اضغط على "تجربة" للاستماع ثم اختر النغمة المفضلة لك:',
                   style: TextStyle(fontSize: 11.5, color: Colors.grey, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Expanded(
                 child: ListView.separated(
                   itemCount: SoundService.themes.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, __) => Divider(height: 1),
                   itemBuilder: (ctx, i) {
                     final theme = SoundService.themes[i];
                     final isSelected = currentThemeId == theme.id;
 
                     return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                       leading: Container(
                         width: 36,
                         height: 36,
@@ -1746,7 +1746,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                           color: isSelected ? AppTheme.primaryColor.withOpacity(0.15) : Colors.grey[100],
                           shape: BoxShape.circle,
                         ),
-                        child: Text(theme.icon, style: const TextStyle(fontSize: 18)),
+                        child: Text(theme.icon, style: TextStyle(fontSize: 18)),
                       ),
                       title: Row(
                         children: [
@@ -1762,12 +1762,12 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                           ),
                           if (isSelected)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.green.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text('المفعلة ⚡',
+                              child: Text('المفعلة ⚡',
                                   style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.green)),
                             ),
                         ],
@@ -1777,7 +1777,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton.filledTonal(
-                            icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                            icon: Icon(Icons.play_arrow_rounded, size: 20),
                             tooltip: 'استماع وتجربة',
                             onPressed: () {
                               SoundService.playScanBeep(themeId: theme.id);
@@ -1808,16 +1808,16 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   },
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('تأكيد واختيار النغمة 💾', style: TextStyle(fontWeight: FontWeight.bold)),
+                icon: Icon(Icons.check_circle_outline),
+                label: Text('تأكيد واختيار النغمة 💾', style: TextStyle(fontWeight: FontWeight.bold)),
                 onPressed: () => Navigator.pop(ctx),
               ),
             ],
@@ -1830,33 +1830,33 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
   void _showAboutModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), shape: BoxShape.circle),
               child: Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 36),
             ),
-            const SizedBox(height: 12),
-            const Text('نايلـي ماركت (Nayli Kiosk)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 4),
-            const Text('نظام الكاشير وإدارة السوبرماركت والمخزون الذكي', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 14),
+            SizedBox(height: 12),
+            Text('نايلـي ماركت (Nayli Kiosk)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            SizedBox(height: 4),
+            Text('نظام الكاشير وإدارة السوبرماركت والمخزون الذكي', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            SizedBox(height: 14),
             Text('الإصدار: 1.4.0 (Build 2026)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                minimumSize: const Size(double.infinity, 44),
+                minimumSize: Size(double.infinity, 44),
               ),
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('إغلاق', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

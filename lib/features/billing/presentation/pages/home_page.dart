@@ -66,7 +66,7 @@ class QuickItem {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -114,7 +114,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     );
     _laserAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: Duration(milliseconds: 1800),
     )..repeat(reverse: true);
     _loadQuickItems();
   }
@@ -194,7 +194,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         if (_currentSheetSize < 0.35) {
           _sheetController.animateTo(
             0.52,
-            duration: const Duration(milliseconds: 280),
+            duration: Duration(milliseconds: 280),
             curve: Curves.easeOutCubic,
           );
         }
@@ -217,7 +217,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     if (_currentSheetSize < 0.35) {
       _sheetController.animateTo(
         0.52,
-        duration: const Duration(milliseconds: 280),
+        duration: Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
       );
     }
@@ -411,7 +411,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(Duration(seconds: 4));
 
       if (res.statusCode == 200) {
         SoundService.playCheckoutSuccess();
@@ -444,7 +444,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       _isScanFlash = true;
       _isLockedOnBarcode = true;
     });
-    Future.delayed(const Duration(milliseconds: 380), () {
+    Future.delayed(Duration(milliseconds: 380), () {
       if (mounted) {
         setState(() {
           _isScanFlash = false;
@@ -467,7 +467,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         }
       });
 
-      Future.delayed(const Duration(milliseconds: 1200), () {
+      Future.delayed(Duration(milliseconds: 1200), () {
         if (mounted && _lastScannedToast != null) {
           setState(() => _lastScannedToast = null);
         }
@@ -475,7 +475,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     } else if (_currentSheetSize < 0.35) {
       _sheetController.animateTo(
         0.52,
-        duration: const Duration(milliseconds: 280),
+        duration: Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
       );
     }
@@ -497,7 +497,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Padding(
@@ -514,50 +514,50 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('إضافة سريعة لسلعة غير مسجلة',
+                Text('إضافة سريعة لسلعة غير مسجلة',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 'باركود: $barcode',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextFormField(
               controller: nameController,
               autofocus: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'اسم المنتج',
                 hintText: 'e.g. حليب كونديا 1 لتر',
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: priceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: 'سعر البيع',
                       suffixText: AppConstants.currencySymbol,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: TextFormField(
                     controller: costPriceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: 'سعر الشراء (التكلفة)',
                       suffixText: AppConstants.currencySymbol,
@@ -566,15 +566,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextFormField(
               controller: stockController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'الكمية الأولية بالمخزون',
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             PrimaryButton(
               onPressed: () {
                 final name = nameController.text.trim();
@@ -617,14 +617,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.delete_sweep_outlined, color: Colors.red),
-            const SizedBox(width: 8),
-            Text(context.tr('إفراغ السلة الحالية'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Icon(Icons.delete_sweep_outlined, color: Colors.red),
+            SizedBox(width: 8),
+            Text(context.tr('إفراغ السلة الحالية'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         content: Text(
           context.tr('هل أنت متأكد من حذف جميع السلع الممسوحة في هذه السلة والبدء من جديد؟'),
-          style: const TextStyle(fontSize: 14),
+          style: TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
@@ -642,7 +642,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 backgroundColor: Colors.red[800]!,
               );
             },
-            child: Text(context.tr('تأكيد الإفراغ'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(context.tr('تأكيد الإفراغ'), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -657,18 +657,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.pause_circle_filled, color: Colors.orange),
-            const SizedBox(width: 8),
-            Text(context.tr('تعليق السلة الحالية (Panier en attente)'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Icon(Icons.pause_circle_filled, color: Colors.orange),
+            SizedBox(width: 8),
+            Text(context.tr('تعليق السلة الحالية (Panier en attente)'), style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('سيتم حفظ سلة هذا الزبون مؤقتاً لخدمة زبون آخر، ويمكنك استرجاعها في أي وقت خلال 20 دقيقة.',
+            Text('سيتم حفظ سلة هذا الزبون مؤقتاً لخدمة زبون آخر، ويمكنك استرجاعها في أي وقت خلال 20 دقيقة.',
                 style: TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: controller,
               decoration: InputDecoration(
@@ -693,7 +693,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 backgroundColor: Colors.orange[800]!,
               );
             },
-            child: Text(context.tr('تعليق الفاتورة'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(context.tr('تعليق الفاتورة'), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -725,8 +725,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             title: Row(
               children: [
                 Icon(Icons.percent_rounded, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                Text(context.tr('تطبيق تخفيض / Remise'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                SizedBox(width: 8),
+                Text(context.tr('تطبيق تخفيض / Remise'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
             content: Column(
@@ -742,7 +742,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         selectedColor: AppTheme.primaryColor.withOpacity(0.2),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: ChoiceChip(
                         label: Center(child: Text(context.tr('amount') + ' (' + context.tr('currency_symbol') + ')')),
@@ -753,10 +753,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 TextField(
                   controller: controller,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
                   autofocus: true,
                   decoration: InputDecoration(
                     labelText: isPercent ? context.tr('discount_percentage') : context.tr('discount_amount'),
@@ -764,9 +764,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   ),
                   onChanged: (_) => setDlgState(() {}),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(10),
@@ -774,10 +774,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(context.tr('المجموع بعد التخفيض:'), style: const TextStyle(fontSize: 13)),
+                      Text(context.tr('المجموع بعد التخفيض:'), style: TextStyle(fontSize: 13)),
                       Text(
                         '${previewTotal.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green),
                       ),
                     ],
                   ),
@@ -791,7 +791,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     context.read<BillingBloc>().add(RemoveDiscountEvent());
                     Navigator.pop(ctx);
                   },
-                  child: Text(context.tr('إلغاء التخفيض'), style: const TextStyle(color: Colors.red)),
+                  child: Text(context.tr('إلغاء التخفيض'), style: TextStyle(color: Colors.red)),
                 ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
@@ -808,7 +808,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   }
                   Navigator.pop(ctx);
                 },
-                child: Text(context.tr('تطبيق'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(context.tr('تطبيق'), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -829,7 +829,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => StatefulBuilder(
@@ -862,15 +862,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.bolt, color: Colors.amber),
-                          const SizedBox(width: 6),
-                          Text(context.tr('إضافة سلعة لشريط البيع السريع ⚡'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Icon(Icons.bolt, color: Colors.amber),
+                          SizedBox(width: 6),
+                          Text(context.tr('إضافة سلعة لشريط البيع السريع ⚡'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                      IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
 
                   // Mode Segmented Buttons (From Stock vs Custom)
                   Wrap(
@@ -879,20 +879,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     alignment: WrapAlignment.center,
                     children: [
                       ChoiceChip(
-                        label: Text('📦 ' + context.tr('تثبيت من المخزون'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        label: Text('📦 ' + context.tr('تثبيت من المخزون'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                         selected: selectedTab == 0,
                         selectedColor: AppTheme.primaryColor.withOpacity(0.18),
                         onSelected: (v) => setDlgState(() => selectedTab = 0),
                       ),
                       ChoiceChip(
-                        label: Text('✏️ ' + context.tr('سلعة مخصصة جديدة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        label: Text('✏️ ' + context.tr('سلعة مخصصة جديدة'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                         selected: selectedTab == 1,
                         selectedColor: AppTheme.primaryColor.withOpacity(0.18),
                         onSelected: (v) => setDlgState(() => selectedTab = 1),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
 
                   if (selectedTab == 0) ...[
                     // Tab 1: Pick from Stock
@@ -900,13 +900,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       controller: searchStockController,
                       decoration: InputDecoration(
                         hintText: context.tr('ابحث عن سلعة في المخزون...'),
-                        prefixIcon: const Icon(Icons.search, size: 20),
+                        prefixIcon: Icon(Icons.search, size: 20),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       ),
                       onChanged: (_) => setDlgState(() {}),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Expanded(
                       child: filteredStock.isEmpty
                           ? Center(
@@ -914,24 +914,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                             )
                           : ListView.separated(
                               itemCount: filteredStock.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              separatorBuilder: (_, __) => Divider(height: 1),
                               itemBuilder: (_, idx) {
                                 final p = filteredStock[idx];
                                 return ListTile(
                                   leading: CircleAvatar(
                                     backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                                    child: const Text('🛍️', style: TextStyle(fontSize: 16)),
+                                    child: Text('🛍️', style: TextStyle(fontSize: 16)),
                                   ),
-                                  title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  title: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   subtitle: Text(
                                     'السعر: ${p.price.toStringAsFixed(0)} دج • المخزون: ${p.stock} قطعة',
-                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                    style: TextStyle(fontSize: 11, color: Colors.grey),
                                   ),
                                   trailing: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppTheme.primaryColor,
                                       foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
                                     onPressed: () async {
@@ -947,7 +947,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                       if (mounted) Navigator.pop(ctx);
                                       context.showAppSnackBar('⚡ تم تثبيت (${p.name}) في شريط البيع السريع بنجاح!', backgroundColor: Colors.teal[800]!);
                                     },
-                                    child: Text(context.tr('تثبيت ⚡'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    child: Text(context.tr('تثبيت ⚡'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                   ),
                                 );
                               },
@@ -962,44 +962,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                           children: [
                             TextFormField(
                               controller: nameController,
-                              decoration: const InputDecoration(labelText: 'اسم السلعة', hintText: 'مثال: خبز تقليدي، كيس، سجائر...'),
+                              decoration: InputDecoration(labelText: 'اسم السلعة', hintText: 'مثال: خبز تقليدي، كيس، سجائر...'),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             Row(
                               children: [
                                 Expanded(
                                   child: TextFormField(
                                     controller: priceController,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType: TextInputType.numberWithOptions(decimal: true),
                                     decoration: InputDecoration(labelText: 'سعر البيع (دج)', suffixText: AppConstants.currencySymbol),
                                   ),
                                 ),
-                                const SizedBox(width: 10),
+                                SizedBox(width: 10),
                                 Expanded(
                                   child: TextFormField(
                                     controller: costPriceController,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType: TextInputType.numberWithOptions(decimal: true),
                                     decoration: InputDecoration(labelText: 'سعر الشراء / التكلفة 🔒', suffixText: AppConstants.currencySymbol),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             TextFormField(
                               controller: iconController,
-                              decoration: const InputDecoration(labelText: 'الأيقونة / الرمز التعبيري', hintText: 'e.g. 🥖, 🥚, 🥛, 🛍️'),
+                              decoration: InputDecoration(labelText: 'الأيقونة / الرمز التعبيري', hintText: 'e.g. 🥖, 🥚, 🥛, 🛍️'),
                             ),
-                            const SizedBox(height: 14),
+                            SizedBox(height: 14),
 
                             // Confidential Notice Banner
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 color: Colors.blue.withOpacity(0.06),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: Colors.blue.withOpacity(0.2)),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: [
                                   Icon(Icons.shield_outlined, size: 16, color: Colors.blue),
                                   SizedBox(width: 6),
@@ -1012,7 +1012,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20),
 
                             PrimaryButton(
                               label: 'حفظ وإضافة لشريط البيع السريع',
@@ -1059,7 +1059,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
@@ -1078,41 +1078,41 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(context.tr('تعديل السلعة السريعة'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                    Text(context.tr('تعديل السلعة السريعة'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 TextFormField(
                   controller: nameController,
-                  decoration: const InputDecoration(labelText: 'اسم السلعة'),
+                  decoration: InputDecoration(labelText: 'اسم السلعة'),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: TextFormField(
                         controller: priceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(labelText: 'سعر البيع', suffixText: AppConstants.currencySymbol),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(
                       child: TextFormField(
                         controller: costPriceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(labelText: 'سعر التكلفة 🔒', suffixText: AppConstants.currencySymbol),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 TextFormField(
                   controller: iconController,
-                  decoration: const InputDecoration(labelText: 'الأيقونة / الرمز التعبيري'),
+                  decoration: InputDecoration(labelText: 'الأيقونة / الرمز التعبيري'),
                 ),
-                const SizedBox(height: 18),
+                SizedBox(height: 18),
 
                 Row(
                   children: [
@@ -1120,27 +1120,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(color: Colors.red),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                         ),
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('حذف'),
+                        icon: Icon(Icons.delete_outline),
+                        label: Text('حذف'),
                         onPressed: () async {
                           await _deleteQuickItem(item.id);
                           if (mounted) Navigator.pop(ctx);
                         },
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       flex: 2,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                         ),
-                        icon: const Icon(Icons.save, color: Colors.white),
-                        label: Text(context.tr('حفظ التعديل'), style: const TextStyle(color: Colors.white)),
+                        icon: Icon(Icons.save, color: Colors.white),
+                        label: Text(context.tr('حفظ التعديل'), style: TextStyle(color: Colors.white)),
                         onPressed: () async {
                           final name = nameController.text.trim();
                           final price = double.tryParse(priceController.text.trim()) ?? item.price;
@@ -1230,7 +1230,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 minChildSize: 0.20,
                 maxChildSize: 0.90,
                 snap: true,
-                snapSizes: const [0.22, 0.52, 0.90],
+                snapSizes: [0.22, 0.52, 0.90],
                 builder: (context, scrollController) {
                   return _buildBottomPanel(scrollController);
                 },
@@ -1274,29 +1274,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       builder: (context, prodState) {
                         final expiringList = ExpiryTrackerService.getExpiringProducts(productsList: prodState.products);
                         final urgentCount = expiringList.where((i) => i.status == ExpiryStatus.expired || i.status == ExpiryStatus.critical7Days).length;
-                        if (urgentCount == 0) return const SizedBox.shrink();
+                        if (urgentCount == 0) return SizedBox.shrink();
 
                         return Padding(
-                          padding: const EdgeInsets.only(left: 6),
+                          padding: EdgeInsets.only(left: 6),
                           child: InkWell(
                             onTap: () => context.push('/expiry-monitor'),
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Colors.red[900]?.withOpacity(0.90),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(color: Colors.redAccent, width: 1.2),
-                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.hourglass_bottom_rounded, color: Colors.amberAccent, size: 16),
-                                  const SizedBox(width: 4),
+                                  Icon(Icons.hourglass_bottom_rounded, color: Colors.amberAccent, size: 16),
+                                  SizedBox(width: 4),
                                   Text(
                                     '$urgentCount قاربت الصلاحية ⏳',
-                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -1310,27 +1310,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     BlocBuilder<ProductBloc, ProductState>(
                       builder: (context, prodState) {
                         final lowStockProducts = prodState.products.where((p) => p.stock <= 5).toList();
-                        if (lowStockProducts.isEmpty) return const SizedBox.shrink();
+                        if (lowStockProducts.isEmpty) return SizedBox.shrink();
 
                         return InkWell(
                           onTap: () => _handleLowStockBadgeTap(lowStockProducts),
                           borderRadius: BorderRadius.circular(20),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.orange[900]?.withOpacity(0.85),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: Colors.amberAccent.withOpacity(0.8), width: 1.2),
-                              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 16),
-                                const SizedBox(width: 4),
+                                Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 16),
+                                SizedBox(width: 4),
                                 Text(
                                   '${lowStockProducts.length} مخزون منخفض',
-                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -1352,9 +1352,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       color: Colors.black54,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white70),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
                     ),
-                    child: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+                    child: Icon(Icons.menu_rounded, color: Colors.white, size: 24),
                   ),
                 ),
               ],
@@ -1377,7 +1377,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       _scannerController.toggleTorch();
                     },
                   ),
-                if (_isCameraOn) const SizedBox(height: 10),
+                if (_isCameraOn) SizedBox(height: 10),
 
                 // 2. Single 2x Zoom Toggle Button
                 if (_isCameraOn)
@@ -1406,7 +1406,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                             color: (_cameraZoomScale > 0.1) ? Colors.white : Colors.white30,
                             width: (_cameraZoomScale > 0.1) ? 1.8 : 1.0,
                           ),
-                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -1420,7 +1420,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       ),
                     ),
                   ),
-                if (_isCameraOn) const SizedBox(height: 10),
+                if (_isCameraOn) SizedBox(height: 10),
 
                 // 3. Camera Enable / Disable Button
                 _buildOverlayButton(
@@ -1448,21 +1448,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               left: 20,
               right: 70,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.green[700],
                   borderRadius: BorderRadius.circular(14),
-                  boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 3))],
+                  boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 3))],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.white, size: 18),
-                    const SizedBox(width: 8),
+                    Icon(Icons.check_circle, color: Colors.white, size: 18),
+                    SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         _lastScannedToast!,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1477,7 +1477,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               top: MediaQuery.of(context).size.height * 0.16,
               left: (MediaQuery.of(context).size.width - 270) / 2,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
+                duration: Duration(milliseconds: 150),
                 width: 270,
                 height: 160,
                 decoration: BoxDecoration(
@@ -1613,16 +1613,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.blue[900]?.withOpacity(0.85),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.white70),
-                    boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)],
+                    boxShadow: [BoxShadow(color: Colors.black38, blurRadius: 6)],
                   ),
                   child: Text(
                     '⚡ تم مسح $_multiScanCount سلع في هذه السلة',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
               ),
@@ -1645,9 +1645,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1657,32 +1657,32 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
-                    const SizedBox(width: 8),
-                    Text('سلع قريبة من النفاد (${lowStockProducts.length}) ⚠️', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+                    SizedBox(width: 8),
+                    Text('سلع قريبة من النفاد (${lowStockProducts.length}) ⚠️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 280),
+              constraints: BoxConstraints(maxHeight: 280),
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: lowStockProducts.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, __) => Divider(height: 1),
                 itemBuilder: (ctx, i) {
                   final p = lowStockProducts[i];
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                    subtitle: Text('الباركود: ${p.barcode} • البيع: ${p.price.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 11)),
+                    title: Text(p.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                    subtitle: Text('الباركود: ${p.barcode} • البيع: ${p.price.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 11)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.red.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -1690,10 +1690,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                           ),
                           child: Text(
                             'المخزون: ${p.stock}',
-                            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         IconButton(
                           icon: Icon(Icons.edit_note, color: AppTheme.primaryColor, size: 24),
                           tooltip: 'تعديل السلعة وتزويد المخزون',
@@ -1708,7 +1708,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 },
               ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
@@ -1716,28 +1716,28 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepOrange,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 18),
-                    label: Text(context.tr('قائمة النواقص 🛒'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    icon: Icon(Icons.shopping_cart_checkout_rounded, size: 18),
+                    label: Text(context.tr('قائمة النواقص 🛒'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push('/products/shopping-list');
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    icon: const Icon(Icons.inventory_2_outlined, size: 18),
-                    label: Text(context.tr('كامل المخزن'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    icon: Icon(Icons.inventory_2_outlined, size: 18),
+                    label: Text(context.tr('كامل المخزن'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push('/products');
@@ -1754,19 +1754,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
 
   Widget _buildCameraOffState() {
     return Container(
-      color: const Color(0xFF1E293B),
+      color: Color(0xFF1E293B),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.videocam_off, color: Colors.white, size: 32),
-          const SizedBox(height: 8),
+          Icon(Icons.videocam_off, color: Colors.white, size: 32),
+          SizedBox(height: 8),
           Text(context.tr('camera_off'),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          SizedBox(height: 12),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
-            icon: const Icon(Icons.videocam),
+            icon: Icon(Icons.videocam),
             label: Text(context.tr('turn_on_camera')),
             onPressed: () {
               setState(() => _isCameraOn = true);
@@ -1791,18 +1791,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
           HapticFeedback.mediumImpact();
           context.showAppSnackBar(
             _isMultiScanMode ? '⚡ تم تفعيل وضع المسح المتعدد السريع' : '📱 تم التبديل إلى وضع المسح الفردي العادي',
-            duration: const Duration(milliseconds: 1500),
+            duration: Duration(milliseconds: 1500),
           );
         },
         borderRadius: BorderRadius.circular(24),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
+          duration: Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           width: 44,
           height: 44,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _isMultiScanMode ? const Color(0xFF15803D) : Colors.black54,
+            color: _isMultiScanMode ? Color(0xFF15803D) : Colors.black54,
             border: Border.all(
               color: _isMultiScanMode ? Colors.greenAccent : Colors.white70,
               width: _isMultiScanMode ? 1.8 : 1.2,
@@ -1811,7 +1811,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               BoxShadow(
                 color: _isMultiScanMode ? Colors.greenAccent.withOpacity(0.35) : Colors.black26,
                 blurRadius: _isMultiScanMode ? 8 : 4,
-                offset: const Offset(0, 2),
+                offset: Offset(0, 2),
               ),
             ],
           ),
@@ -1821,8 +1821,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               if (_isMultiScanMode) ...[
                 // Back Barcode layer 3 (Offset top-left, subtle opacity)
                 Transform.translate(
-                  offset: const Offset(-4.5, -4),
-                  child: const Icon(
+                  offset: Offset(-4.5, -4),
+                  child: Icon(
                     Icons.qr_code_2_rounded,
                     color: Colors.white30,
                     size: 19,
@@ -1830,15 +1830,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 ),
                 // Middle Barcode layer 2 (Offset top-left, medium opacity)
                 Transform.translate(
-                  offset: const Offset(-2.2, -2),
-                  child: const Icon(
+                  offset: Offset(-2.2, -2),
+                  child: Icon(
                     Icons.qr_code_2_rounded,
                     color: Colors.white70,
                     size: 20,
                   ),
                 ),
                 // Front Barcode layer 1 (Prominent, sharp, full opacity)
-                const Icon(
+                Icon(
                   Icons.qr_code_2_rounded,
                   color: Colors.white,
                   size: 22,
@@ -1848,12 +1848,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   bottom: 3,
                   right: 3,
                   child: Container(
-                    padding: const EdgeInsets.all(1.5),
-                    decoration: const BoxDecoration(
+                    padding: EdgeInsets.all(1.5),
+                    decoration: BoxDecoration(
                       color: Colors.amber,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.bolt,
                       size: 9,
                       color: Colors.black,
@@ -1862,7 +1862,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 ),
               ] else ...[
                 // Single Clean Barcode Icon for Normal Single-Scan Mode
-                const Icon(
+                Icon(
                   Icons.qr_code_2_rounded,
                   color: Colors.white,
                   size: 22,
@@ -1883,7 +1883,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         color: Colors.black54,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white30),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
       ),
       child: IconButton(
         icon: Icon(icon, color: Colors.white, size: 20),
@@ -1898,8 +1898,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 15, offset: Offset(0, -5))],
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 15, offset: Offset(0, -5))],
       ),
       child: ListView(
         controller: scrollController,
@@ -1911,13 +1911,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               if (_currentSheetSize < 0.35) {
                 _sheetController.animateTo(
                   0.52,
-                  duration: const Duration(milliseconds: 280),
+                  duration: Duration(milliseconds: 280),
                   curve: Curves.easeOutCubic,
                 );
               } else {
                 _sheetController.animateTo(
                   0.22,
-                  duration: const Duration(milliseconds: 280),
+                  duration: Duration(milliseconds: 280),
                   curve: Curves.easeOutCubic,
                 );
               }
@@ -1928,14 +1928,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   child: Container(
                     width: 44,
                     height: 5,
-                    margin: const EdgeInsets.only(top: 8, bottom: 6),
+                    margin: EdgeInsets.only(top: 8, bottom: 6),
                     decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(3)),
                   ),
                 ),
                 BlocBuilder<BillingBloc, BillingState>(
                   builder: (context, state) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -1948,9 +1948,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                     children: [
                                       Text(
                                         context.tr('cart'),
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                       ),
-                                      const SizedBox(width: 4),
+                                      SizedBox(width: 4),
                                       Icon(
                                         _currentSheetSize > 0.35 ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded,
                                         size: 20,
@@ -1960,16 +1960,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                   ),
                                   Text(
                                     '${state.cartItems.length} ${context.tr('items_count')}',
-                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                    style: TextStyle(fontSize: 11, color: Colors.grey),
                                   ),
                                 ],
                               ),
-                              const SizedBox(width: 10),
+                              SizedBox(width: 10),
                               if (state.cartItems.isNotEmpty) ...[
                                 InkWell(
                                   onTap: _showClearCartConfirmationDialog,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: Colors.red.withOpacity(0.08),
                                       borderRadius: BorderRadius.circular(6),
@@ -1977,18 +1977,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.delete_outline, size: 12, color: Colors.red),
-                                        const SizedBox(width: 2),
-                                        Text(context.tr('clear'), style: const TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
+                                        Icon(Icons.delete_outline, size: 12, color: Colors.red),
+                                        SizedBox(width: 2),
+                                        Text(context.tr('clear'), style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 6),
+                                SizedBox(width: 6),
                                 InkWell(
                                   onTap: _showParkCartDialog,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: Colors.orange.withOpacity(0.08),
                                       borderRadius: BorderRadius.circular(6),
@@ -1996,14 +1996,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.pause_circle_outline, size: 12, color: Colors.orange),
-                                        const SizedBox(width: 2),
-                                        Text(context.tr('hold'), style: const TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
+                                        Icon(Icons.pause_circle_outline, size: 12, color: Colors.orange),
+                                        SizedBox(width: 2),
+                                        Text(context.tr('hold'), style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 6),
+                                SizedBox(width: 6),
                               ],
                               if (state.heldCarts.isNotEmpty) ...[
                                 InkWell(
@@ -2012,11 +2012,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                       context: context,
                                       isScrollControlled: true,
                                       backgroundColor: Colors.transparent,
-                                      builder: (_) => const HeldCartsModal(),
+                                      builder: (_) => HeldCartsModal(),
                                     );
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: Colors.indigo.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(6),
@@ -2024,11 +2024,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.inventory_2_outlined, size: 12, color: Colors.indigo),
-                                        const SizedBox(width: 4),
+                                        Icon(Icons.inventory_2_outlined, size: 12, color: Colors.indigo),
+                                        SizedBox(width: 4),
                                         Text(
                                           'المعلقة (${state.heldCarts.length})',
-                                          style: const TextStyle(fontSize: 10, color: Colors.indigo, fontWeight: FontWeight.bold),
+                                          style: TextStyle(fontSize: 10, color: Colors.indigo, fontWeight: FontWeight.bold),
                                         ),
                                       ],
                                     ),
@@ -2042,7 +2042,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                             children: [
                               Text(
                                 '${state.totalAmount.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.primaryColor,
@@ -2051,7 +2051,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                               if (state.calculatedDiscount > 0)
                                 Text(
                                   'تخفيض: -${state.calculatedDiscount.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-                                  style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
+                                  style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
                                 ),
                             ],
                           ),
@@ -2063,17 +2063,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               ],
             ),
           ),
-          const Divider(height: 12),
+          Divider(height: 12),
 
           // Action Pills (Scale Vrac, Quick Amount, Discount, Return Mode)
           BlocBuilder<BillingBloc, BillingState>(
             builder: (context, state) {
               return Container(
                 height: 38,
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: EdgeInsets.only(bottom: 8),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   children: [
                     // Smart Scale Modal
                     InkWell(
@@ -2082,17 +2082,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
-                          builder: (_) => const SmartScaleModal(),
+                          builder: (_) => SmartScaleModal(),
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.teal.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: Colors.teal.withOpacity(0.4)),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.scale, size: 15, color: Colors.teal),
                             SizedBox(width: 4),
@@ -2101,7 +2101,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
 
                     // Quick Amount
                     InkWell(
@@ -2110,17 +2110,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
-                          builder: (_) => const QuickAmountModal(),
+                          builder: (_) => QuickAmountModal(),
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: Colors.blue.withOpacity(0.4)),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.dialpad, size: 15, color: Colors.blue),
                             SizedBox(width: 4),
@@ -2129,13 +2129,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
 
                     // Discount Remise
                     InkWell(
                       onTap: () => _showDiscountDialog(state),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: state.calculatedDiscount > 0 ? Colors.purple : Colors.purple.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
@@ -2144,7 +2144,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         child: Row(
                           children: [
                             Icon(Icons.percent_rounded, size: 15, color: state.calculatedDiscount > 0 ? Colors.white : Colors.purple),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Text(
                               state.calculatedDiscount > 0 ? 'تخفيض (${state.calculatedDiscount.toStringAsFixed(0)}دج)' : 'تخفيض / Remise',
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: state.calculatedDiscount > 0 ? Colors.white : Colors.purple),
@@ -2153,7 +2153,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
 
                     // Return Mode
                     InkWell(
@@ -2161,7 +2161,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         context.read<BillingBloc>().add(ToggleReturnModeEvent());
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: state.isReturnMode ? Colors.red : Colors.grey[200],
                           borderRadius: BorderRadius.circular(20),
@@ -2170,7 +2170,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         child: Row(
                           children: [
                             Icon(Icons.replay_circle_filled, size: 15, color: state.isReturnMode ? Colors.white : Colors.black87),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Text(
                               state.isReturnMode ? 'وضع الإرجاع مفعّل 🔄' : 'وضع الإرجاع',
                               style: TextStyle(
@@ -2191,11 +2191,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
 
           // Quick Items Header & Micro-hint
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 2),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.bolt, size: 14, color: Colors.amber),
                     SizedBox(width: 4),
@@ -2215,7 +2215,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 Expanded(
                   child: ReorderableListView.builder(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     itemCount: _quickItems.length,
                     onReorder: _onReorderQuickItems,
                     proxyDecorator: (child, index, animation) {
@@ -2231,38 +2231,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       final item = _quickItems[index];
                       return Container(
                         key: ValueKey(item.id),
-                        margin: const EdgeInsets.only(left: 8),
+                        margin: EdgeInsets.only(left: 8),
                         child: InkWell(
                           onTap: () => _addQuickItem(item),
                           onLongPress: () => _showEditQuickItemDialog(item),
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
-                            constraints: const BoxConstraints(minWidth: 85),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            constraints: BoxConstraints(minWidth: 85),
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: Colors.grey[200]!),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2)),
+                                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: Offset(0, 2)),
                               ],
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(item.icon, style: const TextStyle(fontSize: 18)),
-                                const SizedBox(width: 6),
+                                Text(item.icon, style: TextStyle(fontSize: 18)),
+                                SizedBox(width: 6),
                                 Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       item.name,
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                                     ),
                                     Text(
                                       '${item.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                                      style: const TextStyle(fontSize: 10, color: Color(0xFF1E40AF), fontWeight: FontWeight.w700),
+                                      style: TextStyle(fontSize: 10, color: Color(0xFF1E40AF), fontWeight: FontWeight.w700),
                                     ),
                                   ],
                                 ),
@@ -2275,17 +2275,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 16),
+                  padding: EdgeInsets.only(left: 8, right: 16),
                   child: InkWell(
                     onTap: _showAddQuickItemDialog,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Icon(Icons.add, size: 16, color: Colors.grey),
                           SizedBox(width: 4),
@@ -2298,22 +2298,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
 
           // Cart Items List
           BlocBuilder<BillingBloc, BillingState>(
             builder: (context, state) {
               if (state.cartItems.isEmpty) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: EdgeInsets.symmetric(vertical: 24),
                   alignment: Alignment.center,
                   child: Column(
                     children: [
                       Icon(Icons.shopping_cart_outlined, size: 36, color: Colors.grey[400]),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Text(context.tr('cart_empty'),
                           style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(context.tr('cart_empty_hint'),
                           style: TextStyle(color: Colors.grey[400], fontSize: 11)),
                     ],
@@ -2325,18 +2325,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 children: [
                   ListView.separated(
                     shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    physics: NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     itemCount: state.cartItems.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final item = state.cartItems[index];
                       return _buildCartItemCard(context, item);
                     },
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
                         // Button 1: Send Cart to Master POS Desktop (F9)
@@ -2346,19 +2346,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.indigo.shade700,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               elevation: 2,
                             ),
-                            icon: const Icon(Icons.send_rounded, size: 20),
-                            label: const Text(
+                            icon: Icon(Icons.send_rounded, size: 20),
+                            label: Text(
                               'إرسال السلة للكاشير الرئيسي 📤',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             onPressed: () => _sendCartToMasterPos(state),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
 
                         // Button 2: Local Checkout
                         PrimaryButton(
@@ -2377,7 +2377,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                 ],
               );
             },
@@ -2395,12 +2395,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       direction: DismissDirection.horizontal,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: Colors.green[600],
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.add_circle, color: Colors.white, size: 20),
@@ -2411,7 +2411,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       ),
       secondaryBackground: Container(
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: Colors.red[600],
           borderRadius: BorderRadius.circular(12),
@@ -2419,8 +2419,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(item.quantity > 1 ? '-1' : 'حذف', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(width: 4),
+            Text(item.quantity > 1 ? '-1' : 'حذف', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            SizedBox(width: 4),
             Icon(item.quantity > 1 ? Icons.remove_circle : Icons.delete, color: Colors.white, size: 20),
           ],
         ),
@@ -2452,13 +2452,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Theme.of(context).dividerColor),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: Offset(0, 2)),
           ],
         ),
         child: Row(
@@ -2472,18 +2472,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       Expanded(
                         child: Text(
                           item.product.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (hasMulti) ...[
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         InkWell(
                           onTap: () => UniversalUnitSelectorDialog.showForCartItem(context, item),
                           borderRadius: BorderRadius.circular(6),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                             decoration: BoxDecoration(
                               color: item.unitLevel == 'piece'
                                   ? Colors.amber.shade50
@@ -2515,7 +2515,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                             : Colors.blue.shade900,
                                   ),
                                 ),
-                                const Icon(Icons.arrow_drop_down, size: 13, color: Colors.black54),
+                                Icon(Icons.arrow_drop_down, size: 13, color: Colors.black54),
                               ],
                             ),
                           ),
@@ -2523,7 +2523,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       ],
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     '${item.unitPrice.toStringAsFixed(2)} ${AppConstants.currencySymbol}' +
                         (item.unitLevel != 'pack' ? ' [${item.unitDisplayName}]' : ''),
@@ -2535,7 +2535,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, size: 20, color: Colors.red),
+                  icon: Icon(Icons.remove_circle_outline, size: 20, color: Colors.red),
                   onPressed: () {
                     context.read<BillingBloc>().add(
                           UpdateQuantityEvent(
@@ -2545,17 +2545,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         );
                   },
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  constraints: BoxConstraints(),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
                     '${item.quantity}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add_circle_outline, size: 20, color: Colors.green),
+                  icon: Icon(Icons.add_circle_outline, size: 20, color: Colors.green),
                   onPressed: () {
                     context.read<BillingBloc>().add(
                           UpdateQuantityEvent(
@@ -2565,23 +2565,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         );
                   },
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  constraints: BoxConstraints(),
                 ),
               ],
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Text(
               '${item.total.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             IconButton(
-              icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+              icon: Icon(Icons.close, size: 16, color: Colors.grey),
               onPressed: () {
                 context.read<BillingBloc>().add(RemoveProductFromCartEvent(item.cartKey));
               },
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              constraints: BoxConstraints(),
             ),
           ],
         ),
