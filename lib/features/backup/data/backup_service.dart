@@ -615,9 +615,9 @@ class UniversalDatabaseImporter {
     int fileSize,
     String format,
     int imagesDiscovered,
-    Directory? imagesDir,
-    [Map<String, String>? barcodeToImagePath],
-  ) {
+    Directory? imagesDir, [
+    Map<String, String>? barcodeToImagePath,
+  ]) {
     final products = _parseProductsList(data['products'] as List? ?? [], imagesDir, barcodeToImagePath);
 
     final invoices = <Map<String, dynamic>>[];
