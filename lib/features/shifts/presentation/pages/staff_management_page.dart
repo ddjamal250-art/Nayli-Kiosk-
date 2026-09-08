@@ -59,7 +59,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
           children: [
             Icon(Icons.badge_rounded, color: Colors.teal),
             SizedBox(width: 8),
-            Text('إدارة الموارد البشرية والرواتب (HR & Payroll)',
+            Text('إدارة شؤون الموظفين والرواتب',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
@@ -72,8 +72,8 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
           labelStyle: const TextStyle(fontWeight: FontWeight.bold),
           tabs: const [
             Tab(icon: Icon(Icons.people_alt_rounded), text: 'دليل العمال والصلاحيات'),
-            Tab(icon: Icon(Icons.account_balance_wallet_rounded), text: 'الرواتب والسلفيات (Paie)'),
-            Tab(icon: Icon(Icons.access_time_filled_rounded), text: 'سجل الحضور (Pointage)'),
+            Tab(icon: Icon(Icons.account_balance_wallet_rounded), text: 'الرواتب والسلفيات المالية'),
+            Tab(icon: Icon(Icons.access_time_filled_rounded), text: 'سجل الحضور والدوام'),
           ],
         ),
       ),
@@ -483,7 +483,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تسجيل الحضور بالباركود (Pointage)'),
+        title: const Text('تسجيل الحضور عبر قارئ الباركود'),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -708,7 +708,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
                 shrinkWrap: true,
                 children: [
                   SwitchListTile(
-                    title: const Text('تطبيق التخفيضات (Remise)'),
+                    title: const Text('منح صلاحية التخفيض والخصم'),
                     subtitle: const Text('السماح للكاشير بتطبيق تخفيض بالسقف المحدد أسفله'),
                     value: perms['canApplyDiscount'] == true,
                     onChanged: (v) => setModalState(() => perms['canApplyDiscount'] = v),
@@ -724,7 +724,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
                     ),
                   const Divider(),
                   SwitchListTile(
-                    title: const Text('إلغاء الفواتير والسلع (Void)'),
+                    title: const Text('منح صلاحية حذف السلع وإلغاء الفواتير'),
                     subtitle: const Text('إلغاء السلة بعد المسح (يوصى بإبقائها معطلة للحماية من السرقة)'),
                     value: perms['canVoidInvoice'] == true,
                     onChanged: (v) => setModalState(() => perms['canVoidInvoice'] = v),
@@ -811,10 +811,10 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
                   value: type,
                   decoration: const InputDecoration(labelText: 'نوع الحركة المالية', border: OutlineInputBorder()),
                   items: const [
-                    DropdownMenuItem(value: 'advance_cash', child: Text('تسبيق نقدي (Avance Espèces)')),
+                    DropdownMenuItem(value: 'advance_cash', child: Text('تسليم تسبيق نقدي على الراتب')),
                     DropdownMenuItem(value: 'advance_goods', child: Text('سحب سلع استهلاك من المتجر')),
                     DropdownMenuItem(value: 'bonus', child: Text('منحة / مكافأة (+) (+ Prime)')),
-                    DropdownMenuItem(value: 'deduction', child: Text('خصم / غياب (-) (- Retenue)')),
+                    DropdownMenuItem(value: 'deduction', child: Text('خصم مالي بسبب الغياب (-)')),
                   ],
                   onChanged: (v) => setModalState(() => type = v!),
                 ),

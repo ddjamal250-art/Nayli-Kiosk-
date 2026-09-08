@@ -84,14 +84,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
             const Text('اختر نوع المستند المستهدف للتحويل إليه:'),
             const SizedBox(height: 12),
             if (doc.type == DocumentType.devis) ...[
-              _buildConvertTile(ctx, doc, DocumentType.bonDeCommande, 'تحويل إلى وصل طلبية (Bon de Commande)'),
-              _buildConvertTile(ctx, doc, DocumentType.bonDeLivraison, 'تحويل إلى وصل تسليم (Bon de Livraison)'),
-              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة رسمية (Facture)'),
+              _buildConvertTile(ctx, doc, DocumentType.bonDeCommande, 'تحويل إلى طلبية زبون'),
+              _buildConvertTile(ctx, doc, DocumentType.bonDeLivraison, 'تحويل إلى وصل تسليم السلع'),
+              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة بيع رسمية'),
             ] else if (doc.type == DocumentType.bonDeCommande) ...[
-              _buildConvertTile(ctx, doc, DocumentType.bonDeLivraison, 'تحويل إلى وصل تسليم (Bon de Livraison)'),
-              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة رسمية (Facture)'),
+              _buildConvertTile(ctx, doc, DocumentType.bonDeLivraison, 'تحويل إلى وصل تسليم السلع'),
+              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة بيع رسمية'),
             ] else if (doc.type == DocumentType.bonDeLivraison) ...[
-              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة رسمية (Facture)'),
+              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة بيع رسمية'),
             ] else ...[
               _buildConvertTile(ctx, doc, DocumentType.bonDeLivraison, 'استخراج وصل تسليم مكرر'),
             ],
@@ -190,15 +190,15 @@ class _DocumentsPageState extends State<DocumentsPage> {
                       children: [
                         _buildStatBadge('إجمالي الوثائق', _allDocuments.length.toString(), Colors.blue),
                         const SizedBox(width: 8),
-                        _buildStatBadge('Devis', devisCount.toString(), Colors.indigo),
+                        _buildStatBadge('عروض أسعار', devisCount.toString(), Colors.indigo),
                         const SizedBox(width: 8),
-                        _buildStatBadge('BC', bcCount.toString(), Colors.orange),
+                        _buildStatBadge('طلبات شراء', bcCount.toString(), Colors.orange),
                         const SizedBox(width: 8),
-                        _buildStatBadge('BL', blCount.toString(), Colors.teal),
+                        _buildStatBadge('وصولات تسليم', blCount.toString(), Colors.teal),
                         const SizedBox(width: 8),
-                        _buildStatBadge('Factures', facCount.toString(), Colors.green),
+                        _buildStatBadge('فواتير رسمية', facCount.toString(), Colors.green),
                         const SizedBox(width: 8),
-                        _buildStatBadge('Brouillons', draftCount.toString(), Colors.grey),
+                        _buildStatBadge('مسودات', draftCount.toString(), Colors.grey),
                       ],
                     ),
                   ),
@@ -366,7 +366,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          doc.isDraft ? 'مسودة (Brouillon)' : 'مؤكد (Validé)',
+                          doc.isDraft ? 'مسودة غير مؤكدة' : 'مؤكدة ومعتمدة',
                           style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: doc.isDraft ? Colors.grey.shade700 : Colors.green.shade800),
                         ),
                       ),
@@ -399,18 +399,18 @@ class _DocumentsPageState extends State<DocumentsPage> {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'طباعة ومعاينة PDF (A4)',
+                  tooltip: 'طباعة ومعاينة بصيغة PDF',
                   icon: const Icon(Icons.print_rounded, color: Colors.teal),
                   onPressed: () => DocumentPdfGenerator.printDocument(doc),
                 ),
                 if (doc.clientPhone != null && doc.clientPhone!.isNotEmpty)
                   IconButton(
-                    tooltip: 'إرسال عبر واتساب (WhatsApp)',
+                    tooltip: 'إرسال عبر واتساب',
                     icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.green),
                     onPressed: () => DocumentPdfGenerator.sendViaWhatsApp(doc: doc, phoneNumber: doc.clientPhone!),
                   ),
                 IconButton(
-                  tooltip: 'تحويل المستند (Convertir)',
+                  tooltip: 'تحويل المستند',
                   icon: const Icon(Icons.transform_rounded, color: Colors.indigo),
                   onPressed: () => _showConversionDialog(doc),
                 ),

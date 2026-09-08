@@ -5,27 +5,15 @@ import '../data/hive_database.dart';
 class ThemeCubit extends Cubit<ThemeMode> {
   static const String themeKey = 'app_theme_mode';
 
-  ThemeCubit() : super(_getInitialTheme());
+  ThemeCubit() : super(ThemeMode.light);
 
-  static ThemeMode _getInitialTheme() {
-    try {
-      final saved = HiveDatabase.settingsBox.get(themeKey) as String?;
-      if (saved == 'dark') return ThemeMode.dark;
-      if (saved == 'light') return ThemeMode.light;
-    } catch (_) {}
-    return ThemeMode.light;
-  }
-
-  bool get isAmoledDark => state == ThemeMode.dark;
+  bool get isAmoledDark => false;
 
   void toggleTheme() {
-    final next = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    HiveDatabase.settingsBox.put(themeKey, next == ThemeMode.dark ? 'dark' : 'light');
-    emit(next);
+    emit(ThemeMode.light);
   }
 
   void setTheme(ThemeMode mode) {
-    HiveDatabase.settingsBox.put(themeKey, mode == ThemeMode.dark ? 'dark' : 'light');
-    emit(mode);
+    emit(ThemeMode.light);
   }
 }

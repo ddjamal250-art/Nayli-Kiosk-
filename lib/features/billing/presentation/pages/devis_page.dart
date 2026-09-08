@@ -78,7 +78,7 @@ class _DevisPageState extends State<DevisPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('عروض الأسعار والفواتير المبدئية (Devis) 📄', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('عروض الأسعار والفواتير المبدئية 📄', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -96,7 +96,7 @@ class _DevisPageState extends State<DevisPage> {
                   const SizedBox(height: 12),
                   const Text('لا توجد عروض أسعار أو فواتير مبدئية محفوظة', style: TextStyle(color: Colors.grey, fontSize: 14)),
                   const SizedBox(height: 6),
-                  const Text('يمكنك حفظ أي سلة كـ Devis من صفحة الدفع', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  const Text('يمكنك حفظ أي سلة كعرض أسعار من صفحة الدفع', style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
             )
@@ -135,7 +135,7 @@ class _DevisPageState extends State<DevisPage> {
                                 color: Colors.purple.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Text('Devis مبدئي', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple)),
+                              child: const Text('عرض أسعار مبدئي', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple)),
                             ),
                           ],
                         ),

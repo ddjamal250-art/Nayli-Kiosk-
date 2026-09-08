@@ -124,7 +124,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
             TextField(
               controller: ctrl,
               decoration: const InputDecoration(
-                labelText: 'رابط الكشك (Kiosk URL)',
+                labelText: 'رابط شاشة فاحص الأسعار',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.language_rounded),
               ),
@@ -666,7 +666,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
           child: const Icon(Icons.engineering_rounded, color: Colors.indigo),
         ),
         title: const Text(
-          'دليل مهندسي وتقنيي الشبكات للتثبيت والربط (Technical Network Guide) 🛠️',
+          'دليل ربط وتثبيت الشاشات الذكية عبر الشبكة 🛠️',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
         ),
         subtitle: const Text(
@@ -685,10 +685,10 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTechRow('عنوان السيرفر المحلي (Host IP):', _serverIp),
-                _buildTechRow('منفذ الاتصال (Port):', _serverPort.toString() + ' (TCP Inbound)'),
-                _buildTechRow('بروتوكول الخدمة (Protocol):', 'HTTP REST + Embedded Web Server (Zero Overhead)'),
-                _buildTechRow('نطاق الشبكة المطلوب (Subnet):', 'نفس الشبكة المحلية (LAN / Wi-Fi Subnet e.g. 192.168.1.x)'),
+                _buildTechRow('عنوان الخادم المحلي:', _serverIp),
+                _buildTechRow('منفذ الاتصال المخصص:', _serverPort.toString() + ' (TCP Inbound)'),
+                _buildTechRow('بروتوكول الخدمة المحلي:', 'HTTP REST + Embedded Web Server (Zero Overhead)'),
+                _buildTechRow('نطاق الشبكة المحلية:', 'نفس الشبكة المحلية (LAN / Wi-Fi Subnet e.g. 192.168.1.x)'),
               ],
             ),
           ),
@@ -703,7 +703,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
           _buildGuideItem(
             '1. خيار الشاشات الذكية و Android TV Box (الأسهل والأكثر استقراراً):',
             '• لا يتطلب تثبيت أي تطبيق على الإطلاق.\n'
-            '• فتح متصفح التلفاز (Chrome / TV Browser) والانتقال للرابط الموضح أعلاه.\n'
+            '• فتح متصفح الشاشة الذكية والانتقال للرابط الموضح أعلاه.\n'
             '• قارئ الباركود USB يُركب مباشرة في فتحة USB الخاصة بالتلفاز أو الـ TV Box (يعمل كـ HID Keyboard قياسي).\n'
             '• يُنصح بضبط المتصفح على (ملء الشاشة Fullscreen F11) وحفظ الرابط كصفحة رئيسية.',
           ),
@@ -712,7 +712,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
             '2. خيار حاسوب مستقل أو All-in-One PC في الرواق:',
             '• تثبيت برنامج Nayli Kiosk Desktop Setup.\n'
             '• تشغيل الشاشة مباشرة عبر المسار: /kiosk بملء الشاشة.\n'
-            '• ميزة الذاكرة الاحتياطية (Offline Cache) تضمن استمرار فحص الأسعار حتى لو انقطع الكابل.',
+            '• ميزة الحفظ الاحتياطي المحلي تضمن استمرار فحص الأسعار حتى لو انقطع الكابل.',
           ),
 
           _buildGuideItem(
@@ -722,7 +722,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
           ),
 
           _buildGuideItem(
-            '4. إعدادات الروتر والجدار الناري (Router & Firewall Recommendations):',
+            '4. إرشادات الشبكة المحلية وجدار الحماية:',
             '• يُفضل تثبيت عنوان IP ثابت لحاسوب المدير (DHCP Static Lease / Address Reservation) في الروتر.\n'
             '• التأكد من السماح للمنفذ ' + _serverPort.toString() + ' في جدار حماية ويندوز (Windows Defender Firewall Inbound Rules).\n'
             '• الكابل المفضل: كابل إيثرنت Cat6 موصول بالسويتش لضمان سرعة استجابة فورية (أقل من 10ms).',

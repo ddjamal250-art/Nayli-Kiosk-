@@ -885,7 +885,7 @@ class _AddProductPageState extends State<AddProductPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const InputLabel(text: 'سعر البيع (Détail) *'),
+                          const InputLabel(text: 'سعر البيع للعموم *'),
                           TextFormField(
                             controller: _priceCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),

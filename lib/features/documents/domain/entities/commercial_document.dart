@@ -164,21 +164,21 @@ class CommercialDocument {
   String get typeLabelAr {
     switch (type) {
       case CommercialDocType.devis:
-        return 'عرض سعر (Devis)';
+        return 'عرض أسعار مبدئي';
       case CommercialDocType.commande:
-        return 'طلبية زبون (Commande)';
+        return 'طلبية زبون';
       case CommercialDocType.bl:
-        return 'وصل تسليم (BL)';
+        return 'وصل تسليم السلع';
       case CommercialDocType.facture:
-        return 'فاتورة بيع (Facture)';
+        return 'فاتورة بيع رسمية';
       case CommercialDocType.versement:
-        return 'وصل دفع وقبض (Versement)';
+        return 'وصل تسديد وقبض';
       case CommercialDocType.achat:
         return 'وصل شراء مورد (Bon d\'Achat)';
       case CommercialDocType.bonDeRoute:
-        return 'وصل الشحن والتوزيع (Bon de Route)';
+        return 'وصل شحن وتوزيع';
       case CommercialDocType.retourFournisseur:
-        return 'وصل إرجاع للمورد (Bon de Retour)';
+        return 'وصل إرجاع بضاعة للمورد';
     }
   }
 

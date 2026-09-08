@@ -177,7 +177,7 @@ class _PrinterSelectionDialogState extends State<PrinterSelectionDialog> {
                               child: Text(
                                 isThermal
                                     ? 'الطابعة الحرارية تطبع وصولات الكاشير السريعة وعمليات الدفع.'
-                                    : 'طابعة الوثائق تطبع الفواتير الرسمية، Devis، ووصولات التسليم A4.',
+                                    : 'طابعة الوثائق تطبع الفواتير الرسمية، عروض الأسعار، ووصولات التسليم A4.',
                                 style: TextStyle(fontSize: 11, color: isThermal ? Colors.teal.shade800 : Colors.indigo.shade800),
                               ),
                             ),

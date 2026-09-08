@@ -349,7 +349,7 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('إدارة الشبكة والمزامنة (LAN)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('إدارة الشبكة والمزامنة الفورية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: !isWide,
         backgroundColor: Theme.of(context).cardColor,
         foregroundColor: const Color(0xFF0F172A),
@@ -527,7 +527,7 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
             children: [
               Icon(Icons.qr_code_scanner_rounded, color: Colors.indigo, size: 20),
               SizedBox(width: 6),
-              Text('كود المسح للربط الفوري (QR Pair)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('رمز المسح للربط الفوري', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           const SizedBox(height: 14),
@@ -578,12 +578,12 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('إحداثيات الاتصال المحلي (Endpoint)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const Text('بيانات الاتصال المحلي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 12),
 
               _buildInfoRow('عنوان الـ IP المحلي:', _isLoadingIp ? 'جاري الفحص...' : _localIp, Icons.laptop_windows_rounded),
               const SizedBox(height: 10),
-              _buildInfoRow('منفذ الاتصال (Port):', '${LocalSyncServer.port}', Icons.electrical_services_rounded),
+              _buildInfoRow('منفذ الاتصال:', '${LocalSyncServer.port}', Icons.electrical_services_rounded),
               const SizedBox(height: 10),
               _buildInfoRow('رابط الشبكة الكامل:', 'http://$_localIp:${LocalSyncServer.port}', Icons.link_rounded, isUrl: true),
             ],
@@ -603,7 +603,7 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('فحص واختبار الشبكة (Diagnostics)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const Text('فحص واختبار الاتصال بالشبكة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -616,7 +616,7 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.speed_rounded, size: 18),
                 label: Text(
-                  _isTestingPing ? 'جاري الفحص...' : 'فحص استجابة السيرفر المحلي (Ping)',
+                  _isTestingPing ? 'جاري الفحص...' : 'فحص استجابة الخادم المحلي',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                 ),
                 onPressed: _isTestingPing || !_isServerRunning ? null : _testPing,
@@ -888,7 +888,7 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
             ),
             icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
             label: const Text(
-              'عرض رمز تفعيل الحاسوب بقارئ الباركود (Douchette) 🔫 📲',
+              'عرض رمز تفعيل الحاسوب عبر قارئ الباركود 🔫 📲',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             ),
             onPressed: () => PcDouchetteActivationModal.show(context),

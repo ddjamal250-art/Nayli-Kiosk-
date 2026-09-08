@@ -271,7 +271,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             ),
                             icon: const Icon(Icons.print_rounded, size: 16, color: Colors.white),
-                            label: const Text('طباعة نسخة (Duplicata)',
+                            label: const Text('طباعة نسخة مطابقة للوصل',
                                 style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                             onPressed: () async {
                               final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Kiosk');
@@ -416,7 +416,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                         ),
                         icon: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 18),
                         label: const Text(
-                          'مسح وصل ورقي (OCR) 📸',
+                          'مسح وتصوير الوصل الورقي 📸',
                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         onPressed: _scanPaperReceipt,
@@ -430,7 +430,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                         ),
                         icon: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 18),
                         label: const Text(
-                          'وصولات الكاشير (Duplicata) 🧾',
+                          'أرشيف وصولات الكاشير 🧾',
                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         onPressed: () => _showPosTicketsArchiveModal(context),
@@ -512,7 +512,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                               ),
                               icon: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 16),
                               label: const Text(
-                                'مسح وصل (OCR) 📸',
+                                'مسح وتصوير الوصل 📸',
                                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                               ),
                               onPressed: _scanPaperReceipt,
@@ -544,15 +544,15 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildFilterChip('الكل (Tous)', null),
-                      _buildFilterChip('Devis (عروض أسعار)', CommercialDocType.devis),
-                      _buildFilterChip('Commandes (طلبيات)', CommercialDocType.commande),
-                      _buildFilterChip('Bons de Livraison (BL)', CommercialDocType.bl),
-                      _buildFilterChip('Factures (فواتير)', CommercialDocType.facture),
-                      _buildFilterChip('Versements (قبض ودفع)', CommercialDocType.versement),
-                      _buildFilterChip('Bons d\'Achat (شراء)', CommercialDocType.achat),
-                      _buildFilterChip('Bons de Route (شحن)', CommercialDocType.bonDeRoute),
-                      _buildFilterChip('Bons de Retour (إرجاع للمورد) 🔄', CommercialDocType.retourFournisseur),
+                      _buildFilterChip('جميع الوثائق', null),
+                      _buildFilterChip('عروض الأسعار', CommercialDocType.devis),
+                      _buildFilterChip('طلبيات الزبائن', CommercialDocType.commande),
+                      _buildFilterChip('وصولات التسليم', CommercialDocType.bl),
+                      _buildFilterChip('فواتير البيع الرسمية', CommercialDocType.facture),
+                      _buildFilterChip('وصولات القبض والتسديد', CommercialDocType.versement),
+                      _buildFilterChip('فواتير الشراء', CommercialDocType.achat),
+                      _buildFilterChip('وصولات الشحن والنقل', CommercialDocType.bonDeRoute),
+                      _buildFilterChip('إرجاع السلع للمورد 🔄', CommercialDocType.retourFournisseur),
                     ],
                   ),
                 ),

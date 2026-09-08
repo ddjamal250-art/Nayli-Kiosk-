@@ -315,7 +315,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('✅ تم حفظ عرض الأسعار (Devis) للزبون: $clientName'),
+        content: Text('✅ تم حفظ عرض الأسعار للزبون: $clientName'),
         backgroundColor: Colors.purple[700],
         duration: Duration(milliseconds: 1500),
       ),
@@ -909,7 +909,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         ),
                                         icon: Icon(Icons.description, size: 18, color: Colors.purple),
                                         label: Text(
-                                          '📄 Devis',
+                                          '📄 عرض أسعار',
                                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple),
                                         ),
                                         onPressed: () => _saveAsDevis(billingState),

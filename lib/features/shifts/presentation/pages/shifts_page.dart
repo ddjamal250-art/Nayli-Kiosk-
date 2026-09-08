@@ -67,7 +67,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
           children: [
             Icon(Icons.point_of_sale_rounded, color: Colors.teal, size: 28),
             SizedBox(width: 8),
-            Text('فتح وردية جديدة (Ouverture de Caisse)'),
+            Text('فتح وردية جديدة وبدء العمل'),
           ],
         ),
         content: Column(
@@ -89,7 +89,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                   icon: const Icon(Icons.calculate_rounded, color: Colors.teal),
                   tooltip: 'حاسبة الفئات النقدية الجزائرية 🇩🇿',
                   onPressed: () async {
-                    final counted = await AlgerianDenominationDialog.show(context, title: 'حساب رصيد بداية الصندوق (Fond de Caisse)');
+                    final counted = await AlgerianDenominationDialog.show(context, title: 'حساب رصيد بداية الصندوق (عهدة الانطلاق)');
                     if (counted != null) {
                       floatController.text = counted.toStringAsFixed(0);
                     }
@@ -134,7 +134,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
           children: [
             Icon(Icons.assignment_turned_in_rounded, color: Colors.red, size: 28),
             SizedBox(width: 8),
-            Text('إغلاق الصندوق وطباعة تقرير الختام Z-Report'),
+            Text('إغلاق الصندوق وطباعة تقرير الختام المالي'),
           ],
         ),
         content: Column(
@@ -175,7 +175,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             icon: const Icon(Icons.print_rounded, color: Colors.white),
-            label: const Text('إغلاق وطباعة Z-Report', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: const Text('إغلاق وطباعة التقرير المالي', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: () async {
               final actual = double.tryParse(actualCashController.text.trim()) ?? 0.0;
               Navigator.pop(ctx);
@@ -196,7 +196,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
               final botToken = TelegramService.getBotToken();
               final chatId = TelegramService.getChatId();
               if (botToken.isNotEmpty && chatId.isNotEmpty) {
-                final summary = '📊 <b>تقرير ختام الوردية (Z-Report)</b> 🧾\n'
+                final summary = '📊 <b>تقرير ختام الوردية والإغلاق المالي</b> 🧾\n'
                     '━━━━━━━━━━━━━━━━━\n'
                     '👤 <b>العامل:</b> ${closed.workerName}\n'
                     '⏰ <b>الوقت:</b> ${DateFormat('yyyy/MM/dd HH:mm').format(closed.closedAt ?? DateTime.now())}\n'
@@ -234,14 +234,14 @@ class _ShiftsPageState extends State<ShiftsPage> {
           children: [
             Icon(Icons.badge_rounded, color: Colors.teal),
             SizedBox(width: 8),
-            Text('إدارة الورديات والصندوق (Cashier Shifts & Z-Report)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('إدارة الورديات وإغلاق الصندوق المالي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
         actions: [
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F766E), padding: const EdgeInsets.symmetric(horizontal: 14)),
             icon: const Icon(Icons.people_alt_rounded, color: Colors.white, size: 18),
-            label: const Text('إدارة الموارد البشرية والرواتب (HR)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: const Text('إدارة شؤون الموظفين والرواتب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: () => context.push('/staff-management'),
           ),
           const SizedBox(width: 8),
@@ -249,14 +249,14 @@ class _ShiftsPageState extends State<ShiftsPage> {
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, padding: const EdgeInsets.symmetric(horizontal: 14)),
               icon: const Icon(Icons.lock_clock_rounded, color: Colors.white),
-              label: const Text('قفل الشاشة السريع (Pause)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              label: const Text('إيقاف مؤقت للجلسة (استراحة الكاشير)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               onPressed: () => ShiftService.lockScreen(context, workerName: _activeShift!.workerName),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.symmetric(horizontal: 14)),
               icon: const Icon(Icons.close_fullscreen_rounded, color: Colors.white),
-              label: const Text('إغلاق الوردية (Z-Report)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              label: const Text('إغلاق الوردية والتقرير المالي', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               onPressed: _showCloseShiftModal,
             ),
           ] else
@@ -379,7 +379,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                             const SizedBox(height: 16),
                             Row(
                               children: [
-                                _buildShiftStat('رصيد الفتح (Fond)', '${_activeShift!.floatAmount.toStringAsFixed(2)} د.ج', Colors.grey),
+                                _buildShiftStat('رصيد البداية (العهدة)', '${_activeShift!.floatAmount.toStringAsFixed(2)} د.ج', Colors.grey),
                                 const SizedBox(width: 12),
                                 _buildShiftStat('مبيعات الكاش', 'مباشرة في الصندوق', Colors.green),
                                 const SizedBox(width: 12),
@@ -427,7 +427,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                     children: [
                       Icon(Icons.history_edu_rounded, color: Colors.teal),
                       SizedBox(width: 8),
-                      Text('سجل الورديات السابقة وتقارير الختام Z-Report', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('سجل الورديات السابقة والتقارير المالية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -466,7 +466,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('وردية: ${s.workerName} (Z-Report)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                      Text('وردية: ${s.workerName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                       Text(
                                         'الفتح: ${DateFormat('yyyy/MM/dd HH:mm').format(s.openedAt)}  •  الإغلاق: ${s.closedAt != null ? DateFormat('HH:mm').format(s.closedAt!) : "-"}',
                                         style: const TextStyle(fontSize: 12, color: Colors.grey),

@@ -516,7 +516,7 @@ class _StockInPageState extends State<StockInPage> {
       }
     }
 
-    SnackbarHelper.showSuccess(context, '✅ تم تسجيل أريفاج "$name" (+$qty ${_unitMode == ArrivageUnitMode.vracSacs ? "كغ" : "حبة"}) بنجاح!');
+    SnackbarHelper.showSuccess(context, '✅ تم تسجيل توريد "$name" (+$qty ${_unitMode == ArrivageUnitMode.vracSacs ? "كغ" : "حبة"}) بنجاح!');
   }
 
   Future<void> _pickReceiptDate() async {
@@ -1129,7 +1129,7 @@ class _StockInPageState extends State<StockInPage> {
                           onSubmitted: (_) => _qtyFocusNode.requestFocus(),
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'تكلفة الكيلوغرام (PUMP)' : 'سعر تكلفة الحبة (PUMP)',
+                            labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'تكلفة الكيلوغرام المتوسطة' : 'سعر التكلفة المتوسط للحبة',
                             suffixText: 'DA',
                             border: const OutlineInputBorder(),
                           ),

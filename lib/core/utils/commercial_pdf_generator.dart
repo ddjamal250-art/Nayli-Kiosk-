@@ -137,7 +137,7 @@ class CommercialPdfGenerator {
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('الزبون / الطرف الآخر (Client / Destinataire):', style: pw.TextStyle(font: ttf, fontSize: 9, color: PdfColors.grey700)),
+                        pw.Text('العميل / المشتري:', style: pw.TextStyle(font: ttf, fontSize: 9, color: PdfColors.grey700)),
                         pw.Text(doc.entityName, style: pw.TextStyle(font: ttf, fontSize: 12, fontWeight: pw.FontWeight.bold)),
                         if (doc.entityAddress.isNotEmpty)
                           pw.Text('العنوان: ${doc.entityAddress}', style: pw.TextStyle(font: ttf, fontSize: 9)),
@@ -247,16 +247,16 @@ class CommercialPdfGenerator {
                     child: pw.Table(
                       border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
                       children: [
-                        _buildSummaryRow('المجموع الخام (HT):', '${doc.subtotalHT.toStringAsFixed(2)} DA', ttf),
+                        _buildSummaryRow('المجموع الصافي قبل الضريبة:', '${doc.subtotalHT.toStringAsFixed(2)} DA', ttf),
                         if (doc.globalDiscount > 0)
-                          _buildSummaryRow('التخفيض (Remise):', '-${doc.globalDiscount.toStringAsFixed(2)} DA', ttf, isDiscount: true),
+                          _buildSummaryRow('الخصم التجاري:', '-${doc.globalDiscount.toStringAsFixed(2)} DA', ttf, isDiscount: true),
                         if (doc.totalTVA > 0)
-                          _buildSummaryRow('ضريبة القيمة المضافة (TVA):', '${doc.totalTVA.toStringAsFixed(2)} DA', ttf),
-                        _buildSummaryRow('المجموع الصافي (TTC):', '${doc.netTotal.toStringAsFixed(2)} DA', ttf, isBold: true),
+                          _buildSummaryRow('الرسم على القيمة المضافة:', '${doc.totalTVA.toStringAsFixed(2)} DA', ttf),
+                        _buildSummaryRow('المبلغ الإجمالي للدفع:', '${doc.netTotal.toStringAsFixed(2)} DA', ttf, isBold: true),
                         if (doc.previousBalance > 0)
-                          _buildSummaryRow('الرصيد السابق (Ancien Solde):', '+${doc.previousBalance.toStringAsFixed(2)} DA', ttf),
-                        _buildSummaryRow('الدفعة المسددة (Versement):', '${doc.amountPaid.toStringAsFixed(2)} DA', ttf, isPayment: true),
-                        _buildSummaryRow('الرصيد المتبقي (Reste):', '${doc.remainingBalance.toStringAsFixed(2)} DA', ttf, isBold: true, isHighlight: true),
+                          _buildSummaryRow('الرصيد والديون السابقة:', '+${doc.previousBalance.toStringAsFixed(2)} DA', ttf),
+                        _buildSummaryRow('الدفعة المسددة نقداً:', '${doc.amountPaid.toStringAsFixed(2)} DA', ttf, isPayment: true),
+                        _buildSummaryRow('المبلغ المتبقي غير المسدد:', '${doc.remainingBalance.toStringAsFixed(2)} DA', ttf, isBold: true, isHighlight: true),
                       ],
                     ),
                   ),

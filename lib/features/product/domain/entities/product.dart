@@ -135,7 +135,7 @@ class Product extends Equatable {
         unitType,
       ];
 
-  // --- Universal Multi-Unit Packaging Helpers (Walmart UOM Model) ---
+  // --- Universal Multi-Unit Packaging Helpers ---
   bool get isBeverage {
     final cat = category.toLowerCase();
     final n = name.toLowerCase();
@@ -148,18 +148,49 @@ class Product extends Equatable {
         cat.contains('soda') ||
         cat.contains('غازي') ||
         n.contains('قارورة ماء') ||
-        n.contains('eau ');
+        n.contains('eau') ||
+        n.contains('ماء') ||
+        n.contains('عصير') ||
+        n.contains('مشروب') ||
+        n.contains('كوكا') ||
+        n.contains('بيبسي') ||
+        n.contains('حمود') ||
+        n.contains('رويبة') ||
+        n.contains('إفري') ||
+        n.contains('رامي') ||
+        n.contains('سفن اب') ||
+        n.contains('ميراندا') ||
+        n.contains('فانتا');
   }
 
   bool get isTobaccoProduct {
     final cat = category.toLowerCase();
+    final n = name.toLowerCase();
     return isTobacco ||
         cat.contains('تبغ') ||
         cat.contains('سجائر') ||
         cat.contains('شمة') ||
         cat.contains('معسل') ||
         cat.contains('tabac') ||
-        cat.contains('cigarette');
+        cat.contains('cigarette') ||
+        n.contains('مارلبورو') ||
+        n.contains('marlboro') ||
+        n.contains('ريم') ||
+        n.contains('rym') ||
+        n.contains('جولواز') ||
+        n.contains('gauloises') ||
+        n.contains('وينستون') ||
+        n.contains('winston') ||
+        n.contains('فيليب موريس') ||
+        n.contains('philip morris') ||
+        n.contains('سفير') ||
+        n.contains('safir') ||
+        n.contains('روثمان') ||
+        n.contains('rothmans') ||
+        n.contains('شمة') ||
+        n.contains('سجائر') ||
+        n.contains('دخان') ||
+        n.contains('سيكار');
   }
 
   bool get hasSubUnit {
@@ -209,7 +240,7 @@ class Product extends Equatable {
   String get resolvedCartonName {
     if (packName != null && packName!.trim().isNotEmpty) return packName!.trim();
     if (isTobaccoProduct) return 'كرطوشة';
-    if (isBeverage) return 'فاردو (Fardeau)';
+    if (isBeverage) return 'فاردو';
     if (category.contains('بيض')) return 'كرتونة بيض';
     if (category.contains('علك') || category.contains('حلويات')) return 'شكارة / كرتونة';
     return 'كرتونة / فاردو';

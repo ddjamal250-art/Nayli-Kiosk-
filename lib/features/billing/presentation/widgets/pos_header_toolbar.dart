@@ -260,21 +260,7 @@ class PosHeaderToolbar extends StatelessWidget {
                 onPressed: () => context.push('/products'),
               ),
 
-              // 3. Theme Toggle (AMOLED Dark / Light)
-              BlocBuilder<ThemeCubit, ThemeMode>(
-                builder: (context, themeMode) {
-                  final isAmoled = themeMode == ThemeMode.dark;
-                  return IconButton(
-                    tooltip: context.tr('switch_theme_tooltip'),
-                    icon: Icon(
-                      isAmoled ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                      color: isAmoled ? Colors.amber : (isDarkHeader ? Colors.white : const Color(0xFF475569)),
-                      size: 22,
-                    ),
-                    onPressed: () => context.read<ThemeCubit>().toggleTheme(),
-                  );
-                },
-              ),
+
 
               // 4. Custom Header Palette Button
               IconButton(

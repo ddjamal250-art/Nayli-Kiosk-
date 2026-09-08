@@ -301,7 +301,7 @@ class _SettingsPageState extends State<SettingsPage> {
           icon: Icons.bar_chart_rounded,
           iconColor: Colors.green[700]!,
           title: 'مركز المالية والتقارير والأرباح',
-          subtitle: 'صافي الأرباح اليومية، المصاريف، ومناوبات الصندوق (Z-Report)',
+          subtitle: 'صافي الأرباح اليومية، المصاريف، ومناوبات الصندوق اليومية',
           badgeText: 'مالية 📊',
           badgeColor: Colors.green,
           onTap: () => _showFinanceHubSheet(context),
@@ -327,7 +327,7 @@ class _SettingsPageState extends State<SettingsPage> {
           icon: Icons.groups_rounded,
           iconColor: Colors.orange[800]!,
           title: 'مركز العلاقات والديون وعروض الأسعار',
-          subtitle: 'دفتر ديون الزبائن (Crédit)، فواتير الموردين، وعروض Devis',
+          subtitle: 'سجل ديون ومستحقات العملاء، فواتير الموردين، وعروض الأسعار',
           badgeText: 'شركاء 👥',
           badgeColor: Colors.orange,
           onTap: () => _showPartnersHubSheet(context),
@@ -608,7 +608,7 @@ class _SettingsPageState extends State<SettingsPage> {
           icon: Icons.print_rounded,
           iconColor: Colors.indigo,
           title: 'طابعات ويندوز (التعرف التلقائي والفصل)',
-          subtitle: 'تحديد طابعة التوصيل الحرارية (80mm) وطابعة الفواتير (A4)',
+          subtitle: 'تحديد طابعة الإيصالات الحرارية وطابعة الفواتير',
           onTap: () => PrinterSelectionDialog.show(context),
         ),
       ],
@@ -616,7 +616,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildTile(
         icon: Icons.wifi_tethering_rounded,
         iconColor: Colors.teal,
-        title: 'إدارة الشبكة المحلية والمزامنة (LAN & Wi-Fi)',
+        title: 'إدارة الشبكة المحلية والمزامنة الفورية',
         subtitle: 'ربط هواتف العمال عبر كود QR ومزامنة السلات لحظياً',
         onTap: () => context.push('/lan-sync'),
       ),
@@ -625,14 +625,14 @@ class _SettingsPageState extends State<SettingsPage> {
         icon: Icons.tv_rounded,
         iconColor: Color(0xFF4F46E5),
         title: 'إعدادات كشك الأسعار وشاشات العروض الترويجية ⚙️',
-        subtitle: 'تخصيص مدة العرض، سهم الماسح، ورابط الشاشات الذكية (LAN Kiosk)',
+        subtitle: 'تخصيص مدة العرض، سهم الماسح، ورابط الشاشات الذكية',
         onTap: () => context.push('/kiosk-settings'),
       ),
       _buildDivider(),
       _buildTile(
         icon: Icons.qr_code_scanner_rounded,
         iconColor: Color(0xFF4F46E5),
-        title: 'تشغيل كشك فاحص الأسعار للزبائن (Kiosk Mode) 🛍️',
+        title: 'تشغيل كشك فحص الأسعار للزبائن 🛍️',
         subtitle: 'فتح واجهة الفحص الفوري التفاعلية للزبائن على هذا الجهاز',
         onTap: () => context.push('/kiosk'),
       ),
@@ -725,7 +725,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildTile(
         icon: Icons.lock_outline_rounded,
         iconColor: Colors.indigo,
-        title: 'قفل التطبيق برمز الأمان (Security PIN)',
+        title: 'قفل التطبيق بالرمز السري للأمان',
         subtitle: isPinEnabled ? 'مفعل (يحمي الأرباح والإعدادات)' : 'معطل (وصول مباشر)',
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -758,7 +758,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildTile(
         icon: Icons.settings_backup_restore_rounded,
         iconColor: Colors.deepOrange,
-        title: 'استرجاع واستيراد قاعدة البيانات (Restore Data) 📥',
+        title: 'استرجاع واستيراد قاعدة البيانات 📥',
         subtitle: 'استرجاع المنتجات والزبائن والفواتير من ملف خارجي (.nbak / ZIP / فلاش ديسك)',
         onTap: () async {
           final auth = await SecurityPinHelper.authenticate(context, title: 'استرجاع قاعدة البيانات');
@@ -771,7 +771,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildTile(
         icon: Icons.table_chart_outlined,
         iconColor: Colors.green[700]!,
-        title: 'النسخ الاحتياطي وتصدير البيانات (Excel & Backup)',
+        title: 'النسخ الاحتياطي وتصدير البيانات',
         subtitle: 'تصدير المخزون والديون كـ Excel وإنشاء نسخة أمان',
         onTap: () async {
           final auth = await SecurityPinHelper.authenticate(context, title: 'النسخ الاحتياطي وتصدير البيانات');
@@ -796,40 +796,7 @@ class _SettingsPageState extends State<SettingsPage> {
   /// Language & App Info Card
     Widget _buildAppearanceAndThemeSection(BuildContext context) {
     return _buildCardGroup([
-      BlocBuilder<ThemeCubit, ThemeMode>(
-        builder: (context, themeMode) {
-          final isDark = themeMode == ThemeMode.dark;
-          return SwitchListTile(
-            secondary: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: (isDark ? Colors.amber : Colors.blueGrey).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                color: isDark ? Colors.amber.shade800 : Colors.blueGrey,
-                size: 20,
-              ),
-            ),
-            title: Text(
-              context.tr('dark_amoled_mode'),
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
-            ),
-            subtitle: Text(
-              context.tr('dark_amoled_desc'),
-              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-            ),
-            value: isDark,
-            activeColor: Colors.teal,
-            onChanged: (_) {
-              context.read<ThemeCubit>().toggleTheme();
-            },
-          );
-        },
-      ),
-      _buildDivider(),
+
         _buildTile(
           icon: Icons.color_lens_rounded,
           iconColor: Colors.deepPurple,
@@ -843,7 +810,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _buildTile(
           icon: Icons.image_rounded,
           iconColor: Colors.pink,
-          title: 'شعار المتجر (Logo)',
+          title: 'شعار المحل التجاري',
           subtitle: 'تغيير الشعار المعروض في الشاشة الرئيسية',
           onTap: () async {
              final picker = ImagePicker();
@@ -888,7 +855,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           return _buildTile(
             icon: Icons.language_rounded,
             iconColor: Colors.teal,
-            title: 'لغة التطبيق (Language)',
+            title: 'لغة التطبيق',
             subtitle: langName,
             onTap: () => _showLanguageModal(context, currentLocale),
           );
@@ -921,7 +888,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
         _buildTile(
           icon: Icons.qr_code_scanner_rounded,
           iconColor: Color(0xFF0284C7),
-          title: 'تفعيل برنامج الحاسوب بقارئ الباركود (Douchette) 🔫 📲',
+          title: 'تفعيل برنامج الحاسوب عبر قارئ الباركود 🔫 📲',
           subtitle: 'عرض رمز الاستجابة السريعة لتفعيل حاسوب الكاشير فوراً عبر الماسح',
           trailing: Container(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -975,7 +942,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
               icon: Icons.analytics_outlined,
               iconColor: Colors.green[800]!,
               title: 'الداشبورد والتقارير اليومية والأرباح',
-              subtitle: 'صافي الأرباح، الإيرادات، ومبيعات اليوم (Z-Report)',
+              subtitle: 'صافي الأرباح والإيرادات ومبيعات اليوم',
               onTap: () async {
                 Navigator.pop(ctx);
                 final auth = await SecurityPinHelper.authenticate(context, title: 'تقرير الأرباح والمبيعات');
@@ -998,7 +965,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             _buildHubActionTile(
               icon: Icons.point_of_sale_rounded,
               iconColor: Colors.brown[700]!,
-              title: 'مناوبات الكاسة والصندوق (Shifts)',
+              title: 'إدارة ورديات الصندوق والكاشير',
               subtitle: 'رصيد البداية والختام وتسليم عهدة الصندوق بين العمال',
               onTap: () {
                 Navigator.pop(ctx);
@@ -1009,7 +976,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             _buildHubActionTile(
               icon: Icons.auto_stories_rounded,
               iconColor: Colors.indigo,
-              title: 'مركز الوثائق والفواتير الشامل (Devis, BL, Factures) 📑',
+              title: 'مركز الفواتير والوثائق التجارية الشاملة 📑',
               subtitle: 'عروض أسعار، وصولات تسليم، فواتير رسمية، وصولات قبض، وأرشفة',
               onTap: () {
                 Navigator.pop(ctx);
@@ -1064,7 +1031,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
               _buildHubActionTile(
                 icon: Icons.archive_outlined,
                 iconColor: Colors.blue,
-                title: 'استلام السلع والشحنات (Arrivage)',
+                title: 'توريد واستلام السلع والشحنات',
                 subtitle: 'مسح سريع وإدخال دفعات السلع الجديدة للمخزن',
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1121,7 +1088,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
               _buildHubActionTile(
                 icon: Icons.shopping_cart_checkout,
                 iconColor: Colors.orange[800]!,
-                title: 'قائمة النواقص والتسوق (Shopping List) 🛒📝',
+                title: 'قائمة النواقص والشراء من سوق الجملة 🛒📝',
                 subtitle: 'سجل النواقص للشراء من سوق الجملة وتصديره ومشاركته',
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1164,11 +1131,11 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             _buildHubActionTile(
               icon: Icons.menu_book_rounded,
               iconColor: Colors.orange[800]!,
-              title: 'دفتر ديون الزبائن (Crédit)',
+              title: 'سجل ديون ومستحقات العملاء',
               subtitle: 'متابعة الديون، التسديدات، وسجل المعاملات والواتساب',
               onTap: () async {
                 Navigator.pop(ctx);
-                final auth = await SecurityPinHelper.authenticate(context, title: 'دفتر ديون الزبائن (Crédit)');
+                final auth = await SecurityPinHelper.authenticate(context, title: 'سجل ديون ومستحقات العملاء');
                 if (auth && context.mounted) context.push('/customers');
               },
             ),
@@ -1188,8 +1155,8 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             _buildHubActionTile(
               icon: Icons.request_quote_outlined,
               iconColor: Colors.teal[700]!,
-              title: 'عروض الأسعار والفواتير المبدئية (Devis)',
-              subtitle: 'إنشاء Devis رسمي وتحويله لفاتورة بيع بضغطة زر',
+              title: 'عروض الأسعار والفواتير المبدئية',
+              subtitle: 'إنشاء عرض أسعار رسمي وتحويله لفاتورة بيع بضغطة زر',
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/devis');
@@ -1295,9 +1262,9 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('اختر لغة التطبيق (Language)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Text('اختر لغة التطبيق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             SizedBox(height: 14),
-            _buildLangChoice(ctx, 'العربية (Arabic)', '🇩🇿', 'ar', currentLocale.languageCode == 'ar'),
+            _buildLangChoice(ctx, 'العربية', '🇩🇿', 'ar', currentLocale.languageCode == 'ar'),
             Divider(height: 1),
             _buildLangChoice(ctx, 'Français (French)', '🇫🇷', 'fr', currentLocale.languageCode == 'fr'),
             Divider(height: 1),
@@ -1627,7 +1594,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Divider(height: 8),
             ListTile(
               leading: CircleAvatar(backgroundColor: Color(0xFFE3F2FD), child: Icon(Icons.cloud_upload, color: Colors.blue)),
-              title: Text('إنشاء نسخة احتياطية كاملة (Backup JSON)'),
+              title: Text('إنشاء نسخة احتياطية شاملة للنظام'),
               subtitle: Text('حفظ قاعدة بيانات المحل بالكامل في ملف آمن'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1653,7 +1620,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Divider(height: 8),
             ListTile(
               leading: CircleAvatar(backgroundColor: Color(0xFFE8EAF6), child: Icon(Icons.qr_code_scanner_rounded, color: Colors.indigo)),
-              title: Text('ربط الهاتف والتلغرام بالباركود (QR Pairing) 📲'),
+              title: Text('ربط الهاتف وتطبيق تيليغرام 📲'),
               subtitle: Text('استقبال تقارير المبيعات والأرباح والنسخ السحابي ومسح الباركود بالهاتف'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1842,11 +1809,11 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
               child: Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 36),
             ),
             SizedBox(height: 12),
-            Text('نايلـي ماركت (Nayli Kiosk)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('نايل كشك لإدارة نقاط البيع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             SizedBox(height: 4),
             Text('نظام الكاشير وإدارة السوبرماركت والمخزون الذكي', style: TextStyle(color: Colors.grey, fontSize: 12)),
             SizedBox(height: 14),
-            Text('الإصدار: 1.4.0 (Build 2026)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            Text('الإصدار: 1.4.0', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(

@@ -77,7 +77,7 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
               controller: cashCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
-                labelText: 'رصيد بداية الصندوق (Fond de Caisse)',
+                labelText: 'رصيد بداية الصندوق (عهدة البداية)',
                 suffixText: 'دج',
                 border: OutlineInputBorder(),
               ),
@@ -170,7 +170,7 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('رصيد البداية (Fond): ${initialCash.toStringAsFixed(0)} دج'),
+                  Text('رصيد البداية: ${initialCash.toStringAsFixed(0)} دج'),
                   Text('مبيعات الكاش (+): ${cashSales.toStringAsFixed(0)} دج', style: const TextStyle(color: Colors.green)),
                   Text('المصاريف (-): ${shiftExpenses.toStringAsFixed(0)} دج', style: const TextStyle(color: Colors.red)),
                   const Divider(height: 12),
@@ -368,7 +368,7 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('📤 مصاريف (Sorties)', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                const Text('📤 المصاريف والنفقات', style: TextStyle(color: Colors.white70, fontSize: 10)),
                                 const SizedBox(height: 3),
                                 Text('-${shiftExpenses.toStringAsFixed(0)} دج', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
                               ],

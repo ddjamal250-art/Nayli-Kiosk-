@@ -83,14 +83,22 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   DateTime _lastHardwareKeyTime = DateTime.now();
 
   static const List<Map<String, String>> _categoriesDef = [
-    {'key': 'all', 'tr': 'cat_all', 'ar': 'الكل'},
-    {'key': 'beverages', 'tr': 'cat_beverages', 'ar': 'المشروبات'},
-    {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'البقوليات'},
-    {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات'},
-    {'key': 'sweets', 'tr': 'cat_sweets', 'ar': 'الحلويات'},
-    {'key': 'scale', 'tr': 'cat_scale', 'ar': 'الميزان'},
-    {'key': 'dairy', 'tr': 'cat_dairy', 'ar': 'الألبان'},
-    {'key': 'spices', 'tr': 'cat_spices', 'ar': 'التوابل'},
+    {'key': 'all', 'tr': 'cat_all', 'ar': 'الكل', 'icon': '🛒'},
+    {'key': 'tobacco', 'tr': 'tobacco_btn', 'ar': 'المواد التبغية', 'icon': '🚬'},
+    {'key': 'cold_drinks', 'tr': 'cat_beverages', 'ar': 'المشروبات والعصائر', 'icon': '🥤'},
+    {'key': 'dairy', 'tr': 'cat_dairy', 'ar': 'الألبان والأجبان', 'icon': '🥛'},
+    {'key': 'coffee_tea', 'tr': 'cat_coffee_tea', 'ar': 'القهوة والشاي', 'icon': '☕'},
+    {'key': 'sweets', 'tr': 'cat_sweets', 'ar': 'الحلويات والسكاكر', 'icon': '🍫'},
+    {'key': 'scale', 'tr': 'cat_scale', 'ar': 'سلع الميزان', 'icon': '⚖️'},
+    {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'البقوليات والحبوب', 'icon': '🌾'},
+    {'key': 'canned', 'tr': 'cat_canned', 'ar': 'المعلبات والزيوت', 'icon': '🥫'},
+    {'key': 'bakery', 'tr': 'cat_bakery', 'ar': 'المخبوزات والعجائن', 'icon': '🥖'},
+    {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات والتطهير', 'icon': '🧽'},
+    {'key': 'hygiene', 'tr': 'cat_hygiene', 'ar': 'العناية الشخصية', 'icon': '🧴'},
+    {'key': 'stationery', 'tr': 'cat_stationery', 'ar': 'الأدوات المدرسية', 'icon': '📚'},
+    {'key': 'produce', 'tr': 'cat_produce', 'ar': 'الخضر والفواكه واللحوم', 'icon': '🍏'},
+    {'key': 'general_news', 'tr': 'cat_general', 'ar': 'منتجات عامة وجرائد', 'icon': '📰'},
+    {'key': 'spices', 'tr': 'cat_spices', 'ar': 'التوابل والبهارات', 'icon': '🧂'},
   ];
 
   @override
@@ -240,22 +248,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
 
     if (matchedQuickItem != null) {
-      final qPrice = (matchedQuickItem['price'] as num?)?.toDouble() ?? 0.0;
-      final qCost = (matchedQuickItem['costPrice'] as num?)?.toDouble() ?? 0.0;
-      final qName = matchedQuickItem['name']?.toString() ?? 'Article';
-      final qBarcode = matchedQuickItem['barcode']?.toString() ?? barcodeToScan;
-      final qId = matchedQuickItem['id']?.toString() ?? barcodeToScan;
-
-      final quickProduct = Product(
-        id: qId,
-        name: _isReturnMode ? '[${context.tr('return_mode')}] $qName' : qName,
-        barcode: qBarcode,
-        price: _isReturnMode ? -qPrice.abs() : qPrice,
-        costPrice: qCost,
-        stock: (matchedQuickItem['stock'] as num?)?.toInt() ?? 999,
-        category: 'بيع سريع',
-      );
-
+      final quickProduct = _resolveProductForQuickItem(matchedQuickItem);
       UniversalUnitSelectorDialog.showForProduct(context, quickProduct);
       return;
     }
@@ -1202,40 +1195,78 @@ $itemsSummary
             final query = searchController.text.trim().toLowerCase();
 
             final productsInCat = allProducts.where((p) {
-                if (catKey == 'tobacco') {
+                final catL = p.category.toLowerCase();
+                final nameL = p.name.toLowerCase();
+
+                if (catKey == 'all') {
+                  // pass
+                } else if (catKey == 'tobacco') {
                   final isTob = p.isTobacco ||
-                      p.category.toLowerCase().contains('تبغ') ||
-                      p.category.toLowerCase().contains('سجائر') ||
-                      p.category.toLowerCase().contains('tabac') ||
-                      p.category.toLowerCase().contains('cigarette');
+                      catL.contains('تبغ') || catL.contains('سجائر') || catL.contains('شمة') || catL.contains('معسل') ||
+                      nameL.contains('مارلبورو') || nameL.contains('ريم') || nameL.contains('سجائر') || nameL.contains('دخان');
                   if (!isTob) return false;
-                } else if (catKey == 'coffee_tea') {
-                  final catL = p.category.toLowerCase();
-                  final nameL = p.name.toLowerCase();
-                  final isCT = catL.contains('قهوة') || catL.contains('شاي') || catL.contains('cafe') || catL.contains('thé') || catL.contains('tea') ||
-                               nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('cafe') || nameL.contains('thé') || nameL.contains('tea') ||
-                               catL.contains('nescafe') || nameL.contains('nescafe');
-                  if (!isCT) return false;
-                } else if (catKey == 'cold_drinks') {
-                  final catL = p.category.toLowerCase();
-                  final nameL = p.name.toLowerCase();
-                  final isCD = catL.contains('مشروب') || catL.contains('ماء') || catL.contains('عصير') || catL.contains('boisson') || catL.contains('jus') || catL.contains('eau') || catL.contains('غازي') || catL.contains('soda') ||
-                               nameL.contains('مشروب') || nameL.contains('ماء') || nameL.contains('عصير') || nameL.contains('boisson') || nameL.contains('jus') || nameL.contains('eau') || nameL.contains('غازي') || nameL.contains('soda');
+                } else if (catKey == 'cold_drinks' || catKey == 'beverages') {
+                  final isCD = catL.contains('مشروب') || catL.contains('ماء') || catL.contains('عصير') || catL.contains('غازي') ||
+                               nameL.contains('مشروب') || nameL.contains('ماء') || nameL.contains('عصير') || nameL.contains('كوكا') || nameL.contains('حمود');
                   if (!isCD) return false;
+                } else if (catKey == 'dairy') {
+                  final isDairy = catL.contains('حليب') || catL.contains('لبن') || catL.contains('جبن') || catL.contains('ألبان') || catL.contains('زبادي') ||
+                                  nameL.contains('حليب') || nameL.contains('جبن') || nameL.contains('ياغورت');
+                  if (!isDairy) return false;
+                } else if (catKey == 'coffee_tea') {
+                  final isCT = catL.contains('قهوة') || catL.contains('شاي') || catL.contains('سكر') ||
+                               nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('نسكافيه');
+                  if (!isCT) return false;
+                } else if (catKey == 'sweets') {
+                  final isSweets = catL.contains('حلو') || catL.contains('شوكولا') || catL.contains('بسكويت') || catL.contains('علك') ||
+                                   nameL.contains('شوكولا') || nameL.contains('بسكويت') || nameL.contains('قوفريط') || nameL.contains('حلوى');
+                  if (!isSweets) return false;
+                } else if (catKey == 'scale') {
+                  if (!p.isWeighted && !catL.contains('ميزان') && !nameL.contains('ميزان')) return false;
+                } else if (catKey == 'pulses') {
+                  final isPulse = catL.contains('عدس') || catL.contains('حمص') || catL.contains('لوبيا') || catL.contains('أرز') || catL.contains('بقول') ||
+                                  nameL.contains('عدس') || nameL.contains('حمص') || nameL.contains('لوبيا') || nameL.contains('أرز');
+                  if (!isPulse) return false;
+                } else if (catKey == 'canned') {
+                  final isCanned = catL.contains('طماطم') || catL.contains('زيت') || catL.contains('تونة') || catL.contains('سردين') || catL.contains('معلب') ||
+                                   nameL.contains('طماطم') || nameL.contains('زيت') || nameL.contains('تونة');
+                  if (!isCanned) return false;
+                } else if (catKey == 'bakery') {
+                  final isBakery = catL.contains('خبز') || catL.contains('عجين') || catL.contains('مقرونة') || catL.contains('كسكسي') || catL.contains('سميد') || catL.contains('فرينة') ||
+                                   nameL.contains('خبز') || nameL.contains('مقرونة') || nameL.contains('كسكسي');
+                  if (!isBakery) return false;
+                } else if (catKey == 'cleaning') {
+                  final isClean = catL.contains('منظف') || catL.contains('جافيل') || catL.contains('غسيل') || catL.contains('أواني') ||
+                                  nameL.contains('جافيل') || nameL.contains('إيزيس') || nameL.contains('أومو');
+                  if (!isClean) return false;
+                } else if (catKey == 'hygiene') {
+                  final isHyg = catL.contains('صابون') || catL.contains('شامبو') || catL.contains('معجون') || catL.contains('عناية') ||
+                                nameL.contains('صابون') || nameL.contains('شامبو') || nameL.contains('معجون');
+                  if (!isHyg) return false;
+                } else if (catKey == 'stationery') {
+                  final isStat = catL.contains('كراس') || catL.contains('قلم') || catL.contains('دفتر') || catL.contains('مدرس') || catL.contains('مكتب') ||
+                                 nameL.contains('كراس') || nameL.contains('قلم') || nameL.contains('دفتر');
+                  if (!isStat) return false;
+                } else if (catKey == 'produce') {
+                  final isProd = catL.contains('خضر') || catL.contains('فواكه') || catL.contains('لحم') || catL.contains('دجاج') || catL.contains('بيض') ||
+                                 nameL.contains('تفاح') || nameL.contains('بطاطا') || nameL.contains('بيض');
+                  if (!isProd) return false;
                 } else if (catKey == 'general_news') {
-                  final catL = p.category.toLowerCase();
-                  final nameL = p.name.toLowerCase();
-                  final isGN = catL.contains('عام') || catL.contains('جريد') || catL.contains('مجل') || catL.contains('divers') || catL.contains('journal') || catL.contains('مفرقع') || catL.contains('petard') || catL.contains('محرم') || catL.contains('magazine') ||
-                               nameL.contains('عام') || nameL.contains('جريد') || nameL.contains('مجل') || nameL.contains('divers') || nameL.contains('journal') || nameL.contains('مفرقع') || nameL.contains('petard') || nameL.contains('محرم') || nameL.contains('magazine');
+                  final isGN = catL.contains('عام') || catL.contains('جريد') || catL.contains('مجل') || catL.contains('كشك') ||
+                               nameL.contains('عام') || nameL.contains('جريد') || nameL.contains('مجل');
                   if (!isGN) return false;
+                } else if (catKey == 'spices') {
+                  final isSpices = catL.contains('توابل') || catL.contains('بهارات') || catL.contains('ملح') ||
+                                   nameL.contains('توابل') || nameL.contains('بهارات') || nameL.contains('فلفل أسود');
+                  if (!isSpices) return false;
                 } else {
                   if (p.category != catName && p.category != catKey) return false;
                 }
-                
+
                 if (query.isNotEmpty) {
-                return p.name.toLowerCase().contains(query) || p.barcode.contains(query);
-              }
-              return true;
+                  return p.name.toLowerCase().contains(query) || p.barcode.contains(query);
+                }
+                return true;
             }).toList();
 
             return Dialog(
@@ -1480,12 +1511,12 @@ $itemsSummary
                 children: [
                   ListTile(
                     leading: const CircleAvatar(backgroundColor: Colors.grey, child: Icon(Icons.person_outline, color: Colors.white)),
-                    title: const Text('Client Détail (Comptoir)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    title: const Text('زبون عابر (صندوق المبيعات)', style: TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: const Text('Sans crédit ni fidélité'),
                     onTap: () {
                       setState(() {
                         _selectedCustomerId = null;
-                        _selectedCustomerName = 'Client Détail';
+                        _selectedCustomerName = 'زبون عابر';
                         _customerCreditBalance = 0.0;
                       });
                       Navigator.pop(ctx);
@@ -2200,9 +2231,10 @@ $itemsSummary
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Top Categories Bar (with Modal on click) + Customize Quick Items button
+          // 1. Top Categories Bar (Horizontally scrollable with left-to-right swipe)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(14),
@@ -2211,7 +2243,9 @@ $itemsSummary
                 BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
               ],
             ),
-            child: Row(
+            child: ListView(
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              scrollDirection: Axis.horizontal,
               children: [
                 // Quick Items Title & Manage Button
                 InkWell(
@@ -2234,140 +2268,30 @@ $itemsSummary
                   ),
                 ),
                 const SizedBox(width: 8),
-
-                  const SizedBox(width: 8),
-
-                  // General & Newspapers Category Quick Access Button
-                  InkWell(
-                    onTap: () => _showCategoryProductsModal('general_news', 'منتجات عامة وجرائد 📰'),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.grey.shade400),
-                      ),
-                      child: Row(
-                        children: [
-                          const Text('📰', style: TextStyle(fontSize: 14)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'منتجات عامة 📰',
-                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF424242), fontWeight: FontWeight.bold, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Cold Drinks Category Quick Access Button
-                  InkWell(
-                    onTap: () => _showCategoryProductsModal('cold_drinks', 'المشروبات الباردة 🥤'),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: isDark ? Colors.white24 : Colors.blue.shade400),
-                      ),
-                      child: Row(
-                        children: [
-                          const Text('🥤', style: TextStyle(fontSize: 14)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'مشروبات 🥤',
-                            style: TextStyle(color: isDark ? Colors.lightBlueAccent : const Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Coffee & Tea Category Quick Access Button
-                  InkWell(
-                    onTap: () => _showCategoryProductsModal('coffee_tea', 'القهوة والشاي ☕'),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.brown.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: isDark ? Colors.white24 : Colors.brown.shade400),
-                      ),
-                      child: Row(
-                        children: [
-                          const Text('☕', style: TextStyle(fontSize: 14)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'القهوة والشاي ☕',
-                            style: TextStyle(color: isDark ? Colors.orange.shade200 : const Color(0xFF4E342E), fontWeight: FontWeight.bold, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Tobacco Products Category Quick Access Button
-                  InkWell(
-                  onTap: () => _showCategoryProductsModal('tobacco', context.tr('tobacco_btn')),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.amber.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: isDark ? Colors.white24 : Colors.amber.shade400),
-                    ),
-                    child: Row(
-                      children: [
-                        const Text('🚬', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 4),
-                        Text(
-                          'المواد التبغية 🚬',
-                          style: TextStyle(color: isDark ? Colors.amberAccent : const Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
                 const SizedBox(height: 24, child: VerticalDivider(width: 1)),
                 const SizedBox(width: 8),
-
-                // Categories chips
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: ListView.separated(
-                      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _categoriesDef.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 6),
-                      itemBuilder: (context, index) {
-                        final cat = _categoriesDef[index];
-                        final catName = context.tr(cat['tr']!);
-
-                        return ActionChip(
-                          avatar: const Icon(Icons.category_outlined, size: 14, color: Colors.teal),
-                          label: Text(catName, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-                          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          onPressed: () {
-                            _showCategoryProductsModal(cat['key']!, catName);
-                          },
-                        );
+                ..._categoriesDef.map((cat) {
+                  final trVal = context.tr(cat['tr'] ?? '');
+                  final catName = trVal != (cat['tr'] ?? '') && trVal.isNotEmpty
+                      ? trVal
+                      : (cat['ar'] ?? '');
+                  final iconStr = cat['icon'] ?? '🏷️';
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: ActionChip(
+                      avatar: Text(iconStr, style: const TextStyle(fontSize: 14)),
+                      label: Text(catName, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      onPressed: () {
+                        _showCategoryProductsModal(cat['key']!, catName);
                       },
                     ),
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),
@@ -2379,6 +2303,97 @@ $itemsSummary
           ),
         ],
       ),
+    );
+  }
+
+    Product _resolveProductForQuickItem(Map item) {
+    final name = item['name']?.toString() ?? '';
+    final barcode = item['barcode']?.toString() ?? '';
+    final id = item['id']?.toString() ?? barcode;
+    final linkedProductId = item['linkedProductId']?.toString() ?? '';
+    final price = (item['price'] as num?)?.toDouble() ?? 0.0;
+    final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
+    final stock = (item['stock'] as num?)?.toInt() ?? 999;
+
+    // 1. Try finding in productBox
+    Product? matched;
+    if (linkedProductId.isNotEmpty && HiveDatabase.productBox.containsKey(linkedProductId)) {
+      final p = HiveDatabase.productBox.get(linkedProductId);
+      if (p is Product) matched = p;
+    }
+    if (matched == null && barcode.isNotEmpty) {
+      for (var p in HiveDatabase.productBox.values) {
+        if (p is Product && (p.barcode == barcode || p.packBarcode == barcode || p.id == barcode)) {
+          matched = p;
+          break;
+        }
+      }
+    }
+    if (matched == null && name.isNotEmpty) {
+      for (var p in HiveDatabase.productBox.values) {
+        if (p is Product && p.name.trim().toLowerCase() == name.trim().toLowerCase()) {
+          matched = p;
+          break;
+        }
+      }
+    }
+
+    if (matched != null) {
+      if (_isReturnMode) {
+        return matched.copyWith(
+          name: '[${context.tr("return_mode")}] ${matched.name}',
+          price: -matched.price.abs(),
+        );
+      }
+      return matched;
+    }
+
+    // 2. Smart category and UOM detection
+    final detectedSub = CategoryTaxonomy.smartDetect(name);
+    final nameL = name.toLowerCase();
+    final isTob = detectedSub.domainId == 'tobacco' ||
+        detectedSub.id == 'cigarettes' ||
+        nameL.contains('مارلبورو') ||
+        nameL.contains('marlboro') ||
+        nameL.contains('ريم') ||
+        nameL.contains('rym') ||
+        nameL.contains('جولواز') ||
+        nameL.contains('gauloises') ||
+        nameL.contains('سجائر') ||
+        nameL.contains('دخان') ||
+        nameL.contains('شمة');
+    final isBev = detectedSub.id == 'beverages' ||
+        nameL.contains('ماء') ||
+        nameL.contains('مشروب') ||
+        nameL.contains('كوكا') ||
+        nameL.contains('عصير') ||
+        nameL.contains('حمود') ||
+        nameL.contains('رويبة') ||
+        nameL.contains('إفري') ||
+        nameL.contains('رامي');
+
+    final effectivePacksPerCarton = isTob ? 10 : (isBev ? 6 : ((item['packsPerCarton'] as num?)?.toInt() ?? 10));
+    final effectivePiecesPerPack = isTob ? 20 : ((item['piecesPerPack'] as num?)?.toInt() ?? 1);
+    final singlePiecePrice = (item['singlePiecePrice'] as num?)?.toDouble() ??
+        (isTob ? (price / 20).ceilToDouble() : 0.0);
+    final cartonPrice = (item['cartonPrice'] as num?)?.toDouble() ?? (price * effectivePacksPerCarton);
+
+    return Product(
+      id: id,
+      name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
+      barcode: barcode,
+      price: _isReturnMode ? -price.abs() : price,
+      costPrice: cost,
+      stock: stock,
+      category: isTob ? 'المواد التبغية' : (isBev ? 'المشروبات' : detectedSub.titleAr),
+      isTobacco: isTob,
+      packsPerCarton: effectivePacksPerCarton,
+      piecesPerPack: effectivePiecesPerPack,
+      singlePiecePrice: singlePiecePrice,
+      cartonPrice: cartonPrice,
+      packPrice: cartonPrice,
+      packMultiplier: effectivePacksPerCarton,
+      packName: isTob ? 'كرطوشة' : (isBev ? 'فاردو' : null),
     );
   }
 
@@ -2451,15 +2466,7 @@ $itemsSummary
           borderRadius: BorderRadius.circular(16),
           onTap: () {
             _onItemScanned();
-            final prod = Product(
-              id: id,
-              name: _isReturnMode ? '[${context.tr("return_mode")}] $name' : name,
-              barcode: barcode,
-              price: _isReturnMode ? -price.abs() : price,
-              costPrice: cost,
-              stock: stock,
-              category: 'بيع سريع',
-            );
+            final prod = _resolveProductForQuickItem(item);
             UniversalUnitSelectorDialog.showForProduct(context, prod);
           },
           child: Container(

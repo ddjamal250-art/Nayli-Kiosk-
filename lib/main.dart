@@ -80,8 +80,8 @@ class MyApp extends StatelessWidget {
                   return MaterialApp.router(
                     title: 'Nayli Kiosk',
                 theme: AppTheme.lightTheme,
-                darkTheme: AppTheme.amoledDarkTheme,
-                themeMode: themeMode,
+                darkTheme: AppTheme.lightTheme,
+                themeMode: ThemeMode.light,
                 routerConfig: router,
                 scrollBehavior: TouchAndMouseScrollBehavior(),
                 debugShowCheckedModeBanner: false,
