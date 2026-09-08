@@ -158,6 +158,7 @@ class PrinterHelper {
     required List<Map<String, dynamic>> items,
     required double total,
     double discount = 0.0,
+    double coffeeAndTeaTotal = 0.0,
     bool isCredit = false,
     String? customerName,
     double previousDebt = 0.0,

@@ -89,74 +89,74 @@ final router = GoRouter(
   routes: [
     GoRoute(
       path: '/eula',
-      builder: (context, state) => const EulaPage(),
+      builder: (context, state) => EulaPage(),
     ),
     GoRoute(
       path: '/activation',
-      builder: (context, state) => const ActivationPage(),
+      builder: (context, state) => ActivationPage(),
     ),
     GoRoute(
       path: '/',
       builder: (context, state) {
         // Desktop platforms (Windows, Linux, macOS) use the wide desktop POS interface
         if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-          return const DesktopPosPage();
+          return DesktopPosPage();
         }
         // Mobile platforms (Android, iOS) use the native mobile touch & camera interface
-        return const HomePage();
+        return HomePage();
       },
       routes: [
         GoRoute(
           path: 'desktop-pos',
-          builder: (context, state) => const DesktopPosPage(),
+          builder: (context, state) => DesktopPosPage(),
         ),
         GoRoute(
           path: 'classic-mobile-pos',
-          builder: (context, state) => const HomePage(),
+          builder: (context, state) => HomePage(),
         ),
         GoRoute(
           path: 'scanner',
-          builder: (context, state) => const ScannerPage(),
+          builder: (context, state) => ScannerPage(),
         ),
         GoRoute(
           path: 'checkout',
-          builder: (context, state) => const CheckoutPage(),
+          builder: (context, state) => CheckoutPage(),
         ),
       ],
     ),
     GoRoute(
       path: '/customers',
-      builder: (context, state) => const CustomersPage(),
+      builder: (context, state) => CustomersPage(),
     ),
     GoRoute(
       path: '/settings',
-      builder: (context, state) => const SettingsPage(),
+      builder: (context, state) => SettingsPage(),
       routes: [
         GoRoute(
           path: 'receipt-designer',
-          builder: (context, state) => const ReceiptCustomizerPage(),
+          builder: (context, state) => ReceiptCustomizerPage(),
         ),
       ],
     ),
     GoRoute(
       path: '/master-catalog',
-      builder: (context, state) => const MasterCatalogPage(),
+      builder: (context, state) => MasterCatalogPage(),
     ),
     GoRoute(
       path: '/reports',
-      builder: (context, state) => const DailyReportPage(),
+      builder: (context, state) => DailyReportPage(),
     ),
     GoRoute(
       path: '/expenses',
-      builder: (context, state) => const ExpensesPage(),
+      builder: (context, state) => ExpensesPage(),
     ),
     GoRoute(
       path: '/devis',
-      builder: (context, state) => const DevisPage(),
+      builder: (context, state) => DevisPage(),
     ),
     GoRoute(
       path: '/documents',
-      builder: (context, state) => const DocumentsHubPage(),
+      builder: (context, state) => DocumentsHubPage(),
     ),
     GoRoute(
       path: '/stock-in',
@@ -166,23 +166,23 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/backups',
-      builder: (context, state) => const BackupPage(),
+      builder: (context, state) => BackupPage(),
     ),
     GoRoute(
       path: '/shifts',
-      builder: (context, state) => const ShiftsPage(),
+      builder: (context, state) => ShiftsPage(),
     ),
     GoRoute(
       path: '/staff-management',
-      builder: (context, state) => const StaffManagementPage(),
+      builder: (context, state) => StaffManagementPage(),
     ),
     GoRoute(
       path: '/products',
-      builder: (context, state) => const ProductListPage(),
+      builder: (context, state) => ProductListPage(),
       routes: [
         GoRoute(
           path: 'add',
-          builder: (context, state) => const AddProductPage(),
+          builder: (context, state) => AddProductPage(),
         ),
         GoRoute(
           path: 'stock-in',
@@ -192,42 +192,42 @@ final router = GoRouter(
         ),
         GoRoute(
           path: 'supplier-invoices',
-          builder: (context, state) => const SupplierInvoicesPage(),
+          builder: (context, state) => SupplierInvoicesPage(),
         ),
         GoRoute(
           path: 'supplier-invoice/new',
-          builder: (context, state) => const NewSupplierInvoicePage(),
+          builder: (context, state) => NewSupplierInvoicePage(),
         ),
         GoRoute(
           path: 'catalog',
-          builder: (context, state) => const MasterCatalogPage(),
+          builder: (context, state) => MasterCatalogPage(),
         ),
         GoRoute(
           path: 'shelf-labels',
-          builder: (context, state) => const ShelfLabelsPage(),
+          builder: (context, state) => ShelfLabelsPage(),
         ),
         GoRoute(
           path: 'inventory-audit',
-          builder: (context, state) => const InventoryAuditPage(),
+          builder: (context, state) => InventoryAuditPage(),
         ),
         GoRoute(
           path: 'losses',
-          builder: (context, state) => const LossesPage(),
+          builder: (context, state) => LossesPage(),
         ),
         GoRoute(
           path: 'shopping-list',
-          builder: (context, state) => const ShoppingListPage(),
+          builder: (context, state) => ShoppingListPage(),
         ),
         GoRoute(
           path: 'expiry-monitor',
-          builder: (context, state) => const ExpiryMonitorPage(),
+          builder: (context, state) => ExpiryMonitorPage(),
         ),
         GoRoute(
           path: 'edit/:id',
           builder: (context, state) {
             final product = state.extra as Product?;
             if (product == null) {
-              return const ProductListPage();
+              return ProductListPage();
             }
             return EditProductPage(product: product);
           },
@@ -236,23 +236,23 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/shop',
-      builder: (context, state) => const ShopDetailsPage(),
+      builder: (context, state) => ShopDetailsPage(),
     ),
     GoRoute(
       path: '/lan-sync',
-      builder: (context, state) => const LanSyncSettingsPage(),
+      builder: (context, state) => LanSyncSettingsPage(),
     ),
     GoRoute(
       path: '/kiosk',
-      builder: (context, state) => const KioskPriceCheckerPage(),
+      builder: (context, state) => KioskPriceCheckerPage(),
     ),
     GoRoute(
       path: '/kiosk-settings',
-      builder: (context, state) => const KioskSettingsPage(),
+      builder: (context, state) => KioskSettingsPage(),
     ),
     GoRoute(
       path: '/advanced-pos-settings',
-      builder: (context, state) => const AdvancedPosSettingsPage(),
+      builder: (context, state) => AdvancedPosSettingsPage(),
     ),
   ],
 );

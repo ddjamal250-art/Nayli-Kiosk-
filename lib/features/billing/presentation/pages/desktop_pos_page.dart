@@ -1285,7 +1285,7 @@ $itemsSummary
                               )
                             : null,
                         filled: true,
-                        fillcolor: Theme.of(context).scaffoldBackgroundColor,
+                        fillColor: Theme.of(context).scaffoldBackgroundColor,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                       ),
                       onChanged: (_) => setDialogState(() {}),
@@ -1770,7 +1770,7 @@ $itemsSummary
                             onPressed: () => _barcodeController.clear(),
                           ),
                           filled: true,
-                          fillcolor: Theme.of(context).scaffoldBackgroundColor,
+                          fillColor: Theme.of(context).scaffoldBackgroundColor,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                         ),
                         onSubmitted: _handleBarcodeSubmit,

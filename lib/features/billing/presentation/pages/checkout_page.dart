@@ -31,6 +31,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final TextEditingController _acompteController = TextEditingController();
   PaymentMode _paymentMode = PaymentMode.cash;
   Customer? _selectedCustomer;
+  Color borderColor = const Color(0xFFE5E5EA);
 
   @override
   void dispose() {
@@ -325,8 +326,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    borderColor = Color(0xFFE5E5EA);
-
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
