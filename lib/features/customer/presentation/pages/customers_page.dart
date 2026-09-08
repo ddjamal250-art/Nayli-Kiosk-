@@ -46,7 +46,7 @@ class _CustomersPageState extends State<CustomersPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -267,7 +267,7 @@ class _CustomersPageState extends State<CustomersPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -285,7 +285,7 @@ class _CustomersPageState extends State<CustomersPage> {
                     CircleAvatar(
                       backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                       child: Text(customer.name.isNotEmpty ? customer.name[0].toUpperCase() : 'C',
-                          style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                          style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 12),
                     Column(

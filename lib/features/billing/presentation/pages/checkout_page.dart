@@ -43,7 +43,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -550,7 +550,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   children: [
                                     Row(
                                       children: [
-                                        const Icon(Icons.calculate_outlined, color: AppTheme.primaryColor, size: 20),
+                                        Icon(Icons.calculate_outlined, color: AppTheme.primaryColor, size: 20),
                                         const SizedBox(width: 6),
                                         Text(context.tr('change_calc'),
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
@@ -812,10 +812,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
                                         ),
-                                        icon: const Icon(Icons.print, size: 18, color: AppTheme.primaryColor),
+                                        icon: Icon(Icons.print, size: 18, color: AppTheme.primaryColor),
                                         label: Text(
                                           billingState.printSuccess ? context.tr('reprint') : '🖨️ طباعة الوصل',
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                                         ),
                                         onPressed: () async {
                                           if (_paymentMode != PaymentMode.cash && _selectedCustomer == null) {

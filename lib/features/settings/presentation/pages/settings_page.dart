@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -51,14 +52,14 @@ class _SettingsPageState extends State<SettingsPage> {
     final liveAlerts = NotificationService.getLiveAlerts();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           context.tr('settings_comprehensive_title'),
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
@@ -225,7 +226,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                         child: Container(
                           padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(color: AppTheme.primaryColor, shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: AppTheme.primaryColor, shape: BoxShape.circle),
                           child: const Icon(Icons.edit, size: 10, color: Colors.white),
                         ),
                       ),
@@ -273,8 +274,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
                 ),
-                icon: const Icon(Icons.settings, size: 16, color: AppTheme.primaryColor),
-                label: const Text('تعديل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                icon: Icon(Icons.settings, size: 16, color: AppTheme.primaryColor),
+                label: Text('تعديل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                 onPressed: () async {
                   final auth = await SecurityPinHelper.authenticate(context, title: 'إعدادات المتجر والشعار');
                   if (auth && context.mounted) {
@@ -666,7 +667,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             if (isSoundOn)
               IconButton(
-                icon: const Icon(Icons.tune_rounded, size: 20, color: AppTheme.primaryColor),
+                icon: Icon(Icons.tune_rounded, size: 20, color: AppTheme.primaryColor),
                 tooltip: 'تغيير النغمة ومستوى الصوت',
                 onPressed: () => _showSoundThemesModal(context),
               ),
@@ -731,7 +732,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             if (isPinEnabled)
               IconButton(
-                icon: const Icon(Icons.password_rounded, size: 20, color: AppTheme.primaryColor),
+                icon: Icon(Icons.password_rounded, size: 20, color: AppTheme.primaryColor),
                 tooltip: 'تغيير الرمز السري',
                 onPressed: () => _showChangePinModal(context),
               ),
@@ -829,6 +830,35 @@ class _SettingsPageState extends State<SettingsPage> {
         },
       ),
       _buildDivider(),
+        _buildTile(
+          icon: Icons.color_lens_rounded,
+          iconColor: Colors.deepPurple,
+          title: 'تخصيص ألوان الواجهة',
+          subtitle: 'تغيير اللون الرئيسي وشريط الكاشير',
+          onTap: () {
+             HeaderColorDialog.show(context);
+          },
+        ),
+        _buildDivider(),
+        _buildTile(
+          icon: Icons.image_rounded,
+          iconColor: Colors.pink,
+          title: 'شعار المتجر (Logo)',
+          subtitle: 'تغيير الشعار المعروض في الشاشة الرئيسية',
+          onTap: () async {
+             final picker = ImagePicker();
+             final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+             if (pickedFile != null) {
+                 HiveDatabase.settingsBox.put('shop_logo_path', pickedFile.path);
+                 if (context.mounted) {
+                     ScaffoldMessenger.of(context).showSnackBar(
+                         const SnackBar(content: Text('تم حفظ الشعار بنجاح!')),
+                     );
+                 }
+             }
+          },
+        ),
+        _buildDivider(),
       _buildTile(
         icon: Icons.palette_rounded,
         iconColor: Colors.deepPurple,
@@ -1283,7 +1313,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
     return ListTile(
       leading: Text(flag, style: const TextStyle(fontSize: 22)),
       title: Text(name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? AppTheme.primaryColor : Colors.black87)),
-      trailing: isSelected ? const Icon(Icons.check_circle, color: AppTheme.primaryColor) : null,
+      trailing: isSelected ? Icon(Icons.check_circle, color: AppTheme.primaryColor) : null,
       onTap: () {
         context.read<LanguageCubit>().setLanguage(code);
         Navigator.pop(ctx);
@@ -1809,14 +1839,14 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), shape: BoxShape.circle),
-              child: const Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 36),
+              child: Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 36),
             ),
             const SizedBox(height: 12),
             const Text('نايلـي ماركت (Nayli Kiosk)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 4),
             const Text('نظام الكاشير وإدارة السوبرماركت والمخزون الذكي', style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 14),
-            const Text('الإصدار: 1.4.0 (Build 2026)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            Text('الإصدار: 1.4.0 (Build 2026)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(

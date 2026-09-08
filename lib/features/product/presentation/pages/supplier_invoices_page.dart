@@ -120,7 +120,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
+          icon: Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
           onPressed: () => context.pop(),
         ),
       ),
@@ -220,7 +220,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
                                 children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.business, color: AppTheme.primaryColor, size: 18),
+                                      Icon(Icons.business, color: AppTheme.primaryColor, size: 18),
                                       const SizedBox(width: 6),
                                       Text(inv['supplierName'] ?? 'مورد', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                     ],

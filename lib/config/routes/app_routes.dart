@@ -41,17 +41,29 @@ import '../../features/settings/presentation/pages/advanced_pos_settings_page.da
 import '../../features/product/presentation/pages/expiry_monitor_page.dart';
 import '../../features/product/presentation/pages/shopping_list_page.dart';
 import '../../features/documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
+import '../../features/settings/presentation/pages/eula_page.dart';
 
 final router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
+    // 1. EULA Check
+    final bool eulaAccepted = HiveDatabase.settingsBox.get('eula_accepted', defaultValue: false);
+    if (!eulaAccepted && state.matchedLocation != '/eula') {
+      return '/eula';
+    }
+
     final isActivated = LicenseService.isActivated();
     final isGoingToActivation = state.matchedLocation == '/activation';
     final isGoingToScanner = state.matchedLocation == '/scanner';
+    final isGoingToEula = state.matchedLocation == '/eula';
     final isKioskRoute = state.matchedLocation == '/kiosk' || state.matchedLocation == '/kiosk-settings';
     
     // Check if device is configured as a dedicated Customer Price-Checker Kiosk terminal
     final isKioskDevice = HiveDatabase.settingsBox.get('device_role', defaultValue: 'cashier') == 'customer_kiosk';
+
+    if (isGoingToEula) {
+      return null;
+    }
 
     // Dedicated Kiosk terminals are free and unlimited; boot straight into /kiosk
     if (isKioskDevice) {
@@ -75,6 +87,10 @@ final router = GoRouter(
     return null;
   },
   routes: [
+    GoRoute(
+      path: '/eula',
+      builder: (context, state) => const EulaPage(),
+    ),
     GoRoute(
       path: '/activation',
       builder: (context, state) => const ActivationPage(),

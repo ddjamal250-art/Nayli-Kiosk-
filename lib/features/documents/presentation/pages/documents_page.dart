@@ -155,7 +155,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final draftCount = _allDocuments.where((d) => d.isDraft || d.status == 'brouillon').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('الوثائق والفواتير التجارية 📑', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: true,

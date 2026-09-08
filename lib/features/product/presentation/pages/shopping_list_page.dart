@@ -98,7 +98,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         title: const Text('قائمة النواقص (التسوق)', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.print, color: AppTheme.primaryColor),
+            icon: Icon(Icons.print, color: AppTheme.primaryColor),
             tooltip: 'طباعة القائمة',
             onPressed: _printList,
           ),

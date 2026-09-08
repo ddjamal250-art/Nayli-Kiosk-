@@ -256,9 +256,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         category: 'بيع سريع',
       );
 
-      for (int i = 0; i < multiplier; i++) {
-        context.read<BillingBloc>().add(AddProductToCartEvent(quickProduct));
-      }
+      UniversalUnitSelectorDialog.showForProduct(context, quickProduct);
       return;
     }
 
@@ -415,7 +413,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     } else if (event.logicalKey == LogicalKeyboardKey.f11) {
       _showRegisterHandoffModal(context.read<BillingBloc>().state);
       return true;
-    } else if (event.logicalKey == LogicalKeyboardKey.f12 || (event.logicalKey == LogicalKeyboardKey.space && !_barcodeFocusNode.hasFocus)) {
+    } else if (event.logicalKey == LogicalKeyboardKey.f12 || 
+        (event.logicalKey == LogicalKeyboardKey.space && 
+         !_barcodeFocusNode.hasFocus && 
+         FocusManager.instance.primaryFocus?.context?.widget is! EditableText)) {
       _triggerCheckout();
       return true;
     } else if (event.logicalKey == LogicalKeyboardKey.escape) {
@@ -769,7 +770,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                             stock: 999,
                                           );
                                           for (int q = 0; q < item.quantity; q++) {
-                                            context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+                                            UniversalUnitSelectorDialog.showForProduct(context, prod);
                                           }
                                         }
                                         LocalSyncServer.removeRemoteCart(rc.id);
@@ -879,7 +880,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         stock: 999,
       );
       for (int q = 0; q < item.quantity; q++) {
-        context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+        UniversalUnitSelectorDialog.showForProduct(context, prod);
       }
     }
     LocalSyncServer.removeRemoteCart(cart.id);
@@ -1201,20 +1202,37 @@ $itemsSummary
             final query = searchController.text.trim().toLowerCase();
 
             final productsInCat = allProducts.where((p) {
-              if (catKey == 'tobacco') {
-                final isTob = p.isTobacco ||
-                    p.category.toLowerCase().contains('تبغ') ||
-                    p.category.toLowerCase().contains('سجائر') ||
-                    p.category.toLowerCase().contains('tabac') ||
-                    p.category.toLowerCase().contains('cigarette');
-                if (!isTob) return false;
-              } else if (catKey != 'all') {
-                final def = _categoriesDef.firstWhere((c) => c['key'] == catKey, orElse: () => {'ar': ''});
-                final arLabel = def['ar'] ?? '';
-                final pCat = p.category.toLowerCase();
-                if (!pCat.contains(arLabel.toLowerCase())) return false;
-              }
-              if (query.isNotEmpty) {
+                if (catKey == 'tobacco') {
+                  final isTob = p.isTobacco ||
+                      p.category.toLowerCase().contains('تبغ') ||
+                      p.category.toLowerCase().contains('سجائر') ||
+                      p.category.toLowerCase().contains('tabac') ||
+                      p.category.toLowerCase().contains('cigarette');
+                  if (!isTob) return false;
+                } else if (catKey == 'coffee_tea') {
+                  final catL = p.category.toLowerCase();
+                  final nameL = p.name.toLowerCase();
+                  final isCT = catL.contains('قهوة') || catL.contains('شاي') || catL.contains('cafe') || catL.contains('thé') || catL.contains('tea') ||
+                               nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('cafe') || nameL.contains('thé') || nameL.contains('tea') ||
+                               catL.contains('nescafe') || nameL.contains('nescafe');
+                  if (!isCT) return false;
+                } else if (catKey == 'cold_drinks') {
+                  final catL = p.category.toLowerCase();
+                  final nameL = p.name.toLowerCase();
+                  final isCD = catL.contains('مشروب') || catL.contains('ماء') || catL.contains('عصير') || catL.contains('boisson') || catL.contains('jus') || catL.contains('eau') || catL.contains('غازي') || catL.contains('soda') ||
+                               nameL.contains('مشروب') || nameL.contains('ماء') || nameL.contains('عصير') || nameL.contains('boisson') || nameL.contains('jus') || nameL.contains('eau') || nameL.contains('غازي') || nameL.contains('soda');
+                  if (!isCD) return false;
+                } else if (catKey == 'general_news') {
+                  final catL = p.category.toLowerCase();
+                  final nameL = p.name.toLowerCase();
+                  final isGN = catL.contains('عام') || catL.contains('جريد') || catL.contains('مجل') || catL.contains('divers') || catL.contains('journal') || catL.contains('مفرقع') || catL.contains('petard') || catL.contains('محرم') || catL.contains('magazine') ||
+                               nameL.contains('عام') || nameL.contains('جريد') || nameL.contains('مجل') || nameL.contains('divers') || nameL.contains('journal') || nameL.contains('مفرقع') || nameL.contains('petard') || nameL.contains('محرم') || nameL.contains('magazine');
+                  if (!isGN) return false;
+                } else {
+                  if (p.category != catName && p.category != catKey) return false;
+                }
+                
+                if (query.isNotEmpty) {
                 return p.name.toLowerCase().contains(query) || p.barcode.contains(query);
               }
               return true;
@@ -1267,7 +1285,7 @@ $itemsSummary
                               )
                             : null,
                         filled: true,
-                        fillColor: const Color(0xFFF3F4F6),
+                        fillcolor: Theme.of(context).scaffoldBackgroundColor,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                       ),
                       onChanged: (_) => setDialogState(() {}),
@@ -1293,12 +1311,7 @@ $itemsSummary
                                   borderRadius: BorderRadius.circular(10),
                                   onTap: () {
                                     SoundService.playScanBeep();
-                                    if (prod.hasMultiUnit || prod.isTobacco) {
-                                      UniversalUnitSelectorDialog.showForProduct(context, prod);
-                                    } else {
-                                      context.read<BillingBloc>().add(AddProductToCartEvent(prod));
-                                      SnackbarHelper.showSuccess(context, '✅ ${prod.name} ' + context.tr('added_to_cart'));
-                                    }
+                                    UniversalUnitSelectorDialog.showForProduct(context, prod);
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
@@ -1600,7 +1613,7 @@ $itemsSummary
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
           child: Column(
             children: [
@@ -1692,7 +1705,7 @@ $itemsSummary
         }
 
         return Container(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           child: Column(
             children: [
               // Customer Bar (F3) & Price Tier Toggle (F5)
@@ -1757,7 +1770,7 @@ $itemsSummary
                             onPressed: () => _barcodeController.clear(),
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF3F4F6),
+                          fillcolor: Theme.of(context).scaffoldBackgroundColor,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                         ),
                         onSubmitted: _handleBarcodeSubmit,
@@ -1786,7 +1799,7 @@ $itemsSummary
               // Items Table Header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: const Color(0xFFF3F4F6),
+                color: Theme.of(context).scaffoldBackgroundColor,
                 child: Row(
                   children: [
                     Expanded(flex: 4, child: Text(context.tr('table_product'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
@@ -1952,9 +1965,9 @@ $itemsSummary
               // Prominently Enlarged Cart Financial Summary Block
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8FAFC),
-                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1.5)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 1.5)),
                 ),
                 child: Column(
                   children: [
@@ -2181,7 +2194,7 @@ $itemsSummary
 
   Widget _buildRightCatalogPane() {
     return Container(
-      color: const Color(0xFFF3F4F6),
+      color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2190,9 +2203,9 @@ $itemsSummary
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: Theme.of(context).dividerColor),
               boxShadow: [
                 BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
               ],
@@ -2221,8 +2234,85 @@ $itemsSummary
                 ),
                 const SizedBox(width: 8),
 
-                // Tobacco Products Category Quick Access Button
-                InkWell(
+                  const SizedBox(width: 8),
+
+                  // General & Newspapers Category Quick Access Button
+                  InkWell(
+                    onTap: () => _showCategoryProductsModal('general_news', 'منتجات عامة وجرائد 📰'),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade400),
+                      ),
+                      child: const Row(
+                        children: [
+                          Text('📰', style: TextStyle(fontSize: 14)),
+                          SizedBox(width: 4),
+                          Text(
+                            'منتجات عامة 📰',
+                            style: TextStyle(color: Color(0xFF424242), fontWeight: FontWeight.bold, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Cold Drinks Category Quick Access Button
+                  InkWell(
+                    onTap: () => _showCategoryProductsModal('cold_drinks', 'المشروبات الباردة 🥤'),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade400),
+                      ),
+                      child: const Row(
+                        children: [
+                          Text('🥤', style: TextStyle(fontSize: 14)),
+                          SizedBox(width: 4),
+                          Text(
+                            'مشروبات 🥤',
+                            style: TextStyle(color: Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Coffee & Tea Category Quick Access Button
+                  InkWell(
+                    onTap: () => _showCategoryProductsModal('coffee_tea', 'القهوة والشاي ☕'),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.brown.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.brown.shade400),
+                      ),
+                      child: const Row(
+                        children: [
+                          Text('☕', style: TextStyle(fontSize: 14)),
+                          SizedBox(width: 4),
+                          Text(
+                            'القهوة والشاي ☕',
+                            style: TextStyle(color: Color(0xFF4E342E), fontWeight: FontWeight.bold, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Tobacco Products Category Quick Access Button
+                  InkWell(
                   onTap: () => _showCategoryProductsModal('tobacco', context.tr('tobacco_btn')),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
@@ -2264,7 +2354,7 @@ $itemsSummary
                         return ActionChip(
                           avatar: const Icon(Icons.category_outlined, size: 14, color: Colors.teal),
                           label: Text(catName, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-                          backgroundColor: const Color(0xFFF8FAFC),
+                          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                             side: BorderSide(color: Colors.grey.shade300),
@@ -2317,7 +2407,7 @@ $itemsSummary
             onTap: _showQuickCustomItemModal,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.teal.shade300, width: 1.5),
                 boxShadow: [
@@ -2369,14 +2459,14 @@ $itemsSummary
               stock: stock,
               category: 'بيع سريع',
             );
-            context.read<BillingBloc>().add(AddProductToCartEvent(prod));
+            UniversalUnitSelectorDialog.showForProduct(context, prod);
           },
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: Theme.of(context).dividerColor),
               boxShadow: [
                 BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
               ],
@@ -2454,4 +2544,7 @@ $itemsSummary
     );
   }
 }
+
+
+
 

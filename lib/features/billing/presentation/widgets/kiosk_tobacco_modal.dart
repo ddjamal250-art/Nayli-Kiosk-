@@ -229,7 +229,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
     final isTobacco = p.isTobacco || p.category.contains('تبغ') || p.singlePiecePrice > 0 || p.cartonPrice > 0;
 
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(

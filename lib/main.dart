@@ -74,8 +74,11 @@ class MyApp extends StatelessWidget {
         builder: (context, themeMode) {
           return BlocBuilder<LanguageCubit, Locale>(
             builder: (context, locale) {
-              return MaterialApp.router(
-                title: 'Nayli Kiosk',
+              return BlocBuilder<HeaderBrandingCubit, HeaderBrandingState>(
+                builder: (context, branding) {
+                  AppTheme.primaryColor = branding.headerColor;
+                  return MaterialApp.router(
+                    title: 'Nayli Kiosk',
                 theme: AppTheme.lightTheme,
                 darkTheme: AppTheme.amoledDarkTheme,
                 themeMode: themeMode,
@@ -94,6 +97,8 @@ class MyApp extends StatelessWidget {
                   GlobalWidgetsLocalizations.delegate,
                   GlobalCupertinoLocalizations.delegate,
                 ],
+              );
+                },
               );
             },
           );

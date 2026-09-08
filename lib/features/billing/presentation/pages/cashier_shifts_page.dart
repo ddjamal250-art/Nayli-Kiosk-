@@ -288,7 +288,7 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
+          icon: Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
           onPressed: () => context.pop(),
         ),
       ),

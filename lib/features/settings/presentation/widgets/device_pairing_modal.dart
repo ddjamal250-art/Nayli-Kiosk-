@@ -32,7 +32,7 @@ class DevicePairingModal extends StatelessWidget {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       child: Container(
         width: 480,
         padding: const EdgeInsets.all(24),
@@ -124,7 +124,7 @@ class DevicePairingModal extends StatelessWidget {
                           data: telegramDeepLink,
                           version: QrVersions.auto,
                           size: 160.0,
-                          backgroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).cardColor,
                         ),
                       ),
                     ),

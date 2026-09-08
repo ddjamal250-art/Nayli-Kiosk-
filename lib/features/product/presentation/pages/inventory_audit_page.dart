@@ -108,7 +108,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.inventory_rounded, color: AppTheme.primaryColor),
+            Icon(Icons.inventory_rounded, color: AppTheme.primaryColor),
             const SizedBox(width: 8),
             Expanded(child: Text('جرد: ${product.name}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold))),
           ],
@@ -277,7 +277,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
+            icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
             tooltip: 'مسح باركود للجرد السريع',
             onPressed: _scanBarcodeForAudit,
           ),
@@ -601,12 +601,12 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                                         ),
                                         child: Text(
                                           '$counted',
-                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                                         ),
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.add_circle_outline, size: 22, color: AppTheme.primaryColor),
+                                      icon: Icon(Icons.add_circle_outline, size: 22, color: AppTheme.primaryColor),
                                       onPressed: () => _incrementCount(p.id, 1),
                                     ),
                                   ],

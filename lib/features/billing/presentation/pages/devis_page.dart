@@ -83,7 +83,7 @@ class _DevisPageState extends State<DevisPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
+          icon: Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
           onPressed: () => context.pop(),
         ),
       ),
@@ -124,7 +124,7 @@ class _DevisPageState extends State<DevisPage> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.person_pin, color: AppTheme.primaryColor, size: 18),
+                                Icon(Icons.person_pin, color: AppTheme.primaryColor, size: 18),
                                 const SizedBox(width: 6),
                                 Text(client, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                               ],
@@ -150,7 +150,7 @@ class _DevisPageState extends State<DevisPage> {
                           children: [
                             Text(
                               'الإجمالي: ${total.toStringAsFixed(0)} دج',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor),
                             ),
                             Row(
                               children: [

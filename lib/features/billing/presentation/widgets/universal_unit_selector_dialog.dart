@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_helper.dart';
@@ -117,7 +117,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           );
       SnackbarHelper.showSuccess(
         context,
-        '🔄 تم تحويل "${p.name}" إلى $_currentUnitName (x$_quantity)',
+        '?? ?? ????? "${p.name}" ??? $_currentUnitName (x$_quantity)',
       );
     } else {
       context.read<BillingBloc>().add(
@@ -129,7 +129,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           );
       SnackbarHelper.showSuccess(
         context,
-        '🛒 تمت إضافة $_quantity $_currentUnitName من "${p.name}"',
+        '?? ??? ????? $_quantity $_currentUnitName ?? "${p.name}"',
       );
     }
     Navigator.pop(context);
@@ -140,7 +140,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     final isEditingCart = widget.cartItem != null;
 
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
@@ -181,13 +181,13 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              p.category.isNotEmpty ? p.category : 'عام',
+                              p.category.isNotEmpty ? p.category : '???',
                               style: TextStyle(color: Colors.blue.shade800, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'المخزون: ${p.stock} ${p.resolvedPackName}',
+                            '???????: ${p.stock} ${p.resolvedPackName}',
                             style: const TextStyle(color: Colors.grey, fontSize: 11),
                           ),
                         ],
@@ -219,8 +219,8 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                   Expanded(
                     child: Text(
                       isEditingCart
-                          ? 'اختر مستوى التعبئة المطلوب لتحويل السلعة في السلة فوراً:'
-                          : 'اختر نوع العبوة والكمية المراد إضافتها إلى السلة:',
+                          ? '???? ????? ??????? ??????? ?????? ?????? ?? ????? ?????:'
+                          : '???? ??? ?????? ??????? ?????? ??????? ??? ?????:',
                       style: const TextStyle(color: Color(0xFF166534), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -233,23 +233,15 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
             // 3-Tier Packaging Selector Cards
             Row(
               children: [
-                // 1. Piece / SubUnit Option (if available)
-                if (p.hasSubUnit)
-                  Expanded(
+                // 1. Piece / SubUnit Option (Always optional now)
+                Expanded(
                     child: _buildUnitOptionCard(
                       unitKey: 'piece',
                       title: p.resolvedSubUnitName,
-                      subtitle: '1/${p.piecesPerPack > 0 ? p.piecesPerPack : 20} من ${p.resolvedPackName}',
+                      subtitle: '1/${p.piecesPerPack > 0 ? p.piecesPerPack : 20} ?? ${p.resolvedPackName}',
                       price: p.resolvedPiecePrice,
-                      iconText: p.isTobacco ? '🚬' : '🧩',
+                      iconText: p.isTobacco ? '??' : '??',
                       accentColor: Colors.amber,
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: _buildDisabledCard(
-                      title: 'تجزئة بالحبة',
-                      hint: 'غير مفعلة لهذا المنتج',
                     ),
                   ),
                 const SizedBox(width: 10),
@@ -259,31 +251,23 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                   child: _buildUnitOptionCard(
                     unitKey: 'pack',
                     title: p.resolvedPackName,
-                    subtitle: 'العبوة القياسية',
+                    subtitle: '?????? ????????',
                     price: p.price,
-                    iconText: '📦',
+                    iconText: '??',
                     accentColor: Colors.blue,
                   ),
                 ),
                 const SizedBox(width: 10),
 
-                // 3. Carton / Multiplier Option (if available)
-                if (p.hasCarton)
-                  Expanded(
+                // 3. Carton / Multiplier Option (Always optional now)
+                Expanded(
                     child: _buildUnitOptionCard(
                       unitKey: 'carton',
                       title: p.resolvedCartonName,
                       subtitle: 'x${p.packsPerCarton > 0 ? p.packsPerCarton : (p.packMultiplier > 0 ? p.packMultiplier : 10)} ${p.resolvedPackName}',
                       price: p.resolvedCartonPrice,
-                      iconText: '🚛',
+                      iconText: '??',
                       accentColor: Colors.purple,
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: _buildDisabledCard(
-                      title: 'كرتونة / فاردو',
-                      hint: 'غير مفعلة لهذا المنتج',
                     ),
                   ),
               ],
@@ -306,7 +290,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'الكمية بالـ ($_currentUnitName):',
+                        '?????? ???? ($_currentUnitName):',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       // Stepper controls
@@ -363,7 +347,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                         ),
                         selected: isSelected,
                         selectedColor: AppTheme.primaryColor,
-                        backgroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).cardColor,
                         onSelected: (_) => _setQuantity(q),
                       );
                     }).toList(),
@@ -382,7 +366,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'المجموع النهائي:',
+                        '??????? ???????:',
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                       Text(
@@ -406,7 +390,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                   ),
                   icon: Icon(isEditingCart ? Icons.sync : Icons.add_shopping_cart, size: 20),
                   label: Text(
-                    isEditingCart ? 'تأكيد التبديل في السلة' : 'إضافة إلى السلة',
+                    isEditingCart ? '????? ??????? ?? ?????' : '????? ??? ?????',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   onPressed: _applySelection,
@@ -508,7 +492,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
@@ -527,9 +511,11 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          const Text('—', style: TextStyle(color: Colors.grey)),
+          const Text('�', style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
   }
 }
+
+

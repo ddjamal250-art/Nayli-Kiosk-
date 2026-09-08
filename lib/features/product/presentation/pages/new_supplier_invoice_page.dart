@@ -313,7 +313,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
+          icon: Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
           onPressed: () => context.pop(),
         ),
       ),
@@ -404,7 +404,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.calendar_today, size: 16, color: AppTheme.primaryColor),
+                              Icon(Icons.calendar_today, size: 16, color: AppTheme.primaryColor),
                               const SizedBox(width: 6),
                               Text(dateFormat.format(_invoiceDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                             ],
@@ -432,9 +432,9 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('➕ إضافة سلعة للفاتورة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor)),
+                      Text('➕ إضافة سلعة للفاتورة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor)),
                       IconButton(
-                        icon: const Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
+                        icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
                         tooltip: 'مسح الباركود بالكاميرا',
                         onPressed: () async {
                           final scanned = await context.push<String>('/scanner');
@@ -506,7 +506,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                       ),
                       PopupMenuButton<String>(
                         tooltip: 'تغيير تصنيف السلعة',
-                        icon: const Icon(Icons.arrow_drop_down_circle_outlined, size: 20, color: AppTheme.primaryColor),
+                        icon: Icon(Icons.arrow_drop_down_circle_outlined, size: 20, color: AppTheme.primaryColor),
                         padding: EdgeInsets.zero,
                         onSelected: (cat) {
                           setState(() {
@@ -686,7 +686,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                       dense: true,
                       leading: CircleAvatar(
                         backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                        child: Text('${i + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                        child: Text('${i + 1}', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                       ),
                       title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(

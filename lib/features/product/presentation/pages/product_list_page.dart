@@ -144,7 +144,7 @@ class _ProductListPageState extends State<ProductListPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: Row(
             children: [
-              const Icon(Icons.drive_file_move_rounded, color: AppTheme.primaryColor, size: 24),
+              Icon(Icons.drive_file_move_rounded, color: AppTheme.primaryColor, size: 24),
               const SizedBox(width: 8),
               Text('نقل $count سلع لقسم آخر 📂', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ],
@@ -789,12 +789,12 @@ class _ProductListPageState extends State<ProductListPage> {
               centerTitle: true,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.checklist_rounded, color: AppTheme.primaryColor),
+                  icon: Icon(Icons.checklist_rounded, color: AppTheme.primaryColor),
                   tooltip: context.tr('multi_select_tooltip'),
                   onPressed: () => setState(() => _isMultiSelectMode = true),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
+                  icon: Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
                   tooltip: context.tr('export_excel_tooltip'),
                   onPressed: () {
                     final productState = context.read<ProductBloc>().state;
@@ -802,7 +802,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
+                  icon: Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
                   tooltip: 'كتالوج السلع الجزائرية (15,500+)',
                   onPressed: () => context.push('/products/catalog'),
                 ),
@@ -827,7 +827,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.menu_book_rounded, color: AppTheme.primaryColor, size: 22),
+                    Icon(Icons.menu_book_rounded, color: AppTheme.primaryColor, size: 22),
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Column(
@@ -840,7 +840,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.primaryColor),
+                    Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.primaryColor),
                   ],
                 ),
               ),
@@ -1294,7 +1294,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                   value: 'edit',
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
+                                      Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
                                       const SizedBox(width: 10),
                                       Text(context.tr('edit_product_menu'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                                     ],

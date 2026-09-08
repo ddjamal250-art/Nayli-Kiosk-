@@ -485,7 +485,7 @@ class _EditProductPageState extends State<EditProductPage> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
                     const SizedBox(height: 4),
                     Text('${_priceCtrl.text.trim()} ${AppConstants.currencySymbol}',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                   ],
                 ),
               ),
@@ -507,7 +507,7 @@ class _EditProductPageState extends State<EditProductPage> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
                     ),
-                    child: Text('$labelCopies', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    child: Text('$labelCopies', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                   ),
                   IconButton.filledTonal(
                     icon: const Icon(Icons.add),
@@ -690,7 +690,7 @@ class _EditProductPageState extends State<EditProductPage> {
                         ),
                       ),
                       IconButton.filledTonal(
-                        icon: const Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
+                        icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
                         tooltip: context.tr('scan_camera'),
                         onPressed: _scanBarcode,
                       ),

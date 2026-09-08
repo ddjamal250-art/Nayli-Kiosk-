@@ -43,10 +43,10 @@ class _ExpiryMonitorPageState extends State<ExpiryMonitorPage> {
     final warningCount = allExpiryItems.where((i) => i.status == ExpiryStatus.warning30Days).length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('مراقبة صلاحية السلع والتوالف ⏳', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),

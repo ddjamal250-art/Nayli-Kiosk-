@@ -60,7 +60,7 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
 
   void _openWebImageSearch() {
     final queryCtrl = TextEditingController(
-      text: widget.productName.isNotEmpty ? widget.productName : widget.barcode,
+      text: '${widget.productName} ${widget.barcode}'.trim(),
     );
 
     showModalBottomSheet(
@@ -90,7 +90,7 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      const Icon(Icons.cloud_download_outlined, color: AppTheme.primaryColor),
+                      Icon(Icons.cloud_download_outlined, color: AppTheme.primaryColor),
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(

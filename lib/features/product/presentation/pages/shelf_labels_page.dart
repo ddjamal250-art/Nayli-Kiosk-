@@ -296,7 +296,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                     // Label Size Selector Ribbon
                     Row(
                       children: [
-                        const Icon(Icons.aspect_ratio_rounded, size: 15, color: AppTheme.primaryColor),
+                        Icon(Icons.aspect_ratio_rounded, size: 15, color: AppTheme.primaryColor),
                         const SizedBox(width: 4),
                         const Text('مقاس الملصق:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         const Spacer(),
@@ -308,7 +308,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                           ),
                           child: Text(
                             'المحدد: ${_selectedProductIds.length}',
-                            style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 11),
+                            style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 11),
                           ),
                         ),
                       ],
@@ -520,7 +520,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                                         ),
                                         Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                         IconButton(
-                                          icon: const Icon(Icons.add_circle_outline, size: 18, color: AppTheme.primaryColor),
+                                          icon: Icon(Icons.add_circle_outline, size: 18, color: AppTheme.primaryColor),
                                           onPressed: () {
                                             setState(() => _labelQuantities[p.id] = qty + 1);
                                           },
@@ -635,7 +635,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
@@ -647,7 +647,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.label_important_rounded, color: AppTheme.primaryColor, size: 24),
+                    Icon(Icons.label_important_rounded, color: AppTheme.primaryColor, size: 24),
                     const SizedBox(width: 8),
                     Text(
                       'معاينة الملصق (${config.size.displayName})',

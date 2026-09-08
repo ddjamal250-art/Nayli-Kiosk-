@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -86,15 +87,21 @@ class PosHeaderToolbar extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
+                      child: (() {
+                      final customLogoPath = HiveDatabase.settingsBox.get('shop_logo_path') as String?;
+                      if (customLogoPath != null && customLogoPath.isNotEmpty && File(customLogoPath).existsSync()) {
+                        return Image.file(
+                          File(customLogoPath),
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Icon(Icons.storefront, color: headerState.accentColor, size: 28),
+                        );
+                      }
+                      return Image.asset(
                         AppConstants.appLogoPath,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.storefront,
-                          color: headerState.accentColor,
-                          size: 28,
-                        ),
-                      ),
+                        errorBuilder: (_, __, ___) => Icon(Icons.storefront, color: headerState.accentColor, size: 28),
+                      );
+                    })(),
                     ),
                   ),
                 ),

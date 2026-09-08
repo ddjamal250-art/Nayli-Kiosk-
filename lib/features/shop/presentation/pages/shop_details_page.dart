@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import '../../../../core/widgets/input_label.dart';
 import '../../../../core/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
@@ -68,7 +68,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
   Future<void> _pickImage() async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -79,7 +79,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'شعار وصورة بروفيل المتجر',
+              '???? ????? ?????? ??????',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               textAlign: TextAlign.center,
             ),
@@ -93,7 +93,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                 ),
                 child: const Icon(Icons.photo_library_outlined, color: Colors.blue),
               ),
-              title: const Text('اختيار من المعرض (Gallery)'),
+              title: const Text('?????? ?? ?????? (Gallery)'),
               onTap: () async {
                 Navigator.pop(ctx);
                 final picker = ImagePicker();
@@ -108,7 +108,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('📸 تم تحديث شعار المتجر بنجاح!'),
+                        content: Text('?? ?? ????? ???? ?????? ?????!'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -125,7 +125,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                 ),
                 child: const Icon(Icons.camera_alt_outlined, color: Colors.teal),
               ),
-              title: const Text('التقاط صورة بالكاميرا (Camera)'),
+              title: const Text('?????? ???? ????????? (Camera)'),
               onTap: () async {
                 Navigator.pop(ctx);
                 final picker = ImagePicker();
@@ -140,7 +140,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('📸 تم التقاط وحفظ شعار المتجر!'),
+                        content: Text('?? ?? ?????? ???? ???? ??????!'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -159,14 +159,14 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   ),
                   child: const Icon(Icons.delete_outline, color: Colors.red),
                 ),
-                title: const Text('حذف الشعار الحالي', style: TextStyle(color: Colors.red)),
+                title: const Text('??? ?????? ??????', style: TextStyle(color: Colors.red)),
                 onTap: () async {
                   Navigator.pop(ctx);
                   await HiveDatabase.settingsBox.delete('shop_logo_path');
                   setState(() => _logoPath = null);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('🗑️ تم حذف شعار المتجر')),
+                      const SnackBar(content: Text('??? ?? ??? ???? ??????')),
                     );
                   }
                 },
@@ -213,7 +213,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
             _updateControllers(state.shop);
           } else if (state is ShopOperationSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('✅ تم حفظ معلومات المتجر بنجاح!'), backgroundColor: Colors.green),
+              const SnackBar(content: Text('? ?? ??? ??????? ?????? ?????!'), backgroundColor: Colors.green),
             );
             context.pop();
           } else if (state is ShopError) {
@@ -301,7 +301,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                           onPressed: _pickImage,
                           icon: const Icon(Icons.add_photo_alternate_outlined, size: 16),
                           label: Text(
-                            hasValidLogo ? 'تغيير صورة الشعار' : 'رفع شعار المتجر (Logo)',
+                            hasValidLogo ? '????? ???? ??????' : '??? ???? ?????? (Logo)',
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -310,37 +310,37 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  const InputLabel(text: 'اسم المحل / المتجر التجاري'),
+                  const InputLabel(text: '??? ????? / ?????? ???????'),
                   _buildTextField(
                     controller: _nameController,
-                    hint: 'مثال: سوبرماركت البركة / Superette El Baraka',
+                    hint: '????: ????????? ?????? / Superette El Baraka',
                     validator: AppValidators.required(context.tr('required')),
                   ),
                   const SizedBox(height: 15),
-                  const InputLabel(text: 'العنوان - السطر 1'),
+                  const InputLabel(text: '??????? - ????? 1'),
                   _buildTextField(
                     controller: _address1Controller,
-                    hint: 'مثال: حي 1000 مسكن، قرب المسجد',
+                    hint: '????: ?? 1000 ????? ??? ??????',
                     validator: AppValidators.required(context.tr('required')),
                   ),
                   const SizedBox(height: 15),
-                  const InputLabel(text: 'المدينة / الولاية'),
+                  const InputLabel(text: '??????? / ???????'),
                   _buildTextField(
                     controller: _address2Controller,
-                    hint: 'مثال: الجزائر العاصمة / وهران / سطيف',
+                    hint: '????: ??????? ??????? / ????? / ????',
                   ),
                   const SizedBox(height: 15),
-                  const InputLabel(text: 'رقم هاتف المتجر'),
+                  const InputLabel(text: '??? ???? ??????'),
                   _buildTextField(
                     controller: _phoneController,
-                    hint: 'مثال: 0550 12 34 56',
+                    hint: '????: 0550 12 34 56',
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 15),
-                  const InputLabel(text: 'رسالة تذييل الوصل (Footer)'),
+                  const InputLabel(text: '????? ????? ????? (Footer)'),
                   _buildTextField(
                     controller: _footerController,
-                    hint: 'مثال: شكراً لزيارتكم ونتشرف بخدمتكم - Merci pour votre visite',
+                    hint: '????: ????? ???????? ?????? ??????? - Merci pour votre visite',
                     maxLines: 2,
                   ),
                 ],

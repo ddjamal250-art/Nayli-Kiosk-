@@ -180,7 +180,7 @@ class _PcDouchetteActivationModalState extends State<PcDouchetteActivationModal>
                   data: barcodeStr,
                   version: QrVersions.auto,
                   size: 210,
-                  backgroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).cardColor,
                   padding: const EdgeInsets.all(4),
                 ),
               ),

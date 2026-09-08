@@ -868,12 +868,12 @@ class _StockInPageState extends State<StockInPage> {
     final dateFormat = DateFormat('yyyy/MM/dd');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('استلام السلع (أريفاج) 📦',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.chevron_left, size: 28),
@@ -1423,7 +1423,7 @@ class _StockInPageState extends State<StockInPage> {
           ),
           PopupMenuButton<String>(
             tooltip: 'تغيير تصنيف السلعة',
-            icon: const Icon(Icons.tune, color: AppTheme.primaryColor),
+            icon: Icon(Icons.tune, color: AppTheme.primaryColor),
             onSelected: (String cat) {
               setState(() {
                 _selectedCategory = cat;

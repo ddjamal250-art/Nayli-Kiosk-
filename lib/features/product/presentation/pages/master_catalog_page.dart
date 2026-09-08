@@ -740,10 +740,10 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
         final displayedItems = filteredItems.take(_displayLimit).toList();
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             elevation: 0,
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).cardColor,
             foregroundColor: Colors.black87,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -275,7 +275,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
           children: [
             Icon(
               directTelegramSent ? Icons.cloud_done_rounded : Icons.send_rounded,
-              color: directTelegramSent ? const Color(0xFF34D399) : AppTheme.primaryColor,
+              color: directTelegramSent ? Color(0xFF34D399) : AppTheme.primaryColor,
               size: 24,
             ),
             const SizedBox(width: 8),
@@ -526,6 +526,8 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                   storeName: masterShopName,
                   masterIp: ip,
                 );
+                await HiveDatabase.settingsBox.put('master_pos_ip', ip);
+                await HiveDatabase.settingsBox.put('master_pos_port', port);
                 await LocalSyncClient.setServerIp('$ip:$port');
 
                 SoundService.playCheckoutSuccess();
@@ -944,7 +946,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             subtitle: 'ربط الهاتف مع كاشير الكمبيوتر كـ جهاز ملحق أو قارئ باركود لاسلكي يرسل المبيعات للحاسوب مباشرة (عبر الواي فاي أو السحابة تلقائياً).',
             badgeText: 'الأكثر طلباً ⭐',
             badgeColor: const Color(0xFF818CF8),
-            gradientColors: [const Color(0xFF4F46E5), AppTheme.primaryColor],
+            gradientColors: [Color(0xFF4F46E5), AppTheme.primaryColor],
             icon: Icons.wifi_tethering_rounded,
             onTap: () {
               SoundService.playTabSwitch();
@@ -959,7 +961,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             subtitle: 'تشغيل الهاتف كنقطة بيع كاملة ومستقلة لإدارة المخزون والمبيعات، وتفعيلها سحابياً باسم متجرك أو بمفتاح ترخيص.',
             badgeText: 'ترخيص مستقل 🔑',
             badgeColor: const Color(0xFF818CF8),
-            gradientColors: [const Color(0xFF4F46E5), AppTheme.primaryColor],
+            gradientColors: [Color(0xFF4F46E5), AppTheme.primaryColor],
             icon: Icons.storefront_rounded,
             onTap: () {
               SoundService.playTabSwitch();
@@ -974,7 +976,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             subtitle: 'تحويل الهاتف أو التابلت إلى شاشة معلقة للزبائن لفحص الأسعار والعروض في ممرات السوبرماركت فوراً ومجاناً بدون استهلاك رخص!',
             badgeText: 'مجاني 100% 🆓',
             badgeColor: const Color(0xFF818CF8),
-            gradientColors: [const Color(0xFF4F46E5), AppTheme.primaryColor],
+            gradientColors: [Color(0xFF4F46E5), AppTheme.primaryColor],
             icon: Icons.tv_rounded,
             onTap: () {
               SoundService.playTabSwitch();
@@ -1393,7 +1395,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                 data: qrPayload,
                 version: QrVersions.auto,
                 size: 165.0,
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).cardColor,
               ),
             ),
             const SizedBox(height: 10),

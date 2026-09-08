@@ -71,7 +71,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
       if (!mounted) return;
       final destination = await showModalBottomSheet<String>(
         context: context,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -322,7 +322,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
     final isWide = screenWidth >= 768;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -336,7 +336,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
           ],
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),

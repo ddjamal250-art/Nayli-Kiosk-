@@ -512,7 +512,13 @@ class UniversalDatabaseImporter {
             imagesDir,
           );
         } else if (decoded is List) {
-          final products = _parseProductsList(decoded, imagesDir);
+          Map<String, String>? matchedImages;
+          if (imagesDir != null) {
+            try {
+              matchedImages = await ProductImageHelper.scanDirectoryForBarcodeImages(parentDir, imagesDir);
+            } catch (_) {}
+          }
+          final products = _parseProductsList(decoded, imagesDir, matchedImages);
           return ParsedDatabaseData(
             fileFormat: 'nbak/zip (json array)',
             fileName: fileName,
@@ -569,18 +575,19 @@ class UniversalDatabaseImporter {
     final decoded = jsonDecode(content);
     int imagesDiscovered = 0;
 
+    Map<String, String>? matchedImages;
     // Scan adjacent folder for images matching barcodes
     if (imagesDir != null) {
       try {
-        final matched = await ProductImageHelper.scanDirectoryForBarcodeImages(parentDir, imagesDir);
-        imagesDiscovered = matched.length;
+        matchedImages = await ProductImageHelper.scanDirectoryForBarcodeImages(parentDir, imagesDir);
+        imagesDiscovered = matchedImages.length;
       } catch (_) {}
     }
 
     if (decoded is Map<String, dynamic>) {
-      return _parseNayliBackupMap(decoded, fileName, fileSize, 'json', imagesDiscovered, imagesDir);
+      return _parseNayliBackupMap(decoded, fileName, fileSize, 'json', imagesDiscovered, imagesDir, matchedImages);
     } else if (decoded is List) {
-      final products = _parseProductsList(decoded, imagesDir);
+      final products = _parseProductsList(decoded, imagesDir, matchedImages);
       return ParsedDatabaseData(
         fileFormat: 'json',
         fileName: fileName,
@@ -609,8 +616,9 @@ class UniversalDatabaseImporter {
     String format,
     int imagesDiscovered,
     Directory? imagesDir,
+    [Map<String, String>? barcodeToImagePath],
   ) {
-    final products = _parseProductsList(data['products'] as List? ?? [], imagesDir);
+    final products = _parseProductsList(data['products'] as List? ?? [], imagesDir, barcodeToImagePath);
 
     final invoices = <Map<String, dynamic>>[];
     if (data['invoices'] is List) {
@@ -674,7 +682,7 @@ class UniversalDatabaseImporter {
   }
 
   /// Parse products list from JSON array
-  static List<ProductModel> _parseProductsList(List rawList, Directory? imagesDir) {
+  static List<ProductModel> _parseProductsList(List rawList, Directory? imagesDir, [Map<String, String>? barcodeToImagePath]) {
     final products = <ProductModel>[];
     for (var p in rawList) {
       if (p is Map) {

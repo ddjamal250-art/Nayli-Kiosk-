@@ -282,17 +282,17 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     final isDesktop = screenWidth >= 900 || Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           isDesktop ? 'تخصيص وتصميم الوصل الحراري 🧾' : 'تخصيص الوصل 🧾',
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         centerTitle: !isDesktop,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
+          icon: Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
           onPressed: () => context.pop(),
         ),
         actions: isDesktop

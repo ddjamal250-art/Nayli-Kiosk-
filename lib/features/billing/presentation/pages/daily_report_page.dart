@@ -233,11 +233,27 @@ class _DailyReportPageState extends State<DailyReportPage> {
     setState(() => _isPrinting = true);
     try {
       final dateFormatted = DateFormat('dd/MM/yyyy').format(_customDate);
+
+      double coffeeTeaTotal = 0.0;
+      for (final inv in invoices) {
+        if (inv['items'] is List) {
+          for (final it in inv['items']) {
+            if (it is Map) {
+              final name = (it['name']?.toString() ?? '').toLowerCase();
+              final cat = (it['category']?.toString() ?? '').toLowerCase();
+              bool isCoffeeTea = ['قهوة', 'شاي', 'cafe', 'thé', 'tea', 'nescafe'].any((k) => name.contains(k) || cat.contains(k));
+              if (isCoffeeTea) {
+                coffeeTeaTotal += (it['total'] as num?)?.toDouble() ?? (((it['price'] as num?)?.toDouble() ?? 0.0) * ((it['qty'] as num?)?.toInt() ?? 1));
+              }
+            }
+          }
+        }
+      }
+
       final reportItems = [
         {'name': 'Nombre Ventes', 'qty': invoices.length, 'price': '-', 'total': invoices.length},
         {'name': 'Articles Vendu', 'qty': itemsCount, 'price': '-', 'total': itemsCount},
-        {'name': 'Ventes Cash', 'qty': '-', 'price': '-', 'total': '${cashTotal.toStringAsFixed(0)} DA'},
-        {'name': 'Ventes Credit', 'qty': '-', 'price': '-', 'total': '${creditTotal.toStringAsFixed(0)} DA'},
+        {'name': 'S/T (Cafe/The)', 'qty': '-', 'price': '-', 'total': '${coffeeTeaTotal.toStringAsFixed(0)} DA'},
         {'name': 'Benefice Brut', 'qty': '-', 'price': '-', 'total': '${grossProfit.toStringAsFixed(0)} DA'},
         {'name': 'Depenses', 'qty': '-', 'price': '-', 'total': '${expenses.toStringAsFixed(0)} DA'},
         {'name': 'Benefice Net', 'qty': '-', 'price': '-', 'total': '${netProfit.toStringAsFixed(0)} DA'},
@@ -464,12 +480,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
+          icon: Icon(Icons.chevron_left, size: 28, color: AppTheme.primaryColor),
           onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryColor),
+            icon: Icon(Icons.refresh_rounded, color: AppTheme.primaryColor),
             tooltip: 'تحديث الحسابات والبيانات اللحظية',
             onPressed: () {
               setState(() => _secondsRemaining = 20);
@@ -492,7 +508,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.receipt_long, color: AppTheme.primaryColor),
+            icon: Icon(Icons.receipt_long, color: AppTheme.primaryColor),
             tooltip: 'طباعة تقرير Z',
             onPressed: () => _printZReport(invoices, totalRevenue, grossProfit, expenses, netProfit, totalItemsCount, cashSales, creditSales),
           ),
@@ -667,12 +683,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.calendar_month, color: AppTheme.primaryColor, size: 20),
+                          Icon(Icons.calendar_month, color: AppTheme.primaryColor, size: 20),
                           const SizedBox(width: 8),
                           Text('تاريخ التقرير: ${DateFormat('yyyy/MM/dd').format(_customDate)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         ],
                       ),
-                      const Text('تغيير التاريخ ✏️', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                      Text('تغيير التاريخ ✏️', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -1089,7 +1105,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                         children: [
                           Text(
                             '${total.toStringAsFixed(0)} دج',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor),
                           ),
                           const SizedBox(width: 4),
                           const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
@@ -1196,7 +1212,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('المجموع الإجمالي:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text('${total.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primaryColor)),
+                Text('${total.toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primaryColor)),
               ],
             ),
             const SizedBox(height: 16),

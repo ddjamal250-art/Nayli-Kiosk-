@@ -301,7 +301,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(widget.initialDocument == null ? 'إنشاء مستند جديد' : 'تعديل مستند: $_reference',
             style: const TextStyle(fontWeight: FontWeight.bold)),

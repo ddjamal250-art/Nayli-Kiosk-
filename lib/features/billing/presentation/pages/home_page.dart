@@ -365,8 +365,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
   }
 
   Future<void> _sendCartToMasterPos(BillingState state) async {
-    final ip = HiveDatabase.settingsBox.get('master_pos_ip', defaultValue: '') as String;
-    final port = HiveDatabase.settingsBox.get('master_pos_port', defaultValue: '8080').toString();
+    String ip = HiveDatabase.settingsBox.get('master_pos_ip', defaultValue: '') as String;
+    String port = HiveDatabase.settingsBox.get('master_pos_port', defaultValue: '8080').toString();
+
+    final syncIp = LocalSyncClient.getServerIp();
+    if (syncIp.isNotEmpty) {
+      if (syncIp.contains(':')) {
+        final parts = syncIp.split(':');
+        ip = parts[0];
+        port = parts[1];
+      } else {
+        ip = syncIp;
+      }
+    }
 
     if (ip.isEmpty) {
       context.showAppSnackBar(
@@ -485,7 +496,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -713,7 +724,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Row(
               children: [
-                const Icon(Icons.percent_rounded, color: AppTheme.primaryColor),
+                Icon(Icons.percent_rounded, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
                 Text(context.tr('تطبيق تخفيض / Remise'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
@@ -817,7 +828,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1047,7 +1058,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1633,7 +1644,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
@@ -1684,7 +1695,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         ),
                         const SizedBox(width: 6),
                         IconButton(
-                          icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor, size: 24),
+                          icon: Icon(Icons.edit_note, color: AppTheme.primaryColor, size: 24),
                           tooltip: 'تعديل السلعة وتزويد المخزون',
                           onPressed: () {
                             Navigator.pop(ctx);
@@ -2443,9 +2454,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: Theme.of(context).dividerColor),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
           ],

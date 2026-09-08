@@ -255,7 +255,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: [
-              const Icon(Icons.add_shopping_cart, color: AppTheme.primaryColor),
+              Icon(Icons.add_shopping_cart, color: AppTheme.primaryColor),
               const SizedBox(width: 8),
               Text(context.tr('إضافة مادة ميزان جديدة وتفاصيل المخزون'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
@@ -583,7 +583,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                     color: AppTheme.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.scale_rounded, color: AppTheme.primaryColor, size: 24),
+                  child: Icon(Icons.scale_rounded, color: AppTheme.primaryColor, size: 24),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
@@ -608,7 +608,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: context.tr('search_scale_item_hint'),
-                      prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.primaryColor),
+                      prefixIcon: Icon(Icons.search, size: 20, color: AppTheme.primaryColor),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear, size: 18),
@@ -870,7 +870,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                       Text(context.tr('total_amount_label'), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                       Text(
                         '${total.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                       ),
                     ],
                   ),

@@ -230,7 +230,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
     final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         width: isDesktop ? 950 : double.infinity,

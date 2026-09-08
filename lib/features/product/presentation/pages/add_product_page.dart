@@ -497,7 +497,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     ),
                     const SizedBox(width: 8),
                     IconButton.filledTonal(
-                      icon: const Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
+                      icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
                       onPressed: _scanBarcode,
                       padding: const EdgeInsets.all(12),
                     ),

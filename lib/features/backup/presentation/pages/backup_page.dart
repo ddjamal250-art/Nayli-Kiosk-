@@ -854,7 +854,7 @@ class _BackupPageState extends State<BackupPage> {
                         children: [
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
+                              backgroundColor: Theme.of(context).cardColor,
                               foregroundColor: const Color(0xFF0F766E),
                               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

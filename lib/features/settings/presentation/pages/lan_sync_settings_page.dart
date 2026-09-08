@@ -347,11 +347,11 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
     final isWide = screenWidth >= 720;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('إدارة الشبكة والمزامنة (LAN)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: !isWide,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0.5,
         actions: [
@@ -547,7 +547,7 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
               data: qrPayload,
               version: QrVersions.auto,
               size: 160,
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).cardColor,
             ),
           ),
           const SizedBox(height: 12),

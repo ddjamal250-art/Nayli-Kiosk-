@@ -234,7 +234,7 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).cardColor,
             title: Row(
               children: [
                 Container(
@@ -440,7 +440,7 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       child: Container(
         width: 340,
         padding: const EdgeInsets.all(24),

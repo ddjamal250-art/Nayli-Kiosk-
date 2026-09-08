@@ -654,7 +654,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 1,
-      color: const Color(0xFFF8FAFC),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: ExpansionTile(
         initiallyExpanded: true,
         leading: Container(
