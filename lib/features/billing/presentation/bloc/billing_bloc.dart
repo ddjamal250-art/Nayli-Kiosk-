@@ -371,27 +371,35 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
         final productModel = productBox.get(originalId);
         if (productModel != null) {
-          int deductAmount = 1;
+          int newStock = productModel.stock;
           if (cartItem.unitLevel == 'carton' || cartItem.product.id.contains('_carton_')) {
-            final multiplier = productModel.packsPerCarton > 0
-                ? productModel.packsPerCarton
-                : (productModel.packMultiplier > 0 ? productModel.packMultiplier : 10);
-            deductAmount = cartItem.quantity * multiplier;
+            final multiplier = productModel.effectivePacksPerCarton;
+            final deductAmount = cartItem.quantity * multiplier;
+            newStock = (productModel.stock - deductAmount).clamp(0, 999999);
+            productBox.put(originalId, productModel.copyWith(stock: newStock));
           } else if (cartItem.unitLevel == 'piece' || cartItem.product.id.contains('_piece_')) {
-            final pPerPack = productModel.piecesPerPack > 0 ? productModel.piecesPerPack : 20;
-            deductAmount = (cartItem.quantity / pPerPack).ceil();
-            if (deductAmount < 1 && cartItem.quantity > 0) deductAmount = 1;
-          } else if (cartItem.product.id.endsWith('_pack')) {
-            deductAmount = cartItem.quantity * (cartItem.product.packMultiplier > 0 ? cartItem.product.packMultiplier : 1);
-          } else {
-            deductAmount = cartItem.quantity;
-          }
+            // Smart Break-Case Logic (Walmart UOM style)
+            final pPerPack = productModel.effectivePiecesPerPack > 1 ? productModel.effectivePiecesPerPack : 20;
+            final qtyToDeduct = cartItem.quantity;
+            int currentLoose = (HiveDatabase.loosePiecesBox.get(originalId, defaultValue: 0) as num).toInt();
 
-          final newStock = (productModel.stock - deductAmount).clamp(0, 999999);
-          productBox.put(
-            originalId,
-            productModel.copyWith(stock: newStock),
-          );
+            if (currentLoose >= qtyToDeduct) {
+              currentLoose -= qtyToDeduct;
+              await HiveDatabase.loosePiecesBox.put(originalId, currentLoose);
+            } else {
+              final deficit = qtyToDeduct - currentLoose;
+              final packsToBreak = (deficit / pPerPack).ceil();
+              newStock = (productModel.stock - packsToBreak).clamp(0, 999999);
+              currentLoose = (currentLoose + (packsToBreak * pPerPack)) - qtyToDeduct;
+
+              productBox.put(originalId, productModel.copyWith(stock: newStock));
+              await HiveDatabase.loosePiecesBox.put(originalId, currentLoose);
+            }
+          } else {
+            final deductAmount = cartItem.quantity;
+            newStock = (productModel.stock - deductAmount).clamp(0, 999999);
+            productBox.put(originalId, productModel.copyWith(stock: newStock));
+          }
 
           // SMART SHOPPING LIST AUTOMATION
           if (newStock <= 5) {

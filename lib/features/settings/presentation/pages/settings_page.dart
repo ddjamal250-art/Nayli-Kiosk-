@@ -94,31 +94,31 @@ class _SettingsPageState extends State<SettingsPage> {
             SizedBox(height: 20),
 
             // 3. Hardware & Printing Center
-            _buildSectionHeader('الأجهزة والطباعة الحرارية 🖨️'),
+            _buildSectionHeader(context.tr('hardware_printing_header')),
             _buildHardwareSection(context),
 
             SizedBox(height: 20),
 
             // 4. Sound & Notifications Center
-            _buildSectionHeader('الأصوات والإشعارات والتنبيهات 🔊🔔'),
+            _buildSectionHeader(context.tr('sound_notifs_header')),
             _buildSoundAndNotificationsSection(context, isSoundOn, isNotifOn, liveAlerts),
 
             SizedBox(height: 20),
 
             // 5. Security & Data Backup Center
-            _buildSectionHeader('الأمان والنسخ الاحتياطي 🔒💾'),
+            _buildSectionHeader(context.tr('security_backup_header')),
             _buildSecurityAndBackupSection(context, isPinEnabled),
 
             SizedBox(height: 20),
 
             // 5.5 Appearance & Theme Center
-            _buildSectionHeader('المظهر والسمات (Thème & Apparence) 🎨🌙'),
+            _buildSectionHeader(context.tr('appearance_theme_header')),
             _buildAppearanceAndThemeSection(context),
 
             SizedBox(height: 20),
 
             // 6. Language & App Info
-            _buildSectionHeader('اللغة ومعلومات التطبيق 🌐✨'),
+            _buildSectionHeader(context.tr('language_info_header')),
             _buildLanguageAndInfoSection(context, isActivated),
 
             SizedBox(height: 35),

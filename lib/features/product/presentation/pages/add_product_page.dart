@@ -48,6 +48,7 @@ class _AddProductPageState extends State<AddProductPage> {
   bool _isCategoryUserSelected = false;
   String? _imageUrl;
   bool _isTobacco = false;
+  bool _allowPieceSale = false;
   String _unitType = 'piece'; // 'piece', 'meter', 'ml'
   bool _isWeighted = false;
   DateTime? _expiryDate;
@@ -139,7 +140,7 @@ class _AddProductPageState extends State<AddProductPage> {
       _isAutoCalculating = true;
       final packPrice = carton / packs;
       _priceCtrl.text = packPrice % 1 == 0 ? packPrice.toInt().toString() : packPrice.toStringAsFixed(2);
-      if (pieces > 0) {
+      if (pieces > 0 && _allowPieceSale) {
         final piecePrice = (packPrice / pieces).ceilToDouble();
         _singlePiecePriceCtrl.text = piecePrice % 1 == 0 ? piecePrice.toInt().toString() : piecePrice.toStringAsFixed(2);
       }
@@ -159,7 +160,7 @@ class _AddProductPageState extends State<AddProductPage> {
       _isAutoCalculating = true;
       final carton = pack * packs;
       _cartonPriceCtrl.text = carton % 1 == 0 ? carton.toInt().toString() : carton.toStringAsFixed(2);
-      if (pieces > 0) {
+      if (pieces > 0 && _allowPieceSale) {
         final piecePrice = (pack / pieces).ceilToDouble();
         _singlePiecePriceCtrl.text = piecePrice % 1 == 0 ? piecePrice.toInt().toString() : piecePrice.toStringAsFixed(2);
       }
@@ -219,6 +220,59 @@ class _AddProductPageState extends State<AddProductPage> {
     } else {
       setState(() {});
     }
+  }
+
+
+  Widget _buildPieceSaleToggle() {
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: _allowPieceSale ? Colors.deepOrange.withOpacity(0.08) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _allowPieceSale ? Colors.deepOrange.shade300 : Colors.grey.shade300),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.pie_chart_rounded, color: _allowPieceSale ? Colors.deepOrange : Colors.grey, size: 20),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'تفعيل البيع بالحبة (Vente à la pièce)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: _allowPieceSale ? Colors.deepOrange.shade900 : Colors.black87),
+                  ),
+                  const Text('حساب سعر الحبة تلقائياً وتمكين بيعها بالكاشير', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                ],
+              ),
+            ],
+          ),
+          Switch(
+            value: _allowPieceSale,
+            activeColor: Colors.deepOrange,
+            onChanged: (val) {
+              setState(() {
+                _allowPieceSale = val;
+                if (val) {
+                  final pack = double.tryParse(_priceCtrl.text.trim()) ?? 0.0;
+                  final pieces = int.tryParse(_piecesPerPackCtrl.text.trim()) ?? 20;
+                  if (pack > 0 && pieces > 0) {
+                    final calc = (pack / pieces).ceilToDouble();
+                    _singlePiecePriceCtrl.text = calc % 1 == 0 ? calc.toInt().toString() : calc.toStringAsFixed(0);
+                  }
+                } else {
+                  _singlePiecePriceCtrl.text = '';
+                }
+              });
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTobaccoProfitCard() {
@@ -424,7 +478,7 @@ class _AddProductPageState extends State<AddProductPage> {
         cartonPrice: double.tryParse(_cartonPriceCtrl.text.trim()) ?? 0.0,
         wholesaleCartonPrice: double.tryParse(_wholesaleCartonPriceCtrl.text.trim()) ?? 0.0,
         wholesalePackPrice: double.tryParse(_wholesalePackPriceCtrl.text.trim()) ?? 0.0,
-        singlePiecePrice: double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? 0.0,
+        singlePiecePrice: _allowPieceSale ? (double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? 0.0) : 0.0,
         piecesPerPack: int.tryParse(_piecesPerPackCtrl.text.trim()) ?? 20,
         packsPerCarton: int.tryParse(_packsPerCartonCtrl.text.trim()) ?? 10,
         packBarcode: _packBarcodeCtrl.text.trim().isNotEmpty ? _packBarcodeCtrl.text.trim() : null,
@@ -766,6 +820,7 @@ class _AddProductPageState extends State<AddProductPage> {
                             ),
                           ],
                         ),
+                        _buildPieceSaleToggle(),
                         _buildTobaccoProfitCard(),
                       ],
                     ],

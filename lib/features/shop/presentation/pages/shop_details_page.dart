@@ -13,7 +13,7 @@ import '../../../../core/utils/app_validators.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 class ShopDetailsPage extends StatefulWidget {
-  ShopDetailsPage({super.key});
+  const ShopDetailsPage({super.key});
 
   @override
   State<ShopDetailsPage> createState() => _ShopDetailsPageState();
@@ -69,31 +69,31 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              '???? ????? ?????? ??????',
+            const Text(
+              'تغيير وتعيين شعار المتجر',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             ListTile(
               leading: Container(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.photo_library_outlined, color: Colors.blue),
+                child: const Icon(Icons.photo_library_outlined, color: Colors.blue),
               ),
-              title: Text('?????? ?? ?????? (Gallery)'),
+              title: const Text('اختيار من المعرض (Gallery)'),
               onTap: () async {
                 Navigator.pop(ctx);
                 final picker = ImagePicker();
@@ -107,8 +107,8 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   setState(() => _logoPath = picked.path);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('?? ?? ????? ???? ?????? ?????!'),
+                      const SnackBar(
+                        content: Text('✅ تم تعيين شعار المتجر بنجاح!'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -118,14 +118,14 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
             ),
             ListTile(
               leading: Container(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.teal.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.camera_alt_outlined, color: Colors.teal),
+                child: const Icon(Icons.camera_alt_outlined, color: Colors.teal),
               ),
-              title: Text('?????? ???? ????????? (Camera)'),
+              title: const Text('التقاط صورة بالكاميرا (Camera)'),
               onTap: () async {
                 Navigator.pop(ctx);
                 final picker = ImagePicker();
@@ -139,8 +139,8 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   setState(() => _logoPath = picked.path);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('?? ?? ?????? ???? ???? ??????!'),
+                      const SnackBar(
+                        content: Text('✅ تم التقاط وتعيين شعار المتجر بنجاح!'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -149,24 +149,24 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
               },
             ),
             if (_logoPath != null) ...[
-              Divider(),
+              const Divider(),
               ListTile(
                 leading: Container(
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.delete_outline, color: Colors.red),
+                  child: const Icon(Icons.delete_outline, color: Colors.red),
                 ),
-                title: Text('??? ?????? ??????', style: TextStyle(color: Colors.red)),
+                title: const Text('حذف الشعار الحالي', style: TextStyle(color: Colors.red)),
                 onTap: () async {
                   Navigator.pop(ctx);
                   await HiveDatabase.settingsBox.delete('shop_logo_path');
                   setState(() => _logoPath = null);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('??? ?? ??? ???? ??????')),
+                      const SnackBar(content: Text('تم حذف شعار المتجر بنجاح')),
                     );
                   }
                 },
@@ -200,10 +200,10 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.tr('shop_details'),
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.chevron_left, size: 28),
+          icon: const Icon(Icons.chevron_left, size: 28),
           onPressed: () => context.pop(),
         ),
       ),
@@ -213,7 +213,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
             _updateControllers(state.shop);
           } else if (state is ShopOperationSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('? ?? ??? ??????? ?????? ?????!'), backgroundColor: Colors.green),
+              const SnackBar(content: Text('✅ تم حفظ بيانات المتجر بنجاح!'), backgroundColor: Colors.green),
             );
             context.pop();
           } else if (state is ShopError) {
@@ -225,11 +225,11 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
         buildWhen: (previous, current) => current is ShopLoading || current is ShopLoaded,
         builder: (context, state) {
           if (state is ShopLoading) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 120),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
             child: Form(
               key: _formKey,
               child: Column(
@@ -257,7 +257,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.06),
                                       blurRadius: 10,
-                                      offset: Offset(0, 4),
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
@@ -280,13 +280,13 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                                 bottom: 0,
                                 right: 0,
                                 child: Container(
-                                  padding: EdgeInsets.all(6),
+                                  padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
                                     color: AppTheme.primaryColor,
                                     shape: BoxShape.circle,
                                     border: Border.all(color: Colors.white, width: 2),
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.camera_alt,
                                     size: 14,
                                     color: Colors.white,
@@ -296,51 +296,51 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         TextButton.icon(
                           onPressed: _pickImage,
-                          icon: Icon(Icons.add_photo_alternate_outlined, size: 16),
+                          icon: const Icon(Icons.add_photo_alternate_outlined, size: 16),
                           label: Text(
-                            hasValidLogo ? '????? ???? ??????' : '??? ???? ?????? (Logo)',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            hasValidLogo ? 'تغيير شعار المتجر' : 'إضافة شعار المتجر (Logo)',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                  InputLabel(text: '??? ????? / ?????? ???????'),
+                  const InputLabel(text: 'اسم المتجر / المحل التجاري *'),
                   _buildTextField(
                     controller: _nameController,
-                    hint: '????: ????????? ?????? / Superette El Baraka',
+                    hint: 'مثال: سوبرماركت البركة / Superette El Baraka',
                     validator: AppValidators.required(context.tr('required')),
                   ),
-                  SizedBox(height: 15),
-                  InputLabel(text: '??????? - ????? 1'),
+                  const SizedBox(height: 15),
+                  const InputLabel(text: 'العنوان - السطر 1 *'),
                   _buildTextField(
                     controller: _address1Controller,
-                    hint: '????: ?? 1000 ????? ??? ??????',
+                    hint: 'مثال: حي 1000 مسكن، وسط المدينة',
                     validator: AppValidators.required(context.tr('required')),
                   ),
-                  SizedBox(height: 15),
-                  InputLabel(text: '??????? / ???????'),
+                  const SizedBox(height: 15),
+                  const InputLabel(text: 'البلدية / الولاية'),
                   _buildTextField(
                     controller: _address2Controller,
-                    hint: '????: ??????? ??????? / ????? / ????',
+                    hint: 'مثال: الجلفة / الجزائر العاصمة / وهران',
                   ),
-                  SizedBox(height: 15),
-                  InputLabel(text: '??? ???? ??????'),
+                  const SizedBox(height: 15),
+                  const InputLabel(text: 'رقم هاتف المحل'),
                   _buildTextField(
                     controller: _phoneController,
-                    hint: '????: 0550 12 34 56',
+                    hint: 'مثال: 0550 12 34 56',
                     keyboardType: TextInputType.phone,
                   ),
-                  SizedBox(height: 15),
-                  InputLabel(text: '????? ????? ????? (Footer)'),
+                  const SizedBox(height: 15),
+                  const InputLabel(text: 'عبارة أسفل الوصل (Footer)'),
                   _buildTextField(
                     controller: _footerController,
-                    hint: '????: ????? ???????? ?????? ??????? - Merci pour votre visite',
+                    hint: 'مثال: شكراً لزيارتكم ونتمنى لكم يوماً سعيداً - Merci pour votre visite',
                     maxLines: 2,
                   ),
                 ],
@@ -350,7 +350,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
         },
       ),
       bottomNavigationBar: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: BlocBuilder<ShopBloc, ShopState>(
           builder: (context, state) {
             return PrimaryButton(
@@ -379,7 +379,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }

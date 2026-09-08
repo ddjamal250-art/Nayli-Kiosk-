@@ -50,6 +50,7 @@ class _EditProductPageState extends State<EditProductPage> {
   late String _selectedCategory;
   String? _imageUrl;
   late bool _isTobacco;
+  late bool _allowPieceSale;
   late String _unitType; // 'piece', 'meter', 'ml'
   late bool _isWeighted;
   DateTime? _expiryDate;
@@ -90,6 +91,7 @@ class _EditProductPageState extends State<EditProductPage> {
         widget.product.category.contains('معسل') ||
         widget.product.hasMultiUnit;
     _unitType = widget.product.unitType.isNotEmpty ? widget.product.unitType : 'piece';
+    _allowPieceSale = widget.product.singlePiecePrice > 0;
     _cartonPriceCtrl = TextEditingController(text: widget.product.cartonPrice > 0 ? widget.product.cartonPrice.toStringAsFixed(0) : '');
     _wholesaleCartonPriceCtrl = TextEditingController(text: widget.product.wholesaleCartonPrice > 0 ? widget.product.wholesaleCartonPrice.toStringAsFixed(0) : '');
     _wholesalePackPriceCtrl = TextEditingController(text: widget.product.wholesalePackPrice > 0 ? widget.product.wholesalePackPrice.toStringAsFixed(0) : '');
@@ -156,7 +158,7 @@ class _EditProductPageState extends State<EditProductPage> {
       _isAutoCalculating = true;
       final carton = pack * packs;
       _cartonPriceCtrl.text = carton % 1 == 0 ? carton.toInt().toString() : carton.toStringAsFixed(2);
-      if (pieces > 0) {
+      if (pieces > 0 && _allowPieceSale) {
         final piecePrice = (pack / pieces).ceilToDouble();
         _singlePiecePriceCtrl.text = piecePrice % 1 == 0 ? piecePrice.toInt().toString() : piecePrice.toStringAsFixed(2);
       }
@@ -216,6 +218,172 @@ class _EditProductPageState extends State<EditProductPage> {
     } else {
       setState(() {});
     }
+  }
+
+
+  Widget _buildBreakCaseCard() {
+    final barcode = widget.product.barcode;
+    final looseCount = (HiveDatabase.loosePiecesBox.get(barcode, defaultValue: 0) as num).toInt();
+    final packStock = int.tryParse(_stockCtrl.text.trim()) ?? widget.product.stock;
+    final piecesPerPack = int.tryParse(_piecesPerPackCtrl.text.trim()) ?? widget.product.piecesPerPack;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.content_cut_rounded, color: Color(0xFF334155), size: 18),
+              const SizedBox(width: 8),
+              const Text(
+                'إدارة كسر العلب (Break-Case & Loose Pieces)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    children: [
+                      const Text('علب مقفلة بالرف', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      Text('$packStock علبة', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.indigo)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    children: [
+                      const Text('حبات فردية مفتوحة', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      Text('$looseCount حبة', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.deepOrange)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    side: const BorderSide(color: Colors.deepOrange),
+                  ),
+                  onPressed: packStock > 0
+                      ? () {
+                          final newStock = packStock - 1;
+                          final newLoose = looseCount + piecesPerPack;
+                          HiveDatabase.loosePiecesBox.put(barcode, newLoose);
+                          setState(() {
+                            _stockCtrl.text = newStock.toString();
+                          });
+                          SoundService.playKeyTap();
+                          context.showAppSnackBar('✂️ تم فتح علبة وإضافة $piecesPerPack حبة إلى المخزون المفتوح!');
+                        }
+                      : null,
+                  icon: const Icon(Icons.content_cut, size: 16, color: Colors.deepOrange),
+                  label: const Text('فتح علبة لحبات', style: TextStyle(fontSize: 11.5, color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    side: const BorderSide(color: Colors.teal),
+                  ),
+                  onPressed: looseCount >= piecesPerPack
+                      ? () {
+                          final newLoose = looseCount - piecesPerPack;
+                          final newStock = packStock + 1;
+                          HiveDatabase.loosePiecesBox.put(barcode, newLoose);
+                          setState(() {
+                            _stockCtrl.text = newStock.toString();
+                          });
+                          SoundService.playSaveSuccess();
+                          context.showAppSnackBar('📦 تم تجميع $piecesPerPack حبة في علبة مقفلة جديدة!');
+                        }
+                      : null,
+                  icon: const Icon(Icons.inventory_rounded, size: 16, color: Colors.teal),
+                  label: const Text('تجميع لعلبة', style: TextStyle(fontSize: 11.5, color: Colors.teal, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildPieceSaleToggle() {
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: _allowPieceSale ? Colors.deepOrange.withOpacity(0.08) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _allowPieceSale ? Colors.deepOrange.shade300 : Colors.grey.shade300),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.pie_chart_rounded, color: _allowPieceSale ? Colors.deepOrange : Colors.grey, size: 20),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'تفعيل البيع بالحبة (Vente à la pièce)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: _allowPieceSale ? Colors.deepOrange.shade900 : Colors.black87),
+                  ),
+                  const Text('حساب سعر الحبة تلقائياً وتمكين بيعها بالكاشير', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                ],
+              ),
+            ],
+          ),
+          Switch(
+            value: _allowPieceSale,
+            activeColor: Colors.deepOrange,
+            onChanged: (val) {
+              setState(() {
+                _allowPieceSale = val;
+                if (val) {
+                  final pack = double.tryParse(_priceCtrl.text.trim()) ?? 0.0;
+                  final pieces = int.tryParse(_piecesPerPackCtrl.text.trim()) ?? 20;
+                  if (pack > 0 && pieces > 0) {
+                    final calc = (pack / pieces).ceilToDouble();
+                    _singlePiecePriceCtrl.text = calc % 1 == 0 ? calc.toInt().toString() : calc.toStringAsFixed(0);
+                  }
+                } else {
+                  _singlePiecePriceCtrl.text = '';
+                }
+              });
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTobaccoProfitCard() {
@@ -432,7 +600,7 @@ class _EditProductPageState extends State<EditProductPage> {
         cartonPrice: double.tryParse(_cartonPriceCtrl.text.trim()) ?? widget.product.cartonPrice,
         wholesaleCartonPrice: double.tryParse(_wholesaleCartonPriceCtrl.text.trim()) ?? widget.product.wholesaleCartonPrice,
         wholesalePackPrice: double.tryParse(_wholesalePackPriceCtrl.text.trim()) ?? widget.product.wholesalePackPrice,
-        singlePiecePrice: double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? widget.product.singlePiecePrice,
+        singlePiecePrice: _allowPieceSale ? (double.tryParse(_singlePiecePriceCtrl.text.trim()) ?? widget.product.singlePiecePrice) : 0.0,
         piecesPerPack: int.tryParse(_piecesPerPackCtrl.text.trim()) ?? widget.product.piecesPerPack,
         packsPerCarton: int.tryParse(_packsPerCartonCtrl.text.trim()) ?? widget.product.packsPerCarton,
         packBarcode: _packBarcodeCtrl.text.trim().isNotEmpty ? _packBarcodeCtrl.text.trim() : null,
@@ -958,6 +1126,8 @@ class _EditProductPageState extends State<EditProductPage> {
                             ),
                           ],
                         ),
+                        _buildPieceSaleToggle(),
+                        if (_isTobacco && _piecesPerPackCtrl.text != '0') _buildBreakCaseCard(),
                         _buildTobaccoProfitCard(),
                       ],
                     ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/header_branding_cubit.dart';
 import '../../../../core/localization/app_localizations.dart';
+import 'photoshop_color_picker_dialog.dart';
 
 class HeaderColorDialog extends StatelessWidget {
   const HeaderColorDialog({super.key});
@@ -266,6 +267,30 @@ class HeaderColorDialog extends StatelessWidget {
                         ),
                       );
                     }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: state.accentColor,
+                        side: BorderSide(color: state.accentColor.withOpacity(0.6), width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      ),
+                      onPressed: () {
+                        PhotoshopColorPickerDialog.show(context, state.headerColor);
+                      },
+                      icon: const Icon(Icons.colorize_rounded, size: 20),
+                      label: Text(
+                        Localizations.localeOf(context).languageCode == 'ar'
+                            ? '🎨 عجلة الألوان الاحترافية (Photoshop Color Wheel)'
+                            : (Localizations.localeOf(context).languageCode == 'fr'
+                                ? '🎨 Roue Chromatique Pro (Photoshop Color Wheel)'
+                                : '🎨 Professional Color Wheel (Photoshop Color Wheel)'),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ),
                   ),
                 ],
               ),

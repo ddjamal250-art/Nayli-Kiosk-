@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/widgets/product_image_display.dart';
@@ -64,6 +65,12 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   void initState() {
     super.initState();
     _selectedUnit = widget.initialUnit;
+    if (_selectedUnit == 'piece' && !p.hasSubUnit) {
+      _selectedUnit = 'pack';
+    }
+    if (_selectedUnit == 'carton' && !p.hasCarton) {
+      _selectedUnit = 'pack';
+    }
     _quantity = widget.initialQuantity;
     _qtyController = TextEditingController(text: _quantity.toString());
   }
@@ -117,7 +124,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           );
       SnackbarHelper.showSuccess(
         context,
-        '?? ?? ????? "${p.name}" ??? $_currentUnitName (x$_quantity)',
+        '${context.tr("unit_switched_msg")}: "${p.name}" ($posUnitLabel x$_quantity)',
       );
     } else {
       context.read<BillingBloc>().add(
@@ -129,66 +136,133 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           );
       SnackbarHelper.showSuccess(
         context,
-        '?? ??? ????? $_quantity $_currentUnitName ?? "${p.name}"',
+        '${context.tr("added_to_cart")}: $_quantity $posUnitLabel (${p.name})',
       );
     }
     Navigator.pop(context);
   }
 
+  String get posUnitLabel => _currentUnitName;
+
   @override
   Widget build(BuildContext context) {
     final isEditingCart = widget.cartItem != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final cardBg = isDark ? const Color(0xFF0F172A) : Colors.white;
+
+    final List<Widget> unitCards = [];
+
+    if (p.hasCarton) {
+      unitCards.add(
+        Expanded(
+          child: _buildUnitOptionCard(
+            unitKey: 'carton',
+            title: p.resolvedCartonName,
+            subtitle: 'x${p.effectivePacksPerCarton} ${p.resolvedPackName}',
+            price: p.resolvedCartonPrice,
+            iconData: p.isBeverage ? Icons.inventory_2_rounded : Icons.all_inbox_rounded,
+            accentColor: Colors.purple,
+            isDark: isDark,
+          ),
+        ),
+      );
+    }
+
+    unitCards.add(
+      Expanded(
+        child: _buildUnitOptionCard(
+          unitKey: 'pack',
+          title: p.resolvedPackName,
+          subtitle: p.isBeverage ? 'وحدة مفردة' : 'علبة أساسية',
+          price: p.price,
+          iconData: p.isBeverage ? Icons.local_drink_rounded : Icons.check_box_outline_blank_rounded,
+          accentColor: Colors.blue,
+          isDark: isDark,
+        ),
+      ),
+    );
+
+    if (p.hasSubUnit) {
+      unitCards.add(
+        Expanded(
+          child: _buildUnitOptionCard(
+            unitKey: 'piece',
+            title: p.resolvedSubUnitName,
+            subtitle: '1/${p.effectivePiecesPerPack} ${p.resolvedPackName}',
+            price: p.resolvedPiecePrice,
+            iconData: p.isTobaccoProduct ? Icons.smoking_rooms_rounded : Icons.grain_rounded,
+            accentColor: Colors.amber,
+            isDark: isDark,
+          ),
+        ),
+      );
+    }
 
     return Dialog(
-      backgroundColor: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: isDark ? const BorderSide(color: Color(0xFF1E293B)) : BorderSide.none,
+      ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
-        width: 520,
-        constraints: const BoxConstraints(maxHeight: 620),
+        width: 540,
+        constraints: const BoxConstraints(maxHeight: 640),
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
             Row(
               children: [
                 ProductImageDisplay(
                   imageUrl: p.imageUrl,
-                  width: 50,
-                  height: 50,
+                  width: 52,
+                  height: 52,
                   borderRadius: 12,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         p.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: textColor,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: isDark ? const Color(0xFF1E293B) : Colors.blue.shade50,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              p.category.isNotEmpty ? p.category : '???',
-                              style: TextStyle(color: Colors.blue.shade800, fontSize: 10, fontWeight: FontWeight.bold),
+                              p.category.isNotEmpty ? p.category : 'عام',
+                              style: TextStyle(
+                                color: isDark ? const Color(0xFF38BDF8) : Colors.blue.shade800,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '???????: ${p.stock} ${p.resolvedPackName}',
-                            style: const TextStyle(color: Colors.grey, fontSize: 11),
+                            'المخزون: ${p.stock} ${p.resolvedPackName}',
+                            style: TextStyle(
+                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
@@ -196,92 +270,58 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
+                  icon: Icon(Icons.close, color: isDark ? Colors.white70 : Colors.grey),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
-
-            const SizedBox(height: 16),
-
-            // Instruction Banner
+            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
+                color: isDark ? const Color(0xFF052E16) : const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFBBF7D0)),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF15803D) : const Color(0xFFBBF7D0),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.layers_outlined, color: Color(0xFF16A34A), size: 18),
+                  Icon(Icons.layers_outlined, color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A), size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       isEditingCart
-                          ? '???? ????? ??????? ??????? ?????? ?????? ?? ????? ?????:'
-                          : '???? ??? ?????? ??????? ?????? ??????? ??? ?????:',
-                      style: const TextStyle(color: Color(0xFF166534), fontSize: 12, fontWeight: FontWeight.w600),
+                          ? 'اختر الوحدة المناسبة لتبديلها في السلة الحالية:'
+                          : 'حدد وحدة التعبئة والكمية المراد إضافتها إلى السلة:',
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // 3-Tier Packaging Selector Cards
             Row(
               children: [
-                // 1. Piece / SubUnit Option (Always optional now)
-                Expanded(
-                    child: _buildUnitOptionCard(
-                      unitKey: 'piece',
-                      title: p.resolvedSubUnitName,
-                      subtitle: '1/${p.piecesPerPack > 0 ? p.piecesPerPack : 20} ?? ${p.resolvedPackName}',
-                      price: p.resolvedPiecePrice,
-                      iconText: p.isTobacco ? '??' : '??',
-                      accentColor: Colors.amber,
-                    ),
-                  ),
-                const SizedBox(width: 10),
-
-                // 2. Standard Pack Option (Always available)
-                Expanded(
-                  child: _buildUnitOptionCard(
-                    unitKey: 'pack',
-                    title: p.resolvedPackName,
-                    subtitle: '?????? ????????',
-                    price: p.price,
-                    iconText: '??',
-                    accentColor: Colors.blue,
-                  ),
-                ),
-                const SizedBox(width: 10),
-
-                // 3. Carton / Multiplier Option (Always optional now)
-                Expanded(
-                    child: _buildUnitOptionCard(
-                      unitKey: 'carton',
-                      title: p.resolvedCartonName,
-                      subtitle: 'x${p.packsPerCarton > 0 ? p.packsPerCarton : (p.packMultiplier > 0 ? p.packMultiplier : 10)} ${p.resolvedPackName}',
-                      price: p.resolvedCartonPrice,
-                      iconText: '??',
-                      accentColor: Colors.purple,
-                    ),
-                  ),
+                for (int i = 0; i < unitCards.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 10),
+                  unitCards[i],
+                ],
               ],
             ),
-
             const SizedBox(height: 16),
-
-            // Quantity Control Row
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
+                color: isDark ? const Color(0xFF131C31) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,10 +330,13 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '?????? ???? ($_currentUnitName):',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        'الكمية المراد بيعها ($_currentUnitName):',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: textColor,
+                        ),
                       ),
-                      // Stepper controls
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -302,16 +345,23 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                             onPressed: () => _setQuantity(_quantity - 1),
                           ),
                           SizedBox(
-                            width: 60,
+                            width: 50,
                             child: TextField(
                               controller: _qtyController,
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              decoration: const InputDecoration(
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: textColor,
+                              ),
+                              decoration: InputDecoration(
                                 isDense: true,
-                                contentPadding: EdgeInsets.symmetric(vertical: 4),
-                                border: OutlineInputBorder(),
+                                fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               onChanged: (val) {
                                 final n = int.tryParse(val);
@@ -330,7 +380,6 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Quick Quantity Pills
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
@@ -342,12 +391,12 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
-                            color: isSelected ? Colors.white : Colors.black87,
+                            color: isSelected ? Colors.white : textColor,
                           ),
                         ),
                         selected: isSelected,
                         selectedColor: AppTheme.primaryColor,
-                        backgroundColor: Theme.of(context).cardColor,
+                        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                         onSelected: (_) => _setQuantity(q),
                       );
                     }).toList(),
@@ -355,26 +404,27 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Summary & Confirm Action
             Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '??????? ???????:',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
                       Text(
-                        '${_totalPrice.toStringAsFixed(2)} DA',
-                        style: const TextStyle(
+                        'المجموع الصافي:',
+                        style: TextStyle(
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'DA ${_totalPrice.toStringAsFixed(2)}',
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
-                          color: Color(0xFF1E3A8A),
+                          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
                         ),
                       ),
                     ],
@@ -384,13 +434,13 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 2,
                   ),
                   icon: Icon(isEditingCart ? Icons.sync : Icons.add_shopping_cart, size: 20),
                   label: Text(
-                    isEditingCart ? '????? ??????? ?? ?????' : '????? ??? ?????',
+                    isEditingCart ? 'تأكيد التعديل في السلة' : 'إضافة إلى السلة',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   onPressed: _applySelection,
@@ -408,10 +458,17 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     required String title,
     required String subtitle,
     required double price,
-    required String iconText,
+    required IconData iconData,
     required MaterialColor accentColor,
+    required bool isDark,
   }) {
     final isSelected = _selectedUnit == unitKey;
+
+    final unselectedBg = isDark ? const Color(0xFF131C31) : Colors.white;
+    final selectedBg = isDark ? accentColor.shade900.withOpacity(0.35) : accentColor.shade50;
+    final borderColor = isSelected
+        ? (isDark ? accentColor.shade400 : accentColor.shade700)
+        : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade300);
 
     return InkWell(
       onTap: () => _selectUnit(unitKey),
@@ -420,14 +477,14 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? accentColor.shade50 : Colors.white,
+          color: isSelected ? selectedBg : unselectedBg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? accentColor.shade700 : Colors.grey.shade300,
+            color: borderColor,
             width: isSelected ? 2.2 : 1.0,
           ),
           boxShadow: isSelected
-              ? [BoxShadow(color: accentColor.withOpacity(0.15), blurRadius: 8, offset: const Offset(0, 3))]
+              ? [BoxShadow(color: accentColor.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 3))]
               : null,
         ),
         child: Column(
@@ -435,11 +492,11 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(iconText, style: const TextStyle(fontSize: 20)),
+                Icon(iconData, color: isSelected ? accentColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade700), size: 22),
                 if (isSelected)
-                  Icon(Icons.check_circle, color: accentColor.shade700, size: 18)
+                  Icon(Icons.check_circle, color: isDark ? accentColor.shade300 : accentColor.shade700, size: 18)
                 else
-                  Icon(Icons.radio_button_unchecked, color: Colors.grey.shade400, size: 18),
+                  Icon(Icons.radio_button_unchecked, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400, size: 18),
               ],
             ),
             const SizedBox(height: 8),
@@ -447,8 +504,10 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
               title,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: isSelected ? accentColor.shade900 : Colors.black87,
+                fontSize: 13.5,
+                color: isSelected
+                    ? (isDark ? Colors.white : accentColor.shade900)
+                    : (isDark ? Colors.white : Colors.black87),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -458,27 +517,35 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
               subtitle,
               style: TextStyle(
                 fontSize: 10,
-                color: isSelected ? accentColor.shade700 : Colors.grey.shade600,
+                color: isSelected
+                    ? (isDark ? accentColor.shade200 : accentColor.shade700)
+                    : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white : Colors.grey.shade100,
+                color: isSelected
+                    ? (isDark ? accentColor.shade800 : Colors.white)
+                    : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isSelected ? accentColor.shade300 : Colors.transparent,
+                  color: isSelected
+                      ? (isDark ? accentColor.shade400 : accentColor.shade300)
+                      : Colors.transparent,
                 ),
               ),
               child: Text(
-                '${price.toStringAsFixed(0)} DA',
+                'DA ${price.toStringAsFixed(price == price.roundToDouble() ? 0 : 2)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
-                  color: isSelected ? accentColor.shade900 : Colors.black87,
+                  color: isSelected
+                      ? (isDark ? Colors.white : accentColor.shade900)
+                      : (isDark ? Colors.white : Colors.black87),
                 ),
               ),
             ),
@@ -487,35 +554,4 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       ),
     );
   }
-
-  Widget _buildDisabledCard({required String title, required String hint}) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.block, color: Colors.grey, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            hint,
-            style: const TextStyle(fontSize: 9.5, color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          const Text('�', style: TextStyle(color: Colors.grey)),
-        ],
-      ),
-    );
-  }
 }
-
-

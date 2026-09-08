@@ -1316,9 +1316,9 @@ $itemsSummary
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
                                       borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.grey.shade300),
                                     ),
                                     child: Row(
                                       children: [
@@ -1337,7 +1337,7 @@ $itemsSummary
                                               Text(prod.name,
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
-                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87)),
                                               const SizedBox(height: 4),
                                               Row(
                                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2243,17 +2243,17 @@ $itemsSummary
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade400),
+                        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.grey.shade400),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Text('📰', style: TextStyle(fontSize: 14)),
-                          SizedBox(width: 4),
+                          const Text('📰', style: TextStyle(fontSize: 14)),
+                          const SizedBox(width: 4),
                           Text(
                             'منتجات عامة 📰',
-                            style: TextStyle(color: Color(0xFF424242), fontWeight: FontWeight.bold, fontSize: 11),
+                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF424242), fontWeight: FontWeight.bold, fontSize: 11),
                           ),
                         ],
                       ),
@@ -2278,7 +2278,7 @@ $itemsSummary
                           SizedBox(width: 4),
                           Text(
                             'مشروبات 🥤',
-                            style: TextStyle(color: Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontSize: 11),
+                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.lightBlueAccent : const Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontSize: 11),
                           ),
                         ],
                       ),
@@ -2303,7 +2303,7 @@ $itemsSummary
                           SizedBox(width: 4),
                           Text(
                             'القهوة والشاي ☕',
-                            style: TextStyle(color: Color(0xFF4E342E), fontWeight: FontWeight.bold, fontSize: 11),
+                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.orange.shade200 : const Color(0xFF4E342E), fontWeight: FontWeight.bold, fontSize: 11),
                           ),
                         ],
                       ),
@@ -2328,7 +2328,7 @@ $itemsSummary
                         SizedBox(width: 4),
                         Text(
                           'المواد التبغية 🚬',
-                          style: TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11),
+                          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.amberAccent : const Color(0xFF92400E), fontWeight: FontWeight.bold, fontSize: 11),
                         ),
                       ],
                     ),
@@ -2500,7 +2500,7 @@ $itemsSummary
                   name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A)),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

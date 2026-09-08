@@ -12,8 +12,10 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/audit_log_service.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/language_cubit.dart';
+import '../../../../core/utils/security_pin_helper.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import 'header_color_dialog.dart';
+import 'session_lock_overlay.dart';
 
 class PosHeaderToolbar extends StatelessWidget {
   final bool isServerRunning;
@@ -196,7 +198,7 @@ class PosHeaderToolbar extends StatelessWidget {
                         const Icon(Icons.phonelink_ring_rounded, size: 16, color: Colors.white),
                         const SizedBox(width: 6),
                         Text(
-                          ':  (F9)',
+                          'طلبات عن بعد: $pendingRemoteCartsCount (F9)',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ],
@@ -209,16 +211,51 @@ class PosHeaderToolbar extends StatelessWidget {
 
               // Quick Actions Toolbar Buttons
 
+              // 0. Session Pause (Break Mode) Quick Button
+              Tooltip(
+                message: Localizations.localeOf(context).languageCode == 'ar'
+                    ? 'إيقاف مؤقت للجلسة / استراحة (Pause/Break)'
+                    : 'Session Pause / Break Mode',
+                child: InkWell(
+                  onTap: () => SessionLockOverlay.show(context),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.amber.shade600, width: 1.2),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.pause_circle_filled_rounded, color: Colors.amber, size: 20),
+                        const SizedBox(width: 5),
+                        Text(
+                          Localizations.localeOf(context).languageCode == 'ar' ? 'استراحة' : 'Break',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isDarkHeader ? Colors.amberAccent : Colors.amber.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
               // 1. Direct Cash Drawer Quick Kick (F10)
               IconButton(
-                tooltip: ' (F10)',
+                tooltip: 'درج النقود (F10)',
                 icon: const Icon(Icons.account_balance_rounded, color: Colors.amber, size: 22),
                 onPressed: onOpenDrawer,
               ),
 
               // 2. Direct Inventory Access (F4)
               IconButton(
-                tooltip: ' (F4)',
+                tooltip: 'إدارة المخزون (F4)',
                 icon: Icon(Icons.inventory_2_outlined, color: isDarkHeader ? Colors.lightGreenAccent : Colors.green, size: 22),
                 onPressed: () => context.push('/products'),
               ),
@@ -297,7 +334,7 @@ class PosHeaderToolbar extends StatelessWidget {
 
               // 6. Direct Fullscreen Toggle (F11)
               IconButton(
-                tooltip: '',
+                tooltip: 'ملء الشاشة (F11)',
                 icon: Icon(Icons.fullscreen_rounded, color: isDarkHeader ? Colors.white70 : Colors.indigo, size: 23),
                 onPressed: () {
                   final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
@@ -351,19 +388,43 @@ class PosHeaderToolbar extends StatelessWidget {
                 ),
                 offset: const Offset(0, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                onSelected: (val) {
+                onSelected: (val) async {
                   switch (val) {
                     case 'docs':
                       context.push('/documents');
                       break;
                     case 'reports':
-                      context.push('/reports');
+                      if (SecurityPinHelper.isPinEnabled()) {
+                        final ok = await SecurityPinHelper.authenticate(
+                          context,
+                          title: Localizations.localeOf(context).languageCode == 'ar'
+                              ? 'التقارير والأرباح محمية'
+                              : 'Reports Protected',
+                          message: Localizations.localeOf(context).languageCode == 'ar'
+                              ? 'يرجى إدخال رمز الأمان للمدير للاطلاع على التقارير'
+                              : 'Please enter Manager PIN to view reports',
+                        );
+                        if (!ok) break;
+                      }
+                      if (context.mounted) context.push('/reports');
                       break;
                     case 'shifts':
                       context.push('/shifts');
                       break;
                     case 'staff':
-                      context.push('/staff-management');
+                      if (SecurityPinHelper.isPinEnabled()) {
+                        final ok = await SecurityPinHelper.authenticate(
+                          context,
+                          title: Localizations.localeOf(context).languageCode == 'ar'
+                              ? 'إدارة الموظفين محمية'
+                              : 'Staff Management Protected',
+                          message: Localizations.localeOf(context).languageCode == 'ar'
+                              ? 'يرجى إدخال رمز الأمان للمدير للوصول لبيانات الموظفين'
+                              : 'Please enter Manager PIN to access Staff Management',
+                        );
+                        if (!ok) break;
+                      }
+                      if (context.mounted) context.push('/staff-management');
                       break;
                     case 'shopping':
                       context.push('/products/shopping-list');
@@ -461,7 +522,23 @@ class PosHeaderToolbar extends StatelessWidget {
                   color: isDarkHeader ? Colors.white70 : Colors.blueGrey.shade700,
                   size: 24,
                 ),
-                onPressed: () => context.push('/settings'),
+                onPressed: () async {
+                  if (SecurityPinHelper.isPinEnabled()) {
+                    final ok = await SecurityPinHelper.authenticate(
+                      context,
+                      title: Localizations.localeOf(context).languageCode == 'ar'
+                          ? 'إعدادات النظام محمية'
+                          : 'Settings Protected',
+                      message: Localizations.localeOf(context).languageCode == 'ar'
+                          ? 'يرجى إدخال رمز الأمان للمدير للدخول إلى الإعدادات'
+                          : 'Please enter Manager Security PIN to access Settings',
+                    );
+                    if (!ok) return;
+                  }
+                  if (context.mounted) {
+                    context.push('/settings');
+                  }
+                },
               ),
             ],
           ),

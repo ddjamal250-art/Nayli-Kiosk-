@@ -135,14 +135,63 @@ class Product extends Equatable {
         unitType,
       ];
 
-  // --- Universal 3-Tier Multi-Unit Packaging Helpers ---
-  bool get hasSubUnit => (piecesPerPack > 1 && singlePiecePrice > 0) || isTobacco || singlePiecePrice > 0;
-  bool get hasCarton => (packsPerCarton > 1 && cartonPrice > 0) || (packMultiplier > 1 && packPrice > 0) || isTobacco || cartonPrice > 0;
+  // --- Universal Multi-Unit Packaging Helpers (Walmart UOM Model) ---
+  bool get isBeverage {
+    final cat = category.toLowerCase();
+    final n = name.toLowerCase();
+    return cat.contains('مشروب') ||
+        cat.contains('ماء') ||
+        cat.contains('عصير') ||
+        cat.contains('boisson') ||
+        cat.contains('jus') ||
+        cat.contains('eau') ||
+        cat.contains('soda') ||
+        cat.contains('غازي') ||
+        n.contains('قارورة ماء') ||
+        n.contains('eau ');
+  }
+
+  bool get isTobaccoProduct {
+    final cat = category.toLowerCase();
+    return isTobacco ||
+        cat.contains('تبغ') ||
+        cat.contains('سجائر') ||
+        cat.contains('شمة') ||
+        cat.contains('معسل') ||
+        cat.contains('tabac') ||
+        cat.contains('cigarette');
+  }
+
+  bool get hasSubUnit {
+    if (isTobaccoProduct) return true;
+    if (isBeverage) return false; // Water/Drinks never sold by 1/20th of a bottle!
+    return singlePiecePrice > 0;
+  }
+
+  bool get hasCarton {
+    if (isTobaccoProduct) return true;
+    if (isBeverage) return true; // Drinks can be sold as Fardeau or Bottle
+    return (packsPerCarton > 1 && cartonPrice > 0) || (packMultiplier > 1 && packPrice > 0) || cartonPrice > 0;
+  }
+
   bool get hasMultiUnit => hasSubUnit || hasCarton;
 
+  int get effectivePacksPerCarton {
+    if (packsPerCarton > 0) return packsPerCarton;
+    if (packMultiplier > 0) return packMultiplier;
+    if (isBeverage) return 6;
+    if (isTobaccoProduct) return 10;
+    return 10;
+  }
+
+  int get effectivePiecesPerPack {
+    if (piecesPerPack > 0) return piecesPerPack;
+    if (isTobaccoProduct) return 20;
+    return 1;
+  }
+
   String get resolvedSubUnitName {
-    if (isTobacco || category.contains('تبغ') || category.contains('سجائر')) return 'سيجارة';
-    if (category.contains('ماء') || category.contains('مشروبات') || category.contains('عصائر')) return 'قارورة';
+    if (isTobaccoProduct) return 'سيجارة';
     if (category.contains('جبن') || category.contains('أجبان') || category.toLowerCase().contains('fromage')) return 'مثلث / حبة';
     if (category.contains('بيض')) return 'بيضة';
     if (category.contains('قهوة') || category.contains('شاي')) return 'ساشي';
@@ -150,16 +199,17 @@ class Product extends Equatable {
   }
 
   String get resolvedPackName {
-    if (category.contains('ماء') || category.contains('مشروبات')) return 'قارورة';
+    if (isBeverage) return 'قارورة';
     if (category.contains('جبن') || category.contains('أجبان')) return 'علبة / بواطة';
     if (category.contains('بيض')) return 'بلاطو';
+    if (isTobaccoProduct) return 'علبة / باكي';
     return 'علبة';
   }
 
   String get resolvedCartonName {
     if (packName != null && packName!.trim().isNotEmpty) return packName!.trim();
-    if (isTobacco || category.contains('تبغ') || category.contains('سجائر')) return 'كرطوشة';
-    if (category.contains('ماء') || category.contains('مشروبات')) return 'فاردو (Fardou)';
+    if (isTobaccoProduct) return 'كرطوشة';
+    if (isBeverage) return 'فاردو (Fardeau)';
     if (category.contains('بيض')) return 'كرتونة بيض';
     if (category.contains('علك') || category.contains('حلويات')) return 'شكارة / كرتونة';
     return 'كرتونة / فاردو';
@@ -167,26 +217,26 @@ class Product extends Equatable {
 
   double get resolvedPiecePrice {
     if (singlePiecePrice > 0) return singlePiecePrice;
-    if (piecesPerPack > 1) return (price / piecesPerPack).ceilToDouble();
+    if (effectivePiecesPerPack > 1) {
+      return (price / effectivePiecesPerPack).ceilToDouble();
+    }
     return price;
   }
 
   double get resolvedCartonPrice {
     if (cartonPrice > 0) return cartonPrice;
     if (packPrice > 0) return packPrice;
-    final mult = packsPerCarton > 1 ? packsPerCarton : (packMultiplier > 1 ? packMultiplier : 10);
-    return (price * mult).roundToDouble();
+    return (price * effectivePacksPerCarton).roundToDouble();
   }
 
   double get resolvedPieceCost {
-    if (piecesPerPack > 1) return costPrice / piecesPerPack;
+    if (effectivePiecesPerPack > 1) return costPrice / effectivePiecesPerPack;
     return costPrice;
   }
 
   double get resolvedCartonCost {
     if (cartonCostPrice > 0) return cartonCostPrice;
-    final mult = packsPerCarton > 1 ? packsPerCarton : (packMultiplier > 1 ? packMultiplier : 10);
-    return costPrice * mult;
+    return costPrice * effectivePacksPerCarton;
   }
 }
 

@@ -20,6 +20,7 @@ class HiveDatabase {
   static const String payrollBoxName = 'payroll_records_box';
   static const String attendanceBoxName = 'attendance_records_box';
   static const String shoppingListBoxName = 'shopping_list_box';
+  static const String loosePiecesBoxName = 'loose_pieces_box';
 
   static Future<void> init() async {
     await Hive.initFlutter('nayli_kiosk_data');
@@ -46,6 +47,7 @@ class HiveDatabase {
     await Hive.openBox(payrollBoxName); // Staff payroll, salary advances & bonuses
     await Hive.openBox(attendanceBoxName); // Staff attendance & pointage
     await Hive.openBox(shoppingListBoxName); // Smart shopping list
+    await Hive.openBox(loosePiecesBoxName); // Break-case loose piece inventory
   }
 
   static Box<ProductModel> get productBox =>
@@ -66,4 +68,5 @@ class HiveDatabase {
   static Box get payrollBox => Hive.box(payrollBoxName);
   static Box get attendanceBox => Hive.box(attendanceBoxName);
   static Box get shoppingListBox => Hive.box(shoppingListBoxName);
+  static Box get loosePiecesBox => Hive.box(loosePiecesBoxName);
 }

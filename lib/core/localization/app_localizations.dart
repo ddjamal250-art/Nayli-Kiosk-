@@ -436,6 +436,12 @@ class AppLocalizations {
       'shelf_labels_title': 'طباعة ملصقات الأسعار والرفوف',
     },
     'fr': {
+      'hardware_printing_header': 'Matériel & Imprimante Thermique 🖨️',
+      'sound_notifs_header': 'Sons, Notifications & Alertes 🔊🔔',
+      'security_backup_header': 'Sécurité & Sauvegardes 🔒💾',
+      'appearance_theme_header': 'Thème & Apparence Visuelle 🎨🌙',
+      'language_info_header': 'Langue & Informations de l\'application 🌐✨',
+      'settings_comprehensive_title': 'Paramètres & Gestion Complète ⚙️',
       // General & Navigation
       'app_name': 'Nayli Kiosk Pro',
       'app_title': 'Nayli Kiosk - Caisse & Stock POS',
@@ -750,6 +756,12 @@ class AppLocalizations {
       'business_hubs_title': 'Centres de gestion commerciale 🗂️',
     },
     'en': {
+      'hardware_printing_header': 'Hardware & Thermal Printing 🖨️',
+      'sound_notifs_header': 'Sounds, Notifications & Alerts 🔊🔔',
+      'security_backup_header': 'Security & Data Backups 🔒💾',
+      'appearance_theme_header': 'Theme & Visual Appearance 🎨🌙',
+      'language_info_header': 'Language & System Information 🌐✨',
+      'settings_comprehensive_title': 'Settings & System Management ⚙️',
       // General & Navigation
       'app_name': 'Nayli Kiosk Pro',
       'app_title': 'Nayli Kiosk - Smart POS & Inventory Management',
