@@ -77,6 +77,9 @@ class ProductModel extends Product {
   @override
   @HiveField(23)
   final String unitType;
+  @override
+  @HiveField(24)
+  final String? cartonBarcode;
 
   const ProductModel({
     required this.id,
@@ -103,6 +106,7 @@ class ProductModel extends Product {
     this.wholesalePackPrice = 0.0,
     this.cartonCostPrice = 0.0,
     this.unitType = 'unit',
+    this.cartonBarcode,
   }) : super(
           id: id,
           name: name,
@@ -128,6 +132,7 @@ class ProductModel extends Product {
           wholesalePackPrice: wholesalePackPrice,
           cartonCostPrice: cartonCostPrice,
           unitType: unitType,
+          cartonBarcode: cartonBarcode,
         );
 
   @override
@@ -156,6 +161,7 @@ class ProductModel extends Product {
     double? wholesalePackPrice,
     double? cartonCostPrice,
     String? unitType,
+    String? cartonBarcode,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -182,6 +188,7 @@ class ProductModel extends Product {
       wholesalePackPrice: wholesalePackPrice ?? this.wholesalePackPrice,
       cartonCostPrice: cartonCostPrice ?? this.cartonCostPrice,
       unitType: unitType ?? this.unitType,
+      cartonBarcode: cartonBarcode ?? this.cartonBarcode,
     );
   }
 
@@ -211,6 +218,7 @@ class ProductModel extends Product {
       wholesalePackPrice: product.wholesalePackPrice,
       cartonCostPrice: product.cartonCostPrice,
       unitType: product.unitType,
+      cartonBarcode: product.cartonBarcode,
     );
   }
 
@@ -271,6 +279,7 @@ class ProductModel extends Product {
       wholesalePackPrice: (json['wholesalePackPrice'] as num?)?.toDouble() ?? 0.0,
       cartonCostPrice: (json['cartonCostPrice'] as num?)?.toDouble() ?? 0.0,
       unitType: json['unitType']?.toString() ?? 'unit',
+      cartonBarcode: json['cartonBarcode']?.toString(),
     );
   }
 
@@ -300,6 +309,7 @@ class ProductModel extends Product {
       'wholesalePackPrice': wholesalePackPrice,
       'cartonCostPrice': cartonCostPrice,
       'unitType': unitType,
+      'cartonBarcode': cartonBarcode,
     };
   }
 }

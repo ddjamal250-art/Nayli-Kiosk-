@@ -43,6 +43,11 @@ class _AddProductPageState extends State<AddProductPage> {
   final TextEditingController _piecesPerPackCtrl = TextEditingController(text: '20');
   final TextEditingController _packBarcodeCtrl = TextEditingController();
   final TextEditingController _packNameCtrl = TextEditingController();
+  final TextEditingController _cartonBarcodeCtrl = TextEditingController();
+  final TextEditingController _customQuantityCtrl = TextEditingController(text: '3');
+  final TextEditingController _customQuantityPriceCtrl = TextEditingController(text: '100');
+  final TextEditingController _customQuantityLabelCtrl = TextEditingController(text: '3 علب بـ 100 دج');
+  bool _hasCustomQuantityPricing = false;
 
   String _selectedCategory = 'عام';
   bool _isCategoryUserSelected = false;
@@ -84,6 +89,7 @@ class _AddProductPageState extends State<AddProductPage> {
     final isCheese = lower.contains('جبن') || lower.contains('حليب') || lower.contains('مشتقات') || lower.contains('fromage');
     final isDrink = lower.contains('مشروب') || lower.contains('ماء') || lower.contains('عصير') || lower.contains('boisson') || lower.contains('soda');
     final isCoffee = lower.contains('ماكينة') || lower.contains('قهوة') || lower.contains('شاي') || lower.contains('cafe') || lower.contains('tea');
+    final isStationery = lower.contains('مدرسي') || lower.contains('مكتب') || lower.contains('كراس') || lower.contains('قلم') || lower.contains('stylo') || lower.contains('cahier');
     final isProduce = lower.contains('خضر') || lower.contains('فواكه') || lower.contains('ميزان') || lower.contains('legume') || lower.contains('fruit');
 
     setState(() {
@@ -123,6 +129,15 @@ class _AddProductPageState extends State<AddProductPage> {
         _packsPerCartonCtrl.text = '10';
         _piecesPerPackCtrl.text = '100'; // 100 cups yield per kg
         _packNameCtrl.text = 'كيس 1 كغ بن';
+      } else if (isStationery) {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
+        _isWeighted = false;
+        _packsPerCartonCtrl.text = '20';
+        _piecesPerPackCtrl.text = '50';
+        _packNameCtrl.text = 'علبة أقلام (50)';
       } else if (isProduce) {
         _isWeighted = true;
         _hasCartonLevel = false;
@@ -168,6 +183,10 @@ class _AddProductPageState extends State<AddProductPage> {
     _piecesPerPackCtrl.dispose();
     _packBarcodeCtrl.dispose();
     _packNameCtrl.dispose();
+    _cartonBarcodeCtrl.dispose();
+    _customQuantityCtrl.dispose();
+    _customQuantityPriceCtrl.dispose();
+    _customQuantityLabelCtrl.dispose();
     super.dispose();
   }
 
@@ -517,6 +536,14 @@ class _AddProductPageState extends State<AddProductPage> {
         _piecesPerPackCtrl.text = '20';
         _packsPerCartonCtrl.text = '24';
         _packNameCtrl.text = 'علبة';
+      } else if (type == 'stationery') {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
+        _piecesPerPackCtrl.text = '50';
+        _packsPerCartonCtrl.text = '20';
+        _packNameCtrl.text = 'علبة أقلام (50)';
       } else if (type == 'eggs') {
         _hasCartonLevel = true;
         _hasPackLevel = true;
@@ -589,8 +616,13 @@ class _AddProductPageState extends State<AddProductPage> {
         singlePiecePrice: singlePiecePrice,
         piecesPerPack: _hasPieceLevel ? (int.tryParse(_piecesPerPackCtrl.text.trim()) ?? (_selectedCategory.contains('قهوة') ? 100 : 20)) : 1,
         packsPerCarton: _hasCartonLevel ? (int.tryParse(_packsPerCartonCtrl.text.trim()) ?? 10) : 1,
-        packBarcode: (_hasCartonLevel && _packBarcodeCtrl.text.trim().isNotEmpty) ? _packBarcodeCtrl.text.trim() : null,
-        packName: _hasPackLevel && _packNameCtrl.text.trim().isNotEmpty ? _packNameCtrl.text.trim() : null,
+        cartonBarcode: (_hasCartonLevel && _cartonBarcodeCtrl.text.trim().isNotEmpty) ? _cartonBarcodeCtrl.text.trim() : null,
+        packBarcode: (_hasPackLevel && _packBarcodeCtrl.text.trim().isNotEmpty) ? _packBarcodeCtrl.text.trim() : null,
+        packMultiplier: _hasCustomQuantityPricing ? (int.tryParse(_customQuantityCtrl.text.trim()) ?? 1) : 1,
+        packPrice: _hasCustomQuantityPricing ? (double.tryParse(_customQuantityPriceCtrl.text.trim()) ?? 0.0) : 0.0,
+        packName: _hasCustomQuantityPricing && _customQuantityLabelCtrl.text.trim().isNotEmpty
+            ? _customQuantityLabelCtrl.text.trim()
+            : (_hasPackLevel && _packNameCtrl.text.trim().isNotEmpty ? _packNameCtrl.text.trim() : null),
         unitType: _unitType,
       );
 
@@ -771,6 +803,8 @@ class _AddProductPageState extends State<AddProductPage> {
                           children: [
                             _buildPresetChip('🚬 سجائر وتبغ', 'tobacco'),
                             const SizedBox(width: 6),
+                            _buildPresetChip('📚 أدوات مدرسية ومكتبية', 'stationery'),
+                            const SizedBox(width: 6),
                             _buildPresetChip('🧀 جبن ومثلثات', 'cheese'),
                             const SizedBox(width: 6),
                             _buildPresetChip('☕ ماكينة قهوة وشاي', 'coffee'),
@@ -853,9 +887,9 @@ class _AddProductPageState extends State<AddProductPage> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const InputLabel(text: 'باركود الكرتونة (اختياري)'),
+                                        const InputLabel(text: 'باركود الكرتونة / الفاردو (اختياري)'),
                                         TextFormField(
-                                          controller: _packBarcodeCtrl,
+                                          controller: _cartonBarcodeCtrl,
                                           decoration: const InputDecoration(hintText: 'امسح باركود الكرتونة', prefixIcon: Icon(Icons.qr_code, size: 18)),
                                         ),
                                       ],
@@ -969,6 +1003,17 @@ class _AddProductPageState extends State<AddProductPage> {
                                         ),
                                       ],
                                     ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const InputLabel(text: 'باركود العلبة / الحزمة (اختياري)'),
+                                  TextFormField(
+                                    controller: _packBarcodeCtrl,
+                                    decoration: const InputDecoration(hintText: 'امسح باركود العلبة أو الحزمة', prefixIcon: Icon(Icons.qr_code, size: 18)),
                                   ),
                                 ],
                               ),
@@ -1104,6 +1149,141 @@ class _AddProductPageState extends State<AddProductPage> {
                           ],
                         ),
                       ),
+
+                      if (_selectedCategory.contains('ماكينة') || _selectedCategory.contains('قهوة'))
+                        Container(
+                          margin: const EdgeInsets.only(top: 8, bottom: 4),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Icon(Icons.lightbulb_outline, color: Color(0xFFD97706), size: 18),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '☕ دليل ماكينة القهوة والشاي:\n'
+                                  '• استلام كيس البن (1 كغ) بسعر التكلفة (مثلاً 1800 دج).\n'
+                                  '• إنتاجية الأكواب الافتراضية هي 100 فنجان قهوة لكل كيس.\n'
+                                  '• عند بيع فنجان في الكاشير بسعر 35 دج، يخصم البرنامج 0.01 كيس بن من المخزون، ويحسب الربح الصافي بدقة.',
+                                  style: TextStyle(fontSize: 11, height: 1.4, color: Color(0xFF92400E)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // CUSTOM QUANTITY / TIERED PRICING CARD
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _hasCustomQuantityPricing ? const Color(0xFFFAF5FF) : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _hasCustomQuantityPricing ? Colors.purple.shade300 : Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.sell_outlined, color: _hasCustomQuantityPricing ? Colors.purple : Colors.grey, size: 20),
+                                    const SizedBox(width: 8),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'تسعير كمية مخصص / بيع بالعدد 🏷️',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12.5,
+                                            color: _hasCustomQuantityPricing ? Colors.purple.shade900 : Colors.grey.shade800,
+                                          ),
+                                        ),
+                                        const Text('مثال: 3 علب بـ 100 دج أو 5 حبات بـ 60 دج (يتاح بالسلة مباشرة)', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Switch(
+                                  value: _hasCustomQuantityPricing,
+                                  activeColor: Colors.purple,
+                                  onChanged: (v) => setState(() {
+                                    _hasCustomQuantityPricing = v;
+                                    if (v && _customQuantityLabelCtrl.text.isEmpty) {
+                                      _customQuantityLabelCtrl.text = '${_customQuantityCtrl.text} قطع بـ ${_customQuantityPriceCtrl.text} دج';
+                                    }
+                                  }),
+                                ),
+                              ],
+                            ),
+                            if (_hasCustomQuantityPricing) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const InputLabel(text: 'العدد / الكمية *'),
+                                        TextFormField(
+                                          controller: _customQuantityCtrl,
+                                          keyboardType: TextInputType.number,
+                                          decoration: const InputDecoration(hintText: '3', prefixIcon: Icon(Icons.pin, size: 18)),
+                                          onChanged: (_) {
+                                            final q = _customQuantityCtrl.text.trim();
+                                            final p = _customQuantityPriceCtrl.text.trim();
+                                            if (q.isNotEmpty && p.isNotEmpty) {
+                                              _customQuantityLabelCtrl.text = '$q قطع بـ $p دج';
+                                            }
+                                            setState(() {});
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const InputLabel(text: 'السعر الإجمالي المخصص (دج) *'),
+                                        TextFormField(
+                                          controller: _customQuantityPriceCtrl,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          decoration: InputDecoration(hintText: '100', suffixText: context.tr('currency_symbol')),
+                                          onChanged: (_) {
+                                            final q = _customQuantityCtrl.text.trim();
+                                            final p = _customQuantityPriceCtrl.text.trim();
+                                            if (q.isNotEmpty && p.isNotEmpty) {
+                                              _customQuantityLabelCtrl.text = '$q قطع بـ $p دج';
+                                            }
+                                            setState(() {});
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              const InputLabel(text: 'اسم العرض في شاشة البيع'),
+                              TextFormField(
+                                controller: _customQuantityLabelCtrl,
+                                decoration: const InputDecoration(hintText: 'مثال: 3 علب بـ 100 دج'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
 
                       // PROFIT ANALYTICS CARD
                       _buildMultiUnitProfitCard(),

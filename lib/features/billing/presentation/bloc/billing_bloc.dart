@@ -104,10 +104,16 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       (failure) =>
           emit(state.copyWith(error: 'Product not found: ${event.barcode}')),
       (product) {
-        if ((product.packBarcode?.isNotEmpty ?? false) && BarcodeNormalizer.matches(product.packBarcode!, event.barcode)) {
+        if ((product.cartonBarcode?.isNotEmpty ?? false) && BarcodeNormalizer.matches(product.cartonBarcode!, event.barcode)) {
           add(AddProductToCartEvent(product, unitLevel: 'carton'));
-        } else {
+        } else if ((product.packBarcode?.isNotEmpty ?? false) && BarcodeNormalizer.matches(product.packBarcode!, event.barcode)) {
           add(AddProductToCartEvent(product, unitLevel: 'pack'));
+        } else {
+          if (product.hasSubUnit && !product.hasPack) {
+            add(AddProductToCartEvent(product, unitLevel: 'piece'));
+          } else {
+            add(AddProductToCartEvent(product, unitLevel: 'pack'));
+          }
         }
       },
     );
@@ -164,29 +170,41 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     if (index < 0) return;
 
     final currentItem = state.cartItems[index];
-    if (currentItem.unitLevel == event.targetUnit) return;
+    final updatedCart = List<CartItem>.from(state.cartItems);
+    final targetQuantity = event.newQuantity ?? currentItem.quantity;
+
+    // Direct update of custom price, custom name, or quantity on same unit
+    if (currentItem.unitLevel == event.targetUnit) {
+      updatedCart[index] = currentItem.copyWith(
+        quantity: targetQuantity,
+        customUnitPrice: event.customUnitPrice ?? currentItem.customUnitPrice,
+        customUnitName: event.customUnitName ?? currentItem.customUnitName,
+      );
+      emit(state.copyWith(cartItems: updatedCart, error: null));
+      return;
+    }
 
     final targetKey = '${currentItem.product.id}_${event.targetUnit}';
     final targetExistingIndex = state.cartItems.indexWhere((item) => item.cartKey == targetKey);
-
-    final updatedCart = List<CartItem>.from(state.cartItems);
-    final targetQuantity = event.newQuantity ?? currentItem.quantity;
 
     if (targetExistingIndex >= 0 && targetExistingIndex != index) {
       final existingTarget = updatedCart[targetExistingIndex];
       updatedCart[targetExistingIndex] = existingTarget.copyWith(
         quantity: existingTarget.quantity + targetQuantity,
+        customUnitPrice: event.customUnitPrice ?? existingTarget.customUnitPrice,
+        customUnitName: event.customUnitName ?? existingTarget.customUnitName,
       );
       updatedCart.removeAt(index);
     } else {
       updatedCart[index] = currentItem.copyWith(
         unitLevel: event.targetUnit,
         quantity: targetQuantity,
-        customUnitPrice: null, // Reset custom price when changing units
+        customUnitPrice: event.customUnitPrice,
+        customUnitName: event.customUnitName,
       );
     }
 
-    emit(state.copyWith(cartItems: updatedCart));
+    emit(state.copyWith(cartItems: updatedCart, error: null));
   }
 
   void _onRemoveProductFromCart(

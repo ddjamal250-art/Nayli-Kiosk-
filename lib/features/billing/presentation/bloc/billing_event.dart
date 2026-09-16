@@ -34,15 +34,25 @@ class SwitchCartItemUnitEvent extends BillingEvent {
   final String cartKey;
   final String targetUnit; // 'piece', 'pack', 'carton'
   final int? newQuantity;
+  final double? customUnitPrice;
+  final String? customUnitName;
 
   const SwitchCartItemUnitEvent({
     required this.cartKey,
     required this.targetUnit,
     this.newQuantity,
+    this.customUnitPrice,
+    this.customUnitName,
   });
 
   @override
-  List<Object> get props => [cartKey, targetUnit, newQuantity ?? 0];
+  List<Object> get props => [
+        cartKey,
+        targetUnit,
+        newQuantity ?? 0,
+        customUnitPrice ?? 0.0,
+        customUnitName ?? '',
+      ];
 }
 
 class AddCustomItemEvent extends BillingEvent {

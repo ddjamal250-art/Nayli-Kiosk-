@@ -8,6 +8,42 @@ import '../../../core/utils/online_license_service.dart';
 import '../../backup/data/backup_service.dart';
 import '../../../core/utils/telegram_service.dart';
 
+class CashDrawerMovement {
+  final String id;
+  final String type; // 'in' (إيداع/صرف), 'out' (سحب/مصاريف)
+  final double amount;
+  final String reason;
+  final DateTime timestamp;
+  final String cashierName;
+
+  CashDrawerMovement({
+    required this.id,
+    required this.type,
+    required this.amount,
+    required this.reason,
+    required this.timestamp,
+    required this.cashierName,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'type': type,
+    'amount': amount,
+    'reason': reason,
+    'timestamp': timestamp.toIso8601String(),
+    'cashierName': cashierName,
+  };
+
+  factory CashDrawerMovement.fromMap(Map<dynamic, dynamic> map) => CashDrawerMovement(
+    id: map['id']?.toString() ?? 'mov_${DateTime.now().millisecondsSinceEpoch}',
+    type: map['type']?.toString() ?? 'in',
+    amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
+    reason: map['reason']?.toString() ?? '',
+    timestamp: DateTime.tryParse(map['timestamp']?.toString() ?? '') ?? DateTime.now(),
+    cashierName: map['cashierName']?.toString() ?? 'الكاشير',
+  );
+}
+
 class CashierShift {
   final String id;
   final String workerName;
@@ -20,6 +56,8 @@ class CashierShift {
   final double actualCashAtClose;
   final bool isClosed;
   final String? notes;
+  final double cashIn;
+  final double cashOut;
 
   CashierShift({
     required this.id,
@@ -33,10 +71,12 @@ class CashierShift {
     this.actualCashAtClose = 0.0,
     this.isClosed = false,
     this.notes,
+    this.cashIn = 0.0,
+    this.cashOut = 0.0,
   });
 
   double get totalSales => cashSales + tpeSales + creditSales;
-  double get expectedTotalCashInDrawer => floatAmount + cashSales;
+  double get expectedTotalCashInDrawer => floatAmount + cashSales + cashIn - cashOut;
   double get cashDifference => actualCashAtClose - expectedTotalCashInDrawer;
 
   Map<String, dynamic> toMap() => {
@@ -51,6 +91,8 @@ class CashierShift {
     'actualCashAtClose': actualCashAtClose,
     'isClosed': isClosed,
     'notes': notes,
+    'cashIn': cashIn,
+    'cashOut': cashOut,
   };
 
   factory CashierShift.fromMap(Map<dynamic, dynamic> map) => CashierShift(
@@ -65,6 +107,8 @@ class CashierShift {
     actualCashAtClose: (map['actualCashAtClose'] as num?)?.toDouble() ?? 0.0,
     isClosed: map['isClosed'] as bool? ?? false,
     notes: map['notes']?.toString(),
+    cashIn: (map['cashIn'] as num?)?.toDouble() ?? 0.0,
+    cashOut: (map['cashOut'] as num?)?.toDouble() ?? 0.0,
   );
 }
 
@@ -145,6 +189,20 @@ class ShiftService {
       }
     }
 
+    // Calculate cash movements during this shift
+    final movements = await getDrawerMovements();
+    double shiftCashIn = 0.0;
+    double shiftCashOut = 0.0;
+    for (var m in movements) {
+      if (m.timestamp.isAfter(activeShift.openedAt)) {
+        if (m.type == 'in') {
+          shiftCashIn += m.amount;
+        } else {
+          shiftCashOut += m.amount;
+        }
+      }
+    }
+
     final closedShift = CashierShift(
       id: activeShift.id,
       workerName: activeShift.workerName,
@@ -157,6 +215,8 @@ class ShiftService {
       actualCashAtClose: actualCashInDrawer,
       isClosed: true,
       notes: notes,
+      cashIn: shiftCashIn,
+      cashOut: shiftCashOut,
     );
 
     await b.put(closedShift.id, closedShift.toMap());
@@ -187,6 +247,49 @@ class ShiftService {
     }
 
     return closedShift;
+  }
+
+  /// Record cash drawer movement (إيداع صرف أو سحب كاش ومصاريف)
+  static Future<void> recordDrawerMovement({
+    required String type, // 'in' (إيداع) or 'out' (سحب)
+    required double amount,
+    required String reason,
+    required String cashierName,
+  }) async {
+    final b = await box;
+    final raw = b.get('drawer_movements', defaultValue: []);
+    final list = (raw is List)
+        ? raw.map((e) => Map<String, dynamic>.from(e as Map)).toList()
+        : <Map<String, dynamic>>[];
+    final mov = CashDrawerMovement(
+      id: 'mov_${DateTime.now().millisecondsSinceEpoch}',
+      type: type,
+      amount: amount,
+      reason: reason,
+      timestamp: DateTime.now(),
+      cashierName: cashierName,
+    );
+    list.insert(0, mov.toMap());
+    await b.put('drawer_movements', list);
+  }
+
+  /// Get all recorded drawer movements
+  static Future<List<CashDrawerMovement>> getDrawerMovements() async {
+    final b = await box;
+    final raw = b.get('drawer_movements', defaultValue: []);
+    if (raw is! List) return [];
+    return raw.map((e) => CashDrawerMovement.fromMap(e as Map)).toList();
+  }
+
+  /// Get today's recorded drawer movements
+  static Future<List<CashDrawerMovement>> getTodayDrawerMovements() async {
+    final all = await getDrawerMovements();
+    final now = DateTime.now();
+    return all.where((m) =>
+      m.timestamp.year == now.year &&
+      m.timestamp.month == now.month &&
+      m.timestamp.day == now.day
+    ).toList();
   }
 
   /// Lock screen modal (Pause Déjeuner / Rest)

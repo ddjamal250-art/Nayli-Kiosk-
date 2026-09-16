@@ -25,6 +25,7 @@ class Product extends Equatable {
   final double wholesalePackPrice;
   final double cartonCostPrice;
   final String unitType; // 'unit', 'meter', 'ml'
+  final String? cartonBarcode;
 
   const Product({
     required this.id,
@@ -51,6 +52,7 @@ class Product extends Equatable {
     this.wholesalePackPrice = 0.0,
     this.cartonCostPrice = 0.0,
     this.unitType = 'unit',
+    this.cartonBarcode,
   });
 
   Product copyWith({
@@ -78,6 +80,7 @@ class Product extends Equatable {
     double? wholesalePackPrice,
     double? cartonCostPrice,
     String? unitType,
+    String? cartonBarcode,
   }) {
     return Product(
       id: id ?? this.id,
@@ -104,6 +107,7 @@ class Product extends Equatable {
       wholesalePackPrice: wholesalePackPrice ?? this.wholesalePackPrice,
       cartonCostPrice: cartonCostPrice ?? this.cartonCostPrice,
       unitType: unitType ?? this.unitType,
+      cartonBarcode: cartonBarcode ?? this.cartonBarcode,
     );
   }
 
@@ -133,6 +137,7 @@ class Product extends Equatable {
         wholesalePackPrice,
         cartonCostPrice,
         unitType,
+        cartonBarcode,
       ];
 
   // --- Universal Multi-Unit Packaging Helpers ---
@@ -221,6 +226,16 @@ class Product extends Equatable {
     if (isBeverage) return false; // Water/Drinks never sold by 1/20th of a bottle!
     return singlePiecePrice > 0;
   }
+
+  bool get hasCustomQuantityPricing => packMultiplier > 1 && packPrice > 0;
+  int get customQuantity => packMultiplier > 1 ? packMultiplier : 1;
+  double get customQuantityPrice => packPrice > 0 ? packPrice : (price * customQuantity);
+  String get customQuantityLabel {
+    if (packName != null && packName!.trim().isNotEmpty) return packName!.trim();
+    return '$customQuantity قطع = ${customQuantityPrice.toStringAsFixed(0)} دج';
+  }
+
+  bool get hasCartonBarcode => cartonBarcode != null && cartonBarcode!.trim().isNotEmpty;
 
   bool get hasCarton {
     if (isTobaccoProduct) return true;

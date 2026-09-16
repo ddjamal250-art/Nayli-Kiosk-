@@ -11,6 +11,8 @@ import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../widgets/cash_drawer_action_dialog.dart';
+import '../../../shifts/data/shift_service.dart';
 
 class DailyReportPage extends StatefulWidget {
   DailyReportPage({super.key});
@@ -29,6 +31,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
   Timer? _refreshTimer;
   int _secondsRemaining = 20;
   double _cashFloat = 0.0;
+  bool _showVisualCurves = false;
+  List<CashDrawerMovement> _drawerMovements = [];
 
   @override
   void initState() {
@@ -36,6 +40,16 @@ class _DailyReportPageState extends State<DailyReportPage> {
     _startLiveRefreshTimer();
     final box = HiveDatabase.settingsBox;
     _cashFloat = (box.get('daily_cash_float') as num?)?.toDouble() ?? 0.0;
+    _loadDrawerMovements();
+  }
+
+  Future<void> _loadDrawerMovements() async {
+    try {
+      final list = await ShiftService.getDrawerMovements();
+      if (mounted) {
+        setState(() => _drawerMovements = list);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -475,9 +489,42 @@ class _DailyReportPageState extends State<DailyReportPage> {
     final creditSales = invoices.where((i) => i['isCredit'] == true).fold<double>(0.0, (sum, i) => sum + (((i['totalAmount'] as num?)?.toDouble() ?? 0.0) - ((i['paidAmount'] as num?)?.toDouble() ?? 0.0)));
 
     final supplierCashOut = _getSupplierPayments();
-    final cashIn = cashSales;
-    final cashOut = expenses + supplierCashOut;
+
+    // Drawer movements calculation for current period
+    double totalDrawerIn = 0.0;
+    double totalDrawerOut = 0.0;
+    final todayStr = DateFormat('yyyy-MM-dd').format(_customDate);
+    final now = DateTime.now();
+
+    for (final m in _drawerMovements) {
+      final mDateStr = DateFormat('yyyy-MM-dd').format(m.timestamp);
+      bool matchesPeriod = false;
+      if (_selectedPeriod == 0) {
+        matchesPeriod = mDateStr == todayStr;
+      } else if (_selectedPeriod == 1) {
+        matchesPeriod = now.difference(m.timestamp).inDays <= 7;
+      } else if (_selectedPeriod == 2) {
+        matchesPeriod = now.difference(m.timestamp).inDays <= 30;
+      } else if (_selectedPeriod == 3) {
+        matchesPeriod = m.timestamp.year == now.year && m.timestamp.month == now.month;
+      } else {
+        matchesPeriod = true;
+      }
+
+      if (matchesPeriod) {
+        if (m.type == 'in') {
+          totalDrawerIn += m.amount;
+        } else {
+          totalDrawerOut += m.amount;
+        }
+      }
+    }
+
+    final cashIn = cashSales + totalDrawerIn;
+    final cashOut = expenses + supplierCashOut + totalDrawerOut;
     final netCashFlow = cashIn - cashOut;
+
+    final categoryBreakdown = _calculateCategoryBreakdown(invoices);
 
     final stockCapital = _calculateStockCapital();
     final customerDebts = _calculateCustomerDebts();
@@ -1086,6 +1133,53 @@ class _DailyReportPageState extends State<DailyReportPage> {
             ],
             SizedBox(height: 18),
 
+            // Category-Level Performance & Visual Curves Section
+            Container(
+              margin: const EdgeInsets.only(bottom: 18),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.insights_rounded, color: AppTheme.primaryColor, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'تحليل الأصناف والمنحنيات البيانية 📊📈',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                          ),
+                        ],
+                      ),
+                      SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment(value: false, label: Text('جدول الأصناف 📋', style: TextStyle(fontSize: 11))),
+                          ButtonSegment(value: true, label: Text('منحنى بياني 📈', style: TextStyle(fontSize: 11))),
+                        ],
+                        selected: {_showVisualCurves},
+                        onSelectionChanged: (set) => setState(() => _showVisualCurves = set.first),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 20),
+                  if (_showVisualCurves)
+                    _buildVisualCurvesWidget(invoices, expenses)
+                  else
+                    _buildCategoryBreakdownTable(categoryBreakdown),
+                ],
+              ),
+            ),
+
             // Section 2: Cash Flow (التدفق النقدي للكاسة)
             Text('حركة الكاش والصندوق (Cash Flow) 💵', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             SizedBox(height: 8),
@@ -1126,6 +1220,39 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     ],
                   ),
                   Divider(height: 14),
+                  if (totalDrawerIn > 0) ...[
+                    Divider(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.add_circle_outline, color: Colors.teal, size: 16),
+                            SizedBox(width: 6),
+                            Text('إيداعات وصرف إضافي للصندوق:', style: TextStyle(fontSize: 11.5)),
+                          ],
+                        ),
+                        Text('+${totalDrawerIn.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal, fontSize: 13)),
+                      ],
+                    ),
+                  ],
+                  if (totalDrawerOut > 0) ...[
+                    Divider(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.remove_circle_outline, color: Colors.deepOrange, size: 16),
+                            SizedBox(width: 6),
+                            Text('سحوبات ومصاريف كاش مسجلة:', style: TextStyle(fontSize: 11.5)),
+                          ],
+                        ),
+                        Text('-${totalDrawerOut.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange, fontSize: 13)),
+                      ],
+                    ),
+                  ],
+                  Divider(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1139,6 +1266,27 @@ class _DailyReportPageState extends State<DailyReportPage> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => CashDrawerActionDialog.show(
+                        context,
+                        onDone: () {
+                          _loadDrawerMovements();
+                          setState(() {});
+                        },
+                      ),
+                      icon: const Icon(Icons.payments_outlined, size: 18),
+                      label: const Text('تسجيل حركة بالصندوق (إيداع صرف / سحب كاش) 💵', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal.shade700,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1525,4 +1673,368 @@ class _DailyReportPageState extends State<DailyReportPage> {
       ),
     );
   }
+
+  Map<String, Map<String, dynamic>> _calculateCategoryBreakdown(List<Map<String, dynamic>> invoices) {
+    final Map<String, Map<String, dynamic>> catMap = {};
+
+    for (final inv in invoices) {
+      if (inv['items'] is List) {
+        for (final it in inv['items']) {
+          if (it is Map) {
+            final rawCat = (it['category']?.toString() ?? '').trim();
+            final name = (it['name']?.toString() ?? '').toLowerCase();
+            String cat = rawCat.isNotEmpty ? rawCat : 'عام';
+
+            if (it['isCoffeeMachine'] == true || name.contains('قهوة') || name.contains('شاي')) {
+              cat = 'ماكينة القهوة والشاي';
+            } else if (it['isTobacco'] == true || name.contains('سجائر') || name.contains('تبغ') || name.contains('شمة')) {
+              cat = 'تبغ وسجائر';
+            } else if (name.contains('قلم') || name.contains('كراس') || name.contains('مدرسي') || name.contains('stylo')) {
+              cat = 'أدوات مدرسية ومكتبية';
+            } else if (name.contains('جبن') || name.contains('fromage')) {
+              cat = 'أجبان ومشتقات الحليب';
+            } else if (name.contains('ماء') || name.contains('عصير') || name.contains('مشروب')) {
+              cat = 'مشروبات ومياه';
+            } else if (it['isWeighted'] == true || name.contains('ميزان') || name.contains('كغ')) {
+              cat = 'خضر وفواكه وميزان';
+            }
+
+            if (!catMap.containsKey(cat)) {
+              catMap[cat] = {
+                'sales': 0.0,
+                'cost': 0.0,
+                'qty': 0,
+                'losses': 0.0,
+              };
+            }
+
+            final itQty = (it['qty'] as num?)?.toInt() ?? 1;
+            final itTotal = (it['total'] as num?)?.toDouble() ??
+                (((it['price'] as num?)?.toDouble() ?? 0.0) * itQty);
+            final itCost = (((it['costPrice'] as num?)?.toDouble() ?? 0.0) * itQty);
+
+            catMap[cat]!['sales'] = (catMap[cat]!['sales'] as double) + itTotal;
+            catMap[cat]!['cost'] = (catMap[cat]!['cost'] as double) + itCost;
+            catMap[cat]!['qty'] = (catMap[cat]!['qty'] as int) + itQty;
+          }
+        }
+      }
+    }
+
+    // Losses per category
+    try {
+      final lossesBox = HiveDatabase.lossesBox;
+      for (var key in lossesBox.keys) {
+        final val = lossesBox.get(key);
+        if (val is Map) {
+          final cat = (val['category']?.toString() ?? 'عام').trim();
+          final lossAmt = (val['totalLossCost'] as num?)?.toDouble() ?? 0.0;
+          if (catMap.containsKey(cat)) {
+            catMap[cat]!['losses'] = (catMap[cat]!['losses'] as double) + lossAmt;
+          } else if (lossAmt > 0) {
+            catMap[cat] = {
+              'sales': 0.0,
+              'cost': 0.0,
+              'qty': 0,
+              'losses': lossAmt,
+            };
+          }
+        }
+      }
+    } catch (_) {}
+
+    return catMap;
+  }
+
+  Widget _buildCategoryBreakdownTable(Map<String, Map<String, dynamic>> catMap) {
+    if (catMap.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        alignment: Alignment.center,
+        child: const Text('لا توجد مبيعات أصناف مسجلة في هذه الفترة', style: TextStyle(color: Colors.grey, fontSize: 12)),
+      );
+    }
+
+    final sortedEntries = catMap.entries.toList()
+      ..sort((a, b) => (b.value['sales'] as double).compareTo(a.value['sales'] as double));
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columnSpacing: 16,
+        horizontalMargin: 8,
+        headingRowHeight: 40,
+        dataRowMinHeight: 44,
+        dataRowMaxHeight: 48,
+        headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Colors.black87),
+        columns: const [
+          DataColumn(label: Text('الصنف / القسم')),
+          DataColumn(label: Text('المبيعات')),
+          DataColumn(label: Text('التكلفة')),
+          DataColumn(label: Text('الأرباح')),
+          DataColumn(label: Text('الهامش %')),
+          DataColumn(label: Text('القطع')),
+          DataColumn(label: Text('التوالف')),
+        ],
+        rows: sortedEntries.map((e) {
+          final name = e.key;
+          final sales = e.value['sales'] as double;
+          final cost = e.value['cost'] as double;
+          final profit = sales - cost;
+          final margin = sales > 0 ? ((profit / sales) * 100).toStringAsFixed(1) : '0';
+          final qty = e.value['qty'] as int;
+          final losses = e.value['losses'] as double;
+
+          return DataRow(
+            cells: [
+              DataCell(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(Icons.category_rounded, size: 14, color: Colors.teal),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                  ],
+                ),
+              ),
+              DataCell(Text('${sales.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+              DataCell(Text('${cost.toStringAsFixed(0)} دج', style: TextStyle(color: Colors.grey.shade700, fontSize: 11))),
+              DataCell(Text(
+                '${profit >= 0 ? "+" : ""}${profit.toStringAsFixed(0)} دج',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11.5,
+                  color: profit >= 0 ? Colors.green.shade800 : Colors.red.shade800,
+                ),
+              )),
+              DataCell(Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: profit >= 0 ? Colors.green.withOpacity(0.08) : Colors.red.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('$margin%', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: profit >= 0 ? Colors.green.shade800 : Colors.red.shade800)),
+              )),
+              DataCell(Text('$qty', style: const TextStyle(fontSize: 11))),
+              DataCell(Text(
+                losses > 0 ? '${losses.toStringAsFixed(0)} دج' : '-',
+                style: TextStyle(fontSize: 11, color: losses > 0 ? Colors.red.shade700 : Colors.grey),
+              )),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildVisualCurvesWidget(List<Map<String, dynamic>> invoices, double totalExpenses) {
+    // Generate 6 temporal buckets for curves
+    final List<double> salesBuckets = [0, 0, 0, 0, 0, 0];
+    final List<double> costBuckets = [0, 0, 0, 0, 0, 0];
+    final List<double> profitBuckets = [0, 0, 0, 0, 0, 0];
+    final List<String> labels = ['08-10h', '10-12h', '12-15h', '15-18h', '18-21h', '21-24h'];
+
+    for (final inv in invoices) {
+      final ts = inv['timestamp'] as String?;
+      if (ts == null) continue;
+      final dt = DateTime.tryParse(ts);
+      if (dt == null) continue;
+
+      int bucketIndex = 0;
+      final hour = dt.hour;
+      if (hour < 10) {
+        bucketIndex = 0;
+      } else if (hour < 12) {
+        bucketIndex = 1;
+      } else if (hour < 15) {
+        bucketIndex = 2;
+      } else if (hour < 18) {
+        bucketIndex = 3;
+      } else if (hour < 21) {
+        bucketIndex = 4;
+      } else {
+        bucketIndex = 5;
+      }
+
+      final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+      final profit = (inv['netProfit'] as num?)?.toDouble() ?? (total * 0.2);
+      final cost = (total - profit).clamp(0.0, double.infinity);
+
+      salesBuckets[bucketIndex] += total;
+      costBuckets[bucketIndex] += cost;
+      profitBuckets[bucketIndex] += profit;
+    }
+
+    return Column(
+      children: [
+        // Legend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildCurveLegendItem('المبيعات (Ventes)', const Color(0xFF0D9488)),
+            const SizedBox(width: 14),
+            _buildCurveLegendItem('التكلفة والمصاريف (Coûts)', const Color(0xFFE11D48)),
+            const SizedBox(width: 14),
+            _buildCurveLegendItem('صافي الأرباح (Bénéfice Net)', const Color(0xFF2563EB)),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Container(
+          height: 190,
+          width: double.infinity,
+          padding: const EdgeInsets.only(right: 6, left: 6, top: 4),
+          child: CustomPaint(
+            painter: FinancialTrendPainter(
+              salesPoints: salesBuckets,
+              costPoints: costBuckets,
+              profitPoints: profitBuckets,
+              labels: labels,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCurveLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
+      ],
+    );
+  }
+
+}
+
+class FinancialTrendPainter extends CustomPainter {
+  final List<double> salesPoints;
+  final List<double> costPoints;
+  final List<double> profitPoints;
+  final List<String> labels;
+
+  FinancialTrendPainter({
+    required this.salesPoints,
+    required this.costPoints,
+    required this.profitPoints,
+    required this.labels,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (salesPoints.isEmpty) return;
+
+    final double maxVal = [
+      ...salesPoints,
+      ...costPoints,
+      ...profitPoints,
+      1000.0,
+    ].reduce((a, b) => a > b ? a : b);
+
+    final double padL = 36.0;
+    final double padR = 16.0;
+    final double padT = 16.0;
+    final double padB = 28.0;
+
+    final double chartW = size.width - padL - padR;
+    final double chartH = size.height - padT - padB;
+
+    // Grid lines
+    final gridPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.15)
+      ..strokeWidth = 1.0;
+
+    for (int i = 0; i <= 4; i++) {
+      final y = padT + (chartH / 4) * i;
+      canvas.drawLine(Offset(padL, y), Offset(size.width - padR, y), gridPaint);
+      final textVal = (maxVal * (1 - i / 4)).toStringAsFixed(0);
+      final tp = TextPainter(
+        text: TextSpan(text: textVal, style: TextStyle(color: Colors.grey.shade600, fontSize: 9)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(2, y - 6));
+    }
+
+    final int count = salesPoints.length;
+    final double stepX = count > 1 ? (chartW / (count - 1)) : chartW;
+
+    Offset getPoint(int i, double val) {
+      final x = padL + i * stepX;
+      final y = padT + chartH - ((val / (maxVal > 0 ? maxVal : 1)) * chartH);
+      return Offset(x, y.clamp(padT, padT + chartH));
+    }
+
+    void drawCurve(List<double> points, Color color, {bool fill = false}) {
+      if (points.isEmpty) return;
+      final path = Path();
+      final fillPath = Path();
+
+      final first = getPoint(0, points[0]);
+      path.moveTo(first.dx, first.dy);
+      fillPath.moveTo(first.dx, padT + chartH);
+      fillPath.lineTo(first.dx, first.dy);
+
+      for (int i = 0; i < points.length - 1; i++) {
+        final p0 = getPoint(i, points[i]);
+        final p1 = getPoint(i + 1, points[i + 1]);
+        final controlX = (p0.dx + p1.dx) / 2;
+        path.cubicTo(controlX, p0.dy, controlX, p1.dy, p1.dx, p1.dy);
+        fillPath.cubicTo(controlX, p0.dy, controlX, p1.dy, p1.dx, p1.dy);
+      }
+
+      final last = getPoint(points.length - 1, points.last);
+      fillPath.lineTo(last.dx, padT + chartH);
+      fillPath.close();
+
+      if (fill) {
+        final fillPaint = Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [color.withOpacity(0.22), color.withOpacity(0.01)],
+          ).createShader(Rect.fromLTWH(padL, padT, chartW, chartH));
+        canvas.drawPath(fillPath, fillPaint);
+      }
+
+      final linePaint = Paint()
+        ..color = color
+        ..strokeWidth = 2.5
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawPath(path, linePaint);
+
+      final dotPaint = Paint()..color = color;
+      final whitePaint = Paint()..color = Colors.white;
+      for (int i = 0; i < points.length; i++) {
+        final pt = getPoint(i, points[i]);
+        canvas.drawCircle(pt, 4.0, dotPaint);
+        canvas.drawCircle(pt, 2.0, whitePaint);
+      }
+    }
+
+    drawCurve(salesPoints, const Color(0xFF0D9488), fill: true);
+    drawCurve(costPoints, const Color(0xFFE11D48));
+    drawCurve(profitPoints, const Color(0xFF2563EB));
+
+    for (int i = 0; i < labels.length; i++) {
+      final x = padL + i * stepX;
+      final tp = TextPainter(
+        text: TextSpan(text: labels[i], style: TextStyle(color: Colors.grey.shade700, fontSize: 9.5, fontWeight: FontWeight.bold)),
+        textDirection: TextDirection.rtl,
+      )..layout();
+      tp.paint(canvas, Offset(x - (tp.width / 2), padT + chartH + 8));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant FinancialTrendPainter oldDelegate) => true;
 }

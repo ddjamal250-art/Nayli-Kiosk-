@@ -41,13 +41,14 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       wholesalePackPrice: (fields[21] as num?)?.toDouble() ?? 0.0,
       cartonCostPrice: (fields[22] as num?)?.toDouble() ?? 0.0,
       unitType: fields[23] as String? ?? 'unit',
+      cartonBarcode: fields[24] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductModel obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(25)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -95,7 +96,9 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       ..writeByte(22)
       ..write(obj.cartonCostPrice)
       ..writeByte(23)
-      ..write(obj.unitType);
+      ..write(obj.unitType)
+      ..writeByte(24)
+      ..write(obj.cartonBarcode);
   }
 
   @override

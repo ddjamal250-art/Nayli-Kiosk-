@@ -16,6 +16,7 @@ import '../../../../core/utils/security_pin_helper.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import 'header_color_dialog.dart';
 import 'session_lock_overlay.dart';
+import 'cash_drawer_action_dialog.dart';
 
 class PosHeaderToolbar extends StatelessWidget {
   final bool isServerRunning;
@@ -251,6 +252,13 @@ class PosHeaderToolbar extends StatelessWidget {
                 tooltip: 'درج النقود (F10)',
                 icon: const Icon(Icons.account_balance_rounded, color: Colors.amber, size: 22),
                 onPressed: onOpenDrawer,
+              ),
+
+              // 1.1 Cash Drawer Movements (إيداع / سحب كاش)
+              IconButton(
+                tooltip: 'حركة الصندوق - إيداع / سحب كاش',
+                icon: const Icon(Icons.payments_rounded, color: Colors.tealAccent, size: 22),
+                onPressed: () => CashDrawerActionDialog.show(context),
               ),
 
               // 2. Direct Inventory Access (F4)
