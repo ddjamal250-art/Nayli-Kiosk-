@@ -237,6 +237,8 @@ class Product extends Equatable {
 
   bool get hasCartonBarcode => cartonBarcode != null && cartonBarcode!.trim().isNotEmpty;
 
+  bool get hasPack => packsPerCarton > 1 || price > 0;
+
   bool get hasCarton {
     if (isTobaccoProduct) return true;
     if (isBeverage) return true; // Drinks can be sold as Fardeau or Bottle

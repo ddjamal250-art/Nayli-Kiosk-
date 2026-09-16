@@ -118,9 +118,12 @@ class _CashDrawerActionDialogState extends State<CashDrawerActionDialog> {
         cashierName: cashierName,
       );
 
-      AuditLogService.log(
+      AuditLogService.logEvent(
         action: _actionType == 'in' ? 'CASH_DRAWER_IN' : 'CASH_DRAWER_OUT',
-        details: 'مبلغ: $amt دج | سبب: $reason | كاشير: $cashierName',
+        station: 'كاشير',
+        staffName: cashierName,
+        amount: amt,
+        details: 'سبب: $reason',
       );
 
       if (_openDrawerHardware) {
