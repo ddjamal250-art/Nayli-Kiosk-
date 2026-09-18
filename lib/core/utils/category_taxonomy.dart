@@ -1,3 +1,4 @@
+import 'package:hive_flutter/hive_flutter.dart';
 import '../data/hive_database.dart';
 class CategoryDomain {
   final String id;
@@ -510,10 +511,12 @@ class CategoryTaxonomy {
   /// Retrieves user custom categories from persistent settings box
   static List<String> getCustomCategories() {
     try {
-      final box = HiveDatabase.settingsBox;
-      final raw = box.get(customCategoriesSettingsKey);
-      if (raw is List) {
-        return raw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      if (Hive.isBoxOpen(HiveDatabase.settingsBoxName)) {
+        final box = HiveDatabase.settingsBox;
+        final raw = box.get(customCategoriesSettingsKey);
+        if (raw is List) {
+          return raw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+        }
       }
     } catch (_) {}
     return [];
@@ -524,6 +527,9 @@ class CategoryTaxonomy {
     final clean = categoryName.trim();
     if (clean.isEmpty) return;
     try {
+      if (!Hive.isBoxOpen(HiveDatabase.settingsBoxName)) {
+        await Hive.openBox(HiveDatabase.settingsBoxName);
+      }
       final box = HiveDatabase.settingsBox;
       final current = getCustomCategories();
       if (!current.contains(clean) && !defaultCategories.contains(clean)) {
@@ -538,6 +544,9 @@ class CategoryTaxonomy {
     final clean = categoryName.trim();
     if (clean.isEmpty) return;
     try {
+      if (!Hive.isBoxOpen(HiveDatabase.settingsBoxName)) {
+        await Hive.openBox(HiveDatabase.settingsBoxName);
+      }
       final box = HiveDatabase.settingsBox;
       final current = getCustomCategories();
       current.removeWhere((c) => c == clean);
