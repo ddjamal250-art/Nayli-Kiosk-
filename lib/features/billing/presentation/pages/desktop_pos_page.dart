@@ -2078,105 +2078,8 @@ $itemsSummary
                       ),
                     ),
 
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                            icon: const Icon(Icons.percent_rounded, color: Colors.purple, size: 18),
-                            label: Text(context.tr('btn_discount'), style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12)),
-                            onPressed: _showDiscountModal,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    side: const BorderSide(color: Colors.indigo, width: 1.2),
-                                  ),
-                                  icon: const Icon(Icons.pause_circle_outline, color: Colors.indigo, size: 18),
-                                  label: Text(
-                                    state.activeHeldCarts.isNotEmpty
-                                        ? '${context.tr("hold")} (${state.activeHeldCarts.length})'
-                                        : '${context.tr("btn_hold")}',
-                                    style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12),
-                                  ),
-                                  onPressed: _handleHoldOrResumeCart,
-                                ),
-                              ),
-                              if (state.activeHeldCarts.isNotEmpty)
-                                Positioned(
-                                  top: -5,
-                                  right: -5,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.orange,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Text(
-                                      '${state.activeHeldCarts.length}',
-                                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-                            side: const BorderSide(color: Colors.deepOrange, width: 1.2),
-                          ),
-                          icon: const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.deepOrange, size: 18),
-                          label: Text(context.tr('transfer_f11_btn'), style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12)),
-                          onPressed: () => _showRegisterHandoffModal(state),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF059669),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              elevation: 2,
-                            ),
-                            icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
-                            label: Text(
-                              StaffPermissionsService.enableFastKeyboardShortcuts
-                                  ? '${context.tr("btn_pay_checkout")} (F12)'
-                                  : context.tr('btn_pay_checkout'),
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            onPressed: () {
-                              if (StaffPermissionsService.enableCustomerDisplay) {
-                                LocalSyncServer.updateCustomerDisplay(
-                                  items: state.cartItems.map((i) => {
-                                    'name': i.product.name,
-                                    'qty': i.quantity,
-                                    'price': i.product.price,
-                                    'total': i.total,
-                                  }).toList(),
-                                  total: currentTotal,
-                                  subtotal: state.totalAmount,
-                                  discount: _cartDiscountValue,
-                                  customerName: _selectedCustomerName,
-                                );
-                              }
-                              _triggerCheckout();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: 10),
+                    _buildCartActionButtons(state, currentTotal),
                   ],
                 ),
               ),
@@ -2184,6 +2087,217 @@ $itemsSummary
           ),
         );
       },
+    );
+  }
+
+  Widget _buildCartActionButtons(BillingState state, double currentTotal) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 540;
+        if (isWide) {
+          return Row(
+            children: [
+              Expanded(flex: 7, child: _buildDiscountButton()),
+              const SizedBox(width: 8),
+              Expanded(flex: 11, child: _buildHoldButton(state)),
+              const SizedBox(width: 8),
+              Expanded(flex: 11, child: _buildTransferButton(state)),
+              const SizedBox(width: 8),
+              Expanded(flex: 15, child: _buildCheckoutButton(state, currentTotal)),
+            ],
+          );
+        } else {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(flex: 7, child: _buildDiscountButton()),
+                  const SizedBox(width: 8),
+                  Expanded(flex: 11, child: _buildHoldButton(state)),
+                  const SizedBox(width: 8),
+                  Expanded(flex: 11, child: _buildTransferButton(state)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: _buildCheckoutButton(state, currentTotal),
+              ),
+            ],
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildDiscountButton() {
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        side: const BorderSide(color: Colors.purple, width: 1.2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: const Size(0, 46),
+      ),
+      onPressed: _showDiscountModal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.percent_rounded, color: Colors.purple, size: 17),
+          const SizedBox(width: 4),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                context.tr('btn_discount'),
+                style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12),
+                maxLines: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHoldButton(BillingState state) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+              side: const BorderSide(color: Colors.indigo, width: 1.2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              minimumSize: const Size(0, 46),
+            ),
+            onPressed: _handleHoldOrResumeCart,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.pause_circle_outline, color: Colors.indigo, size: 17),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      state.activeHeldCarts.isNotEmpty
+                          ? '${context.tr("hold")} (${state.activeHeldCarts.length})'
+                          : context.tr("btn_hold"),
+                      style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12),
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (state.activeHeldCarts.isNotEmpty)
+          Positioned(
+            top: -5,
+            right: -5,
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '${state.activeHeldCarts.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTransferButton(BillingState state) {
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        side: const BorderSide(color: Colors.deepOrange, width: 1.2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: const Size(0, 46),
+      ),
+      onPressed: () => _showRegisterHandoffModal(state),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.deepOrange, size: 17),
+          const SizedBox(width: 4),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                context.tr('transfer_f11_btn'),
+                style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12),
+                maxLines: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckoutButton(BillingState state, double currentTotal) {
+    final payText = StaffPermissionsService.enableFastKeyboardShortcuts
+        ? (context.tr("btn_pay_checkout").contains('F12')
+            ? context.tr("btn_pay_checkout")
+            : '${context.tr("btn_pay_checkout")} (F12)')
+        : context.tr('btn_pay_checkout').replaceAll(' (F12)', '').replaceAll('(F12)', '').trim();
+
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF059669),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: const Size(0, 50),
+      ),
+      onPressed: () {
+        if (StaffPermissionsService.enableCustomerDisplay) {
+          LocalSyncServer.updateCustomerDisplay(
+            items: state.cartItems.map((i) => {
+              'name': i.product.name,
+              'qty': i.quantity,
+              'price': i.product.price,
+              'total': i.total,
+            }).toList(),
+            total: currentTotal,
+            subtotal: state.totalAmount,
+            discount: _cartDiscountValue,
+            customerName: _selectedCustomerName,
+          );
+        }
+        _triggerCheckout();
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
+          const SizedBox(width: 8),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                payText,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                maxLines: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
