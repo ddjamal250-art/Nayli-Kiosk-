@@ -468,10 +468,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                   width: 48,
                                   height: 48,
                                   child: ProductImageDisplay(
-                                    product: product,
+                                    imageUrl: product.imageUrl,
                                     width: 48,
                                     height: 48,
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: 8,
                                   ),
                                 ),
                               ),
@@ -641,7 +641,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       return Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.grey.shade900 : Colors.blue.shade50.withValues(alpha: 0.3),
+                          color: isDark ? Colors.grey.shade900 : Colors.blue.shade50.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.blue.shade100),
                         ),
@@ -879,7 +879,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
 
     // 6. Not found anywhere
-    SoundService.playErrorSound();
+    SoundService.playWarning();
     SnackbarHelper.showWarning(
       context,
       '${context.tr("product_not_found")}: "$barcodeToScan"',
@@ -2873,7 +2873,7 @@ $itemsSummary
         border: Border.all(color: Colors.teal.shade300, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: Colors.black.withOpacity(0.12),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2964,10 +2964,10 @@ $itemsSummary
                             width: 38,
                             height: 38,
                             child: ProductImageDisplay(
-                              product: product,
+                              imageUrl: product.imageUrl,
                               width: 38,
                               height: 38,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: 6,
                             ),
                           ),
                         ),
