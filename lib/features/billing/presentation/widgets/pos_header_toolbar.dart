@@ -17,6 +17,7 @@ import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import 'header_color_dialog.dart';
 import 'session_lock_overlay.dart';
 import 'cash_drawer_action_dialog.dart';
+import '../../../../core/services/github_update_service.dart';
 
 class PosHeaderToolbar extends StatelessWidget {
   final bool isServerRunning;
@@ -429,6 +430,9 @@ class PosHeaderToolbar extends StatelessWidget {
                     case 'catalog':
                       context.push('/master-catalog');
                       break;
+                    case 'update':
+                      GitHubUpdateService.checkForUpdates(context, silent: false);
+                      break;
                   }
                 },
                 itemBuilder: (ctx) => [
@@ -500,6 +504,22 @@ class PosHeaderToolbar extends StatelessWidget {
                         const Icon(Icons.library_books_rounded, color: Colors.deepOrange, size: 20),
                         const SizedBox(width: 10),
                         Text(context.tr('master_catalog_btn'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'update',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.system_update_rounded, color: Colors.blueAccent, size: 20),
+                        const SizedBox(width: 10),
+                        Text(
+                          Localizations.localeOf(context).languageCode == 'ar'
+                              ? 'التحقق من التحديثات (OTA)'
+                              : 'Check for Updates (OTA)',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
                       ],
                     ),
                   ),

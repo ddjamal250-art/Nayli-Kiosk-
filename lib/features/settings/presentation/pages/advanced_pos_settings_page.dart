@@ -7,6 +7,8 @@ import '../../../../core/utils/expiry_tracker_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/data/local_sync_server.dart';
+import '../../../../core/services/github_update_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 
 class AdvancedPosSettingsPage extends StatefulWidget {
@@ -336,6 +338,62 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
                   ),
                 ],
               ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Cloud Remote Update Section (OTA)
+          _buildSectionHeader('تحديثات النظام السحابية', 'فحص وتحميل الإصدارات الرسمية الجديدة مباشرة من GitHub'),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.cloud_sync_rounded, color: Colors.blue, size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'تحديث البرنامج عن بعد (GitHub OTA)',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(height: 2),
+                        FutureBuilder<PackageInfo>(
+                          future: PackageInfo.fromPlatform(),
+                          builder: (ctx, snapshot) {
+                            final ver = snapshot.hasData ? snapshot.data!.version : '1.4.0';
+                            return Text(
+                              'الإصدار المثبت حالياً: v$ver',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: () => GitHubUpdateService.checkForUpdates(context, silent: false),
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('فحص التحديثات الآن', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 24),

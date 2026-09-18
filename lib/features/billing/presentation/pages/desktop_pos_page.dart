@@ -40,6 +40,7 @@ import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
 import '../widgets/universal_unit_selector_dialog.dart';
+import '../../../../core/services/github_update_service.dart';
 
 enum PosPriceTier { detail, demiGros, gros }
 
@@ -117,6 +118,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     _startIpmCalculator();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _barcodeFocusNode.requestFocus();
+      GitHubUpdateService.runStartupCheck(context);
     });
   }
 

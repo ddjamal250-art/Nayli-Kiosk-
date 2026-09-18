@@ -1,0 +1,538 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../utils/snackbar_helper.dart';
+import '../utils/sound_service.dart';
+
+/// كائن يحمل تفاصيل الإصدار الجديد من GitHub Releases
+class GitHubReleaseInfo {
+  final String tagName;
+  final String cleanVersion;
+  final String title;
+  final String changelog;
+  final String downloadUrl;
+  final String assetName;
+  final int sizeBytes;
+  final DateTime? publishedAt;
+  final bool isPrerelease;
+
+  const GitHubReleaseInfo({
+    required this.tagName,
+    required this.cleanVersion,
+    required this.title,
+    required this.changelog,
+    required this.downloadUrl,
+    required this.assetName,
+    required this.sizeBytes,
+    this.publishedAt,
+    this.isPrerelease = false,
+  });
+
+  String get sizeFormatted {
+    if (sizeBytes <= 0) return '';
+    final double mb = sizeBytes / (1024 * 1024);
+    return '${mb.toStringAsFixed(1)} ميغابايت';
+  }
+}
+
+/// محرك التحديث السحابي الشامل عبر GitHub Releases
+/// يعمل على كل من Windows Desktop و Android
+/// وقابل للنسخ المباشر وإعادة الاستخدام في أي مشروع Flutter
+class GitHubUpdateService {
+  // =========================================================================
+  // ⚙️ إعدادات المستودع (قابلة للتغيير في أي مشروع آخر بتعديل هذين السطرين فقط)
+  // =========================================================================
+  static const String repoOwner = 'ddjamal250-art';
+  static const String repoName = 'Nayli-Kiosk-';
+
+  static bool _isChecking = false;
+  static bool _hasAutoChecked = false;
+
+  /// مقارنة ذكية ودقيقة لأرقام الإصدارات بحسب نظام Semantic Versioning
+  /// ترجع true إذا كان remoteVersion أعلى من currentVersion
+  static bool isNewerVersion(String currentVersion, String remoteVersion) {
+    try {
+      final cleanCurrent = currentVersion
+          .trim()
+          .replaceFirst(RegExp(r'^[vV]'), '')
+          .split('+')
+          .first
+          .split('-')
+          .first;
+
+      final cleanRemote = remoteVersion
+          .trim()
+          .replaceFirst(RegExp(r'^[vV]'), '')
+          .split('+')
+          .first
+          .split('-')
+          .first;
+
+      final currentParts = cleanCurrent.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      final remoteParts = cleanRemote.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+      final maxLen = currentParts.length > remoteParts.length ? currentParts.length : remoteParts.length;
+
+      for (int i = 0; i < maxLen; i++) {
+        final c = i < currentParts.length ? currentParts[i] : 0;
+        final r = i < remoteParts.length ? remoteParts[i] : 0;
+        if (r > c) return true;
+        if (r < c) return false;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// استعلام أحدث إصدار من واجهة GitHub Releases الرسمية المجانية
+  static Future<GitHubReleaseInfo?> fetchLatestRelease() async {
+    try {
+      final url = Uri.parse('https://api.github.com/repos/$repoOwner/$repoName/releases/latest');
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Nayli-Kiosk-App',
+        },
+      ).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final tagName = (data['tag_name'] ?? '').toString().trim();
+      final cleanVer = tagName.replaceFirst(RegExp(r'^[vV]'), '');
+      final title = (data['name'] ?? tagName).toString().trim();
+      final body = (data['body'] ?? '').toString().trim();
+      final publishedAtStr = data['published_at']?.toString();
+      final publishedAt = publishedAtStr != null ? DateTime.tryParse(publishedAtStr) : null;
+      final isPrerelease = data['prerelease'] == true;
+
+      // مطابقة الملف المناسب لنظام التشغيل الحالي
+      final assets = (data['assets'] as List<dynamic>?) ?? [];
+      String downloadUrl = '';
+      String assetName = '';
+      int sizeBytes = 0;
+
+      if (Platform.isWindows) {
+        for (final a in assets) {
+          final name = (a['name'] ?? '').toString();
+          if (name.toLowerCase().endsWith('.exe')) {
+            assetName = name;
+            downloadUrl = a['browser_download_url']?.toString() ?? '';
+            sizeBytes = (a['size'] as num?)?.toInt() ?? 0;
+            break;
+          }
+        }
+      } else if (Platform.isAndroid) {
+        for (final a in assets) {
+          final name = (a['name'] ?? '').toString();
+          if (name.toLowerCase().endsWith('.apk')) {
+            assetName = name;
+            downloadUrl = a['browser_download_url']?.toString() ?? '';
+            sizeBytes = (a['size'] as num?)?.toInt() ?? 0;
+            break;
+          }
+        }
+      }
+
+      // في حال عدم العثور على ملف مخصص للنظام، استخدام أول ملف متوفر
+      if (downloadUrl.isEmpty && assets.isNotEmpty) {
+        final firstAsset = assets.first;
+        assetName = firstAsset['name']?.toString() ?? '';
+        downloadUrl = firstAsset['browser_download_url']?.toString() ?? '';
+        sizeBytes = (firstAsset['size'] as num?)?.toInt() ?? 0;
+      }
+
+      // إذا لم تكن هناك ملفات مرفوعة، الرابط يفتح صفحة الإصدار في المتصفح
+      if (downloadUrl.isEmpty) {
+        downloadUrl = data['html_url']?.toString() ?? 'https://github.com/$repoOwner/$repoName/releases/latest';
+      }
+
+      return GitHubReleaseInfo(
+        tagName: tagName,
+        cleanVersion: cleanVer,
+        title: title.isNotEmpty ? title : 'الإصدار $cleanVer',
+        changelog: body.isNotEmpty ? body : 'تحسينات عامة في الأداء وسرعة الاستجابة.',
+        downloadUrl: downloadUrl,
+        assetName: assetName,
+        sizeBytes: sizeBytes,
+        publishedAt: publishedAt,
+        isPrerelease: isPrerelease,
+      );
+    } catch (e) {
+      debugPrint('⚠️ GitHubUpdateService error: $e');
+      return null;
+    }
+  }
+
+  /// التحقق من التحديثات
+  /// [silent]: إذا كانت true (مثل عند بدء تشغيل البرنامج) لا تظهر أي رسالة إذا لم يكن هناك تحديث.
+  /// إذا كانت false (عند ضغط المستخدم على زر الفحص في الإعدادات) تظهر رسالة تفيد بنتيجة الفحص.
+  static Future<void> checkForUpdates(BuildContext context, {bool silent = true}) async {
+    if (_isChecking) return;
+    _isChecking = true;
+
+    if (!silent) {
+      SnackbarHelper.showInfo(context, 'جاري التحقق من وجود تحديثات جديدة عبر السحابة...');
+    }
+
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version;
+
+      final latestRelease = await fetchLatestRelease();
+
+      if (!context.mounted) return;
+
+      if (latestRelease != null && isNewerVersion(currentVersion, latestRelease.cleanVersion)) {
+        SoundService.playRestockSound();
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => _UpdateDialog(
+            currentVersion: currentVersion,
+            releaseInfo: latestRelease,
+          ),
+        );
+      } else {
+        if (!silent) {
+          SoundService.playSaveSuccess();
+          SnackbarHelper.showSuccess(
+            context,
+            'أنت تستخدم أحدث إصدار متاح حالياً (v$currentVersion) ✅',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Update check error: $e');
+      if (!silent && context.mounted) {
+        SnackbarHelper.showWarning(context, 'تعذر الاتصال بخادم التحديثات، تحقق من اتصال الإنترنت.');
+      }
+    } finally {
+      _isChecking = false;
+    }
+  }
+
+  /// فحص تلقائي صامت عند بدء تشغيل التطبيق (مع مهلة تأخير 5 ثوانٍ لعدم إبطاء الإقلاع)
+  static void runStartupCheck(BuildContext context) {
+    if (_hasAutoChecked) return;
+    _hasAutoChecked = true;
+
+    Future.delayed(const Duration(seconds: 5), () {
+      if (context.mounted) {
+        checkForUpdates(context, silent: true);
+      }
+    });
+  }
+}
+
+/// نافذة التحديث اللمسية التفاعلية
+class _UpdateDialog extends StatefulWidget {
+  final String currentVersion;
+  final GitHubReleaseInfo releaseInfo;
+
+  const _UpdateDialog({
+    required this.currentVersion,
+    required this.releaseInfo,
+  });
+
+  @override
+  State<_UpdateDialog> createState() => _UpdateDialogState();
+}
+
+class _UpdateDialogState extends State<_UpdateDialog> {
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+  int _downloadedBytes = 0;
+  int _totalBytes = 0;
+  String? _statusText;
+  http.Client? _httpClient;
+
+  Future<void> _startDownloadAndInstall() async {
+    final downloadUrl = widget.releaseInfo.downloadUrl;
+    if (downloadUrl.isEmpty) return;
+
+    // على نظام أندرويد: فتح رابط التحميل المباشر للـ APK عبر المتصفح/مثبت النظام
+    if (Platform.isAndroid) {
+      final uri = Uri.parse(downloadUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (mounted) Navigator.pop(context);
+      }
+      return;
+    }
+
+    // على نظام ويندوز: تحميل الملف مع شريط النسبة المئوية وتشغيل المثبت تلقائياً
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+      _downloadedBytes = 0;
+      _totalBytes = widget.releaseInfo.sizeBytes;
+      _statusText = 'جاري الاتصال بخادم التحميل السريع...';
+    });
+
+    try {
+      _httpClient = http.Client();
+      final request = http.Request('GET', Uri.parse(downloadUrl));
+      final response = await _httpClient!.send(request);
+
+      if (response.statusCode != 200) {
+        throw Exception('Server returned status: ${response.statusCode}');
+      }
+
+      final contentLength = response.contentLength ?? widget.releaseInfo.sizeBytes;
+      setState(() {
+        _totalBytes = contentLength;
+        _statusText = 'جاري تنزيل حزمة التثبيت...';
+      });
+
+      final tempDir = await getTemporaryDirectory();
+      final fileName = widget.releaseInfo.assetName.isNotEmpty
+          ? widget.releaseInfo.assetName
+          : 'nayli-kiosk-update.exe';
+      final file = File('${tempDir.path}/$fileName');
+      final sink = file.openWrite();
+
+      int received = 0;
+      await response.stream.listen((chunk) {
+        received += chunk.length;
+        sink.add(chunk);
+        if (mounted) {
+          setState(() {
+            _downloadedBytes = received;
+            if (contentLength > 0) {
+              _downloadProgress = (received / contentLength).clamp(0.0, 1.0);
+            }
+          });
+        }
+      }).asFuture();
+
+      await sink.flush();
+      await sink.close();
+
+      if (!mounted) return;
+
+      setState(() {
+        _downloadProgress = 1.0;
+        _statusText = 'اكتمل التحميل! جاري تشغيل برنامج التثبيت...';
+      });
+
+      // تشغيل برنامج التثبيت
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (Platform.isWindows) {
+        await Process.start(file.path, []);
+        exit(0); // إغلاق البرنامج الحالي ليتمكن المثبت من استبدال الملفات
+      } else {
+        final fileUri = Uri.file(file.path);
+        if (await canLaunchUrl(fileUri)) {
+          await launchUrl(fileUri, mode: LaunchMode.externalApplication);
+        }
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (e) {
+      debugPrint('Download error: $e');
+      if (mounted) {
+        setState(() {
+          _isDownloading = false;
+          _statusText = 'تعذر إكمال التحميل التلقائي: $e';
+        });
+        SnackbarHelper.showWarning(context, 'حدث خطأ أثناء التحميل. جاري فتح الرابط في المتصفح...');
+        // فتح الرابط يدوياً كخطة بديلة آمنة
+        final uri = Uri.parse(downloadUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _httpClient?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 520,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // العنوان والأيقونة
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.rocket_launch_rounded, color: Colors.teal, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'يتوفر إصدار جديد من البرنامج 🎉',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'الحالي: v${widget.currentVersion}',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade800),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.teal,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'الجديد: v${widget.releaseInfo.cleanVersion}',
+                              style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+
+            // قائمة التغييرات والمزايا
+            const Text(
+              'ما الجديد في هذا التحديث:',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 140),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  widget.releaseInfo.changelog,
+                  style: TextStyle(fontSize: 13, height: 1.5, color: isDark ? Colors.grey.shade300 : Colors.grey.shade800),
+                ),
+              ),
+            ),
+
+            if (widget.releaseInfo.sizeFormatted.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.folder_zip_outlined, size: 16, color: Colors.grey),
+                  const SizedBox(width: 6),
+                  Text(
+                    'حجم التحديث: ${widget.releaseInfo.sizeFormatted}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ],
+
+            const SizedBox(height: 16),
+
+            // شريط التقدم أثناء التحميل
+            if (_isDownloading) ...[
+              LinearProgressIndicator(
+                value: _downloadProgress > 0 ? _downloadProgress : null,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+                backgroundColor: Colors.teal.shade50,
+                color: Colors.teal,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _statusText ?? '',
+                    style: const TextStyle(fontSize: 12, color: Colors.teal, fontWeight: FontWeight.bold),
+                  ),
+                  if (_totalBytes > 0)
+                    Text(
+                      '${(_downloadedBytes / (1024 * 1024)).toStringAsFixed(1)} / ${(_totalBytes / (1024 * 1024)).toStringAsFixed(1)} MB (${(_downloadProgress * 100).toStringAsFixed(0)}%)',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontFamily: 'monospace'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // الأزرار
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (!_isDownloading) ...[
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('تذكيري لاحقاً'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: _startDownloadAndInstall,
+                    icon: const Icon(Icons.download_rounded),
+                    label: const Text('تحديث وتثبيت الآن'),
+                  ),
+                ] else ...[
+                  TextButton(
+                    onPressed: () {
+                      _httpClient?.close();
+                      Navigator.pop(context);
+                    },
+                    child: const Text('إلغاء التحميل', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
