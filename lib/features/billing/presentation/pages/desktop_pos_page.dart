@@ -11,6 +11,8 @@ import '../../data/kiosk_service.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_server.dart';
+import '../../../../core/data/master_catalog_service.dart';
+import '../../../../core/data/master_catalog_seed.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
@@ -64,6 +66,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   double _cartDiscountValue = 0.0;
   bool _isDiscountPercentage = false;
   bool _showTouchNumpad = false;
+  List<Product> _searchSuggestions = [];
 
   // Costco IPM Speedometer tracking
   int _scannedItemsCount = 0;
@@ -216,13 +219,552 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     SoundService.playScanBeep();
   }
 
+  String _normalizeSearchText(String input) {
+    if (input.isEmpty) return '';
+    return input
+        .toLowerCase()
+        .trim()
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '') // Remove Arabic tashkeel
+        .replaceAll(RegExp(r'[أإآٱ]'), 'ا') // Unify Alef
+        .replaceAll('ة', 'ه') // Unify Taa Marbuta
+        .replaceAll('ى', 'ي') // Unify Yaa / Alef Maqsura
+        .replaceAll(RegExp(r'[\s\-_]+'), ' ');
+  }
+
+  int _getCurrentMultiplier() {
+    final text = _barcodeController.text.trim();
+    if (text.contains('*')) {
+      final parts = text.split('*');
+      final qty = int.tryParse(parts[0]);
+      if (qty != null && qty > 0 && qty <= 500) {
+        return qty;
+      }
+    }
+    return 1;
+  }
+
+  void _addProductToCartWithPricing(Product product, {int quantity = 1}) {
+    double effectivePrice = product.price;
+    if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
+      effectivePrice = product.wholesalePrice;
+    } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
+      effectivePrice = (product.price + product.wholesalePrice) / 2;
+    }
+
+    if (_isReturnMode) {
+      effectivePrice = -effectivePrice.abs();
+    }
+
+    final itemProduct = Product(
+      id: product.id,
+      name: _isReturnMode ? '[${context.tr('return_mode')}] ${product.name}' : product.name,
+      barcode: product.barcode,
+      price: effectivePrice,
+      costPrice: product.costPrice,
+      stock: product.stock,
+      category: product.category,
+      imageUrl: product.imageUrl,
+      isTobacco: product.isTobacco,
+      wholesalePrice: product.wholesalePrice,
+      cartonPrice: product.cartonPrice,
+      wholesaleCartonPrice: product.wholesaleCartonPrice,
+      wholesalePackPrice: product.wholesalePackPrice,
+      singlePiecePrice: product.singlePiecePrice,
+      piecesPerPack: product.piecesPerPack,
+      packsPerCarton: product.packsPerCarton,
+      unitType: product.unitType,
+      isWeighted: product.isWeighted,
+    );
+
+    context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct, quantity: quantity));
+    _onItemScanned();
+    if (mounted) {
+      setState(() {
+        _searchSuggestions = [];
+        _barcodeController.clear();
+      });
+      _barcodeFocusNode.requestFocus();
+    }
+  }
+
+  List<Product> _findProductsByNameOrBarcode(String rawQuery) {
+    if (rawQuery.trim().isEmpty) return [];
+    final query = rawQuery.trim();
+    final normQuery = _normalizeSearchText(query);
+    final products = context.read<ProductBloc>().state.products;
+
+    // 1. Check exact barcode match first
+    final exactBarcode = products.where((p) => BarcodeNormalizer.matches(p.barcode, query)).toList();
+    if (exactBarcode.isNotEmpty) {
+      return exactBarcode;
+    }
+
+    final matched = <Product>[];
+    for (final p in products) {
+      final normName = _normalizeSearchText(p.name);
+      final normBarcode = BarcodeNormalizer.clean(p.barcode);
+      final normCategory = _normalizeSearchText(p.category);
+
+      if (normName.contains(normQuery) ||
+          normBarcode.contains(query) ||
+          normCategory.contains(normQuery)) {
+        matched.add(p);
+      }
+    }
+
+    // Sort: exact name match first, prefix match second, then alphabetical
+    matched.sort((a, b) {
+      final aName = _normalizeSearchText(a.name);
+      final bName = _normalizeSearchText(b.name);
+
+      final aExact = aName == normQuery;
+      final bExact = bName == normQuery;
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+
+      final aStarts = aName.startsWith(normQuery);
+      final bStarts = bName.startsWith(normQuery);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+
+      return aName.compareTo(bName);
+    });
+
+    return matched;
+  }
+
+  void _onSearchTextChanged(String text) {
+    final raw = text.trim();
+    if (raw.isEmpty || raw.length < 2) {
+      if (_searchSuggestions.isNotEmpty) {
+        setState(() {
+          _searchSuggestions = [];
+        });
+      }
+      return;
+    }
+
+    String query = raw;
+    if (raw.contains('*')) {
+      final parts = raw.split('*');
+      if (parts.length > 1) {
+        query = parts.sublist(1).join('*').trim();
+      }
+    }
+
+    if (query.length < 2) {
+      if (_searchSuggestions.isNotEmpty) {
+        setState(() {
+          _searchSuggestions = [];
+        });
+      }
+      return;
+    }
+
+    // If query is pure digits and >= 8 digits, likely hardware wedge barcode scan
+    final isBarcodeOnly = RegExp(r'^\d+$').hasMatch(query);
+    if (isBarcodeOnly && query.length >= 8) {
+      final matches = _findProductsByNameOrBarcode(query);
+      setState(() {
+        _searchSuggestions = matches.take(6).toList();
+      });
+      return;
+    }
+
+    final matches = _findProductsByNameOrBarcode(query);
+    setState(() {
+      _searchSuggestions = matches.take(8).toList();
+    });
+  }
+
+  void _showProductSelectionModal(List<Product> matches, {int multiplier = 1, required String query}) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            width: 600,
+            constraints: const BoxConstraints(maxHeight: 520),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.search_rounded, color: Colors.teal, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'نتائج البحث: "$query"',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'اختر السلعة المطلوبة لإضافتها إلى السلة (${matches.length} نتائج)',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(dialogCtx),
+                    ),
+                  ],
+                ),
+                const Divider(height: 20),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: matches.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (ctx, index) {
+                      final product = matches[index];
+                      double effectivePrice = product.price;
+                      if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
+                        effectivePrice = product.wholesalePrice;
+                      } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
+                        effectivePrice = (product.price + product.wholesalePrice) / 2;
+                      }
+
+                      final isOutOfStock = product.stock <= 0;
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(dialogCtx);
+                          _addProductToCartWithPricing(product, quantity: multiplier);
+                          SnackbarHelper.showSuccess(
+                            context,
+                            '${context.tr("added_to_cart")}: ${product.name} (x$multiplier)',
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: ProductImageDisplay(
+                                    product: product,
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        if (product.barcode.isNotEmpty) ...[
+                                          Text(
+                                            product.barcode,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey.shade600,
+                                              fontFamily: 'monospace',
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                        ],
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.teal.shade50,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            product.category,
+                                            style: TextStyle(fontSize: 10, color: Colors.teal.shade800),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: isOutOfStock ? Colors.red.shade50 : Colors.green.shade50,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            'المخزون: ${product.stock}',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: isOutOfStock ? Colors.red.shade700 : Colors.green.shade700,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${effectivePrice.toStringAsFixed(0)} ${context.tr("currency_symbol")}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.teal,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.teal,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      minimumSize: const Size(0, 32),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(dialogCtx);
+                                      _addProductToCartWithPricing(product, quantity: multiplier);
+                                      SnackbarHelper.showSuccess(
+                                        context,
+                                        '${context.tr("added_to_cart")}: ${product.name} (x$multiplier)',
+                                      );
+                                    },
+                                    icon: const Icon(Icons.add_shopping_cart, size: 16),
+                                    label: Text(multiplier > 1 ? 'إضافة (x$multiplier)' : 'إضافة', style: const TextStyle(fontSize: 12)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showMasterCatalogSuggestionModal(List<MasterCatalogItem> catalogMatches, {int multiplier = 1, required String query}) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            width: 620,
+            constraints: const BoxConstraints(maxHeight: 520),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.travel_explore_rounded, color: Colors.blue, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'الكتالوج الجزائري الشامل (59 ألف منتج)',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'غير مسجل بمحلك بعد. اختر لإضافته إلى المخزون وبيعه فوراً:',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(dialogCtx),
+                    ),
+                  ],
+                ),
+                const Divider(height: 20),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: catalogMatches.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (ctx, index) {
+                      final item = catalogMatches[index];
+                      return Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey.shade900 : Colors.blue.shade50.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.shade100),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(item.categoryIcon, style: const TextStyle(fontSize: 22)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        item.barcode,
+                                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontFamily: 'monospace'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.shade50,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          item.category,
+                                          style: TextStyle(fontSize: 10, color: Colors.blue.shade800),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${item.defaultPrice.toStringAsFixed(0)} ${context.tr("currency_symbol")}',
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.blue),
+                                ),
+                                const SizedBox(height: 4),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    minimumSize: const Size(0, 32),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(dialogCtx);
+                                    final newProduct = Product(
+                                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                                      name: item.name,
+                                      barcode: item.barcode,
+                                      price: item.defaultPrice > 0 ? item.defaultPrice : 100.0,
+                                      costPrice: item.defaultCost > 0 ? item.defaultCost : 80.0,
+                                      stock: 50,
+                                      category: item.category,
+                                      imageUrl: item.imageUrl,
+                                      isTobacco: item.isTobacco,
+                                      cartonPrice: item.cartonPrice,
+                                      wholesaleCartonPrice: item.wholesaleCartonPrice,
+                                      wholesalePackPrice: item.wholesalePackPrice,
+                                      singlePiecePrice: item.singlePiecePrice,
+                                      piecesPerPack: item.piecesPerPack,
+                                      packsPerCarton: item.packsPerCarton,
+                                      unitType: item.unitType,
+                                      wholesalePrice: item.wholesalePrice > 0 ? item.wholesalePrice : item.defaultPrice,
+                                    );
+                                    context.read<ProductBloc>().add(AddProduct(newProduct));
+                                    _addProductToCartWithPricing(newProduct, quantity: multiplier);
+                                    SnackbarHelper.showSuccess(
+                                      context,
+                                      'تمت إضافة "${item.name}" إلى مخزون المحل والسلة بنجاح',
+                                    );
+                                  },
+                                  icon: const Icon(Icons.add, size: 16),
+                                  label: const Text('إضافة وبيع', style: TextStyle(fontSize: 11)),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _handleBarcodeSubmit(String rawInput) {
     if (rawInput.trim().isEmpty) return;
     final input = rawInput.trim();
     _barcodeController.clear();
+    setState(() {
+      _searchSuggestions = [];
+    });
     _barcodeFocusNode.requestFocus();
 
-    // Check for quantity multiplier syntax (e.g., "5*6130140001019" or "12*")
+    // Check for quantity multiplier syntax (e.g., "5*6130140001019" or "3*حليب")
     int multiplier = 1;
     String barcodeToScan = input;
     if (input.contains('*')) {
@@ -305,39 +847,43 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       }
     }
 
-    // 3. Find product in product catalog
+    // 3. Find product in local inventory by barcode (exact or normalized)
     final productBloc = context.read<ProductBloc>();
     final products = productBloc.state.products;
-    final product = products.where((p) => p.barcode == barcodeToScan).firstOrNull;
+    final barcodeProduct = BarcodeNormalizer.findProduct(products, barcodeToScan);
 
-    if (product != null) {
-      double effectivePrice = product.price;
-      if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
-        effectivePrice = product.wholesalePrice;
-      } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
-        effectivePrice = (product.price + product.wholesalePrice) / 2;
-      }
-
-      if (_isReturnMode) {
-        effectivePrice = -effectivePrice.abs();
-      }
-
-      final itemProduct = Product(
-        id: product.id,
-        name: _isReturnMode ? '[${context.tr('return_mode')}] ${product.name}' : product.name,
-        barcode: product.barcode,
-        price: effectivePrice,
-        costPrice: product.costPrice,
-        stock: product.stock,
-        category: product.category,
-      );
-
-      for (int i = 0; i < multiplier; i++) {
-        context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
-      }
-    } else {
-      context.read<BillingBloc>().add(ScanBarcodeEvent(barcodeToScan));
+    if (barcodeProduct != null) {
+      _addProductToCartWithPricing(barcodeProduct, quantity: multiplier);
+      return;
     }
+
+    // 4. Search by product name / keyword in local inventory
+    final nameMatches = _findProductsByNameOrBarcode(barcodeToScan);
+    if (nameMatches.length == 1) {
+      _addProductToCartWithPricing(nameMatches.first, quantity: multiplier);
+      SnackbarHelper.showSuccess(
+        context,
+        '${context.tr("added_to_cart")}: ${nameMatches.first.name} (x$multiplier)',
+      );
+      return;
+    } else if (nameMatches.length > 1) {
+      _showProductSelectionModal(nameMatches, multiplier: multiplier, query: barcodeToScan);
+      return;
+    }
+
+    // 5. Check Algerian National Master Catalog (59,000 items)
+    final masterMatches = MasterCatalogService.instance.search(barcodeToScan, limit: 12);
+    if (masterMatches.isNotEmpty) {
+      _showMasterCatalogSuggestionModal(masterMatches, multiplier: multiplier, query: barcodeToScan);
+      return;
+    }
+
+    // 6. Not found anywhere
+    SoundService.playErrorSound();
+    SnackbarHelper.showWarning(
+      context,
+      '${context.tr("product_not_found")}: "$barcodeToScan"',
+    );
   }
 
   bool _handleGlobalHardwareKey(KeyEvent event) {
@@ -1814,7 +2360,7 @@ $itemsSummary
                 ),
               ),
 
-              // Barcode Input Box with Touch Numpad toggle
+              // Barcode / Search Input Box with Touch Numpad toggle
               Padding(
                 padding: const EdgeInsets.all(10),
                 child: Row(
@@ -1823,13 +2369,22 @@ $itemsSummary
                       child: TextField(
                         controller: _barcodeController,
                         focusNode: _barcodeFocusNode,
+                        onChanged: _onSearchTextChanged,
                         decoration: InputDecoration(
                           hintText: context.tr('scan_input_hint'),
-                          prefixIcon: const Icon(Icons.barcode_reader, color: Colors.teal),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () => _barcodeController.clear(),
-                          ),
+                          prefixIcon: const Icon(Icons.search_rounded, color: Colors.teal),
+                          suffixIcon: (_barcodeController.text.isNotEmpty || _searchSuggestions.isNotEmpty)
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    setState(() {
+                                      _barcodeController.clear();
+                                      _searchSuggestions = [];
+                                    });
+                                    _barcodeFocusNode.requestFocus();
+                                  },
+                                )
+                              : null,
                           filled: true,
                           fillColor: Theme.of(context).scaffoldBackgroundColor,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
@@ -1853,6 +2408,10 @@ $itemsSummary
                   ],
                 ),
               ),
+
+              // Live Search Suggestions Dropdown
+              if (_searchSuggestions.isNotEmpty)
+                _buildSearchSuggestionsDropdown(),
 
               // Touch Numpad if toggled on
               if (_showTouchNumpad) _buildTouchNumpad(),
@@ -2301,6 +2860,191 @@ $itemsSummary
     );
   }
 
+  Widget _buildSearchSuggestionsDropdown() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final multiplier = _getCurrentMultiplier();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      constraints: const BoxConstraints(maxHeight: 280),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.teal.shade300, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : Colors.teal.shade50,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.flash_on_rounded, color: Colors.teal, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'مقترحات سريعة (${_searchSuggestions.length})',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal),
+                ),
+                if (multiplier > 1) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.teal,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'الكمية: x$multiplier',
+                      style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _searchSuggestions = [];
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.close, size: 16, color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              itemCount: _searchSuggestions.length,
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+              ),
+              itemBuilder: (ctx, idx) {
+                final product = _searchSuggestions[idx];
+                double effectivePrice = product.price;
+                if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
+                  effectivePrice = product.wholesalePrice;
+                } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
+                  effectivePrice = (product.price + product.wholesalePrice) / 2;
+                }
+
+                final isOutOfStock = product.stock <= 0;
+
+                return InkWell(
+                  onTap: () {
+                    _addProductToCartWithPricing(product, quantity: multiplier);
+                    SnackbarHelper.showSuccess(
+                      context,
+                      '${context.tr("added_to_cart")}: ${product.name} (x$multiplier)',
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: SizedBox(
+                            width: 38,
+                            height: 38,
+                            child: ProductImageDisplay(
+                              product: product,
+                              width: 38,
+                              height: 38,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.name,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  if (product.barcode.isNotEmpty) ...[
+                                    Text(
+                                      product.barcode,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey.shade600,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                  ],
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: isOutOfStock ? Colors.red.shade50 : Colors.green.shade50,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    child: Text(
+                                      'المخزون: ${product.stock}',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: isOutOfStock ? Colors.red.shade700 : Colors.green.shade700,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '${effectivePrice.toStringAsFixed(0)} ${context.tr("currency_symbol")}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.teal.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(Icons.add, size: 16, color: Colors.teal),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTouchNumpad() {
     return Container(
       padding: const EdgeInsets.all(8),
@@ -2334,12 +3078,15 @@ $itemsSummary
                   _handleBarcodeSubmit(_barcodeController.text);
                 } else if (k == 'C') {
                   _barcodeController.clear();
+                  _onSearchTextChanged('');
                 } else if (k == 'DEL') {
                   if (_barcodeController.text.isNotEmpty) {
                     _barcodeController.text = _barcodeController.text.substring(0, _barcodeController.text.length - 1);
+                    _onSearchTextChanged(_barcodeController.text);
                   }
                 } else {
                   _barcodeController.text += k;
+                  _onSearchTextChanged(_barcodeController.text);
                 }
               },
               borderRadius: BorderRadius.circular(8),
