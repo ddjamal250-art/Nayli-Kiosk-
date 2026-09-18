@@ -62,26 +62,7 @@ class _AddProductPageState extends State<AddProductPage> {
   DateTime? _expiryDate;
   bool _isSaving = false;
 
-  static const List<String> categories = [
-    'عام',
-    'أدوات مدرسية ومكتبية',
-    'تبغ وسجائر',
-    'شمة وتبغ تقليدي',
-    'ورق لف وفلاتر',
-    'معسل وشيشة',
-    'ولاعات وغاز',
-    'ماكينة القهوة والشاي',
-    'عطور زيتية وبالمتر',
-    'مواد غذائية ومعلبات',
-    'حليب ومشتقاته',
-    'أجبان ومشتقات الحليب',
-    'مخبوزات وعجائن',
-    'مشروبات ومياه',
-    'نظافة وتجميل',
-    'حلويات وسكاكر',
-    'خضر وفواكه',
-    'أخرى',
-  ];
+  List<String> _availableCategories = [];
 
   void _applyCategoryConfig(String cat, {bool userOverride = false}) {
     final lower = cat.toLowerCase();
@@ -91,6 +72,10 @@ class _AddProductPageState extends State<AddProductPage> {
     final isCoffee = lower.contains('ماكينة') || lower.contains('قهوة') || lower.contains('شاي') || lower.contains('cafe') || lower.contains('tea');
     final isStationery = lower.contains('مدرسي') || lower.contains('مكتب') || lower.contains('كراس') || lower.contains('قلم') || lower.contains('stylo') || lower.contains('cahier');
     final isProduce = lower.contains('خضر') || lower.contains('فواكه') || lower.contains('ميزان') || lower.contains('legume') || lower.contains('fruit');
+    final isBattery = lower.contains('بطار') || lower.contains('حجر') || lower.contains('بيل') || lower.contains('pile');
+    final isPhoneAcc = lower.contains('هاتف') || lower.contains('شاحن') || lower.contains('كابل') || lower.contains('سماع');
+    final isToy = lower.contains('لعب') || lower.contains('هدية') || lower.contains('jouet');
+    final isCosmetics = lower.contains('كوسميتيك') || lower.contains('تجميل') || lower.contains('مكياج') || lower.contains('عطر');
 
     setState(() {
       _isTobacco = isTob;
@@ -144,6 +129,22 @@ class _AddProductPageState extends State<AddProductPage> {
         _hasPackLevel = false;
         _hasPieceLevel = false;
         _allowPieceSale = false;
+      } else if (isBattery) {
+        _hasCartonLevel = true;
+        _hasPackLevel = true;
+        _hasPieceLevel = true;
+        _allowPieceSale = true;
+        _isWeighted = false;
+        _packsPerCartonCtrl.text = '10';
+        _piecesPerPackCtrl.text = '4';
+        _packNameCtrl.text = 'بلاكيت (4 حبات)';
+      } else if (isPhoneAcc || isToy || isCosmetics) {
+        _hasCartonLevel = false;
+        _hasPackLevel = true;
+        _hasPieceLevel = false;
+        _allowPieceSale = false;
+        _isWeighted = false;
+        _packNameCtrl.text = 'قطعة';
       }
     });
 
@@ -155,11 +156,12 @@ class _AddProductPageState extends State<AddProductPage> {
   @override
   void initState() {
     super.initState();
+    _availableCategories = CategoryTaxonomy.getDropdownCategories();
     _nameCtrl.addListener(() {
       if (!_isCategoryUserSelected && _nameCtrl.text.trim().isNotEmpty) {
         final detected = CategoryTaxonomy.smartDetect(_nameCtrl.text.trim());
         if (mounted && _selectedCategory != detected.titleAr) {
-          final matched = categories.contains(detected.titleAr) ? detected.titleAr : 'عام';
+          final matched = _availableCategories.contains(detected.titleAr) ? detected.titleAr : 'عام';
           _selectedCategory = matched;
           _applyCategoryConfig(matched);
         }
@@ -569,6 +571,69 @@ class _AddProductPageState extends State<AddProductPage> {
     );
   }
 
+  void _showAddNewCategoryDialog() {
+    final textController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.category_rounded, color: Colors.teal),
+            SizedBox(width: 8),
+            Text('إضافة صنف تجاري جديد 📂', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'أدخل اسم الصنف الجديد. سيتم حفظه تلقائياً وإضافته لقائمة الأصناف في الكاسة والإدارة والتقارير المالية:',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: textController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'مثال: لواحق هواتف، قطع غيار، ألعاب...',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.label_outline),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            onPressed: () async {
+              final newCat = textController.text.trim();
+              if (newCat.isNotEmpty) {
+                await CategoryTaxonomy.addCustomCategory(newCat);
+                setState(() {
+                  _availableCategories = CategoryTaxonomy.getDropdownCategories();
+                  _selectedCategory = newCat;
+                  _isCategoryUserSelected = true;
+                });
+                _applyCategoryConfig(newCat, userOverride: true);
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  context.showAppSnackBar('✅ تم إضافة واعتماد الصنف الجديد ($newCat) بنجاح!');
+                }
+              }
+            },
+            child: const Text('إضافة وحفظ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _submit() async {
     if (_isSaving) return;
     if (_formKey.currentState!.validate()) {
@@ -709,15 +774,26 @@ class _AddProductPageState extends State<AddProductPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Category Dropdown
-                const InputLabel(text: 'قسم / صنف السلعة 📂'),
+                // Category Dropdown with Custom Category creation
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const InputLabel(text: 'قسم / صنف السلعة 📂'),
+                    TextButton.icon(
+                      onPressed: _showAddNewCategoryDialog,
+                      icon: const Icon(Icons.add_circle_outline, size: 16, color: Colors.teal),
+                      label: const Text('+ إضافة صنف جديد', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal)),
+                      style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+                    ),
+                  ],
+                ),
                 DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  value: _availableCategories.contains(_selectedCategory) ? _selectedCategory : (_availableCategories.isNotEmpty ? _availableCategories.first : 'عام'),
                   decoration: InputDecoration(
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
-                  items: categories
+                  items: _availableCategories
                       .map((cat) => DropdownMenuItem(value: cat, child: Text(cat, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))))
                       .toList(),
                   onChanged: (val) {

@@ -1,3 +1,4 @@
+import '../data/hive_database.dart';
 class CategoryDomain {
   final String id;
   final String titleAr;
@@ -324,6 +325,113 @@ class CategoryTaxonomy {
       ],
     ),
 
+        // 9. لواحق هواتف وإلكترونيات
+    CategoryDomain(
+      id: 'phone_accessories',
+      titleAr: 'لواحق هواتف وإلكترونيات',
+      titleFr: 'Accessoires Téléphone & High-Tech',
+      titleEn: 'Phone Accessories & Electronics',
+      icon: '📱',
+      subcategories: [
+        CategorySub(
+          id: 'chargers_cables',
+          domainId: 'phone_accessories',
+          titleAr: 'شواحن وكوابل ومحولات',
+          titleFr: 'Chargeurs & Câbles',
+          titleEn: 'Chargers & Cables',
+          icon: '🔌',
+          tags: ['شاحن', 'كابل', 'كابلي', 'تايب سي', 'آيفون', 'مايكرو', 'chargeur', 'cable', 'type-c', 'usb', 'adaptateur'],
+        ),
+        CategorySub(
+          id: 'audio_cases',
+          domainId: 'phone_accessories',
+          titleAr: 'سماعات وأغطية وحماية الشاشة',
+          titleFr: 'Écouteurs, Coques & Verres',
+          titleEn: 'Headphones & Protection',
+          icon: '🎧',
+          tags: ['سماعات', 'كاسك', 'إيكوتور', 'بوشات', 'كفر', 'غطاء', 'حماية شاشة', 'زجاج واقي', 'انكاسابل', 'ecouteur', 'casque', 'pochette', 'incassable', 'verre trempé'],
+        ),
+      ],
+    ),
+
+    // 10. بطاريات وكهربائيات
+    CategoryDomain(
+      id: 'batteries_electric',
+      titleAr: 'بطاريات وكهربائيات',
+      titleFr: 'Piles & Électricité',
+      titleEn: 'Batteries & Hardware',
+      icon: '🔋',
+      subcategories: [
+        CategorySub(
+          id: 'batteries_piles',
+          domainId: 'batteries_electric',
+          titleAr: 'بطاريات وحجرات جافة ومزدوجة',
+          titleFr: 'Piles & Batteries',
+          titleEn: 'Dry Batteries & Cells',
+          icon: '🔋',
+          tags: ['بطارية', 'بطاريات', 'حجرة', 'حجرات', 'بيل', 'aa', 'aaa', 'cr2032', '9v', 'pile', 'batterie', 'duracell', 'energizer', 'toshiba'],
+        ),
+        CategorySub(
+          id: 'lighting_small_electric',
+          domainId: 'batteries_electric',
+          titleAr: 'مصابيح وإنارة وخردوات كهربائية',
+          titleFr: 'Lampes & Électricité Légère',
+          titleEn: 'Lighting & Small Electric',
+          icon: '💡',
+          tags: ['مصباح', 'لمبة', 'فيشة', 'مأخذ', 'شريط لاصق', 'سكوتش كهربائي', 'شمع', 'فلاش', 'lampe', 'prise', 'torche'],
+        ),
+      ],
+    ),
+
+    // 11. كوسميتيك وعطور
+    CategoryDomain(
+      id: 'cosmetics_perfumes',
+      titleAr: 'كوسميتيك وعطور',
+      titleFr: 'Cosmétiques & Parfums',
+      titleEn: 'Cosmetics & Perfumes',
+      icon: '💄',
+      subcategories: [
+        CategorySub(
+          id: 'makeup_skincare',
+          domainId: 'cosmetics_perfumes',
+          titleAr: 'مستحضرات تجميل ومكياج',
+          titleFr: 'Maquillage & Soins',
+          titleEn: 'Makeup & Skincare',
+          icon: '💄',
+          tags: ['مكياج', 'كحل', 'ماسك', 'مسكرة', 'أحمر شفاه', 'مرطب', 'تجميل', 'كوسميتيك', 'maquillage', 'rouge a levre', 'masque'],
+        ),
+        CategorySub(
+          id: 'perfumes_deodorants',
+          domainId: 'cosmetics_perfumes',
+          titleAr: 'عطور ومزيلات عرق',
+          titleFr: 'Parfums & Déodorants',
+          titleEn: 'Perfumes & Deodorants',
+          icon: '🧴',
+          tags: ['عطر', 'بارفان', 'ريحة', 'ديودوران', 'مزيل عرق', 'مسك', 'parfum', 'deodorant'],
+        ),
+      ],
+    ),
+
+    // 12. ألعاب وهدايا
+    CategoryDomain(
+      id: 'toys_gifts',
+      titleAr: 'ألعاب وهدايا',
+      titleFr: 'Jouets & Cadeaux',
+      titleEn: 'Toys & Gifts',
+      icon: '🧸',
+      subcategories: [
+        CategorySub(
+          id: 'toys_novelties',
+          domainId: 'toys_gifts',
+          titleAr: 'ألعاب أطفال ومفاجآت',
+          titleFr: 'Jouets Enfants & Surprises',
+          titleEn: 'Kids Toys & Surprises',
+          icon: '🧸',
+          tags: ['لعبة', 'ألعاب', 'سيارة لعبة', 'كرة', 'بالون', 'بالونات', 'نفيخة', 'بيض مفاجأة', 'كيدز', 'jouet', 'voiture', 'ballon'],
+        ),
+      ],
+    ),
+
     // 8. ماكينة القهوة والشاي والمشروبات الساخنة (صنف معزول ومستقل)
     CategoryDomain(
       id: 'coffee_tea',
@@ -371,6 +479,78 @@ class CategoryTaxonomy {
       ],
     ),
   ];
+
+  static const List<String> defaultCategories = [
+    'عام',
+    'أدوات مدرسية ومكتبية',
+    'لواحق هواتف وإلكترونيات',
+    'بطاريات وكهربائيات',
+    'كوسميتيك وعطور',
+    'ألعاب وهدايا',
+    'تبغ وسجائر',
+    'شمة وتبغ تقليدي',
+    'ورق لف وفلاتر',
+    'معسل وشيشة',
+    'ولاعات وغاز',
+    'ماكينة القهوة والشاي',
+    'عطور زيتية وبالمتر',
+    'مواد غذائية ومعلبات',
+    'حليب ومشتقاته',
+    'أجبان ومشتقات الحليب',
+    'مخبوزات وعجائن',
+    'مشروبات ومياه',
+    'نظافة وتجميل',
+    'حلويات وسكاكر',
+    'خضر وفواكه',
+    'أخرى',
+  ];
+
+  static const String customCategoriesSettingsKey = 'user_custom_categories';
+
+  /// Retrieves user custom categories from persistent settings box
+  static List<String> getCustomCategories() {
+    try {
+      final box = HiveDatabase.settingsBox;
+      final raw = box.get(customCategoriesSettingsKey);
+      if (raw is List) {
+        return raw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Adds a new user-defined custom category and persists it
+  static Future<void> addCustomCategory(String categoryName) async {
+    final clean = categoryName.trim();
+    if (clean.isEmpty) return;
+    try {
+      final box = HiveDatabase.settingsBox;
+      final current = getCustomCategories();
+      if (!current.contains(clean) && !defaultCategories.contains(clean)) {
+        current.add(clean);
+        await box.put(customCategoriesSettingsKey, current);
+      }
+    } catch (_) {}
+  }
+
+  /// Removes a custom category from persistent storage
+  static Future<void> removeCustomCategory(String categoryName) async {
+    final clean = categoryName.trim();
+    if (clean.isEmpty) return;
+    try {
+      final box = HiveDatabase.settingsBox;
+      final current = getCustomCategories();
+      current.removeWhere((c) => c == clean);
+      await box.put(customCategoriesSettingsKey, current);
+    } catch (_) {}
+  }
+
+  /// Gets the combined list of categories for dropdowns (preset + custom)
+  static List<String> getDropdownCategories() {
+    final Set<String> all = Set<String>.from(defaultCategories);
+    all.addAll(getCustomCategories());
+    return all.toList();
+  }
 
   /// Flat list of all subcategory names for legacy dropdown and fast selection
   static List<String> get allCategoryNames {
@@ -444,6 +624,10 @@ class CategoryTaxonomy {
         if (clean.contains(s.titleAr.toLowerCase()) || clean == s.id) return s.icon;
       }
     }
+    if (clean.contains('هاتف') || clean.contains('شاحن') || clean.contains('كابل') || clean.contains('سماع') || clean.contains('إلكترون') || clean.contains('phone')) return '📱';
+    if (clean.contains('بطار') || clean.contains('حجر') || clean.contains('بيل') || clean.contains('pile') || clean.contains('battery')) return '🔋';
+    if (clean.contains('كوسميتيك') || clean.contains('تجميل') || clean.contains('مكياج') || clean.contains('عطر') || clean.contains('ريحة') || clean.contains('parfum')) return '💄';
+    if (clean.contains('لعب') || clean.contains('jouet') || clean.contains('toy') || clean.contains('بالون') || clean.contains('هدية')) return '🧸';
     if (clean.contains('مدرس') || clean.contains('مكتب') || clean.contains('كراس') || clean.contains('قلم')) return '📚';
     if (clean.contains('تبغ') || clean.contains('سجائر')) return '🚬';
     if (clean.contains('شمة')) return '🌿';

@@ -97,6 +97,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات والتطهير', 'icon': '🧽'},
     {'key': 'hygiene', 'tr': 'cat_hygiene', 'ar': 'العناية الشخصية', 'icon': '🧴'},
     {'key': 'stationery', 'tr': 'cat_stationery', 'ar': 'الأدوات المدرسية', 'icon': '📚'},
+    {'key': 'phone_accessories', 'tr': 'cat_phone_acc', 'ar': 'لواحق هواتف وإلكترونيات', 'icon': '📱'},
+    {'key': 'batteries', 'tr': 'cat_batteries', 'ar': 'بطاريات وكهربائيات', 'icon': '🔋'},
+    {'key': 'cosmetics', 'tr': 'cat_cosmetics', 'ar': 'كوسميتيك وعطور', 'icon': '💄'},
+    {'key': 'toys', 'tr': 'cat_toys', 'ar': 'ألعاب وهدايا', 'icon': '🧸'},
     {'key': 'produce', 'tr': 'cat_produce', 'ar': 'الخضر والفواكه واللحوم', 'icon': '🍏'},
     {'key': 'general_news', 'tr': 'cat_general', 'ar': 'منتجات عامة وجرائد', 'icon': '📰'},
     {'key': 'spices', 'tr': 'cat_spices', 'ar': 'التوابل والبهارات', 'icon': '🧂'},
@@ -1244,6 +1248,30 @@ $itemsSummary
                   final isHyg = catL.contains('صابون') || catL.contains('شامبو') || catL.contains('معجون') || catL.contains('عناية') ||
                                 nameL.contains('صابون') || nameL.contains('شامبو') || nameL.contains('معجون');
                   if (!isHyg) return false;
+                } else if (catKey == 'phone_accessories') {
+                  final isPhone = catL.contains('هاتف') || catL.contains('شاحن') || catL.contains('كابل') ||
+                                  catL.contains('سماع') || catL.contains('إلكترون') || catL.contains('phone') ||
+                                  nameL.contains('شاحن') || nameL.contains('كابل') || nameL.contains('سماعة') ||
+                                  nameL.contains('ecouteur') || nameL.contains('chargeur') || nameL.contains('cable') ||
+                                  nameL.contains('بوشات') || nameL.contains('انكاسابل');
+                  if (!isPhone) return false;
+                } else if (catKey == 'batteries') {
+                  final isBat = catL.contains('بطار') || catL.contains('حجر') || catL.contains('بيل') ||
+                                catL.contains('pile') || catL.contains('battery') ||
+                                nameL.contains('بطارية') || nameL.contains('حجرة') || nameL.contains('pile');
+                  if (!isBat) return false;
+                } else if (catKey == 'cosmetics') {
+                  final isCosm = catL.contains('كوسميتيك') || catL.contains('تجميل') || catL.contains('مكياج') ||
+                                 catL.contains('عطر') || catL.contains('ريحة') || catL.contains('parfum') ||
+                                 nameL.contains('عطر') || nameL.contains('شامبو') || nameL.contains('كريم') ||
+                                 nameL.contains('ماسك') || nameL.contains('كحل');
+                  if (!isCosm) return false;
+                } else if (catKey == 'toys') {
+                  final isToy = catL.contains('لعب') || catL.contains('jouet') || catL.contains('toy') ||
+                                catL.contains('بالون') || catL.contains('هدية') ||
+                                nameL.contains('لعبة') || nameL.contains('سيارة لعبة') || nameL.contains('بالون') ||
+                                nameL.contains('مفاجأة');
+                  if (!isToy) return false;
                 } else if (catKey == 'stationery') {
                   final isStat = catL.contains('كراس') || catL.contains('قلم') || catL.contains('دفتر') || catL.contains('مدرس') || catL.contains('مكتب') ||
                                  nameL.contains('كراس') || nameL.contains('قلم') || nameL.contains('دفتر');
@@ -2289,6 +2317,24 @@ $itemsSummary
                       ),
                       onPressed: () {
                         _showCategoryProductsModal(cat['key']!, catName);
+                      },
+                    ),
+                  );
+                }),
+                ...CategoryTaxonomy.getCustomCategories().map((customCat) {
+                  final iconStr = CategoryTaxonomy.getIconForCategory(customCat);
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: ActionChip(
+                      avatar: Text(iconStr, style: const TextStyle(fontSize: 14)),
+                      label: Text(customCat, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.teal)),
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(color: Colors.teal.shade300),
+                      ),
+                      onPressed: () {
+                        _showCategoryProductsModal(customCat, customCat);
                       },
                     ),
                   );
