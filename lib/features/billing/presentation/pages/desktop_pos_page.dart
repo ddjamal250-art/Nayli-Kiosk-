@@ -159,6 +159,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           SoundService.playWarning();
           final barcode = scanData['barcode']?.toString() ?? '';
           final count = scanData['scanCount'] ?? 1;
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: const Color(0xFFC2410C),

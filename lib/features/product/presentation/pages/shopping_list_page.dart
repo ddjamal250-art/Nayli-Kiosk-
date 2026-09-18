@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/printer_helper.dart';
+import '../../../../core/utils/snackbar_helper.dart';
 
 class ShoppingListPage extends StatefulWidget {
   const ShoppingListPage({super.key});
@@ -82,12 +83,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           total: 0.0,
           footer: '-------------------------',
         );
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت الطباعة بنجاح')));
+        context.showAppSnackBar('🖨️ تمت طباعة قائمة النواقص بنجاح');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الطابعة غير متصلة')));
+        context.showAppSnackBar('⚠️ الطابعة غير متصلة', isError: true);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      context.showAppSnackBar('خطأ في الطباعة: $e', isError: true);
     }
   }
 

@@ -245,12 +245,7 @@ class _CustomersPageState extends State<CustomersPage> {
 
                 if (mounted) {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${context.tr('payment_recorded_msg')} ($amount ${AppConstants.currencySymbol})'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  context.showAppSnackBar('✅ ${context.tr('payment_recorded_msg')} ($amount ${AppConstants.currencySymbol})', backgroundColor: const Color(0xFF059669));
                 }
               }
             },

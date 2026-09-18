@@ -10,6 +10,7 @@ import '../../domain/entities/shop.dart';
 import '../bloc/shop_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_validators.dart';
+import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 class ShopDetailsPage extends StatefulWidget {
@@ -106,12 +107,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   await HiveDatabase.settingsBox.put('shop_logo_path', picked.path);
                   setState(() => _logoPath = picked.path);
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✅ تم تعيين شعار المتجر بنجاح!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                    context.showAppSnackBar('✅ تم تعيين شعار المتجر بنجاح!', backgroundColor: const Color(0xFF059669));
                   }
                 }
               },
@@ -138,12 +134,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   await HiveDatabase.settingsBox.put('shop_logo_path', picked.path);
                   setState(() => _logoPath = picked.path);
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✅ تم التقاط وتعيين شعار المتجر بنجاح!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                    context.showAppSnackBar('✅ تم التقاط وتعيين شعار المتجر بنجاح!', backgroundColor: const Color(0xFF059669));
                   }
                 }
               },
@@ -165,9 +156,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
                   await HiveDatabase.settingsBox.delete('shop_logo_path');
                   setState(() => _logoPath = null);
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم حذف شعار المتجر بنجاح')),
-                    );
+                    context.showAppSnackBar('🗑️ تم حذف شعار المتجر بنجاح');
                   }
                 },
               ),
@@ -212,14 +201,10 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
           if (state is ShopLoaded) {
             _updateControllers(state.shop);
           } else if (state is ShopOperationSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('✅ تم حفظ بيانات المتجر بنجاح!'), backgroundColor: Colors.green),
-            );
+            context.showAppSnackBar('✅ تم حفظ بيانات المتجر بنجاح!', backgroundColor: const Color(0xFF059669));
             context.pop();
           } else if (state is ShopError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-            );
+            context.showAppSnackBar(state.message, isError: true);
           }
         },
         buildWhen: (previous, current) => current is ShopLoading || current is ShopLoaded,

@@ -9,6 +9,7 @@ import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/utils/category_taxonomy.dart';
+import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -137,9 +138,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
     final barcode = _barcodeController.text.trim();
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('يرجى كتابة اسم السلعة أو مسح الباركود'), backgroundColor: Colors.red),
-      );
+      context.showAppSnackBar('يرجى كتابة اسم السلعة أو مسح الباركود', isError: true);
       return;
     }
 
@@ -177,13 +176,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       _isCategoryUserSelected = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ تمت إضافة "$name" للفاتورة ($totalUnits حبة)'),
-        backgroundColor: Colors.green,
-        duration: Duration(milliseconds: 1000),
-      ),
-    );
+    context.showAppSnackBar('✅ تمت إضافة "$name" للفاتورة ($totalUnits حبة)', backgroundColor: const Color(0xFF059669));
   }
 
   double get _totalInvoiceCost {
@@ -196,9 +189,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
 
   Future<void> _submitInvoice() async {
     if (_invoiceItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('الفاتورة فارغة! أضف سلعة واحدة على الأقل.'), backgroundColor: Colors.orange),
-      );
+      context.showAppSnackBar('⚠️ الفاتورة فارغة! أضف سلعة واحدة على الأقل.', backgroundColor: Colors.orange.shade800);
       return;
     }
 
@@ -291,13 +282,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ تم حفظ فاتورة المورد وزيادة المخزون بنجاح ($_totalUnitsCount حبة)!'),
-        backgroundColor: Colors.green,
-        duration: Duration(milliseconds: 1500),
-      ),
-    );
+    context.showAppSnackBar('✅ تم حفظ فاتورة المورد وزيادة المخزون بنجاح ($_totalUnitsCount حبة)!', backgroundColor: const Color(0xFF059669));
 
     context.pop();
   }

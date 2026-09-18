@@ -8,6 +8,7 @@ import '../../../../core/service_locator.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/utils/snackbar_helper.dart';
 
 import '../../../product/domain/repositories/product_repository.dart';
 import '../../../product/data/models/product_model.dart';
@@ -135,13 +136,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Future<void> _completeSaleWithoutPrint(BillingState billingState) async {
     if (_paymentMode != PaymentMode.cash && _selectedCustomer == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr('select_customer_hint')),
-          backgroundColor: Colors.orange,
-          duration: Duration(milliseconds: 1500),
-        ),
-      );
+      context.showAppSnackBar(context.tr('select_customer_hint'), backgroundColor: Colors.orange.shade800);
       return;
     }
 
@@ -221,24 +216,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       if (mounted) {
         context.read<BillingBloc>().add(ClearCartEvent());
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ تم تسجيل البيع وتحديث المخزون والأرباح بنجاح!'),
-            backgroundColor: Colors.green,
-            duration: Duration(milliseconds: 1200),
-          ),
-        );
+        context.showAppSnackBar('✅ تم تسجيل البيع وتحديث المخزون والأرباح بنجاح!', backgroundColor: const Color(0xFF059669));
         context.go('/');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ أثناء تسجيل البيع: $e'),
-            backgroundColor: Colors.red,
-            duration: Duration(milliseconds: 1500),
-          ),
-        );
+        context.showAppSnackBar('خطأ أثناء تسجيل البيع: $e', isError: true);
       }
     }
   }
@@ -276,13 +259,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     buffer.writeln('✨ شكراً لتعاملكم معنا!');
 
     Clipboard.setData(ClipboardData(text: buffer.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('📋 تم نسخ نص الفاتورة لمشاركتها عبر واتساب!'),
-        backgroundColor: Colors.teal,
-        duration: Duration(milliseconds: 1200),
-      ),
-    );
+    context.showAppSnackBar('📋 تم نسخ نص الفاتورة لمشاركتها عبر واتساب!', backgroundColor: Colors.teal);
   }
 
   Future<void> _saveAsDevis(BillingState billingState) async {
@@ -312,15 +289,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (!mounted) return;
 
     context.read<BillingBloc>().add(ClearCartEvent());
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ تم حفظ عرض الأسعار للزبون: $clientName'),
-        backgroundColor: Colors.purple[700],
-        duration: Duration(milliseconds: 1500),
-      ),
-    );
-
+    context.showAppSnackBar('✅ تم حفظ عرض الأسعار للزبون: $clientName', backgroundColor: Colors.purple[700]!);
     context.go('/devis');
   }
 
@@ -358,14 +327,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         body: BlocConsumer<BillingBloc, BillingState>(
           listener: (context, state) {
             if (state.printSuccess) {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.tr('printed_success')),
-                  backgroundColor: Colors.green,
-                  duration: Duration(milliseconds: 1200),
-                ),
-              );
+              context.showAppSnackBar(context.tr('printed_success'), backgroundColor: const Color(0xFF059669));
             }
           },
           builder: (context, billingState) {
@@ -818,12 +780,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         ),
                                         onPressed: () async {
                                           if (_paymentMode != PaymentMode.cash && _selectedCustomer == null) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text(context.tr('select_customer_hint')),
-                                                backgroundColor: Colors.orange,
-                                              ),
-                                            );
+                                            context.showAppSnackBar(context.tr('select_customer_hint'), backgroundColor: Colors.orange.shade800);
                                             return;
                                           }
 

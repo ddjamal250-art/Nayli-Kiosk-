@@ -1037,20 +1037,10 @@ class _ProductListPageState extends State<ProductListPage> {
           Expanded(
             child: BlocConsumer<ProductBloc, ProductState>(
               listener: (context, state) {
-                if (state.status == ProductStatus.success &&
-                    state.message != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(state.message!),
-                        backgroundColor: Colors.green),
-                  );
-                } else if (state.status == ProductStatus.error &&
-                    state.message != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(state.message!),
-                        backgroundColor: Colors.red),
-                  );
+                if (state.status == ProductStatus.error &&
+                    state.message != null &&
+                    (ModalRoute.of(context)?.isCurrent ?? false)) {
+                  context.showAppSnackBar(state.message!, isError: true);
                 }
               },
               builder: (context, state) {
@@ -1485,8 +1475,11 @@ class _ProductListPageState extends State<ProductListPage> {
             ),
             TextButton(
               onPressed: () {
+                final pName = product.name;
                 context.read<ProductBloc>().add(DeleteProduct(product.id));
                 Navigator.pop(innerContext);
+                SoundService.playDeleteSound();
+                context.showAppSnackBar('🗑️ تم حذف "$pName" بنجاح', backgroundColor: Colors.red[800]!);
               },
               child: Text(context.tr('delete'), style: TextStyle(color: Colors.red)),
             ),
