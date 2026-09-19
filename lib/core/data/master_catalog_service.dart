@@ -429,16 +429,17 @@ class MasterCatalogService {
 
     for (int i = 0; i < headers.length; i++) {
       final h = headers[i];
-      if (h.contains('code') || h.contains('barcode') || h.contains('cb')) {
+      if (h.contains('code') || h.contains('barcode') || h.contains('cb') || h.contains('باركود') || h.contains('كود') || h.contains('ref')) {
         barcodeCol = i;
-      } else if (h.contains('desig') || h.contains('name') || h.contains('nom') || h.contains('produit') || h.contains('libelle')) {
+      } else if (h.contains('desig') || h.contains('name') || h.contains('nom') || h.contains('produit') || h.contains('libelle') || h.contains('اسم') || h.contains('منتج') || h.contains('سلعة') || h.contains('تعيين')) {
         nameCol = i;
-      } else if (h.contains('famille') || h.contains('cat') || h.contains('rayon') || h.contains('صنف') || h.contains('قسم')) {
+      } else if (h.contains('famille') || h.contains('cat') || h.contains('rayon') || h.contains('صنف') || h.contains('قسم') || h.contains('تصنيف') || h.contains('مجموعة') || h.contains('group')) {
         catCol = i;
-      } else if (h.contains('vente') || h.contains('price') || h.contains('prix') || h.contains('pv') || h.contains('سعر')) {
-        if (priceCol == -1) priceCol = i;
-      } else if (h.contains('achat') || h.contains('cost') || h.contains('pa') || h.contains('شراء')) {
+      } else if (h.contains('achat') || h.contains('cost') || h.contains('pa') || h.contains('شراء') || h.contains('تكلفة')) {
+        // فحص سعر الشراء / التكلفة أولاً لتجنب التداخل مع كلمة "سعر"
         costCol = i;
+      } else if (h.contains('vente') || h.contains('price') || h.contains('prix') || h.contains('pv') || h.contains('سعر') || h.contains('بيع')) {
+        priceCol = i;
       } else if (h.contains('image') || h.contains('photo') || h.contains('img') || h.contains('صورة')) {
         imgCol = i;
       }

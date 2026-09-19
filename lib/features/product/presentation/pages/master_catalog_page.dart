@@ -182,7 +182,13 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
       final ext = file.path.split('.').last.toLowerCase();
       
       if (ext == 'csv') {
-        final content = await file.readAsString();
+        String content;
+        try {
+          content = await file.readAsString(encoding: utf8);
+        } catch (_) {
+          final bytes = await file.readAsBytes();
+          content = utf8.decode(bytes, allowMalformed: true);
+        }
         final count = MasterCatalogService.importFromCSV(content);
         setState((){});
         if (count > 0) {
