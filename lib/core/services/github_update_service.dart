@@ -148,17 +148,9 @@ class GitHubUpdateService {
         }
       }
 
-      // في حال عدم العثور على ملف مخصص للنظام، استخدام أول ملف متوفر
-      if (downloadUrl.isEmpty && assets.isNotEmpty) {
-        final firstAsset = assets.first;
-        assetName = firstAsset['name']?.toString() ?? '';
-        downloadUrl = firstAsset['browser_download_url']?.toString() ?? '';
-        sizeBytes = (firstAsset['size'] as num?)?.toInt() ?? 0;
-      }
-
-      // إذا لم تكن هناك ملفات مرفوعة، الرابط يفتح صفحة الإصدار في المتصفح
+      // إذا لم يكن هناك ملف تثبيت جاهز ومطابق لنظام التشغيل الحالي، لا نقترح التحديث حتى يكتمل رفعه رسمياً
       if (downloadUrl.isEmpty) {
-        downloadUrl = data['html_url']?.toString() ?? 'https://github.com/$repoOwner/$repoName/releases/latest';
+        return null;
       }
 
       return GitHubReleaseInfo(
@@ -354,6 +346,9 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     final downloadUrl = widget.releaseInfo.downloadUrl;
     if (downloadUrl.isEmpty) return;
 
+    // 1. حفظ السلة الحالية المفتوحة فوراً في Hive لضمان عدم ضياع أي بيانات تحت أي ظرف
+    await GitHubUpdateService.saveActiveCartBeforeUpdate(context);
+
     // على نظام أندرويد: فتح رابط التحميل المباشر للـ APK عبر المتصفح/مثبت النظام
     if (Platform.isAndroid) {
       final uri = Uri.parse(downloadUrl);
@@ -364,88 +359,168 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       return;
     }
 
-    // على نظام ويندوز: تحميل الملف مع شريط النسبة المئوية وتشغيل المثبت تلقائياً
+    // على نظام ويندوز: تحميل الملف داخل البرنامج مع شريط النسبة واستئناف التحميل التلقائي
     setState(() {
       _isDownloading = true;
-      _downloadProgress = 0.0;
-      _downloadedBytes = 0;
-      _totalBytes = widget.releaseInfo.sizeBytes;
-      _statusText = 'جاري الاتصال بخادم التحميل السريع...';
+      _statusText = 'جاري الاتصال بخادم التحديثات...';
     });
 
+    File? targetFile;
     try {
-      _httpClient = http.Client();
-      final request = http.Request('GET', Uri.parse(downloadUrl));
-      final response = await _httpClient!.send(request);
-
-      if (response.statusCode != 200) {
-        throw Exception('Server returned status: ${response.statusCode}');
-      }
-
-      final contentLength = response.contentLength ?? widget.releaseInfo.sizeBytes;
-      setState(() {
-        _totalBytes = contentLength;
-        _statusText = 'جاري تنزيل حزمة التثبيت...';
-      });
-
       final tempDir = await getTemporaryDirectory();
       final fileName = widget.releaseInfo.assetName.isNotEmpty
           ? widget.releaseInfo.assetName
           : 'nayli-kiosk-update.exe';
-      final file = File('${tempDir.path}/$fileName');
-      final sink = file.openWrite();
+      targetFile = File('${tempDir.path}/$fileName');
 
-      int received = 0;
-      await response.stream.listen((chunk) {
-        received += chunk.length;
-        sink.add(chunk);
-        if (mounted) {
-          setState(() {
-            _downloadedBytes = received;
-            if (contentLength > 0) {
-              _downloadProgress = (received / contentLength).clamp(0.0, 1.0);
-            }
-          });
+      // إذا كان الملف محملاً بالكامل ومطابقاً للحجم المطلوب مسبقاً، لا داعي لإعادة تحميله
+      if (targetFile.existsSync()) {
+        final existingLength = await targetFile.length();
+        if (widget.releaseInfo.sizeBytes > 0 && existingLength == widget.releaseInfo.sizeBytes) {
+          if (mounted) {
+            await _launchInstallerAndExit(targetFile);
+          }
+          return;
+        } else if (widget.releaseInfo.sizeBytes > 0 && existingLength > widget.releaseInfo.sizeBytes) {
+          // ملف قديم غير متطابق
+          await targetFile.delete();
         }
-      }).asFuture();
-
-      await sink.flush();
-      await sink.close();
-
-      if (!mounted) return;
-
-      setState(() {
-        _downloadProgress = 1.0;
-        _statusText = 'اكتمل التحميل! جاري تشغيل برنامج التثبيت...';
-      });
-
-      // تسجيل أن هذا الإصدار تم تثبيته لمنع تكرار الإشعار
-      await HiveDatabase.settingsBox.put('last_installed_update_tag', widget.releaseInfo.tagName);
-
-      // حفظ السلة الحالية تلقائياً قبل الإغلاق
-      await GitHubUpdateService.saveActiveCartBeforeUpdate(context);
-
-      // تشغيل برنامج التثبيت
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (Platform.isWindows) {
-        await Process.start(file.path, []);
-        exit(0); // إغلاق البرنامج الحالي ليتمكن المثبت من استبدال الملفات
-      } else {
-        final fileUri = Uri.file(file.path);
-        if (await canLaunchUrl(fileUri)) {
-          await launchUrl(fileUri, mode: LaunchMode.externalApplication);
-        }
-        if (mounted) Navigator.pop(context);
       }
     } catch (e) {
-      debugPrint('Download error: $e');
+      debugPrint('[UpdateDownloader] Target file prep error: $e');
+    }
+
+    if (targetFile == null) {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'تعذر إكمال التحميل التلقائي، يرجى المحاولة لاحقاً.';
+          _statusText = 'تعذر إنشاء مسار التحميل، يرجى التأكد من توفر مساحة كافية على القرص.';
         });
-        SnackbarHelper.showWarning(context, 'تعذر إكمال التحميل التلقائي، يرجى التحقق من اتصال الإنترنت.');
       }
+      return;
+    }
+
+    // حلقة التحميل مع الاستئناف التلقائي (Resumable Download with HTTP Range)
+    int received = targetFile.existsSync() ? await targetFile.length() : 0;
+    int retryCount = 0;
+    const maxRetries = 5;
+    bool completed = false;
+
+    while (!completed && retryCount <= maxRetries && mounted) {
+      IOSink? sink;
+      try {
+        _httpClient?.close();
+        _httpClient = http.Client();
+
+        final request = http.Request('GET', Uri.parse(downloadUrl));
+        // استئناف التحميل من البايت الحالي لتوفير البيانات والوقت
+        if (received > 0) {
+          request.headers['Range'] = 'bytes=$received-';
+          if (mounted) {
+            setState(() {
+              _statusText = 'جاري استئناف التحميل من ${((received / (1024 * 1024))).toStringAsFixed(1)} ميغابايت...';
+            });
+          }
+        }
+
+        final streamedResponse = await _httpClient!.send(request).timeout(const Duration(seconds: 30));
+
+        // 200 = ملف كامل، 206 = استئناف جزئي (Partial Content)
+        if (streamedResponse.statusCode != 200 && streamedResponse.statusCode != 206) {
+          throw Exception('HTTP Status: ${streamedResponse.statusCode}');
+        }
+
+        // إذا أرجع السيرفر 200 بدلاً من 206 بينما كنا طلبنا Range، نبدأ من الصفر
+        if (streamedResponse.statusCode == 200 && received > 0) {
+          received = 0;
+          if (targetFile.existsSync()) await targetFile.delete();
+        }
+
+        final contentLength = streamedResponse.contentLength ?? 0;
+        final totalExpected = (streamedResponse.statusCode == 206)
+            ? received + contentLength
+            : (contentLength > 0 ? contentLength : widget.releaseInfo.sizeBytes);
+
+        if (mounted) {
+          setState(() {
+            _totalBytes = totalExpected;
+            _statusText = 'جاري تنزيل ملف التحديث...';
+          });
+        }
+
+        sink = targetFile.openWrite(mode: received > 0 ? FileMode.append : FileMode.write);
+
+        await streamedResponse.stream.listen((chunk) {
+          received += chunk.length;
+          sink?.add(chunk);
+          if (mounted) {
+            setState(() {
+              _downloadedBytes = received;
+              if (_totalBytes > 0) {
+                _downloadProgress = (received / _totalBytes).clamp(0.0, 1.0);
+              }
+            });
+          }
+        }).asFuture().timeout(const Duration(seconds: 60));
+
+        await sink.flush();
+        await sink.close();
+        sink = null;
+
+        completed = true;
+      } catch (e) {
+        debugPrint('[UpdateDownloader] Download error (attempt $retryCount): $e');
+        try {
+          await sink?.flush();
+          await sink?.close();
+        } catch (_) {}
+
+        retryCount++;
+        if (retryCount <= maxRetries && mounted) {
+          setState(() {
+            _statusText = 'انقطع الاتصال مؤقتاً، جاري إعادة المحاولة ($retryCount من $maxRetries)...';
+          });
+          await Future.delayed(Duration(seconds: 2 * retryCount));
+        } else {
+          break;
+        }
+      }
+    }
+
+    if (!mounted) return;
+
+    if (completed) {
+      await _launchInstallerAndExit(targetFile);
+    } else {
+      setState(() {
+        _isDownloading = false;
+        _statusText = 'تعذر إكمال التحميل بسبب انقطاع الاتصال. يمكنك الضغط على "استئناف التحميل" للمتابعة.';
+      });
+      SnackbarHelper.showWarning(context, 'تعذر إكمال التحميل التلقائي، يمكنك استئناف التحميل بالضغط على الزر.');
+    }
+  }
+
+  /// تشغيل برنامج التثبيت وإغلاق التطبيق الحالي بأمان
+  Future<void> _launchInstallerAndExit(File file) async {
+    setState(() {
+      _downloadProgress = 1.0;
+      _statusText = 'اكتمل التحميل بنجاح! جاري تشغيل برنامج التثبيت...';
+    });
+
+    // تسجيل أن هذا الإصدار تم تثبيته لمنع تكرار الإشعار
+    await HiveDatabase.settingsBox.put('last_installed_update_tag', widget.releaseInfo.tagName);
+
+    // تشغيل برنامج التثبيت
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (Platform.isWindows) {
+      await Process.start(file.path, []);
+      exit(0); // إغلاق البرنامج الحالي ليتمكن المثبت من استبدال الملفات
+    } else {
+      final fileUri = Uri.file(file.path);
+      if (await canLaunchUrl(fileUri)) {
+        await launchUrl(fileUri, mode: LaunchMode.externalApplication);
+      }
+      if (mounted) Navigator.pop(context);
     }
   }
 
@@ -644,8 +719,8 @@ class _UpdateDialogState extends State<_UpdateDialog> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: _startDownloadAndInstall,
-                    icon: const Icon(Icons.download_rounded),
-                    label: const Text('تحديث وتثبيت الآن'),
+                    icon: Icon(_downloadedBytes > 0 ? Icons.refresh_rounded : Icons.download_rounded),
+                    label: Text(_downloadedBytes > 0 ? 'استئناف التحميل' : 'تحديث وتثبيت الآن'),
                   ),
                 ] else ...[
                   TextButton(
