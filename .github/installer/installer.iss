@@ -1,5 +1,5 @@
 #define MyAppName "Nayli Kiosk Desktop POS"
-#define MyAppVersion "2.0.1"
+#define MyAppVersion "2.0.2"
 #define MyAppPublisher "Nayli Market Solutions"
 #define MyAppExeName "Nayli-Kiosk.exe"
 
