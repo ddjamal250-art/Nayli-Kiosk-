@@ -342,8 +342,8 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
           ),
           const SizedBox(height: 24),
 
-          // Cloud Remote Update Section (OTA)
-          _buildSectionHeader('تحديثات النظام السحابية', 'فحص وتحميل الإصدارات الرسمية الجديدة مباشرة من GitHub'),
+          // Official System Updates Section
+          _buildSectionHeader('تحديثات النظام الرسمية', 'فحص وتحميل أحدث الإصدارات الرسمية المعتمدة تلقائياً'),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
@@ -364,7 +364,7 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'تحديث البرنامج عن بعد (GitHub OTA)',
+                          'تحديث البرنامج تلقائياً (تحديثات رسمية)',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         const SizedBox(height: 2),

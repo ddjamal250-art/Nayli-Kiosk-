@@ -9,6 +9,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/snackbar_helper.dart';
 import '../utils/sound_service.dart';
+import '../data/hive_database.dart';
+import '../../features/billing/domain/entities/held_cart.dart';
+import '../../features/billing/presentation/bloc/billing_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// كائن يحمل تفاصيل الإصدار الجديد من GitHub Releases
 class GitHubReleaseInfo {
@@ -161,7 +165,7 @@ class GitHubUpdateService {
         tagName: tagName,
         cleanVersion: cleanVer,
         title: title.isNotEmpty ? title : 'الإصدار $cleanVer',
-        changelog: body.isNotEmpty ? body : 'تحسينات عامة في الأداء وسرعة الاستجابة.',
+        changelog: _cleanChangelog(body),
         downloadUrl: downloadUrl,
         assetName: assetName,
         sizeBytes: sizeBytes,
@@ -174,6 +178,62 @@ class GitHubUpdateService {
     }
   }
 
+  /// تنقية وتطهير سجل التغييرات من أي مصطلحات برمجية أو روابط خارجية
+  static String _cleanChangelog(String raw) {
+    if (raw.trim().isEmpty) {
+      return '• تحسينات عامة في أداء واستقرار النظام.\n• تحديثات لواجهة الكاشير وسرعة الاستجابة.\n• أيقونات وشعارات رسمية جديدة عالية الدقة.';
+    }
+
+    final lines = raw.split('\n');
+    final cleaned = <String>[];
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+
+      final lower = trimmed.toLowerCase();
+      if (lower.contains('github') ||
+          lower.contains('ota') ||
+          lower.contains('commit') ||
+          lower.contains('workflow') ||
+          lower.contains('actions') ||
+          lower.contains('repo') ||
+          lower.contains('http://') ||
+          lower.contains('https://') ||
+          lower.contains('sha')) {
+        continue;
+      }
+
+      cleaned.add(trimmed);
+    }
+
+    if (cleaned.isEmpty) {
+      return '• تحسينات عامة في أداء واستقرار النظام.\n• تحديثات لواجهة الكاشير وسرعة الاستجابة.\n• أيقونات وشعارات رسمية جديدة عالية الدقة.';
+    }
+
+    return cleaned.join('\n');
+  }
+
+  /// حفظ السلة الحالية المفتوحة في قاعدة البيانات المحلية قبل إجراء أي تحديث
+  static Future<void> saveActiveCartBeforeUpdate(BuildContext context) async {
+    try {
+      final billingBloc = context.read<BillingBloc>();
+      final items = billingBloc.state.cartItems;
+      if (items.isNotEmpty) {
+        final held = HeldCart(
+          id: 'auto_saved_${DateTime.now().millisecondsSinceEpoch}',
+          label: 'سلة محفوظة تلقائياً قبل التحديث',
+          parkedAt: DateTime.now(),
+          items: List.from(items),
+        );
+        await HiveDatabase.settingsBox.put('auto_saved_cart_before_update', held.toMap());
+        debugPrint('[GitHubUpdateService] Active cart (${items.length} items) saved to Hive');
+      }
+    } catch (e) {
+      debugPrint('[GitHubUpdateService] Could not auto-save cart: $e');
+    }
+  }
+
   /// التحقق من التحديثات
   /// [silent]: إذا كانت true (مثل عند بدء تشغيل البرنامج) لا تظهر أي رسالة إذا لم يكن هناك تحديث.
   /// إذا كانت false (عند ضغط المستخدم على زر الفحص في الإعدادات) تظهر رسالة تفيد بنتيجة الفحص.
@@ -182,7 +242,7 @@ class GitHubUpdateService {
     _isChecking = true;
 
     if (!silent) {
-      SnackbarHelper.showInfo(context, 'جاري التحقق من وجود تحديثات جديدة عبر السحابة...');
+      SnackbarHelper.showInfo(context, 'جاري التحقق من وجود تحديثات رسمية جديدة عبر السحابة...');
     }
 
     try {
@@ -215,7 +275,7 @@ class GitHubUpdateService {
     } catch (e) {
       debugPrint('Update check error: $e');
       if (!silent && context.mounted) {
-        SnackbarHelper.showWarning(context, 'تعذر الاتصال بخادم التحديثات، تحقق من اتصال الإنترنت.');
+        SnackbarHelper.showWarning(context, 'تعذر الاتصال بسيرفر التحديثات، تحقق من اتصال الإنترنت.');
       }
     } finally {
       _isChecking = false;
@@ -227,9 +287,42 @@ class GitHubUpdateService {
     if (_hasAutoChecked) return;
     _hasAutoChecked = true;
 
-    Future.delayed(const Duration(seconds: 5), () {
-      if (context.mounted) {
-        checkForUpdates(context, silent: true);
+    Future.delayed(const Duration(seconds: 5), () async {
+      if (!context.mounted) return;
+
+      final lastInstalledTag = HiveDatabase.settingsBox.get('last_installed_update_tag') as String?;
+      final lastDismissedTag = HiveDatabase.settingsBox.get('last_dismissed_update_tag') as String?;
+      final lastDismissedTimeStr = HiveDatabase.settingsBox.get('last_dismissed_update_time') as String?;
+
+      final latestRelease = await fetchLatestRelease();
+      if (latestRelease == null) return;
+
+      // منع التكرار إذا كان هذا الإصدار قد تم تثبيته بالفعل
+      if (lastInstalledTag != null && lastInstalledTag == latestRelease.tagName) {
+        return;
+      }
+
+      // عدم إزعاج الكاشير إذا طلب التذكير لاحقاً خلال آخر 24 ساعة
+      if (lastDismissedTag != null && lastDismissedTag == latestRelease.tagName && lastDismissedTimeStr != null) {
+        final lastDismissed = DateTime.tryParse(lastDismissedTimeStr);
+        if (lastDismissed != null && DateTime.now().difference(lastDismissed).inHours < 24) {
+          return;
+        }
+      }
+
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version;
+
+      if (context.mounted && isNewerVersion(currentVersion, latestRelease.cleanVersion)) {
+        SoundService.playRestockSound();
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => _UpdateDialog(
+            currentVersion: currentVersion,
+            releaseInfo: latestRelease,
+          ),
+        );
       }
     });
   }
@@ -326,6 +419,12 @@ class _UpdateDialogState extends State<_UpdateDialog> {
         _statusText = 'اكتمل التحميل! جاري تشغيل برنامج التثبيت...';
       });
 
+      // تسجيل أن هذا الإصدار تم تثبيته لمنع تكرار الإشعار
+      await HiveDatabase.settingsBox.put('last_installed_update_tag', widget.releaseInfo.tagName);
+
+      // حفظ السلة الحالية تلقائياً قبل الإغلاق
+      await GitHubUpdateService.saveActiveCartBeforeUpdate(context);
+
       // تشغيل برنامج التثبيت
       await Future.delayed(const Duration(milliseconds: 500));
       if (Platform.isWindows) {
@@ -343,14 +442,9 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'تعذر إكمال التحميل التلقائي: $e';
+          _statusText = 'تعذر إكمال التحميل التلقائي، يرجى المحاولة لاحقاً.';
         });
-        SnackbarHelper.showWarning(context, 'حدث خطأ أثناء التحميل. جاري فتح الرابط في المتصفح...');
-        // فتح الرابط يدوياً كخطة بديلة آمنة
-        final uri = Uri.parse(downloadUrl);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
+        SnackbarHelper.showWarning(context, 'تعذر إكمال التحميل التلقائي، يرجى التحقق من اتصال الإنترنت.');
       }
     }
   }
@@ -364,6 +458,11 @@ class _UpdateDialogState extends State<_UpdateDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    int activeCartItemsCount = 0;
+    try {
+      activeCartItemsCount = context.read<BillingBloc>().state.cartItems.length;
+    } catch (_) {}
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -391,7 +490,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'يتوفر إصدار جديد من البرنامج 🎉',
+                        'يتوفر تحديث رسمي جديد للبرنامج 🎉',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
@@ -432,6 +531,31 @@ class _UpdateDialogState extends State<_UpdateDialog> {
             const SizedBox(height: 16),
             const Divider(height: 1),
             const SizedBox(height: 16),
+
+            // تنبيه السلة المفتوحة (إذا كانت هناك سلع ممسوحة)
+            if (activeCartItemsCount > 0) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shopping_cart_checkout_rounded, color: Colors.amber, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'تنبيه: لديك $activeCartItemsCount سلع في السلة الحالية. سيتم حفظها تلقائياً واستعادتها فور إعادة فتح البرنامج.',
+                        style: TextStyle(fontSize: 12, color: Colors.amber.shade900, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // قائمة التغييرات والمزايا
             const Text(
@@ -504,7 +628,11 @@ class _UpdateDialogState extends State<_UpdateDialog> {
               children: [
                 if (!_isDownloading) ...[
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () async {
+                      await HiveDatabase.settingsBox.put('last_dismissed_update_tag', widget.releaseInfo.tagName);
+                      await HiveDatabase.settingsBox.put('last_dismissed_update_time', DateTime.now().toIso8601String());
+                      if (context.mounted) Navigator.pop(context);
+                    },
                     child: const Text('تذكيري لاحقاً'),
                   ),
                   const SizedBox(width: 8),
@@ -521,9 +649,11 @@ class _UpdateDialogState extends State<_UpdateDialog> {
                   ),
                 ] else ...[
                   TextButton(
-                    onPressed: () {
+                    onPressed: () async {
                       _httpClient?.close();
-                      Navigator.pop(context);
+                      await HiveDatabase.settingsBox.put('last_dismissed_update_tag', widget.releaseInfo.tagName);
+                      await HiveDatabase.settingsBox.put('last_dismissed_update_time', DateTime.now().toIso8601String());
+                      if (context.mounted) Navigator.pop(context);
                     },
                     child: const Text('إلغاء التحميل', style: TextStyle(color: Colors.red)),
                   ),

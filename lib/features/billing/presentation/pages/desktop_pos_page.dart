@@ -33,6 +33,7 @@ import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../../../core/widgets/product_image_display.dart';
 import '../../../shifts/data/shift_service.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../domain/entities/held_cart.dart';
 import '../bloc/billing_bloc.dart';
 import '../widgets/held_carts_modal.dart';
 import '../widgets/quick_items_manager_dialog.dart';
@@ -118,8 +119,33 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     _startIpmCalculator();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _barcodeFocusNode.requestFocus();
+      _restoreAutoSavedCart();
       GitHubUpdateService.runStartupCheck(context);
     });
+  }
+
+  /// استعادة السلة المعلقة تلقائياً إذا تم حفظها قبل تثبيت تحديث
+  void _restoreAutoSavedCart() {
+    try {
+      final savedData = HiveDatabase.settingsBox.get('auto_saved_cart_before_update');
+      if (savedData != null && savedData is Map) {
+        final heldCart = HeldCart.fromMap(savedData);
+        if (heldCart.items.isNotEmpty) {
+          final billingBloc = context.read<BillingBloc>();
+          for (final item in heldCart.items) {
+            billingBloc.add(AddProductToCartEvent(item.product, quantity: item.quantity));
+          }
+          HiveDatabase.settingsBox.delete('auto_saved_cart_before_update');
+          SoundService.playSaveSuccess();
+          SnackbarHelper.showSuccess(
+            context,
+            '✅ تمت استعادة سلة المبيعات (${heldCart.items.length} سلع) تلقائياً بعد التحديث!',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error restoring auto-saved cart: $e');
+    }
   }
 
   @override

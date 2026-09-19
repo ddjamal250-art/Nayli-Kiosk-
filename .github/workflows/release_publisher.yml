@@ -1,4 +1,4 @@
-﻿name: Publish GitHub Release (OTA Updates)
+name: Publish GitHub Release (OTA Updates)
 
 on:
   push:
@@ -167,7 +167,7 @@ jobs:
         with:
           tag_name: ${{ steps.tag_info.outputs.tag }}
           name: Nayli Kiosk POS ${{ steps.tag_info.outputs.tag }}
-          body: ${{ inputs.release_notes || '### تحديث رسمي لبرنامج نايلى كيوسك Nayli Kiosk POS\n\n- أحدث التحسينات والإصلاحات البرمجية.\n- دعم كامل للتحديث التلقائي السحابي (OTA).' }}
+          body: ${{ inputs.release_notes || '### تحديث رسمي لبرنامج نايلى كيوسك Nayli Kiosk POS\n\n- أحدث التحسينات والإصلاحات البرمجية.\n- تحسينات عامة في أداء واستقرار النظام.' }}
           draft: false
           prerelease: false
           files: |

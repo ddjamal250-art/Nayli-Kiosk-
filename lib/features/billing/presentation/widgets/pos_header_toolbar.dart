@@ -516,8 +516,8 @@ class PosHeaderToolbar extends StatelessWidget {
                         const SizedBox(width: 10),
                         Text(
                           Localizations.localeOf(context).languageCode == 'ar'
-                              ? 'التحقق من التحديثات (OTA)'
-                              : 'Check for Updates (OTA)',
+                              ? 'التحقق من التحديثات الرسمية'
+                              : 'Check for Official Updates',
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ],
