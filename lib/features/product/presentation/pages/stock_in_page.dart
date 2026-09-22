@@ -26,6 +26,8 @@ import '../../../documents/domain/entities/commercial_document.dart';
 import '../../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
 import '../../../../core/utils/receipt_ocr_parser.dart';
 import '../widgets/product_image_picker_field.dart';
+import '../widgets/ready_coffee_calculator_card.dart';
+import '../../../billing/presentation/widgets/quick_items_manager_dialog.dart';
 
 enum ArrivageUnitMode { cartons, vracSacs, singleUnits, coffeeMachine }
 
@@ -53,6 +55,9 @@ class _StockInPageState extends State<StockInPage> {
 
   // Arrivage Mode (Cartons vs Vrac Sacs vs Single Units)
   ArrivageUnitMode _unitMode = ArrivageUnitMode.cartons;
+
+  // Ready Coffee Calculator & Serving Recipe Data
+  ReadyCoffeeData _coffeeData = ReadyCoffeeData();
 
   // Controllers
   final TextEditingController _nameController = TextEditingController();
@@ -193,16 +198,9 @@ class _StockInPageState extends State<StockInPage> {
 
   void _onSacInputsChanged() {
     if (_unitMode == ArrivageUnitMode.coffeeMachine && !_isUpdatingFromCalculation) {
-      final bags = int.tryParse(_sacCountController.text.trim()) ?? 0;
-      final yieldPerBag = int.tryParse(_unitsPerCartonController.text.trim()) ?? 100;
-      final totalCups = bags * yieldPerBag;
+      final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
+      final totalCups = (bags > 0 ? bags : 1) * _coffeeData.baseYieldCount;
       _qtyController.text = totalCups.toString();
-      final sacCost = double.tryParse(_sacCostController.text.trim()) ?? 0.0;
-      if (yieldPerBag > 0 && sacCost > 0) {
-        _isUpdatingFromCalculation = true;
-        _costPriceController.text = (sacCost / yieldPerBag).toStringAsFixed(2);
-        _isUpdatingFromCalculation = false;
-      }
       setState(() {});
       return;
     }
@@ -224,15 +222,7 @@ class _StockInPageState extends State<StockInPage> {
   }
 
   void _onSacCostChanged() {
-    if (_unitMode == ArrivageUnitMode.coffeeMachine && !_isUpdatingFromCalculation) {
-      final yieldPerBag = int.tryParse(_unitsPerCartonController.text.trim()) ?? 100;
-      final sacCost = double.tryParse(_sacCostController.text.trim()) ?? 0.0;
-      if (yieldPerBag > 0 && sacCost > 0) {
-        _isUpdatingFromCalculation = true;
-        _costPriceController.text = (sacCost / yieldPerBag).toStringAsFixed(2);
-        _isUpdatingFromCalculation = false;
-      }
-      setState(() {});
+    if (_unitMode == ArrivageUnitMode.coffeeMachine) {
       return;
     }
     if (_unitMode != ArrivageUnitMode.vracSacs || _isUpdatingFromCalculation) return;
@@ -402,15 +392,13 @@ class _StockInPageState extends State<StockInPage> {
     int effectiveQty = qty;
     double effectiveCost = costPrice;
 
-    if (_unitMode == ArrivageUnitMode.coffeeMachine) {
+    final isCoffee = _unitMode == ArrivageUnitMode.coffeeMachine;
+
+    if (isCoffee) {
       final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
-      final yieldPerBag = int.tryParse(_unitsPerCartonController.text.trim()) ?? 100;
-      final bagCost = double.tryParse(_sacCostController.text.trim()) ?? 0.0;
-      effectiveQty = bags * yieldPerBag;
-      if (yieldPerBag > 0 && bagCost > 0) {
-        effectiveCost = bagCost / yieldPerBag;
-      }
-      _selectedCategory = 'ماكينة القهوة والشاي';
+      effectiveQty = (bags > 0 ? bags : 1) * _coffeeData.baseYieldCount;
+      effectiveCost = _coffeeData.totalCupCost;
+      _selectedCategory = 'القهوة الجاهزة';
     }
 
     final productBloc = context.read<ProductBloc>();
@@ -420,7 +408,7 @@ class _StockInPageState extends State<StockInPage> {
         : null;
 
     // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
-    if (_isExistingInShop && _currentStock > 0 && costPrice > 0 && _unitMode != ArrivageUnitMode.coffeeMachine) {
+    if (_isExistingInShop && _currentStock > 0 && costPrice > 0 && !isCoffee) {
       final oldCost = (existingProduct != null && existingProduct.costPrice > 0)
           ? existingProduct.costPrice
           : costPrice;
@@ -433,49 +421,62 @@ class _StockInPageState extends State<StockInPage> {
 
     final productImageUrl = _itemImageUrl ?? existingProduct?.imageUrl ?? masterMatch?.imageUrl;
     final isTobacco = existingProduct?.isTobacco ?? masterMatch?.isTobacco ?? false;
-    final piecesPerPack = existingProduct?.piecesPerPack ?? masterMatch?.piecesPerPack ?? 20;
+    final piecesPerPack = isCoffee ? _coffeeData.baseYieldCount : (existingProduct?.piecesPerPack ?? masterMatch?.piecesPerPack ?? 20);
     final packsPerCarton = existingProduct?.packsPerCarton ?? masterMatch?.packsPerCarton ?? 10;
-    final singlePiecePrice = existingProduct?.singlePiecePrice ?? masterMatch?.singlePiecePrice ?? 0.0;
+    final singlePiecePrice = isCoffee ? _coffeeData.salePrice : (existingProduct?.singlePiecePrice ?? masterMatch?.singlePiecePrice ?? 0.0);
     final cartonPrice = existingProduct?.cartonPrice ?? masterMatch?.cartonPrice ?? 0.0;
     final wholesaleCartonPrice = existingProduct?.wholesaleCartonPrice ?? masterMatch?.wholesaleCartonPrice ?? 0.0;
     final wholesalePackPrice = existingProduct?.wholesalePackPrice ?? masterMatch?.wholesalePackPrice ?? 0.0;
     final cartonCostPrice = existingProduct?.cartonCostPrice ?? masterMatch?.cartonCostPrice ?? 0.0;
-    final unitType = existingProduct?.unitType ?? masterMatch?.unitType ?? 'unit';
+    final unitType = isCoffee ? 'كأس' : (existingProduct?.unitType ?? masterMatch?.unitType ?? 'unit');
+    final effectivePrice = isCoffee ? _coffeeData.salePrice : price;
+    final effectiveAllowPieceSale = isCoffee ? true : (existingProduct?.allowPieceSale ?? false);
 
-    final effectiveCategory = _selectedCategory.trim().isNotEmpty
-        ? _selectedCategory.trim()
-        : (existingProduct?.category ?? masterMatch?.category ?? 'عام');
+    final effectiveCategory = isCoffee
+        ? 'القهوة الجاهزة'
+        : (_selectedCategory.trim().isNotEmpty
+            ? _selectedCategory.trim()
+            : (existingProduct?.category ?? masterMatch?.category ?? 'عام'));
+
+    String savedProductId = '';
 
     if (_isExistingInShop && _existingProductId != null) {
+      savedProductId = _existingProductId!;
       final updatedProduct = (existingProduct ?? Product(
         id: _existingProductId!,
         name: name,
         barcode: _activeBarcode,
-        price: price,
+        price: effectivePrice,
       )).copyWith(
         name: name,
         barcode: _activeBarcode,
         category: effectiveCategory,
-        price: price,
+        price: effectivePrice,
         costPrice: effectiveCost,
         stock: _currentStock + effectiveQty,
         isWeighted: isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
+        unitType: unitType,
+        allowPieceSale: effectiveAllowPieceSale,
+        singlePiecePrice: singlePiecePrice,
+        piecesPerPack: piecesPerPack,
       );
       productBloc.add(UpdateProduct(updatedProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         updatedProduct,
         category: effectiveCategory,
-        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : 'حبة'),
+        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : 'حبة')),
       );
     } else {
+      final newId = const Uuid().v4();
+      savedProductId = newId;
       final newProduct = Product(
-        id: const Uuid().v4(),
+        id: newId,
         name: name,
         barcode: _activeBarcode,
         category: effectiveCategory,
-        price: price,
+        price: effectivePrice,
         costPrice: effectiveCost,
         stock: effectiveQty,
         isWeighted: isWeighted,
@@ -490,22 +491,45 @@ class _StockInPageState extends State<StockInPage> {
         wholesalePackPrice: wholesalePackPrice,
         cartonCostPrice: cartonCostPrice,
         unitType: unitType,
+        allowPieceSale: effectiveAllowPieceSale,
       );
       productBloc.add(AddProduct(newProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         newProduct,
         category: effectiveCategory,
-        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : 'حبة'),
+        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : 'حبة')),
       );
+    }
+
+    // Pin directly to POS Quick Sale if enabled
+    if (isCoffee && _coffeeData.pinToQuickSale && savedProductId.isNotEmpty) {
+      try {
+        final qBox = HiveDatabase.quickItemsBox;
+        final qItem = QuickItemData(
+          id: 'quick_$savedProductId',
+          name: name,
+          price: _coffeeData.salePrice,
+          costPrice: _coffeeData.totalCupCost,
+          icon: _coffeeData.quickIcon,
+          barcode: _activeBarcode,
+          shortCode: _coffeeData.quickShortCode,
+          stock: effectiveQty,
+          linkedProductId: savedProductId,
+          orderIndex: qBox.length,
+        );
+        qBox.put(qItem.id, qItem.toMap());
+      } catch (e) {
+        debugPrint('Error pinning coffee quick item from stock in: $e');
+      }
     }
 
     setState(() {
       _sessionStockIns.insert(0, {
         'name': name,
         'barcode': _activeBarcode,
-        'qty': qty,
+        'qty': effectiveQty,
         'unitMode': _unitMode.name,
-        'price': price,
+        'price': effectivePrice,
         'costPrice': effectiveCost,
         'supplier': _supplierNameController.text.trim(),
         'supplierPhone': _supplierPhoneController.text.trim(),
@@ -514,6 +538,8 @@ class _StockInPageState extends State<StockInPage> {
         'condition': _itemCondition,
       });
 
+      _coffeeData = ReadyCoffeeData();
+      _sacCountController.text = '1';
       _activeBarcode = '';
       _lastScannedBarcode = null;
       _nameController.clear();
@@ -1095,56 +1121,124 @@ class _StockInPageState extends State<StockInPage> {
                       decoration: const InputDecoration(labelText: 'سعر شراء الكرتونة الواحدة', suffixText: 'DA/كرتونة', border: OutlineInputBorder()),
                     ),
                   ] else if (_unitMode == ArrivageUnitMode.coffeeMachine) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _sacCountController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'عدد أكياس البن (1 كغ)', suffixText: 'كيس', border: OutlineInputBorder()),
+                    // Packages count & total cups overview row
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFBF8F5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFD7CCC8)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _sacCountController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: _coffeeData.drinkType == 'capsule'
+                                    ? 'عدد علب الكبسولات المستلمة'
+                                    : (_coffeeData.drinkType == 'tea' ? 'عدد علب الشاي المستلمة' : 'عدد أكياس البن المستلمة (1 كغ)'),
+                                suffixText: _coffeeData.drinkType == 'capsule' || _coffeeData.drinkType == 'tea' ? 'علبة' : 'كيس',
+                                border: const OutlineInputBorder(),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              onChanged: (val) {
+                                final bags = int.tryParse(val.trim()) ?? 1;
+                                final totalCups = (bags > 0 ? bags : 1) * _coffeeData.baseYieldCount;
+                                _qtyController.text = totalCups.toString();
+                                setState(() {});
+                              },
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _unitsPerCartonController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'إنتاجية الكيس من الأكواب', suffixText: 'كأس/كغ', border: OutlineInputBorder()),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Builder(
+                              builder: (context) {
+                                final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
+                                final totalCups = (bags > 0 ? bags : 1) * _coffeeData.baseYieldCount;
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFBCAAA4)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('إجمالي الأكواب المستلمة:', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                      Text('$totalCups كأس ☕',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF4E342E))),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _sacCostController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'سعر شراء الكيس الواحد', suffixText: 'DA/كيس', border: OutlineInputBorder()),
+                    // Dedicated Ready Coffee Recipe & Cost Calculator Card
+                    ReadyCoffeeCalculatorCard(
+                      initialData: _coffeeData,
+                      onChanged: (data) {
+                        setState(() {
+                          _coffeeData = data;
+                          _priceController.text = data.salePrice.toStringAsFixed(0);
+                          _costPriceController.text = data.totalCupCost.toStringAsFixed(2);
+                          final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
+                          _qtyController.text = ((bags > 0 ? bags : 1) * data.baseYieldCount).toString();
+                          if (_nameController.text.isEmpty ||
+                              _nameController.text.contains('قهوة') ||
+                              _nameController.text.contains('شاي') ||
+                              _nameController.text.contains('كأس') ||
+                              _nameController.text.contains('زيت') ||
+                              _nameController.text.contains('شكارة')) {
+                            _nameController.text = data.drinkName;
+                          }
+                        });
+                      },
+                    ),
+                    // Total Shipment Profit Banner for Coffee
+                    Builder(
+                      builder: (context) {
+                        final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
+                        final totalCups = (bags > 0 ? bags : 1) * _coffeeData.baseYieldCount;
+                        final profitPerCup = _coffeeData.netProfit;
+                        final totalProfit = profitPerCup * totalCups;
+                        final isPos = profitPerCup >= 0;
+                        if (_coffeeData.salePrice <= 0 || _coffeeData.totalCupCost <= 0) return const SizedBox.shrink();
+
+                        return Container(
+                          margin: const EdgeInsets.only(top: 8, bottom: 6),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isPos ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: isPos ? const Color(0xFF86EFAC) : const Color(0xFFFECACA)),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Builder(
-                            builder: (context) {
-                              final bags = int.tryParse(_sacCountController.text.trim()) ?? 0;
-                              final yieldPerBag = int.tryParse(_unitsPerCartonController.text.trim()) ?? 100;
-                              final totalCups = bags * yieldPerBag;
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: Colors.brown.shade50,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.brown.shade200),
+                          child: Row(
+                            children: [
+                              Icon(isPos ? Icons.savings_rounded : Icons.trending_down,
+                                  size: 18, color: isPos ? const Color(0xFF16A34A) : Colors.red),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '💰 إجمالي صافي أرباح هذه الشحنة بالكامل ($totalCups كأس): ${totalProfit >= 0 ? "+" : ""}${totalProfit.toStringAsFixed(2)} DA',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12.5,
+                                    color: isPos ? const Color(0xFF166534) : Colors.red.shade800,
+                                  ),
                                 ),
-                                child: Text('إجمالي الأكواب: $totalCups كأس ☕',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.brown)),
-                              );
-                            },
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ] else if (_unitMode == ArrivageUnitMode.vracSacs) ...[
                     Row(
@@ -1197,114 +1291,116 @@ class _StockInPageState extends State<StockInPage> {
                     ),
                   ],
 
-                  const SizedBox(height: 12),
+                  if (_unitMode != ArrivageUnitMode.coffeeMachine) ...[
+                    const SizedBox(height: 12),
 
-                  // Selling Price & Unit Cost Price
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _priceController,
-                          focusNode: _priceFocusNode,
-                          textInputAction: TextInputAction.next,
-                          onSubmitted: (_) => _costPriceFocusNode.requestFocus(),
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: _unitMode == ArrivageUnitMode.coffeeMachine ? 'سعر بيع الكأس المحضر *' : (_unitMode == ArrivageUnitMode.vracSacs ? 'سعر بيع الكيلوغرام *' : 'سعر بيع الحبة *'),
-                            suffixText: 'DA',
-                            border: const OutlineInputBorder(),
+                    // Selling Price & Unit Cost Price
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _priceController,
+                            focusNode: _priceFocusNode,
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (_) => _costPriceFocusNode.requestFocus(),
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'سعر بيع الكيلوغرام *' : 'سعر بيع الحبة *',
+                              suffixText: 'DA',
+                              border: const OutlineInputBorder(),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _costPriceController,
-                          focusNode: _costPriceFocusNode,
-                          textInputAction: TextInputAction.next,
-                          onSubmitted: (_) => _qtyFocusNode.requestFocus(),
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: _unitMode == ArrivageUnitMode.coffeeMachine ? 'تكلفة الكأس الواحد (Achat) *' : (_unitMode == ArrivageUnitMode.vracSacs ? 'تكلفة الكيلوغرام المتوسطة' : 'سعر التكلفة المتوسط للحبة'),
-                            suffixText: 'DA',
-                            border: const OutlineInputBorder(),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _costPriceController,
+                            focusNode: _costPriceFocusNode,
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (_) => _qtyFocusNode.requestFocus(),
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'تكلفة الكيلوغرام المتوسطة' : 'سعر التكلفة المتوسط للحبة',
+                              suffixText: 'DA',
+                              border: const OutlineInputBorder(),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  // Live Profit & Expected Margin Card
-                  Builder(
-                    builder: (context) {
-                      final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
-                      final cost = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
-                      final qty = int.tryParse(_qtyController.text.trim()) ?? 0;
-                      if (price <= 0 || cost <= 0) return const SizedBox.shrink();
+                      ],
+                    ),
+                    // Live Profit & Expected Margin Card
+                    Builder(
+                      builder: (context) {
+                        final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+                        final cost = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
+                        final qty = int.tryParse(_qtyController.text.trim()) ?? 0;
+                        if (price <= 0 || cost <= 0) return const SizedBox.shrink();
 
-                      final unitProfit = price - cost;
-                      final marginPct = cost > 0 ? ((unitProfit / cost) * 100).toStringAsFixed(1) : '0';
-                      final totalProfit = unitProfit * qty;
-                      final isPos = unitProfit > 0;
+                        final unitProfit = price - cost;
+                        final marginPct = cost > 0 ? ((unitProfit / cost) * 100).toStringAsFixed(1) : '0';
+                        final totalProfit = unitProfit * qty;
+                        final isPos = unitProfit > 0;
 
-                      // Cartons extra info
-                      double? cartonProfit;
-                      if (_unitMode == ArrivageUnitMode.cartons) {
-                        final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
-                        final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
-                        if (perCarton > 0 && cartonCost > 0) {
-                          cartonProfit = (price * perCarton) - cartonCost;
+                        // Cartons extra info
+                        double? cartonProfit;
+                        if (_unitMode == ArrivageUnitMode.cartons) {
+                          final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+                          final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
+                          if (perCarton > 0 && cartonCost > 0) {
+                            cartonProfit = (price * perCarton) - cartonCost;
+                          }
                         }
-                      }
 
-                      return Container(
-                        margin: const EdgeInsets.only(top: 8, bottom: 6),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isPos ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: isPos ? const Color(0xFF86EFAC) : const Color(0xFFFECACA)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(isPos ? Icons.insights_rounded : Icons.trending_down,
-                                    size: 16, color: isPos ? const Color(0xFF16A34A) : Colors.red),
-                                const SizedBox(width: 6),
+                        return Container(
+                          margin: const EdgeInsets.only(top: 8, bottom: 6),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isPos ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: isPos ? const Color(0xFF86EFAC) : const Color(0xFFFECACA)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(isPos ? Icons.insights_rounded : Icons.trending_down,
+                                      size: 16, color: isPos ? const Color(0xFF16A34A) : Colors.red),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'أرباح متوقعة: ${unitProfit >= 0 ? "+" : ""}${unitProfit.toStringAsFixed(2)} DA / وحدة (هامش $marginPct%)',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: isPos ? const Color(0xFF166534) : Colors.red.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (qty > 0) ...[
+                                const SizedBox(height: 4),
                                 Text(
-                                  'أرباح متوقعة: ${unitProfit >= 0 ? "+" : ""}${unitProfit.toStringAsFixed(2)} DA / وحدة (هامش $marginPct%)',
+                                  '💰 إجمالي صافي أرباح هذه الشحنة بالكامل ($qty وحدة): ${totalProfit >= 0 ? "+" : ""}${totalProfit.toStringAsFixed(2)} DA',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: isPos ? const Color(0xFF166534) : Colors.red.shade800,
+                                    fontSize: 11.5,
+                                    color: isPos ? const Color(0xFF0F766E) : Colors.red.shade700,
                                   ),
                                 ),
                               ],
-                            ),
-                            if (qty > 0) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                '💰 إجمالي صافي أرباح هذه الشحنة بالكامل ($qty وحدة): ${totalProfit >= 0 ? "+" : ""}${totalProfit.toStringAsFixed(2)} DA',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11.5,
-                                  color: isPos ? const Color(0xFF0F766E) : Colors.red.shade700,
+                              if (cartonProfit != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  '📦 صافي ربح الكرتونة الواحدة: ${cartonProfit >= 0 ? "+" : ""}${cartonProfit.toStringAsFixed(2)} DA',
+                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Color(0xFF0D9488)),
                                 ),
-                              ),
+                              ],
                             ],
-                            if (cartonProfit != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                '📦 صافي ربح الكرتونة الواحدة: ${cartonProfit >= 0 ? "+" : ""}${cartonProfit.toStringAsFixed(2)} DA',
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Color(0xFF0D9488)),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 14),
 
                   // Supplier & Phone Row
@@ -1437,6 +1533,19 @@ class _StockInPageState extends State<StockInPage> {
         onTap: () {
           setState(() {
             _unitMode = mode;
+            if (mode == ArrivageUnitMode.coffeeMachine) {
+              _selectedCategory = 'القهوة الجاهزة';
+              _isCategoryUserSelected = true;
+              if (_nameController.text.isEmpty ||
+                  _nameController.text.contains('زيت') ||
+                  _nameController.text.contains('شكارة')) {
+                _nameController.text = _coffeeData.drinkName;
+              }
+              _priceController.text = _coffeeData.salePrice.toStringAsFixed(0);
+              _costPriceController.text = _coffeeData.totalCupCost.toStringAsFixed(2);
+              final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
+              _qtyController.text = (_coffeeData.baseYieldCount * (bags > 0 ? bags : 1)).toString();
+            }
           });
           SoundService.playTabSwitch();
         },
@@ -1524,6 +1633,18 @@ class _StockInPageState extends State<StockInPage> {
               setState(() {
                 _selectedCategory = cat;
                 _isCategoryUserSelected = true;
+                if (cat == 'القهوة الجاهزة' || cat == 'قهوة جاهزة وكبسولات' || cat == 'مشروبات ساخنة محضرة') {
+                  _unitMode = ArrivageUnitMode.coffeeMachine;
+                  if (_nameController.text.isEmpty ||
+                      _nameController.text.contains('زيت') ||
+                      _nameController.text.contains('شكارة')) {
+                    _nameController.text = _coffeeData.drinkName;
+                  }
+                  _priceController.text = _coffeeData.salePrice.toStringAsFixed(0);
+                  _costPriceController.text = _coffeeData.totalCupCost.toStringAsFixed(2);
+                  final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
+                  _qtyController.text = (_coffeeData.baseYieldCount * (bags > 0 ? bags : 1)).toString();
+                }
               });
             },
             itemBuilder: (BuildContext context) {
