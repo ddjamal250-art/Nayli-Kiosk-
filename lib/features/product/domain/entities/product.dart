@@ -204,19 +204,33 @@ class Product extends Equatable {
     final n = name.toLowerCase();
     return cat.contains('ماكينة') ||
         cat.contains('آلة القهوة') ||
-        cat.contains('قهوة وشاي') ||
+        cat.contains('قهوة') ||
+        cat.contains('شاي') ||
         cat.contains('كافيتيريا') ||
+        cat.contains('مقهى') ||
+        cat.contains('ساخنة') ||
+        n.contains('قهوة') ||
+        n.contains('شاي') ||
+        n.contains('كبسول') ||
+        n.contains('capsule') ||
         n.contains('إكسبريسو') ||
+        n.contains('إسبريسو') ||
         n.contains('اسبريسو') ||
         n.contains('كأس قهوة') ||
         n.contains('كاس قهوة') ||
+        n.contains('قهوة بريس') ||
         n.contains('قهوة كبريس') ||
         n.contains('قهوة حليب') ||
         n.contains('كأس شاي') ||
         n.contains('كاس شاي') ||
         n.contains('شاي بالنعناع') ||
         n.contains('حبوب بن') ||
-        n.contains('مسحوق قهوة');
+        n.contains('مسحوق قهوة') ||
+        n.contains('نسكافيه') ||
+        n.contains('كابتشينو') ||
+        n.contains('express') ||
+        n.contains('coffee') ||
+        n.contains('tea');
   }
 
   int get cupsYield => piecesPerPack > 0 ? piecesPerPack : 100;

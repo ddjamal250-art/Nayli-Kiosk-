@@ -78,7 +78,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
   bool _isLoading = true;
 
   static const List<String> _popularEmojis = [
-    '🥖', '🥚', '🍲', '🫓', '🥛', '☕', '💧', '🛍️',
+    '☕', '🟤', '🍵', '🥖', '🥐', '🥚', '🍲', '🫓', '🥛', '💧', '🛍️',
     '🥪', '🍰', '🧀', '🥤', '🥩', '🍗', '🍉', '🍎',
     '🍟', '🍕', '🍯', '🧈', '🧂', '🍬', '🍫', '🏷️',
   ];
@@ -100,16 +100,24 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
       }
     }
 
+    // Standard coffee presets
+    final coffeePresets = [
+      QuickItemData(id: 'coffee_cup_express', name: 'قهوة عادية (Express)', price: 40.0, costPrice: 15.0, icon: '☕', barcode: '2000000000087', shortCode: 'C1', stock: 500, orderIndex: 0),
+      QuickItemData(id: 'coffee_capsule', name: 'قهوة كبسولة (Capsule)', price: 60.0, costPrice: 30.0, icon: '🟤', barcode: '2000000000094', shortCode: 'C2', stock: 200, orderIndex: 1),
+      QuickItemData(id: 'tea_cup', name: 'كأس شاي (Thé)', price: 30.0, costPrice: 10.0, icon: '🍵', barcode: '2000000000100', shortCode: 'C3', stock: 500, orderIndex: 2),
+    ];
+
     if (list.isEmpty) {
       // Default standard Algerian quick staples
       final defaults = [
-        QuickItemData(id: 'bread', name: 'خبز باكيط (Baguette)', price: 10.0, costPrice: 8.5, icon: '🥖', barcode: '2000000000018', shortCode: '1', stock: 150, orderIndex: 0),
-        QuickItemData(id: 'egg_single', name: 'حبة بيض (Œuf)', price: 20.0, costPrice: 17.0, icon: '🥚', barcode: '2000000000025', shortCode: '2', stock: 360, orderIndex: 1),
-        QuickItemData(id: 'chakhchoukha', name: 'شخشوخة / تريدة تقليدية', price: 120.0, costPrice: 90.0, icon: '🍲', barcode: '2000000000032', shortCode: '3', stock: 50, orderIndex: 2),
-        QuickItemData(id: 'kesra', name: 'كسرة رخساس / فطير', price: 50.0, costPrice: 35.0, icon: '🫓', barcode: '2000000000049', shortCode: '4', stock: 40, orderIndex: 3),
-        QuickItemData(id: 'milk_bag', name: 'حليب شكارة مدعم (Lait)', price: 25.0, costPrice: 23.5, icon: '🥛', barcode: '2000000000056', shortCode: '5', stock: 80, orderIndex: 4),
-        QuickItemData(id: 'water_500', name: 'قارورة ماء 0.5L', price: 25.0, costPrice: 18.0, icon: '💧', barcode: '2000000000063', shortCode: '6', stock: 120, orderIndex: 5),
-        QuickItemData(id: 'plastic_bag', name: 'كيس تسوق بلاستيكي', price: 5.0, costPrice: 2.0, icon: '🛍️', barcode: '2000000000070', shortCode: '7', stock: 500, orderIndex: 6),
+        ...coffeePresets,
+        QuickItemData(id: 'bread', name: 'خبز باكيط (Baguette)', price: 10.0, costPrice: 8.5, icon: '🥖', barcode: '2000000000018', shortCode: '1', stock: 150, orderIndex: 3),
+        QuickItemData(id: 'egg_single', name: 'حبة بيض (Œuf)', price: 20.0, costPrice: 17.0, icon: '🥚', barcode: '2000000000025', shortCode: '2', stock: 360, orderIndex: 4),
+        QuickItemData(id: 'chakhchoukha', name: 'شخشوخة / تريدة تقليدية', price: 120.0, costPrice: 90.0, icon: '🍲', barcode: '2000000000032', shortCode: '3', stock: 50, orderIndex: 5),
+        QuickItemData(id: 'kesra', name: 'كسرة رخساس / فطير', price: 50.0, costPrice: 35.0, icon: '🫓', barcode: '2000000000049', shortCode: '4', stock: 40, orderIndex: 6),
+        QuickItemData(id: 'milk_bag', name: 'حليب شكارة مدعم (Lait)', price: 25.0, costPrice: 23.5, icon: '🥛', barcode: '2000000000056', shortCode: '5', stock: 80, orderIndex: 7),
+        QuickItemData(id: 'water_500', name: 'قارورة ماء 0.5L', price: 25.0, costPrice: 18.0, icon: '💧', barcode: '2000000000063', shortCode: '6', stock: 120, orderIndex: 8),
+        QuickItemData(id: 'plastic_bag', name: 'كيس تسوق بلاستيكي', price: 5.0, costPrice: 2.0, icon: '🛍️', barcode: '2000000000070', shortCode: '7', stock: 500, orderIndex: 9),
       ];
 
       for (var item in defaults) {
@@ -117,6 +125,16 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
         _syncWithProductBox(item);
       }
       list.addAll(defaults);
+    } else {
+      // Ensure coffee presets exist for merchants who already had custom quick items
+      for (var cp in coffeePresets) {
+        if (!list.any((e) => e.name.contains('قهوة') || e.name.contains('شاي') || e.id == cp.id)) {
+          final newItem = cp.copyWith(orderIndex: list.length);
+          box.put(newItem.id, newItem.toMap());
+          _syncWithProductBox(newItem);
+          list.add(newItem);
+        }
+      }
     }
 
     list.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
@@ -127,9 +145,35 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
     });
   }
 
+  void _addCoffeePresetsManually() {
+    final box = HiveDatabase.quickItemsBox;
+    final presets = [
+      QuickItemData(id: 'coffee_cup_express', name: 'قهوة عادية (Express)', price: 40.0, costPrice: 15.0, icon: '☕', barcode: '2000000000087', shortCode: 'C1', stock: 500, orderIndex: _items.length),
+      QuickItemData(id: 'coffee_capsule', name: 'قهوة كبسولة (Capsule)', price: 60.0, costPrice: 30.0, icon: '🟤', barcode: '2000000000094', shortCode: 'C2', stock: 200, orderIndex: _items.length + 1),
+      QuickItemData(id: 'tea_cup', name: 'كأس شاي (Thé)', price: 30.0, costPrice: 10.0, icon: '🍵', barcode: '2000000000100', shortCode: 'C3', stock: 500, orderIndex: _items.length + 2),
+    ];
+
+    int added = 0;
+    for (var item in presets) {
+      if (!_items.any((existing) => existing.id == item.id || existing.name == item.name)) {
+        box.put(item.id, item.toMap());
+        _syncWithProductBox(item);
+        _items.add(item);
+        added++;
+      }
+    }
+
+    setState(() {});
+    SoundService.playSaveSuccess();
+    SnackbarHelper.showSuccess(context, added > 0 ? 'تمت إضافة أزرار القهوة والشاي إلى البيع السريع!' : 'أزرار القهوة والشاي موجودة بالفعل!');
+  }
+
   void _syncWithProductBox(QuickItemData item) {
     final productBox = HiveDatabase.productBox;
     final existing = productBox.values.where((p) => p.barcode == item.barcode || p.id == item.id).firstOrNull;
+
+    final nameL = item.name.toLowerCase();
+    final isCoffee = nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('كبسول') || nameL.contains('express');
 
     final productModel = ProductModel(
       id: existing?.id ?? item.id,
@@ -138,7 +182,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
       price: item.price,
       costPrice: item.costPrice,
       stock: existing != null ? existing.stock : item.stock,
-      category: 'بيع سريع',
+      category: isCoffee ? 'القهوة والشاي' : 'بيع سريع',
       isWeighted: false,
       wholesalePrice: item.price,
     );
@@ -146,7 +190,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
     productBox.put(productModel.id, productModel);
     CatalogCrowdsourceHelper.silentHarvest(
       productModel.toEntity(),
-      category: 'بيع سريع',
+      category: isCoffee ? 'القهوة والشاي' : 'بيع سريع',
       unit: 'حبة',
     );
     context.read<ProductBloc>().add(LoadProducts());
@@ -453,6 +497,13 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                   ],
                 ),
                 const Spacer(),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
+                  icon: const Icon(Icons.coffee_rounded, color: Colors.white, size: 18),
+                  label: const Text('تثبيت القهوة والشاي ☕', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  onPressed: _addCoffeePresetsManually,
+                ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
                   icon: const Icon(Icons.add, color: Colors.white),

@@ -1036,7 +1036,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     if (matchedQuickItem != null) {
       final quickProduct = _resolveProductForQuickItem(matchedQuickItem);
-      UniversalUnitSelectorDialog.showForProduct(context, quickProduct);
+      if (quickProduct.isCoffeeMachineProduct && !_isReturnMode) {
+        _showCoffeeSaleDialog(quickProduct, 1);
+      } else {
+        UniversalUnitSelectorDialog.showForProduct(context, quickProduct);
+      }
       return;
     }
 
@@ -2004,8 +2008,9 @@ $itemsSummary
                   final isDairy = catL.contains('حليب') || catL.contains('لبن') || catL.contains('جبن') || catL.contains('ألبان') || catL.contains('زبادي') ||
                                   nameL.contains('حليب') || nameL.contains('جبن') || nameL.contains('ياغورت');
                   if (!isDairy) return false;
-                } else if (catKey == 'coffee_tea') {
-                  final isCT = catL.contains('قهوة') || catL.contains('شاي') || catL.contains('سكر') ||
+                } else if (catKey == 'coffee_tea' || catKey.contains('قهوة') || catKey.contains('شاي')) {
+                  final isCT = p.isCoffeeMachineProduct ||
+                               catL.contains('قهوة') || catL.contains('شاي') || catL.contains('سكر') ||
                                nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('نسكافيه');
                   if (!isCT) return false;
                 } else if (catKey == 'sweets') {
@@ -2157,7 +2162,12 @@ $itemsSummary
                                   borderRadius: BorderRadius.circular(10),
                                   onTap: () {
                                     SoundService.playScanBeep();
-                                    UniversalUnitSelectorDialog.showForProduct(context, prod);
+                                    if (prod.isCoffeeMachineProduct && !_isReturnMode) {
+                                      Navigator.pop(ctx);
+                                      _showCoffeeSaleDialog(prod, 1);
+                                    } else {
+                                      UniversalUnitSelectorDialog.showForProduct(context, prod);
+                                    }
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
@@ -3519,6 +3529,15 @@ $itemsSummary
         nameL.contains('رويبة') ||
         nameL.contains('إفري') ||
         nameL.contains('رامي');
+    final isCoffee = nameL.contains('قهوة') ||
+        nameL.contains('شاي') ||
+        nameL.contains('كبسول') ||
+        nameL.contains('إكسبريسو') ||
+        nameL.contains('إسبريسو') ||
+        nameL.contains('اسبريسو') ||
+        nameL.contains('express') ||
+        nameL.contains('coffee') ||
+        nameL.contains('tea');
 
     final effectivePacksPerCarton = isTob ? 10 : (isBev ? 6 : ((item['packsPerCarton'] as num?)?.toInt() ?? 10));
     final effectivePiecesPerPack = isTob ? 20 : ((item['piecesPerPack'] as num?)?.toInt() ?? 1);
@@ -3533,7 +3552,7 @@ $itemsSummary
       price: _isReturnMode ? -price.abs() : price,
       costPrice: cost,
       stock: stock,
-      category: isTob ? 'المواد التبغية' : (isBev ? 'المشروبات' : detectedSub.titleAr),
+      category: isTob ? 'المواد التبغية' : (isCoffee ? 'ماكينة القهوة والشاي' : (isBev ? 'المشروبات' : detectedSub.titleAr)),
       isTobacco: isTob,
       packsPerCarton: effectivePacksPerCarton,
       piecesPerPack: effectivePiecesPerPack,
@@ -3615,7 +3634,11 @@ $itemsSummary
           onTap: () {
             _onItemScanned();
             final prod = _resolveProductForQuickItem(item);
-            UniversalUnitSelectorDialog.showForProduct(context, prod);
+            if (prod.isCoffeeMachineProduct && !_isReturnMode) {
+              _showCoffeeSaleDialog(prod, 1);
+            } else {
+              UniversalUnitSelectorDialog.showForProduct(context, prod);
+            }
           },
           child: Container(
             padding: const EdgeInsets.all(12),
@@ -3686,24 +3709,46 @@ $itemsSummary
 
   List<Map<String, dynamic>> _getAllCombinedCategories() {
     final List<Map<String, dynamic>> all = [];
+    final Set<String> seenKeys = {};
+
+    void addCat(String key, String title, String icon, bool isCustom) {
+      final cleanKey = key.trim();
+      final cleanTitle = title.trim();
+      if (cleanKey.isEmpty || cleanTitle.isEmpty) return;
+      if (seenKeys.contains(cleanKey) || seenKeys.contains(cleanTitle)) return;
+      seenKeys.add(cleanKey);
+      seenKeys.add(cleanTitle);
+      all.add({
+        'key': cleanKey,
+        'ar': cleanTitle,
+        'icon': icon,
+        'isCustom': isCustom,
+      });
+    }
+
+    // 1. Preset Categories
     for (var def in _categoriesDef) {
       final trVal = context.tr(def['tr'] ?? '');
       final catName = trVal != (def['tr'] ?? '') && trVal.isNotEmpty ? trVal : (def['ar'] ?? '');
-      all.add({
-        'key': def['key'],
-        'ar': catName,
-        'icon': def['icon'] ?? '🏷️',
-        'isCustom': false,
-      });
+      addCat(def['key'] ?? '', catName, def['icon'] ?? '🏷️', false);
     }
-    for (var custom in CategoryTaxonomy.getCustomCategories()) {
-      all.add({
-        'key': custom,
-        'ar': custom,
-        'icon': CategoryTaxonomy.getIconForCategory(custom),
-        'isCustom': true,
-      });
+
+    // 2. Discover Real Categories from Loaded Products in Store
+    final productsState = context.read<ProductBloc>().state;
+    if (productsState.status == ProductStatus.loaded) {
+      for (final p in productsState.products) {
+        final cat = p.category.trim();
+        if (cat.isNotEmpty) {
+          addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
+        }
+      }
     }
+
+    // 3. Taxonomy Dropdown Categories (e.g. 'ماكينة القهوة والشاي', etc.)
+    for (var cat in CategoryTaxonomy.getDropdownCategories()) {
+      addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
+    }
+
     return all;
   }
 
@@ -3712,16 +3757,32 @@ $itemsSummary
     final hidden = CategoryTaxonomy.getHiddenCategories();
     final order = CategoryTaxonomy.getCategoryOrder();
 
-    final visible = all.where((c) => !hidden.contains(c['ar'])).toList();
+    // 1. Filter out hidden
+    final visible = all.where((c) {
+      final key = c['key'] as String;
+      final name = c['ar'] as String;
+      return !hidden.contains(key) && !hidden.contains(name);
+    }).toList();
 
+    // 2. Sort by custom order
     visible.sort((a, b) {
-      final idxA = order.indexOf(a['ar']);
-      final idxB = order.indexOf(b['ar']);
+      final keyA = a['key'] as String;
+      final keyB = b['key'] as String;
+      final nameA = a['ar'] as String;
+      final nameB = b['ar'] as String;
+
+      int idxA = order.indexOf(keyA);
+      if (idxA == -1) idxA = order.indexOf(nameA);
+
+      int idxB = order.indexOf(keyB);
+      if (idxB == -1) idxB = order.indexOf(nameB);
+
       if (idxA != -1 && idxB != -1) return idxA.compareTo(idxB);
       if (idxA != -1) return -1;
       if (idxB != -1) return 1;
       return 0;
     });
+
     return visible;
   }
 
@@ -3761,74 +3822,100 @@ class _CategorySettingsDialog extends StatefulWidget {
 }
 
 class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
-  late List<String> _orderedNames;
-  late Set<String> _hiddenNames;
+  late List<Map<String, dynamic>> _orderedCategories;
+  late Set<String> _hiddenKeys;
 
   @override
   void initState() {
     super.initState();
-    _hiddenNames = CategoryTaxonomy.getHiddenCategories().toSet();
+    _hiddenKeys = CategoryTaxonomy.getHiddenCategories().toSet();
     final savedOrder = CategoryTaxonomy.getCategoryOrder();
-    
-    final allNames = widget.allCategories.map((e) => e['ar'] as String).toList();
-    
-    _orderedNames = [];
-    for (final name in savedOrder) {
-      if (allNames.contains(name)) {
-        _orderedNames.add(name);
-      }
-    }
-    for (final name in allNames) {
-      if (!_orderedNames.contains(name)) {
-        _orderedNames.add(name);
-      }
-    }
+
+    final all = List<Map<String, dynamic>>.from(widget.allCategories);
+
+    all.sort((a, b) {
+      final keyA = a['key'] as String;
+      final keyB = b['key'] as String;
+      final nameA = a['ar'] as String;
+      final nameB = b['ar'] as String;
+
+      int idxA = savedOrder.indexOf(keyA);
+      if (idxA == -1) idxA = savedOrder.indexOf(nameA);
+
+      int idxB = savedOrder.indexOf(keyB);
+      if (idxB == -1) idxB = savedOrder.indexOf(nameB);
+
+      if (idxA != -1 && idxB != -1) return idxA.compareTo(idxB);
+      if (idxA != -1) return -1;
+      if (idxB != -1) return 1;
+      return 0;
+    });
+
+    _orderedCategories = all;
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: const [
           Icon(Icons.category, color: Colors.blue),
           SizedBox(width: 8),
-          Text('إعدادات عرض الأصناف'),
+          Text('تنظيم وترتيب شريط الأصناف'),
         ],
       ),
       content: SizedBox(
-        width: 400,
-        height: 500,
+        width: 440,
+        height: 520,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('اسحب لإعادة الترتيب، واستخدم المربعات للإخفاء/الإظهار.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            const Text(
+              'اسحب لإعادة الترتيب، واستخدم المربعات لتحديد ما يظهر في الشريط الرئيسي.',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
             const SizedBox(height: 10),
             Expanded(
               child: ReorderableListView.builder(
-                itemCount: _orderedNames.length,
+                itemCount: _orderedCategories.length,
                 onReorder: (oldIndex, newIndex) {
                   if (oldIndex < newIndex) newIndex -= 1;
                   setState(() {
-                    final item = _orderedNames.removeAt(oldIndex);
-                    _orderedNames.insert(newIndex, item);
+                    final item = _orderedCategories.removeAt(oldIndex);
+                    _orderedCategories.insert(newIndex, item);
                   });
                 },
                 itemBuilder: (context, index) {
-                  final name = _orderedNames[index];
-                  final cat = widget.allCategories.firstWhere((e) => e['ar'] == name);
-                  final isHidden = _hiddenNames.contains(name);
+                  final cat = _orderedCategories[index];
+                  final key = cat['key'] as String;
+                  final name = cat['ar'] as String;
+                  final isHidden = _hiddenKeys.contains(key) || _hiddenKeys.contains(name);
+
                   return Card(
-                    key: ValueKey(name),
-                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    key: ValueKey('cat_$key'),
+                    elevation: 1,
+                    margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
                     child: CheckboxListTile(
-                      secondary: Text(cat['icon'] as String, style: const TextStyle(fontSize: 18)),
-                      title: Text(name, style: TextStyle(fontWeight: FontWeight.bold, decoration: isHidden ? TextDecoration.lineThrough : null, color: isHidden ? Colors.grey : null)),
+                      secondary: Text(cat['icon'] as String, style: const TextStyle(fontSize: 20)),
+                      title: Text(
+                        name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          decoration: isHidden ? TextDecoration.lineThrough : null,
+                          color: isHidden ? Colors.grey : null,
+                        ),
+                      ),
                       value: !isHidden,
                       onChanged: (val) {
                         setState(() {
                           if (val == true) {
-                            _hiddenNames.remove(name);
+                            _hiddenKeys.remove(key);
+                            _hiddenKeys.remove(name);
                           } else {
-                            _hiddenNames.add(name);
+                            _hiddenKeys.add(key);
+                            _hiddenKeys.add(name);
                           }
                         });
                       },
@@ -3841,13 +3928,17 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
           onPressed: () async {
-            await CategoryTaxonomy.saveCategoryOrder(_orderedNames);
+            final orderList = _orderedCategories.map((c) => c['key'] as String).toList();
+            await CategoryTaxonomy.saveCategoryOrder(orderList);
             final box = HiveDatabase.settingsBox;
-            await box.put(CategoryTaxonomy.hiddenCategoriesSettingsKey, _hiddenNames.toList());
+            await box.put(CategoryTaxonomy.hiddenCategoriesSettingsKey, _hiddenKeys.toList());
             if (mounted) Navigator.pop(context);
           },
           child: const Text('حفظ التعديلات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
