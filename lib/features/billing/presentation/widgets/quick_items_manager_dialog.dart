@@ -39,6 +39,30 @@ class QuickItemData {
     this.orderIndex = 0,
   });
 
+  QuickItemData copyWith({
+    String? id,
+    String? name,
+    double? price,
+    double? costPrice,
+    String? icon,
+    String? barcode,
+    String? shortCode,
+    int? stock,
+    String? linkedProductId,
+    int? orderIndex,
+  }) => QuickItemData(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    price: price ?? this.price,
+    costPrice: costPrice ?? this.costPrice,
+    icon: icon ?? this.icon,
+    barcode: barcode ?? this.barcode,
+    shortCode: shortCode ?? this.shortCode,
+    stock: stock ?? this.stock,
+    linkedProductId: linkedProductId ?? this.linkedProductId,
+    orderIndex: orderIndex ?? this.orderIndex,
+  );
+
   Map<String, dynamic> toMap() => {
     'id': id,
     'name': name,
