@@ -430,7 +430,6 @@ class _StockInPageState extends State<StockInPage> {
     final cartonCostPrice = existingProduct?.cartonCostPrice ?? masterMatch?.cartonCostPrice ?? 0.0;
     final unitType = isCoffee ? 'كأس' : (existingProduct?.unitType ?? masterMatch?.unitType ?? 'unit');
     final effectivePrice = isCoffee ? _coffeeData.salePrice : price;
-    final effectiveAllowPieceSale = isCoffee ? true : (existingProduct?.allowPieceSale ?? false);
 
     final effectiveCategory = isCoffee
         ? 'القهوة الجاهزة'
@@ -458,7 +457,6 @@ class _StockInPageState extends State<StockInPage> {
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
         unitType: unitType,
-        allowPieceSale: effectiveAllowPieceSale,
         singlePiecePrice: singlePiecePrice,
         piecesPerPack: piecesPerPack,
       );
@@ -491,7 +489,6 @@ class _StockInPageState extends State<StockInPage> {
         wholesalePackPrice: wholesalePackPrice,
         cartonCostPrice: cartonCostPrice,
         unitType: unitType,
-        allowPieceSale: effectiveAllowPieceSale,
       );
       productBloc.add(AddProduct(newProduct));
       CatalogCrowdsourceHelper.silentHarvest(
