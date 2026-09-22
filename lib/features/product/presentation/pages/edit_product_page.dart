@@ -16,10 +16,11 @@ import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../../shop/data/models/shop_model.dart';
+import '../../billing/presentation/widgets/quick_items_manager_dialog.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
-
 import '../widgets/product_image_picker_field.dart';
+import '../widgets/ready_coffee_calculator_card.dart';
 
 class EditProductPage extends StatefulWidget {
   final Product product;
@@ -64,6 +65,12 @@ class _EditProductPageState extends State<EditProductPage> {
   late bool _isWeighted;
   DateTime? _expiryDate;
 
+  late ReadyCoffeeData _coffeeData;
+  bool get _isCoffeeCategory =>
+      _selectedCategory == 'القهوة الجاهزة' ||
+      _selectedCategory.contains('قهوة') ||
+      _selectedCategory.contains('شاي');
+
   List<String> _availableCategories = [];
 
   @override
@@ -107,14 +114,28 @@ class _EditProductPageState extends State<EditProductPage> {
     if (widget.product.expiryDate != null && widget.product.expiryDate!.isNotEmpty) {
       _expiryDate = DateTime.tryParse(widget.product.expiryDate!);
     }
+
+    final qBox = HiveDatabase.quickItemsBox;
+    final existingQuick = qBox.values.where((it) => it is Map && (it['linkedProductId'] == widget.product.id || (widget.product.barcode.isNotEmpty && it['barcode'] == widget.product.barcode))).firstOrNull;
+
+    _coffeeData = ReadyCoffeeData(
+      drinkType: widget.product.name.contains('كبسول') ? 'capsule' : (widget.product.name.contains('شاي') ? 'tea' : 'express'),
+      drinkName: widget.product.name,
+      basePackCost: widget.product.costPrice,
+      baseYieldCount: widget.product.piecesPerPack > 1 ? widget.product.piecesPerPack : 50,
+      salePrice: widget.product.resolvedPiecePrice > 0 ? widget.product.resolvedPiecePrice : widget.product.price,
+      pinToQuickSale: existingQuick != null,
+      quickIcon: (existingQuick is Map ? existingQuick['icon']?.toString() : null) ?? (widget.product.name.contains('كبسول') ? '🟤' : (widget.product.name.contains('شاي') ? '🍵' : '☕')),
+    );
   }
 
   void _applyCategoryConfig(String cat, {bool userOverride = false}) {
     final lower = cat.toLowerCase();
     final isTob = lower.contains('تبغ') || lower.contains('سجائر') || lower.contains('شمة') || lower.contains('معسل') || lower.contains('ولاع') || lower.contains('ورق لف');
     final isCheese = lower.contains('جبن') || lower.contains('حليب') || lower.contains('مشتقات') || lower.contains('fromage');
-    final isDrink = lower.contains('مشروب') || lower.contains('ماء') || lower.contains('عصير') || lower.contains('boisson') || lower.contains('soda');
-    final isCoffee = lower.contains('ماكينة') || lower.contains('قهوة') || lower.contains('شاي') || lower.contains('cafe') || lower.contains('tea');
+    final isDrink = (lower.contains('مشروب') || lower.contains('ماء') || lower.contains('عصير') || lower.contains('boisson') || lower.contains('soda')) &&
+        !lower.contains('قهوة') && !lower.contains('شاي');
+    final isCoffee = lower.contains('القهوة الجاهزة') || lower.contains('ماكينة') || lower.contains('قهوة') || lower.contains('شاي') || lower.contains('cafe') || lower.contains('tea');
     final isStationery = lower.contains('مدرسي') || lower.contains('مكتب') || lower.contains('كراس') || lower.contains('قلم') || lower.contains('stylo') || lower.contains('cahier');
     final isProduce = lower.contains('خضر') || lower.contains('فواكه') || lower.contains('ميزان') || lower.contains('legume') || lower.contains('fruit');
     final isBattery = lower.contains('بطار') || lower.contains('حجر') || lower.contains('بيل') || lower.contains('pile');
@@ -151,14 +172,17 @@ class _EditProductPageState extends State<EditProductPage> {
         _piecesPerPackCtrl.text = '1';
         _packNameCtrl.text = 'قارورة';
       } else if (isCoffee) {
-        _hasCartonLevel = true;
+        _hasCartonLevel = false;
         _hasPackLevel = true;
         _hasPieceLevel = true;
         _allowPieceSale = true;
         _isWeighted = false;
-        _packsPerCartonCtrl.text = '10';
-        _piecesPerPackCtrl.text = '100'; // 100 cups yield per kg
-        _packNameCtrl.text = 'كيس 1 كغ بن';
+        _packsPerCartonCtrl.text = '1';
+        _piecesPerPackCtrl.text = _coffeeData.baseYieldCount.toString();
+        _packNameCtrl.text = 'كأس';
+        _priceCtrl.text = _coffeeData.salePrice.toStringAsFixed(0);
+        _singlePiecePriceCtrl.text = _coffeeData.salePrice.toStringAsFixed(0);
+        _costPriceCtrl.text = _coffeeData.totalCupCost.toStringAsFixed(2);
       } else if (isStationery) {
         _hasCartonLevel = true;
         _hasPackLevel = true;
@@ -829,6 +853,36 @@ class _EditProductPageState extends State<EditProductPage> {
         category: _selectedCategory,
         unit: _isWeighted ? 'كغ' : 'حبة',
       );
+
+      // Sync with Quick Items box
+      try {
+        final qBox = HiveDatabase.quickItemsBox;
+        final existingKey = qBox.keys.where((k) {
+          final it = qBox.get(k);
+          return it is Map && (it['linkedProductId'] == updatedProduct.id || (updatedProduct.barcode.isNotEmpty && it['barcode'] == updatedProduct.barcode) || k == 'quick_${updatedProduct.id}');
+        }).firstOrNull;
+
+        if (_isCoffeeCategory && _coffeeData.pinToQuickSale) {
+          final qItem = QuickItemData(
+            id: existingKey?.toString() ?? 'quick_${updatedProduct.id}',
+            name: updatedProduct.name,
+            price: _coffeeData.salePrice,
+            costPrice: _coffeeData.totalCupCost,
+            icon: _coffeeData.quickIcon,
+            barcode: updatedProduct.barcode,
+            shortCode: _coffeeData.quickShortCode,
+            stock: (updatedProduct.stock * _coffeeData.baseYieldCount).toInt(),
+            linkedProductId: updatedProduct.id,
+            orderIndex: existingKey != null ? ((qBox.get(existingKey) as Map)['orderIndex'] as num?)?.toInt() ?? 0 : qBox.length,
+          );
+          await qBox.put(qItem.id, qItem.toMap());
+        } else if (!_coffeeData.pinToQuickSale && existingKey != null) {
+          await qBox.delete(existingKey);
+        }
+      } catch (e) {
+        debugPrint('Error syncing quick item in edit product: $e');
+      }
+
       SoundService.playCheckoutSuccess();
       context.showAppSnackBar('✅ تم تحديث وتعديل بيانات السلعة بنجاح!');
       await Future.delayed(const Duration(milliseconds: 150));
@@ -1123,6 +1177,25 @@ class _EditProductPageState extends State<EditProductPage> {
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // Dedicated Ready Coffee Recipe & Cost Calculator Card
+                if (_isCoffeeCategory) ...[
+                  ReadyCoffeeCalculatorCard(
+                    initialData: _coffeeData,
+                    onChanged: (data) {
+                      setState(() {
+                        _coffeeData = data;
+                        _priceCtrl.text = data.salePrice.toStringAsFixed(0);
+                        _singlePiecePriceCtrl.text = data.salePrice.toStringAsFixed(0);
+                        _costPriceCtrl.text = data.totalCupCost.toStringAsFixed(2);
+                        _piecesPerPackCtrl.text = data.baseYieldCount.toString();
+                        _allowPieceSale = true;
+                        _hasPieceLevel = true;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Unit Type Selection (قطعة، متر، مليلتر)
                 InputLabel(text: context.tr('unit_label')),

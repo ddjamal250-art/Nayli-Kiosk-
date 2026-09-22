@@ -40,6 +40,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
   static const List<Map<String, String>> _categoryTabsDef = [
     {'key': 'all', 'ar': 'الكل', 'fr': 'Tous', 'en': 'All'},
+    {'key': 'coffee_ready', 'ar': '☕ القهوة الجاهزة', 'fr': '☕ Café Prêt', 'en': '☕ Ready Coffee'},
     {'key': 'scale', 'ar': '⚖️ مواد الميزان', 'fr': '⚖️ Vrac & Balance', 'en': '⚖️ Scale & Bulk'},
     {'key': 'stationery', 'ar': '📚 أدوات مدرسية', 'fr': '📚 Papeterie', 'en': '📚 Stationery'},
     {'key': 'tobacco', 'ar': '🚬 تبغ وسجائر', 'fr': '🚬 Tabac', 'en': '🚬 Tobacco'},
@@ -56,6 +57,36 @@ class _ProductListPageState extends State<ProductListPage> {
   List<String> get _categoryTabs => _categoryTabsDef.map((c) => c['ar']!).toList();
   String get _selectedCategoryFilter =>
       _selectedCategoryIndex < _categoryTabsDef.length ? _categoryTabsDef[_selectedCategoryIndex]['ar']! : 'الكل';
+
+  bool _productMatchesTab(Product p, int tabIdx) {
+    if (tabIdx == 0) return true;
+    if (tabIdx >= _categoryTabsDef.length) return false;
+    final catDef = _categoryTabsDef[tabIdx];
+    final key = catDef['key'];
+    final pCat = p.category.toLowerCase();
+    final pName = p.name.toLowerCase();
+
+    if (key == 'coffee_ready') {
+      return p.isCoffeeMachineProduct || pCat.contains('قهوة') || pCat.contains('شاي') || pCat.contains('كافيتيريا');
+    }
+    if (key == 'scale') {
+      return p.isWeighted || p.barcode.startsWith('SCALE_') || pName.contains('ميزان') || pName.contains('كغ');
+    }
+    if (key == 'stationery') {
+      return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
+    }
+    if (key == 'tobacco') {
+      return p.isTobacco || pCat.contains('تبغ') || pCat.contains('سجائر') || pCat.contains('شمة') || pCat.contains('معسل');
+    }
+    if (key == 'beverages') {
+      final isDrink = p.isBeverage || pCat.contains('مشروب') || pCat.contains('ماء') || pCat.contains('عصير') || pCat.contains('غازي');
+      return isDrink && !p.isCoffeeMachineProduct && !pCat.contains('قهوة') && !pCat.contains('شاي');
+    }
+
+    final arName = (catDef['ar'] ?? '').toLowerCase();
+    final frName = (catDef['fr'] ?? '').toLowerCase();
+    return pCat.contains(arName) || pCat.contains(frName);
+  }
 
   void _toggleProductSelection(String id) {
     setState(() {
@@ -759,13 +790,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     final filtered = state.products.where((p) {
                       final matchesQuery = query.isEmpty || p.name.toLowerCase().contains(query) || p.barcode.contains(query);
                       if (!matchesQuery) return false;
-                      if (_selectedCategoryIndex == 0) return true;
-                      if (_selectedCategoryIndex == 1) {
-                        return p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ');
-                      }
-                      final catDef = _categoryTabsDef[_selectedCategoryIndex];
-                      final pCat = p.category.toLowerCase();
-                      return pCat.contains((catDef['ar'] ?? '').toLowerCase()) || pCat.contains((catDef['fr'] ?? '').toLowerCase());
+                      return _productMatchesTab(p, _selectedCategoryIndex);
                     }).toList();
 
                     return TextButton(
@@ -986,26 +1011,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     final label = catDef[langCode] ?? catDef['ar'] ?? '';
 
                     // Calculate count for this tab
-                    int count = 0;
-                    if (idx == 0) {
-                      count = state.products.length;
-                    } else if (idx == 1) {
-                      count = state.products.where((p) => p.isWeighted || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')).length;
-                    } else if (catDef['key'] == 'stationery') {
-                      count = state.products.where((p) {
-                        final pCat = p.category.toLowerCase();
-                        return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
-                      }).length;
-                    } else if (catDef['key'] == 'tobacco') {
-                      count = state.products.where((p) => p.isTobacco || p.category.contains('تبغ') || p.category.contains('سجائر') || p.category.contains('شمة') || p.category.contains('معسل')).length;
-                    } else {
-                      final arName = (catDef['ar'] ?? '').toLowerCase();
-                      final frName = (catDef['fr'] ?? '').toLowerCase();
-                      count = state.products.where((p) {
-                        final pCat = p.category.toLowerCase();
-                        return pCat.contains(arName) || pCat.contains(frName);
-                      }).length;
-                    }
+                    final count = state.products.where((p) => _productMatchesTab(p, idx)).length;
 
                     return FilterChip(
                       label: Text(
@@ -1017,7 +1023,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         ),
                       ),
                       selected: isSelected,
-                      selectedColor: idx == 1 ? Colors.teal : AppTheme.primaryColor,
+                      selectedColor: idx == 1 ? Colors.brown : (idx == 2 ? Colors.teal : AppTheme.primaryColor),
                       backgroundColor: isSelected ? AppTheme.primaryColor : Colors.grey[100],
                       checkmarkColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -1061,23 +1067,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   final matchesSearch = product.name.toLowerCase().contains(_searchQuery) ||
                       product.barcode.toLowerCase().contains(_searchQuery);
                   if (!matchesSearch) return false;
-
-                  if (_selectedCategoryIndex == 0) return true;
-                  if (_selectedCategoryIndex == 1) {
-                    return product.isWeighted ||
-                        product.barcode.startsWith('SCALE_') ||
-                        product.name.contains('ميزان') ||
-                        product.name.contains('كغ');
-                  }
-                  final catDef = _categoryTabsDef[_selectedCategoryIndex];
-                  final pCat = product.category.toLowerCase();
-                  if (catDef['key'] == 'stationery') {
-                    return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
-                  }
-                  if (catDef['key'] == 'tobacco') {
-                    return product.isTobacco || pCat.contains('تبغ') || pCat.contains('سجائر') || pCat.contains('شمة') || pCat.contains('معسل');
-                  }
-                  return pCat.contains((catDef['ar'] ?? '').toLowerCase()) || pCat.contains((catDef['fr'] ?? '').toLowerCase());
+                  return _productMatchesTab(product, _selectedCategoryIndex);
                 }).toList();
 
                 if (filteredProducts.isEmpty) {

@@ -93,7 +93,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     {'key': 'tobacco', 'tr': 'tobacco_btn', 'ar': 'المواد التبغية', 'icon': '🚬'},
     {'key': 'cold_drinks', 'tr': 'cat_beverages', 'ar': 'المشروبات والعصائر', 'icon': '🥤'},
     {'key': 'dairy', 'tr': 'cat_dairy', 'ar': 'الألبان والأجبان', 'icon': '🥛'},
-    {'key': 'coffee_tea', 'tr': 'cat_coffee_tea', 'ar': 'القهوة والشاي', 'icon': '☕'},
+    {'key': 'coffee_tea', 'tr': 'cat_coffee_tea', 'ar': 'القهوة الجاهزة', 'icon': '☕'},
     {'key': 'sweets', 'tr': 'cat_sweets', 'ar': 'الحلويات والسكاكر', 'icon': '🍫'},
     {'key': 'scale', 'tr': 'cat_scale', 'ar': 'سلع الميزان', 'icon': '⚖️'},
     {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'البقوليات والحبوب', 'icon': '🌾'},
@@ -101,7 +101,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     {'key': 'bakery', 'tr': 'cat_bakery', 'ar': 'المخبوزات والعجائن', 'icon': '🥖'},
     {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات والتطهير', 'icon': '🧽'},
     {'key': 'hygiene', 'tr': 'cat_hygiene', 'ar': 'العناية الشخصية', 'icon': '🧴'},
-    {'key': 'stationery', 'tr': 'cat_stationery', 'ar': 'الأدوات المدرسية', 'icon': '📚'},
+    {'key': 'stationery', 'tr': 'cat_stationery', 'ar': 'الأدوات المدرسية والمكتبية', 'icon': '📚'},
     {'key': 'phone_accessories', 'tr': 'cat_phone_acc', 'ar': 'لواحق هواتف وإلكترونيات', 'icon': '📱'},
     {'key': 'batteries', 'tr': 'cat_batteries', 'ar': 'بطاريات وكهربائيات', 'icon': '🔋'},
     {'key': 'cosmetics', 'tr': 'cat_cosmetics', 'ar': 'كوسميتيك وعطور', 'icon': '💄'},
@@ -274,6 +274,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   Future<void> _showCoffeeSaleDialog(Product product, int multiplier) async {
     final TextEditingController priceCtrl = TextEditingController(text: product.resolvedPiecePrice.toStringAsFixed(0));
     String deductType = 'cup'; // 'cup', 'full_pack'
+    int cupQty = (multiplier > 1) ? multiplier : 1;
     
     // Load accessories from state
     final productsState = context.read<ProductBloc>().state;
@@ -285,13 +286,17 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         if (p.id == product.id) return false;
         final n = p.name.toLowerCase();
         final c = p.category.toLowerCase();
-        return c.contains('قهوة') || c.contains('مستلزم') || n.contains('سكر') || n.contains('غوبلي') || n.contains('كأس') || n.contains('مغرف') || n.contains('ملعق') || n.contains('حليب') || n.contains('ماء');
+        // Strictly exclude packaged beverages, water bottles, and juices from coffee supplies
+        if (p.isBeverage || n.contains('ماء') || n.contains('eau') || n.contains('عصير') || n.contains('قارورة') || n.contains('كوكا')) {
+          return false;
+        }
+        return c.contains('مستلزم') || n.contains('سكر') || n.contains('غوبلي') || n.contains('gobelet') || n.contains('مغرف') || n.contains('ملعق') || n.contains('cuill');
       }).toList();
 
       // Auto-select standard accessories if they exist
       for (var acc in availableAccessories) {
         final n = acc.name.toLowerCase();
-        if (n.contains('غوبلي') || n.contains('gobelet') || n.contains('كأس') || n.contains('كاس') || 
+        if (n.contains('غوبلي') || n.contains('gobelet') || 
             n.contains('سكر') || n.contains('sucre') || 
             n.contains('مغرف') || n.contains('ملعق') || n.contains('cuill')) {
           selectedAccessoryIds.add(acc.id);
@@ -306,14 +311,16 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           builder: (context, setDialogState) {
             final isFullPack = deductType == 'full_pack';
             
-            // Calculate Total Cost
-            double totalCost = isFullPack ? product.costPrice : product.resolvedPieceCost;
+            // Calculate Total Cost per single unit
+            double singleCost = isFullPack ? product.costPrice : product.resolvedPieceCost;
             if (!isFullPack) {
               for (var accId in selectedAccessoryIds) {
                 final acc = availableAccessories.firstWhere((p) => p.id == accId);
-                totalCost += acc.resolvedPieceCost;
+                singleCost += acc.resolvedPieceCost;
               }
             }
+            final currentQty = isFullPack ? (1 * multiplier) : cupQty;
+            final double totalCost = singleCost * currentQty;
 
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -350,7 +357,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     Column(
                       children: [
                         RadioListTile<String>(
-                          title: Text('تحضير كوب واحد (${product.resolvedSubUnitName})', style: TextStyle(fontSize: 13)),
+                          title: Text('تحضير وبيع بالأكواب (${product.resolvedSubUnitName})', style: TextStyle(fontSize: 13)),
                           value: 'cup',
                           groupValue: deductType,
                           contentPadding: EdgeInsets.zero,
@@ -375,10 +382,68 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         ),
                       ],
                     ),
+
+                    if (!isFullPack) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text('عدد الكؤوس:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.brown),
+                            onPressed: () {
+                              if (cupQty > 1) {
+                                setDialogState(() => cupQty--);
+                              }
+                            },
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.brown.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.brown.shade300),
+                            ),
+                            child: Text(
+                              '$cupQty',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.brown),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline, color: Colors.brown),
+                            onPressed: () => setDialogState(() => cupQty++),
+                          ),
+                          const Spacer(),
+                          ...[1, 2, 3, 5].map((q) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: InkWell(
+                              onTap: () => setDialogState(() => cupQty = q),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: cupQty == q ? Colors.brown : Colors.brown.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: cupQty == q ? Colors.brown : Colors.brown.shade200),
+                                ),
+                                child: Text(
+                                  '$q',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: cupQty == q ? Colors.white : Colors.brown,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )),
+                        ],
+                      ),
+                    ],
                     
                     if (!isFullPack && availableAccessories.isNotEmpty) ...[
-                      SizedBox(height: 16),
-                      Text('إضافة مستلزمات للطلب (تخصم من المخزون وتُحسب تكلفتها):', style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 14),
+                      Text('مستلزمات الطلب (تخصم تلقائياً من المخزون وتُحسب تكلفتها):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -411,7 +476,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('التكلفة الإجمالية:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text(isFullPack ? 'التكلفة الإجمالية:' : 'التكلفة الإجمالية ($cupQty كؤوس):', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
                           Text('${totalCost.toStringAsFixed(2)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade700, fontSize: 16)),
                         ],
                       ),
@@ -422,7 +487,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       controller: priceCtrl,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'سعر البيع للزبون',
+                        labelText: isFullPack ? 'سعر بيع العلبة' : 'سعر بيع الكأس الواحد للزبون',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         suffixText: 'دج',
                       ),
@@ -439,34 +504,35 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.brown, foregroundColor: Colors.white),
                   onPressed: () {
                     final price = double.tryParse(priceCtrl.text) ?? (isFullPack ? product.price : product.resolvedPiecePrice);
+                    final finalQty = isFullPack ? (1 * multiplier) : cupQty;
 
                     if (isFullPack) {
                       context.read<BillingBloc>().add(AddProductToCartEvent(
                         product,
                         unitLevel: 'pack',
-                        quantity: 1 * multiplier,
+                        quantity: finalQty,
                         customPrice: price,
                       ));
                     } else {
-                      // 1. Add Main Coffee Product (1 Cup)
+                      // 1. Add Main Coffee Product
                       context.read<BillingBloc>().add(AddProductToCartEvent(
                         product,
                         unitLevel: 'piece',
-                        quantity: 1 * multiplier,
+                        quantity: finalQty,
                         customPrice: price,
                       ));
 
-                      // 2. Add Selected Accessories (1 piece each)
+                      // 2. Add Selected Accessories
                       for (var accId in selectedAccessoryIds) {
                         final acc = availableAccessories.firstWhere((p) => p.id == accId);
                         context.read<BillingBloc>().add(AddProductToCartEvent(
-                          acc, unitLevel: 'piece', quantity: 1 * multiplier, customPrice: 0.0, customUnitName: 'مستلزمات',
+                          acc, unitLevel: 'piece', quantity: finalQty, customPrice: 0.0, customUnitName: 'مستلزمات',
                         ));
                       }
                     }
                     
                     Navigator.pop(ctx);
-                    SnackbarHelper.showSuccess(context, 'تمت الإضافة بنجاح!');
+                    SnackbarHelper.showSuccess(context, 'تمت إضافة $finalQty بنجاح!');
                   },
                   child: Text('تأكيد وإضافة'),
                 ),
@@ -2009,9 +2075,11 @@ $itemsSummary
                                   nameL.contains('حليب') || nameL.contains('جبن') || nameL.contains('ياغورت');
                   if (!isDairy) return false;
                 } else if (catKey == 'coffee_tea' || catKey.contains('قهوة') || catKey.contains('شاي')) {
+                  if (p.isBeverage && !catL.contains('قهوة') && !catL.contains('شاي') && !nameL.contains('قهوة') && !nameL.contains('شاي')) return false;
+                  if (nameL.contains('ماء معدني') || nameL.contains('قارورة ماء') || nameL.contains('ماء 0.5') || nameL.contains('ماء 1.5') || nameL.contains('جافيل')) return false;
                   final isCT = p.isCoffeeMachineProduct ||
-                               catL.contains('قهوة') || catL.contains('شاي') || catL.contains('سكر') ||
-                               nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('نسكافيه');
+                               catL.contains('قهوة') || catL.contains('شاي') ||
+                               nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('نسكافيه') || nameL.contains('كبسول');
                   if (!isCT) return false;
                 } else if (catKey == 'sweets') {
                   final isSweets = catL.contains('حلو') || catL.contains('شوكولا') || catL.contains('بسكويت') || catL.contains('علك') ||
@@ -3552,7 +3620,7 @@ $itemsSummary
       price: _isReturnMode ? -price.abs() : price,
       costPrice: cost,
       stock: stock,
-      category: isTob ? 'المواد التبغية' : (isCoffee ? 'ماكينة القهوة والشاي' : (isBev ? 'المشروبات' : detectedSub.titleAr)),
+      category: isTob ? 'المواد التبغية' : (isCoffee ? 'القهوة الجاهزة' : (isBev ? 'المشروبات والعصائر' : detectedSub.titleAr)),
       isTobacco: isTob,
       packsPerCarton: effectivePacksPerCarton,
       piecesPerPack: effectivePiecesPerPack,
@@ -3733,20 +3801,51 @@ $itemsSummary
       addCat(def['key'] ?? '', catName, def['icon'] ?? '🏷️', false);
     }
 
+    // Helper: Map arbitrary category string to preset key if matching
+    String? resolvePresetKey(String catName) {
+      final c = catName.trim().toLowerCase();
+      if (c.contains('تبغ') || c.contains('سجائر') || c.contains('شمة')) return 'tobacco';
+      if (c.contains('مشروب') || c.contains('عصير') || c.contains('ماء')) return 'cold_drinks';
+      if (c.contains('حليب') || c.contains('ألبان') || c.contains('أجبان') || c.contains('جبن')) return 'dairy';
+      if (c.contains('قهوة') || c.contains('شاي') || c.contains('ماكينة') || c.contains('كافيتيريا') || c.contains('كابوتشينو') || c.contains('كبسول')) return 'coffee_tea';
+      if (c.contains('حلو') || c.contains('شوكولا') || c.contains('بسكويت') || c.contains('سكاكر')) return 'sweets';
+      if (c.contains('ميزان')) return 'scale';
+      if (c.contains('بقول') || c.contains('عدس') || c.contains('حمص') || c.contains('فريك') || c.contains('لوبيا') || c.contains('أرز')) return 'pulses';
+      if (c.contains('معلب') || c.contains('طماطم') || c.contains('تونة') || c.contains('زيت')) return 'canned';
+      if (c.contains('مخبوز') || c.contains('عجائن') || c.contains('كسكسي') || c.contains('سميد') || c.contains('فرينة')) return 'bakery';
+      if (c.contains('منظف') || c.contains('تطهير') || c.contains('جافيل') || c.contains('صابون')) return 'cleaning';
+      if (c.contains('عناية') || c.contains('شامبو') || c.contains('معجون')) return 'hygiene';
+      if (c.contains('مدرس') || c.contains('مكتب')) return 'stationery';
+      if (c.contains('هاتف') || c.contains('شاحن') || c.contains('كابل') || c.contains('سماع')) return 'phone_accessories';
+      if (c.contains('بطار') || c.contains('حجر') || c.contains('بيل')) return 'batteries';
+      if (c.contains('كوسميتيك') || c.contains('عطر') || c.contains('تجميل')) return 'cosmetics';
+      if (c.contains('لعب') || c.contains('هدية')) return 'toys';
+      if (c.contains('خضر') || c.contains('فواكه') || c.contains('لحوم')) return 'produce';
+      if (c.contains('عام') || c.contains('جرائد')) return 'general_news';
+      if (c.contains('توابل') || c.contains('بهارات')) return 'spices';
+      return null;
+    }
+
     // 2. Discover Real Categories from Loaded Products in Store
     final productsState = context.read<ProductBloc>().state;
     if (productsState.status == ProductStatus.loaded) {
       for (final p in productsState.products) {
         final cat = p.category.trim();
         if (cat.isNotEmpty) {
-          addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
+          final preset = resolvePresetKey(cat);
+          if (preset == null) {
+            addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
+          }
         }
       }
     }
 
-    // 3. Taxonomy Dropdown Categories (e.g. 'ماكينة القهوة والشاي', etc.)
+    // 3. Taxonomy Dropdown Categories (only truly new custom ones)
     for (var cat in CategoryTaxonomy.getDropdownCategories()) {
-      addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
+      final preset = resolvePresetKey(cat);
+      if (preset == null) {
+        addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
+      }
     }
 
     return all;
@@ -3788,12 +3887,14 @@ $itemsSummary
 
   void _showCategorySettingsModal() {
     final allCats = _getAllCombinedCategories();
-    showDialog(
+    showDialog<bool>(
       context: context,
       builder: (ctx) {
         return _CategorySettingsDialog(allCategories: allCats);
       },
-    ).then((_) => setState(() {}));
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Widget _buildBottomHotkeysBar() {
@@ -3828,7 +3929,7 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
   @override
   void initState() {
     super.initState();
-    _hiddenKeys = CategoryTaxonomy.getHiddenCategories().toSet();
+    final savedHidden = CategoryTaxonomy.getHiddenCategories().toSet();
     final savedOrder = CategoryTaxonomy.getCategoryOrder();
 
     final all = List<Map<String, dynamic>>.from(widget.allCategories);
@@ -3852,6 +3953,15 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
     });
 
     _orderedCategories = all;
+    _hiddenKeys = {};
+    for (final cat in all) {
+      final k = cat['key'] as String;
+      final n = cat['ar'] as String;
+      if (savedHidden.contains(k) || savedHidden.contains(n)) {
+        _hiddenKeys.add(k);
+        _hiddenKeys.add(n);
+      }
+    }
   }
 
   @override
@@ -3937,9 +4047,19 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
           onPressed: () async {
             final orderList = _orderedCategories.map((c) => c['key'] as String).toList();
             await CategoryTaxonomy.saveCategoryOrder(orderList);
-            final box = HiveDatabase.settingsBox;
-            await box.put(CategoryTaxonomy.hiddenCategoriesSettingsKey, _hiddenKeys.toList());
-            if (mounted) Navigator.pop(context);
+            
+            // Rebuild hidden set strictly for current categories
+            final Set<String> toSaveHidden = {};
+            for (final cat in _orderedCategories) {
+              final k = cat['key'] as String;
+              final n = cat['ar'] as String;
+              if (_hiddenKeys.contains(k) || _hiddenKeys.contains(n)) {
+                toSaveHidden.add(k);
+                toSaveHidden.add(n);
+              }
+            }
+            await CategoryTaxonomy.saveHiddenCategories(toSaveHidden.toList());
+            if (mounted) Navigator.pop(context, true);
           },
           child: const Text('حفظ التعديلات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),

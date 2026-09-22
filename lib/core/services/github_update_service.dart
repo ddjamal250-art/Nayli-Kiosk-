@@ -55,8 +55,23 @@ class GitHubUpdateService {
   static const String repoOwner = 'ddjamal250-art';
   static const String repoName = 'Nayli-Kiosk-';
 
+  /// رقم الإصدار الحالي المضمن في التطبيق لضمان دقة الفحص على الويندوز
+  static const String currentAppVersion = '2.0.2';
+
   static bool _isChecking = false;
   static bool _hasAutoChecked = false;
+
+  /// الحصول على رقم الإصدار الحالي للتطبيق بدقة مع بديل مضمون
+  static Future<String> getAppVersion() async {
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      final ver = packageInfo.version.trim();
+      if (ver.isNotEmpty && ver != '1.0.0' && ver != '0.0.0') {
+        return ver;
+      }
+    } catch (_) {}
+    return currentAppVersion;
+  }
 
   /// مقارنة ذكية ودقيقة لأرقام الإصدارات بحسب نظام Semantic Versioning
   /// ترجع true إذا كان remoteVersion أعلى من currentVersion
@@ -77,6 +92,8 @@ class GitHubUpdateService {
           .first
           .split('-')
           .first;
+
+      if (cleanCurrent == cleanRemote) return false;
 
       final currentParts = cleanCurrent.split('.').map((e) => int.tryParse(e) ?? 0).toList();
       final remoteParts = cleanRemote.split('.').map((e) => int.tryParse(e) ?? 0).toList();
@@ -238,9 +255,7 @@ class GitHubUpdateService {
     }
 
     try {
-      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version;
-
+      final currentVersion = await getAppVersion();
       final latestRelease = await fetchLatestRelease();
 
       if (!context.mounted) return;
@@ -289,8 +304,15 @@ class GitHubUpdateService {
       final latestRelease = await fetchLatestRelease();
       if (latestRelease == null) return;
 
+      final currentVersion = await getAppVersion();
+
+      // إذا كان الإصدار المثبت يطابق أو أحدث من الإصدار السحابي، نوقف الفحص فوراً
+      if (!isNewerVersion(currentVersion, latestRelease.cleanVersion)) {
+        return;
+      }
+
       // منع التكرار إذا كان هذا الإصدار قد تم تثبيته بالفعل
-      if (lastInstalledTag != null && lastInstalledTag == latestRelease.tagName) {
+      if (lastInstalledTag != null && (lastInstalledTag == latestRelease.tagName || lastInstalledTag == 'v$currentVersion')) {
         return;
       }
 
@@ -302,10 +324,7 @@ class GitHubUpdateService {
         }
       }
 
-      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version;
-
-      if (context.mounted && isNewerVersion(currentVersion, latestRelease.cleanVersion)) {
+      if (context.mounted) {
         SoundService.playRestockSound();
         showDialog(
           context: context,

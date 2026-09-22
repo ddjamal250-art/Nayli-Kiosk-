@@ -202,7 +202,12 @@ class Product extends Equatable {
     if (isTobaccoProduct) return false;
     final cat = category.toLowerCase();
     final n = name.toLowerCase();
-    return cat.contains('ماكينة') ||
+    // Strictly exclude packaged beverages/waters unless they are explicitly coffee/tea
+    if (isBeverage && !cat.contains('قهوة') && !cat.contains('شاي') && !n.contains('قهوة') && !n.contains('شاي') && !n.contains('كأس') && !n.contains('كاس')) {
+      return false;
+    }
+    return cat.contains('القهوة الجاهزة') ||
+        cat.contains('ماكينة') ||
         cat.contains('آلة القهوة') ||
         cat.contains('قهوة') ||
         cat.contains('شاي') ||

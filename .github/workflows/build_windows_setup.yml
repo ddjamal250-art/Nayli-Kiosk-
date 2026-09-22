@@ -46,6 +46,8 @@ jobs:
             -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' `
             -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' `
             -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' `
+            -replace '1,0,0,1', '2,0,2,0' `
+            -replace '"1.0.0.1"', '"2.0.2.0"' `
             | Set-Content "windows\runner\Runner.rc"
 
       - name: Install dependencies

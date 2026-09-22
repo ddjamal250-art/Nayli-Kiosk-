@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/data/hive_database.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
@@ -13,10 +14,11 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
+import '../../billing/presentation/widgets/quick_items_manager_dialog.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
-
 import '../widgets/product_image_picker_field.dart';
+import '../widgets/ready_coffee_calculator_card.dart';
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -62,14 +64,21 @@ class _AddProductPageState extends State<AddProductPage> {
   DateTime? _expiryDate;
   bool _isSaving = false;
 
+  ReadyCoffeeData _coffeeData = ReadyCoffeeData();
+  bool get _isCoffeeCategory =>
+      _selectedCategory == 'القهوة الجاهزة' ||
+      _selectedCategory.contains('قهوة') ||
+      _selectedCategory.contains('شاي');
+
   List<String> _availableCategories = [];
 
   void _applyCategoryConfig(String cat, {bool userOverride = false}) {
     final lower = cat.toLowerCase();
     final isTob = lower.contains('تبغ') || lower.contains('سجائر') || lower.contains('شمة') || lower.contains('معسل') || lower.contains('ولاع') || lower.contains('ورق لف');
     final isCheese = lower.contains('جبن') || lower.contains('حليب') || lower.contains('مشتقات') || lower.contains('fromage');
-    final isDrink = lower.contains('مشروب') || lower.contains('ماء') || lower.contains('عصير') || lower.contains('boisson') || lower.contains('soda');
-    final isCoffee = lower.contains('ماكينة') || lower.contains('قهوة') || lower.contains('شاي') || lower.contains('cafe') || lower.contains('tea');
+    final isDrink = (lower.contains('مشروب') || lower.contains('ماء') || lower.contains('عصير') || lower.contains('boisson') || lower.contains('soda')) &&
+        !lower.contains('قهوة') && !lower.contains('شاي');
+    final isCoffee = lower.contains('القهوة الجاهزة') || lower.contains('ماكينة') || lower.contains('قهوة') || lower.contains('شاي') || lower.contains('cafe') || lower.contains('tea');
     final isStationery = lower.contains('مدرسي') || lower.contains('مكتب') || lower.contains('كراس') || lower.contains('قلم') || lower.contains('stylo') || lower.contains('cahier');
     final isProduce = lower.contains('خضر') || lower.contains('فواكه') || lower.contains('ميزان') || lower.contains('legume') || lower.contains('fruit');
     final isBattery = lower.contains('بطار') || lower.contains('حجر') || lower.contains('بيل') || lower.contains('pile');
@@ -106,14 +115,20 @@ class _AddProductPageState extends State<AddProductPage> {
         _piecesPerPackCtrl.text = '1';
         _packNameCtrl.text = 'قارورة';
       } else if (isCoffee) {
-        _hasCartonLevel = true;
+        _hasCartonLevel = false;
         _hasPackLevel = true;
         _hasPieceLevel = true;
         _allowPieceSale = true;
         _isWeighted = false;
-        _packsPerCartonCtrl.text = '10';
-        _piecesPerPackCtrl.text = '100'; // 100 cups yield per kg
-        _packNameCtrl.text = 'كيس 1 كغ بن';
+        _packsPerCartonCtrl.text = '1';
+        _piecesPerPackCtrl.text = _coffeeData.baseYieldCount.toString();
+        _packNameCtrl.text = 'كأس';
+        _priceCtrl.text = _coffeeData.salePrice.toStringAsFixed(0);
+        _singlePiecePriceCtrl.text = _coffeeData.salePrice.toStringAsFixed(0);
+        _costPriceCtrl.text = _coffeeData.totalCupCost.toStringAsFixed(2);
+        if (_nameCtrl.text.isEmpty) {
+          _nameCtrl.text = _coffeeData.drinkName;
+        }
       } else if (isStationery) {
         _hasCartonLevel = true;
         _hasPackLevel = true;
@@ -697,6 +712,29 @@ class _AddProductPageState extends State<AddProductPage> {
         category: _selectedCategory,
         unit: _isWeighted ? 'كغ' : 'حبة',
       );
+
+      // Pin directly to POS Quick Sale if enabled
+      if (_isCoffeeCategory && _coffeeData.pinToQuickSale) {
+        try {
+          final qBox = HiveDatabase.quickItemsBox;
+          final qItem = QuickItemData(
+            id: 'quick_${product.id}',
+            name: product.name,
+            price: _coffeeData.salePrice,
+            costPrice: _coffeeData.totalCupCost,
+            icon: _coffeeData.quickIcon,
+            barcode: product.barcode,
+            shortCode: _coffeeData.quickShortCode,
+            stock: (product.stock * _coffeeData.baseYieldCount).toInt(),
+            linkedProductId: product.id,
+            orderIndex: qBox.length,
+          );
+          await qBox.put(qItem.id, qItem.toMap());
+        } catch (e) {
+          debugPrint('Error pinning coffee quick item: $e');
+        }
+      }
+
       SoundService.playCheckoutSuccess();
       context.showAppSnackBar('✅ تم إضافة واستلام السلعة (${product.name}) بنجاح!');
       await Future.delayed(const Duration(milliseconds: 150));
@@ -807,6 +845,31 @@ class _AddProductPageState extends State<AddProductPage> {
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // Dedicated Ready Coffee Recipe & Cost Calculator Card
+                if (_isCoffeeCategory) ...[
+                  ReadyCoffeeCalculatorCard(
+                    initialData: _coffeeData,
+                    onChanged: (data) {
+                      setState(() {
+                        _coffeeData = data;
+                        _priceCtrl.text = data.salePrice.toStringAsFixed(0);
+                        _singlePiecePriceCtrl.text = data.salePrice.toStringAsFixed(0);
+                        _costPriceCtrl.text = data.totalCupCost.toStringAsFixed(2);
+                        _piecesPerPackCtrl.text = data.baseYieldCount.toString();
+                        _allowPieceSale = true;
+                        _hasPieceLevel = true;
+                        if (_nameCtrl.text.isEmpty ||
+                            _nameCtrl.text.contains('قهوة') ||
+                            _nameCtrl.text.contains('شاي') ||
+                            _nameCtrl.text.contains('كأس')) {
+                          _nameCtrl.text = data.drinkName;
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Unit Type Selection (قطعة، متر، مليلتر)
                 const InputLabel(text: 'وحدة البيع والقياس 📏📦'),

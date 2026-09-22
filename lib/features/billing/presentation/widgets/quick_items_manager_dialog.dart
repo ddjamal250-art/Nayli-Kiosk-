@@ -171,15 +171,66 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
 
   void _addCoffeePresetsManually() {
     final box = HiveDatabase.quickItemsBox;
+    final productBox = HiveDatabase.productBox;
+
+    // Search for existing real products under "القهوة الجاهزة" or matching names
+    final realCoffeeProducts = productBox.values.where((p) =>
+      p.category.contains('القهوة الجاهزة') ||
+      p.category.contains('قهوة') ||
+      p.isCoffeeMachineProduct
+    ).toList();
+
+    Product? findOrNull(String kw) {
+      final kwL = kw.toLowerCase();
+      return realCoffeeProducts.where((p) => p.name.toLowerCase().contains(kwL)).firstOrNull;
+    }
+
+    final realExpress = findOrNull('express') ?? findOrNull('عادية') ?? findOrNull('بن');
+    final realCapsule = findOrNull('capsule') ?? findOrNull('كبسول');
+    final realTea = findOrNull('شاي') ?? findOrNull('thé');
+
     final presets = [
-      QuickItemData(id: 'coffee_cup_express', name: 'قهوة عادية (Express)', price: 40.0, costPrice: 15.0, icon: '☕', barcode: '2000000000087', shortCode: 'C1', stock: 500, orderIndex: _items.length),
-      QuickItemData(id: 'coffee_capsule', name: 'قهوة كبسولة (Capsule)', price: 60.0, costPrice: 30.0, icon: '🟤', barcode: '2000000000094', shortCode: 'C2', stock: 200, orderIndex: _items.length + 1),
-      QuickItemData(id: 'tea_cup', name: 'كأس شاي (Thé)', price: 30.0, costPrice: 10.0, icon: '🍵', barcode: '2000000000100', shortCode: 'C3', stock: 500, orderIndex: _items.length + 2),
+      QuickItemData(
+        id: realExpress != null ? 'quick_${realExpress.id}' : 'coffee_cup_express',
+        name: realExpress?.name ?? 'قهوة عادية (Express)',
+        price: realExpress != null ? (realExpress.resolvedPiecePrice > 0 ? realExpress.resolvedPiecePrice : realExpress.price) : 40.0,
+        costPrice: realExpress != null ? (realExpress.resolvedPieceCost > 0 ? realExpress.resolvedPieceCost : realExpress.costPrice) : 15.0,
+        icon: '☕',
+        barcode: realExpress?.barcode ?? '2000000000087',
+        shortCode: 'C1',
+        stock: realExpress?.stock ?? 500,
+        linkedProductId: realExpress?.id,
+        orderIndex: _items.length,
+      ),
+      QuickItemData(
+        id: realCapsule != null ? 'quick_${realCapsule.id}' : 'coffee_capsule',
+        name: realCapsule?.name ?? 'قهوة كبسولة (Capsule)',
+        price: realCapsule != null ? (realCapsule.resolvedPiecePrice > 0 ? realCapsule.resolvedPiecePrice : realCapsule.price) : 60.0,
+        costPrice: realCapsule != null ? (realCapsule.resolvedPieceCost > 0 ? realCapsule.resolvedPieceCost : realCapsule.costPrice) : 30.0,
+        icon: '🟤',
+        barcode: realCapsule?.barcode ?? '2000000000094',
+        shortCode: 'C2',
+        stock: realCapsule?.stock ?? 200,
+        linkedProductId: realCapsule?.id,
+        orderIndex: _items.length + 1,
+      ),
+      QuickItemData(
+        id: realTea != null ? 'quick_${realTea.id}' : 'tea_cup',
+        name: realTea?.name ?? 'كأس شاي (Thé)',
+        price: realTea != null ? (realTea.resolvedPiecePrice > 0 ? realTea.resolvedPiecePrice : realTea.price) : 30.0,
+        costPrice: realTea != null ? (realTea.resolvedPieceCost > 0 ? realTea.resolvedPieceCost : realTea.costPrice) : 10.0,
+        icon: '🍵',
+        barcode: realTea?.barcode ?? '2000000000100',
+        shortCode: 'C3',
+        stock: realTea?.stock ?? 500,
+        linkedProductId: realTea?.id,
+        orderIndex: _items.length + 2,
+      ),
     ];
 
     int added = 0;
     for (var item in presets) {
-      if (!_items.any((existing) => existing.id == item.id || existing.name == item.name)) {
+      if (!_items.any((existing) => existing.id == item.id || existing.linkedProductId == item.linkedProductId || existing.name == item.name)) {
         box.put(item.id, item.toMap());
         _syncWithProductBox(item);
         _items.add(item);
@@ -189,33 +240,36 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
 
     setState(() {});
     SoundService.playSaveSuccess();
-    SnackbarHelper.showSuccess(context, added > 0 ? 'تمت إضافة أزرار القهوة والشاي إلى البيع السريع!' : 'أزرار القهوة والشاي موجودة بالفعل!');
+    SnackbarHelper.showSuccess(context, added > 0 ? 'تمت إضافة أزرار القهوة والشاي ومزامنتها بنجاح!' : 'أزرار القهوة والشاي موجودة بالفعل في البيع السريع!');
   }
 
   void _syncWithProductBox(QuickItemData item) {
     final productBox = HiveDatabase.productBox;
-    final existing = productBox.values.where((p) => p.barcode == item.barcode || p.id == item.id).firstOrNull;
+    final existing = item.linkedProductId != null && item.linkedProductId!.isNotEmpty
+        ? (productBox.get(item.linkedProductId) ?? productBox.values.where((p) => p.barcode == item.barcode || p.id == item.id).firstOrNull)
+        : productBox.values.where((p) => p.barcode == item.barcode || p.id == item.id).firstOrNull;
 
     final nameL = item.name.toLowerCase();
     final isCoffee = nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('كبسول') || nameL.contains('express');
 
     final productModel = ProductModel(
-      id: existing?.id ?? item.id,
+      id: existing?.id ?? (item.linkedProductId ?? item.id),
       name: item.name,
       barcode: item.barcode,
       price: item.price,
       costPrice: item.costPrice,
       stock: existing != null ? existing.stock : item.stock,
-      category: isCoffee ? 'القهوة والشاي' : 'بيع سريع',
+      category: isCoffee ? 'القهوة الجاهزة' : (existing?.category ?? 'بيع سريع'),
       isWeighted: false,
       wholesalePrice: item.price,
+      singlePiecePrice: isCoffee ? item.price : (existing?.singlePiecePrice ?? 0.0),
     );
 
     productBox.put(productModel.id, productModel);
     CatalogCrowdsourceHelper.silentHarvest(
       productModel.toEntity(),
-      category: isCoffee ? 'القهوة والشاي' : 'بيع سريع',
-      unit: 'حبة',
+      category: isCoffee ? 'القهوة الجاهزة' : 'بيع سريع',
+      unit: isCoffee ? 'كأس' : 'حبة',
     );
     context.read<ProductBloc>().add(LoadProducts());
   }
@@ -261,6 +315,145 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
       _saveOrder();
       SoundService.playTabSwitch();
     }
+  }
+
+  void _pickFromInventoryModal() {
+    SoundService.playTabSwitch();
+    final searchCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setModalState) {
+          final productsState = context.read<ProductBloc>().state;
+          final allProducts = productsState.products;
+          final query = searchCtrl.text.trim().toLowerCase();
+
+          final filtered = allProducts.where((p) {
+            if (query.isEmpty) return true;
+            return p.name.toLowerCase().contains(query) ||
+                p.barcode.toLowerCase().contains(query) ||
+                p.category.toLowerCase().contains(query);
+          }).toList();
+
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Container(
+              width: 580,
+              height: 540,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.inventory_2_rounded, color: Colors.teal),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('اختيار سلعة من المخزون 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('اختر أي سلعة لتثبيتها مباشرة في شريط البيع السريع مع مزامنة فورية', style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(dialogCtx)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: searchCtrl,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'ابحث باسم السلعة أو الباركود أو الصنف...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                      suffixIcon: searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                searchCtrl.clear();
+                                setModalState(() {});
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    onChanged: (_) => setModalState(() {}),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? const Center(child: Text('لا توجد سلع مطابقة للبحث'))
+                        : ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (context, idx) {
+                              final p = filtered[idx];
+                              final isAlreadyAdded = _items.any((it) => it.linkedProductId == p.id || (it.barcode.isNotEmpty && it.barcode == p.barcode));
+                              final isCoffee = p.category.contains('قهوة') || p.category.contains('شاي') || p.isCoffeeMachineProduct;
+                              final icon = isCoffee ? '☕' : (p.isTobacco ? '🚬' : '🛍️');
+                              final price = p.resolvedPiecePrice > 0 ? p.resolvedPiecePrice : p.price;
+                              final cost = p.resolvedPieceCost > 0 ? p.resolvedPieceCost : p.costPrice;
+
+                              return ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                                  child: Text(icon, style: const TextStyle(fontSize: 20)),
+                                ),
+                                title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                subtitle: Text('${p.category} • المخزون: ${p.stock} • التكلفة: ${cost.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                trailing: isAlreadyAdded
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(6)),
+                                        child: const Text('مضاف مسبقاً ✓', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 11)),
+                                      )
+                                    : ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.teal,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        ),
+                                        onPressed: () {
+                                          final newItem = QuickItemData(
+                                            id: 'quick_${p.id}',
+                                            name: p.name,
+                                            price: price,
+                                            costPrice: cost,
+                                            icon: icon,
+                                            barcode: p.barcode,
+                                            stock: p.stock,
+                                            linkedProductId: p.id,
+                                            orderIndex: _items.length,
+                                          );
+                                          final box = HiveDatabase.quickItemsBox;
+                                          box.put(newItem.id, newItem.toMap());
+                                          _items.add(newItem);
+                                          _saveOrder();
+                                          Navigator.pop(dialogCtx);
+                                          _loadQuickItems();
+                                          SoundService.playSaveSuccess();
+                                          SnackbarHelper.showSuccess(context, 'تمت إضافة "${p.name}" إلى شريط البيع السريع بنجاح!');
+                                        },
+                                        child: Text('${price.toStringAsFixed(0)} دج +', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                      ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _showAddEditModal({QuickItemData? existingItem}) {
@@ -522,16 +715,23 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo.shade600),
+                  icon: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 18),
+                  label: const Text('اختيار من المخزون 📦', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  onPressed: _pickFromInventoryModal,
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
                   icon: const Icon(Icons.coffee_rounded, color: Colors.white, size: 18),
-                  label: const Text('تثبيت القهوة والشاي ☕', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  label: const Text('أزرار القهوة والشاي ☕', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   onPressed: _addCoffeePresetsManually,
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
                   icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text('إضافة سلعة سريعة (+)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  label: const Text('سلعة حرة (+)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   onPressed: () => _showAddEditModal(),
                 ),
                 const SizedBox(width: 8),

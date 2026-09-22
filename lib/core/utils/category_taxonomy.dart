@@ -433,22 +433,22 @@ class CategoryTaxonomy {
       ],
     ),
 
-    // 8. ماكينة القهوة والشاي والمشروبات الساخنة (صنف معزول ومستقل)
+    // 8. القهوة الجاهزة والمشروبات الساخنة (صنف معزول ومستقل)
     CategoryDomain(
       id: 'coffee_tea',
-      titleAr: 'ماكينة القهوة والشاي',
-      titleFr: 'Machine à Café & Thé',
-      titleEn: 'Coffee & Tea Machine',
+      titleAr: 'القهوة الجاهزة',
+      titleFr: 'Café Prêt & Boissons',
+      titleEn: 'Ready Coffee & Tea',
       icon: '☕',
       subcategories: [
         CategorySub(
-          id: 'coffee_beans_ground',
+          id: 'coffee_ready',
           domainId: 'coffee_tea',
-          titleAr: 'حبوب بن ومسحوق قهوة',
-          titleFr: 'Café en grains & moulu',
-          titleEn: 'Coffee Beans & Ground',
+          titleAr: 'قهوة جاهزة وكبسولات',
+          titleFr: 'Café & Capsules',
+          titleEn: 'Ready Coffee & Capsules',
           icon: '☕',
-          tags: ['بن', 'قهوة', 'اسبريسو', 'اكسبريسو', 'حبوب بن', 'قهوة مطحونة', 'لافيستا', 'فاميكو', 'بونال', 'cafe', 'espresso', 'grain', 'moulu', 'illy', 'lavazza'],
+          tags: ['قهوة جاهزة', 'قهوة عادية', 'قهوة كبسولة', 'كبسولة', 'كبسول', 'بن', 'قهوة', 'اسبريسو', 'اكسبريسو', 'حبوب بن', 'قهوة مطحونة', 'express', 'capsule', 'coffee'],
         ),
         CategorySub(
           id: 'tea_infusions',
@@ -457,7 +457,7 @@ class CategoryTaxonomy {
           titleFr: 'Thé & Infusions',
           titleEn: 'Tea & Herbs',
           icon: '🍵',
-          tags: ['شاي', 'شاي أخضر', 'شاي أحمر', 'نعناع', 'أتاي', 'بارود', 'the', 'infusion', 'menthe'],
+          tags: ['شاي', 'كأس شاي', 'شاي أخضر', 'شاي أحمر', 'نعناع', 'أتاي', 'بارود', 'the', 'infusion', 'menthe'],
         ),
         CategorySub(
           id: 'cups_machine_supplies',
@@ -466,7 +466,7 @@ class CategoryTaxonomy {
           titleFr: 'Gobelets & Consommables',
           titleEn: 'Cups & Serving Supplies',
           icon: '🥤',
-          tags: ['كؤوس', 'كوب', 'كاس', 'خلط', 'ملاعق صغيرة', 'سكر ساشي', 'gobelet', 'palet'],
+          tags: ['كؤوس', 'غوبلي', 'كوب', 'كاس', 'خلط', 'ملاعق صغيرة', 'مغرف', 'ملعقة قهوة', 'سكر ساشي', 'gobelet', 'palet'],
         ),
         CategorySub(
           id: 'prepared_hot_drinks',
@@ -483,6 +483,7 @@ class CategoryTaxonomy {
 
   static const List<String> defaultCategories = [
     'عام',
+    'القهوة الجاهزة',
     'أدوات مدرسية ومكتبية',
     'لواحق هواتف وإلكترونيات',
     'بطاريات وكهربائيات',
@@ -576,6 +577,17 @@ class CategoryTaxonomy {
       }
     } catch (_) {}
     return [];
+  }
+
+  /// Saves the complete list of hidden categories
+  static Future<void> saveHiddenCategories(List<String> hidden) async {
+    try {
+      if (!Hive.isBoxOpen(HiveDatabase.settingsBoxName)) {
+        await Hive.openBox(HiveDatabase.settingsBoxName);
+      }
+      final box = HiveDatabase.settingsBox;
+      await box.put(hiddenCategoriesSettingsKey, hidden.map((e) => e.trim()).toList());
+    } catch (_) {}
   }
 
   /// Toggles visibility of a category on the home screen
