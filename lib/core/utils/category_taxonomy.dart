@@ -561,6 +561,91 @@ class CategoryTaxonomy {
     return all.toList();
   }
 
+  static const String hiddenCategoriesSettingsKey = 'hidden_categories_pref';
+  static const String categoryOrderSettingsKey = 'category_order_pref';
+
+  /// Retrieves the list of categories the user has chosen to hide
+  static List<String> getHiddenCategories() {
+    try {
+      if (Hive.isBoxOpen(HiveDatabase.settingsBoxName)) {
+        final box = HiveDatabase.settingsBox;
+        final raw = box.get(hiddenCategoriesSettingsKey);
+        if (raw is List) {
+          return raw.map((e) => e.toString().trim()).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Toggles visibility of a category on the home screen
+  static Future<void> toggleCategoryVisibility(String categoryName, bool isVisible) async {
+    final clean = categoryName.trim();
+    if (clean.isEmpty) return;
+    try {
+      if (!Hive.isBoxOpen(HiveDatabase.settingsBoxName)) {
+        await Hive.openBox(HiveDatabase.settingsBoxName);
+      }
+      final box = HiveDatabase.settingsBox;
+      final hidden = getHiddenCategories();
+      if (isVisible) {
+        hidden.remove(clean);
+      } else {
+        if (!hidden.contains(clean)) hidden.add(clean);
+      }
+      await box.put(hiddenCategoriesSettingsKey, hidden);
+    } catch (_) {}
+  }
+
+  /// Retrieves custom ordering for categories
+  static List<String> getCategoryOrder() {
+    try {
+      if (Hive.isBoxOpen(HiveDatabase.settingsBoxName)) {
+        final box = HiveDatabase.settingsBox;
+        final raw = box.get(categoryOrderSettingsKey);
+        if (raw is List) {
+          return raw.map((e) => e.toString().trim()).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Saves the updated order of categories
+  static Future<void> saveCategoryOrder(List<String> order) async {
+    try {
+      if (!Hive.isBoxOpen(HiveDatabase.settingsBoxName)) {
+        await Hive.openBox(HiveDatabase.settingsBoxName);
+      }
+      final box = HiveDatabase.settingsBox;
+      await box.put(categoryOrderSettingsKey, order.map((e) => e.trim()).toList());
+    } catch (_) {}
+  }
+
+  /// Returns sorted and filtered categories for the Home Screen
+  static List<String> getVisibleHomeScreenCategories() {
+    final all = getDropdownCategories();
+    final hidden = getHiddenCategories();
+    final order = getCategoryOrder();
+
+    // 1. Filter out hidden
+    final visible = all.where((c) => !hidden.contains(c)).toList();
+
+    // 2. Sort by custom order
+    visible.sort((a, b) {
+      final idxA = order.indexOf(a);
+      final idxB = order.indexOf(b);
+      
+      if (idxA != -1 && idxB != -1) return idxA.compareTo(idxB);
+      if (idxA != -1) return -1; // a is ordered, b is not
+      if (idxB != -1) return 1;  // b is ordered, a is not
+      return 0; // both unordered, keep relative position
+    });
+
+    return visible;
+  }
+
+
   /// Flat list of all subcategory names for legacy dropdown and fast selection
   static List<String> get allCategoryNames {
     final List<String> names = [];

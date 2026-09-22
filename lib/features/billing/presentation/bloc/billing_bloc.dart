@@ -150,6 +150,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       backendItems[existingIndex] = existingItem.copyWith(
         quantity: existingItem.quantity + event.quantity,
         customUnitPrice: event.customPrice ?? existingItem.customUnitPrice,
+        customUnitName: event.customUnitName ?? existingItem.customUnitName,
+        customUnitCost: event.customUnitCost ?? existingItem.customUnitCost,
       );
       emit(cleanState.copyWith(cartItems: backendItems, error: null));
     } else {
@@ -158,6 +160,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         quantity: event.quantity,
         unitLevel: event.unitLevel,
         customUnitPrice: event.customPrice,
+        customUnitName: event.customUnitName,
+        customUnitCost: event.customUnitCost,
       );
       emit(cleanState.copyWith(
           cartItems: [...cleanState.cartItems, newItem], error: null));

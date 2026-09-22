@@ -24,8 +24,8 @@ class DailyReportPage extends StatefulWidget {
 class _DailyReportPageState extends State<DailyReportPage> {
   // Period filter: 0 = Today, 1 = 7 Days, 2 = 30 Days, 3 = This Month, 4 = All Time
   int _selectedPeriod = 0;
-  // Department filter: 0 = Total, 1 = Tobacco (تبغ وسجائر), 2 = Coffee & Tea (ماكينة القهوة والشاي), 3 = General Goods (مواد غذائية وعامة)
-  int _reportCategoryTab = 0;
+  // Department filter (dynamic)
+  String _selectedDepartment = 'الشامل 📊';
   DateTime _customDate = DateTime.now();
   bool _isPrinting = false;
   Timer? _refreshTimer;
@@ -413,30 +413,20 @@ class _DailyReportPageState extends State<DailyReportPage> {
     final expenses = _getFilteredExpenses();
     final netProfit = (grossProfit - expenses);
 
-    // Tobacco vs Coffee vs General Department Financial Separation
-    double tobaccoRevenue = 0.0;
-    double tobaccoCost = 0.0;
-    int tobaccoUnitsCount = 0;
-
-    double coffeeRevenue = 0.0;
-    double coffeeCost = 0.0;
-    int coffeeCupsCount = 0;
+    // Dynamic Department Financial Separation
+    Set<String> activeDepartments = {'الشامل 📊'};
+    double deptRevenue = 0.0;
+    double deptCost = 0.0;
+    int deptUnitsCount = 0;
 
     for (final inv in invoices) {
-      if (inv['tobaccoSales'] != null) {
-        tobaccoRevenue += (inv['tobaccoSales'] as num).toDouble();
-        tobaccoCost += (inv['tobaccoCost'] as num?)?.toDouble() ?? 0.0;
-      }
-      if (inv['coffeeSales'] != null) {
-        coffeeRevenue += (inv['coffeeSales'] as num).toDouble();
-        coffeeCost += (inv['coffeeCost'] as num?)?.toDouble() ?? 0.0;
-        coffeeCupsCount += (inv['coffeeCupsCount'] as num?)?.toInt() ?? 0;
-      }
-
       if (inv['items'] is List) {
         final items = inv['items'] as List;
         for (final it in items) {
           if (it is Map) {
+            String cat = it['category']?.toString().trim() ?? 'مواد عامة';
+            if (cat.isEmpty) cat = 'مواد عامة';
+
             final isTob = it['isTobacco'] == true ||
                 (it['name']?.toString().contains('مارلبورو') ?? false) ||
                 (it['name']?.toString().contains('وينستون') ?? false) ||
@@ -451,36 +441,44 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 (it['category']?.toString().contains('قهوة') ?? false) ||
                 (it['category']?.toString().contains('شاي') ?? false);
 
-            final itQty = (it['qty'] as num?)?.toInt() ?? 1;
-            final itTotal = (it['total'] as num?)?.toDouble() ??
-                (((it['price'] as num?)?.toDouble() ?? 0.0) * itQty);
-            final itCost = (((it['costPrice'] as num?)?.toDouble() ?? 0.0) * itQty);
+            if (isTob) cat = 'المواد التبغية 🚬';
+            else if (isCoffee) cat = 'القهوة والشاي ☕';
 
-            if (inv['tobaccoSales'] == null && isTob) {
-              tobaccoRevenue += itTotal;
-              tobaccoCost += itCost;
-            }
-            if (isTob) {
-              tobaccoUnitsCount += itQty;
-            }
+            activeDepartments.add(cat);
 
-            if (inv['coffeeSales'] == null && isCoffee) {
-              coffeeRevenue += itTotal;
-              coffeeCost += itCost;
-            }
-            if (isCoffee && inv['coffeeCupsCount'] == null) {
-              coffeeCupsCount += itQty;
+            if (_selectedDepartment == cat) {
+              final itQty = (it['qty'] as num?)?.toInt() ?? 1;
+              final itTotal = (it['total'] as num?)?.toDouble() ??
+                  (((it['price'] as num?)?.toDouble() ?? 0.0) * itQty);
+              final itCost = (((it['costPrice'] as num?)?.toDouble() ?? 0.0) * itQty);
+
+              deptRevenue += itTotal;
+              deptCost += itCost;
+              deptUnitsCount += itQty;
             }
           }
         }
       }
+
+      // Legacy invoice-level fields support
+      if (inv['tobaccoSales'] != null) {
+        activeDepartments.add('المواد التبغية 🚬');
+        if (_selectedDepartment == 'المواد التبغية 🚬' && inv['items'] == null) {
+          deptRevenue += (inv['tobaccoSales'] as num).toDouble();
+          deptCost += (inv['tobaccoCost'] as num?)?.toDouble() ?? 0.0;
+        }
+      }
+      if (inv['coffeeSales'] != null) {
+        activeDepartments.add('القهوة والشاي ☕');
+        if (_selectedDepartment == 'القهوة والشاي ☕' && inv['items'] == null) {
+          deptRevenue += (inv['coffeeSales'] as num).toDouble();
+          deptCost += (inv['coffeeCost'] as num?)?.toDouble() ?? 0.0;
+          deptUnitsCount += (inv['coffeeCupsCount'] as num?)?.toInt() ?? 0;
+        }
+      }
     }
 
-    final tobaccoProfit = (tobaccoRevenue - tobaccoCost).clamp(0.0, double.infinity);
-    final coffeeProfit = (coffeeRevenue - coffeeCost).clamp(0.0, double.infinity);
-    final generalRevenue = (totalRevenue - tobaccoRevenue - coffeeRevenue).clamp(0.0, double.infinity);
-    final generalCost = (totalCost - tobaccoCost - coffeeCost).clamp(0.0, double.infinity);
-    final generalProfit = (grossProfit - tobaccoProfit - coffeeProfit).clamp(0.0, double.infinity);
+    final deptProfit = (deptRevenue - deptCost).clamp(0.0, double.infinity);
 
     final totalItemsCount = invoices.fold<int>(0, (sum, inv) => sum + ((inv['itemCount'] as int?) ?? 1));
     final averageBasket = invoices.isNotEmpty ? (totalRevenue / invoices.length) : 0.0;
@@ -782,48 +780,30 @@ class _DailyReportPageState extends State<DailyReportPage> {
               SizedBox(height: 14),
             ],
 
-            // Department Filter Tabs (الإجمالي الشامل vs قسم التبغ vs ماكينة القهوة vs المواد العامة)
+            // Dynamic Department Filter Dropdown
             Container(
               margin: EdgeInsets.only(bottom: 14),
-              padding: EdgeInsets.all(4),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade300),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildCategoryTabButton(
-                      label: 'الشامل 📊',
-                      index: 0,
-                      badge: '${totalRevenue.toStringAsFixed(0)} دج',
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildCategoryTabButton(
-                      label: 'التبغ 🚬',
-                      index: 1,
-                      badge: '${tobaccoRevenue.toStringAsFixed(0)} دج',
-                      badgeColor: Colors.amber.shade900,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildCategoryTabButton(
-                      label: 'القهوة ☕',
-                      index: 2,
-                      badge: '${coffeeRevenue.toStringAsFixed(0)} دج',
-                      badgeColor: Colors.brown.shade800,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildCategoryTabButton(
-                      label: 'العامة 🛒',
-                      index: 3,
-                      badge: '${generalRevenue.toStringAsFixed(0)} دج',
-                      badgeColor: Colors.blue.shade800,
-                    ),
-                  ),
-                ],
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedDepartment,
+                  isExpanded: true,
+                  icon: Icon(Icons.arrow_drop_down_circle, color: AppTheme.primaryColor),
+                  items: (activeDepartments.toList()..sort()).map((cat) {
+                    return DropdownMenuItem<String>(
+                      value: cat,
+                      child: Text('القسم: $cat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedDepartment = val);
+                  },
+                ),
               ),
             ),
 
@@ -832,41 +812,19 @@ class _DailyReportPageState extends State<DailyReportPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _reportCategoryTab == 1
-                      ? 'أرباح ومبيعات قسم التبغ والسجائر 🚬'
-                      : (_reportCategoryTab == 2
-                          ? 'أرباح ومبيعات ماكينة القهوة والشاي ☕'
-                          : (_reportCategoryTab == 3
-                              ? 'أرباح ومبيعات المواد الغذائية والعامة 🛒'
-                              : 'الإيرادات والأرباح الإجمالية 📈')),
+                  _selectedDepartment == 'الشامل 📊' ? 'الإيرادات والأرباح الإجمالية 📈' : 'أرباح ومبيعات $_selectedDepartment',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
-                if (_reportCategoryTab != 0)
+                if (_selectedDepartment != 'الشامل 📊')
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: _reportCategoryTab == 1
-                          ? Colors.amber.shade100
-                          : (_reportCategoryTab == 2
-                              ? Colors.brown.shade100
-                              : Colors.blue.shade100),
+                      color: Colors.blue.shade100,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      _reportCategoryTab == 1
-                          ? 'نسبة الأرباح: ${(grossProfit > 0 ? (tobaccoProfit / grossProfit * 100) : 0).toStringAsFixed(1)}%'
-                          : (_reportCategoryTab == 2
-                              ? 'نسبة الأرباح: ${(grossProfit > 0 ? (coffeeProfit / grossProfit * 100) : 0).toStringAsFixed(1)}%'
-                              : 'نسبة الأرباح: ${(grossProfit > 0 ? (generalProfit / grossProfit * 100) : 0).toStringAsFixed(1)}%'),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: _reportCategoryTab == 1
-                            ? Colors.amber.shade900
-                            : (_reportCategoryTab == 2
-                                ? Colors.brown.shade900
-                                : Colors.blue.shade900),
-                      ),
+                      'نسبة الأرباح: ${(grossProfit > 0 ? (deptProfit / grossProfit * 100) : 0).toStringAsFixed(1)}%',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue.shade900),
                     ),
                   ),
               ],
@@ -876,29 +834,17 @@ class _DailyReportPageState extends State<DailyReportPage> {
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    title: _reportCategoryTab == 1
-                        ? 'مبيعات التبغ'
-                        : (_reportCategoryTab == 2
-                            ? 'مبيعات القهوة'
-                            : (_reportCategoryTab == 3 ? 'مبيعات العامة' : 'صافي الإيرادات')),
-                    value: '${(_reportCategoryTab == 1 ? tobaccoRevenue : (_reportCategoryTab == 2 ? coffeeRevenue : (_reportCategoryTab == 3 ? generalRevenue : totalRevenue))).toStringAsFixed(0)} دج',
+                    title: _selectedDepartment == 'الشامل 📊' ? 'صافي الإيرادات' : 'مبيعات القسم',
+                    value: '${(_selectedDepartment == 'الشامل 📊' ? totalRevenue : deptRevenue).toStringAsFixed(0)} دج',
                     icon: Icons.point_of_sale,
-                    color: _reportCategoryTab == 1
-                        ? Colors.amber.shade800
-                        : (_reportCategoryTab == 2
-                            ? Colors.brown.shade800
-                            : Colors.blue),
+                    color: Colors.blue,
                   ),
                 ),
                 SizedBox(width: 8),
                 Expanded(
                   child: _buildMetricCard(
-                    title: _reportCategoryTab == 1
-                        ? 'تكلفة شراء التبغ'
-                        : (_reportCategoryTab == 2
-                            ? 'تكلفة حبوب القهوة'
-                            : (_reportCategoryTab == 3 ? 'تكلفة العامة' : 'تكلفة المبيعات')),
-                    value: '${(_reportCategoryTab == 1 ? tobaccoCost : (_reportCategoryTab == 2 ? coffeeCost : (_reportCategoryTab == 3 ? generalCost : totalCost))).toStringAsFixed(0)} دج',
+                    title: _selectedDepartment == 'الشامل 📊' ? 'تكلفة المبيعات' : 'تكلفة الشراء',
+                    value: '${(_selectedDepartment == 'الشامل 📊' ? totalCost : deptCost).toStringAsFixed(0)} دج',
                     icon: Icons.inventory_2_outlined,
                     color: Colors.brown,
                   ),
@@ -910,12 +856,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    title: _reportCategoryTab == 1
-                        ? 'أرباح التبغ (Marge)'
-                        : (_reportCategoryTab == 2
-                            ? 'أرباح القهوة (Marge)'
-                            : (_reportCategoryTab == 3 ? 'أرباح العامة' : 'إجمالي الربح (Brut)')),
-                    value: '+${(_reportCategoryTab == 1 ? tobaccoProfit : (_reportCategoryTab == 2 ? coffeeProfit : (_reportCategoryTab == 3 ? generalProfit : grossProfit))).toStringAsFixed(0)} دج',
+                    title: _selectedDepartment == 'الشامل 📊' ? 'إجمالي الربح (Brut)' : 'أرباح القسم (Marge)',
+                    value: '+${(_selectedDepartment == 'الشامل 📊' ? grossProfit : deptProfit).toStringAsFixed(0)} دج',
                     icon: Icons.trending_up,
                     color: Colors.teal,
                   ),
@@ -923,22 +865,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 SizedBox(width: 8),
                 Expanded(
                   child: _buildMetricCard(
-                    title: _reportCategoryTab == 1
-                        ? 'قطع التبغ المباعة'
-                        : (_reportCategoryTab == 2
-                            ? 'أكواب القهوة المباعة'
-                            : (_reportCategoryTab == 3 ? 'سلع عامة مباعة' : 'متوسط السلة (Panier)')),
-                    value: _reportCategoryTab == 1
-                        ? '$tobaccoUnitsCount علبة/حبة'
-                        : (_reportCategoryTab == 2
-                            ? '$coffeeCupsCount فنجان/كوب'
-                            : (_reportCategoryTab == 3
-                                ? '${(totalItemsCount - tobaccoUnitsCount - coffeeCupsCount).clamp(0, 999999)} سلعة'
-                                : '${averageBasket.toStringAsFixed(0)} دج')),
-                    icon: _reportCategoryTab == 2
-                        ? Icons.coffee_rounded
-                        : (_reportCategoryTab != 0 ? Icons.inventory : Icons.shopping_basket_outlined),
-                    color: _reportCategoryTab == 2 ? Colors.brown.shade700 : Colors.purple,
+                    title: _selectedDepartment == 'الشامل 📊' ? 'متوسط السلة' : 'الكمية المباعة',
+                    value: _selectedDepartment == 'الشامل 📊' 
+                        ? '${averageBasket.toStringAsFixed(0)} دج'
+                        : '$deptUnitsCount قطعة/كوب',
+                    icon: _selectedDepartment == 'الشامل 📊' ? Icons.shopping_basket_outlined : Icons.inventory,
+                    color: Colors.purple,
                   ),
                 ),
               ],
@@ -950,13 +882,9 @@ class _DailyReportPageState extends State<DailyReportPage> {
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: _reportCategoryTab == 1
-                      ? [Color(0xFFD97706), Color(0xFFB45309)]
-                      : (_reportCategoryTab == 2
-                          ? [Color(0xFF795548), Color(0xFF4E342E)]
-                          : (_reportCategoryTab == 3
-                              ? [Color(0xFF2563EB), Color(0xFF1D4ED8)]
-                              : [Colors.green[700]!, Colors.teal[600]!])),
+                  colors: _selectedDepartment == 'الشامل 📊'
+                      ? [Colors.green[700]!, Colors.teal[600]!]
+                      : [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
@@ -970,18 +898,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _reportCategoryTab == 1
-                            ? 'صافي أرباح قسم التبغ والسجائر 🚬'
-                            : (_reportCategoryTab == 2
-                                ? 'صافي أرباح ماكينة القهوة والشاي ☕'
-                                : (_reportCategoryTab == 3
-                                    ? 'صافي أرباح المواد الغذائية والعامة 🛒'
-                                    : 'صافي الربح النهائي الشامل (Net)')),
+                        _selectedDepartment == 'الشامل 📊' ? 'صافي الربح النهائي الشامل (Net)' : 'صافي أرباح القسم',
                         style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                       SizedBox(height: 2),
                       Text(
-                        '${(_reportCategoryTab == 1 ? tobaccoProfit : (_reportCategoryTab == 2 ? coffeeProfit : (_reportCategoryTab == 3 ? generalProfit : netProfit))).toStringAsFixed(0)} دج',
+                        '${(_selectedDepartment == 'الشامل 📊' ? netProfit : deptProfit).toStringAsFixed(0)} دج',
                         style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -993,13 +915,9 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      _reportCategoryTab == 0
+                      _selectedDepartment == 'الشامل 📊'
                           ? 'المصاريف: -${expenses.toStringAsFixed(0)} دج'
-                          : (_reportCategoryTab == 1
-                              ? 'هامش التبغ: ${(tobaccoRevenue > 0 ? (tobaccoProfit / tobaccoRevenue * 100) : 0).toStringAsFixed(1)}%'
-                              : (_reportCategoryTab == 2
-                                  ? 'هامش القهوة: ${(coffeeRevenue > 0 ? (coffeeProfit / coffeeRevenue * 100) : 0).toStringAsFixed(1)}%'
-                                  : 'هامش العامة: ${(generalRevenue > 0 ? (generalProfit / generalRevenue * 100) : 0).toStringAsFixed(1)}%')),
+                          : 'الهامش: ${(deptRevenue > 0 ? (deptProfit / deptRevenue * 100) : 0).toStringAsFixed(1)}%',
                       style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -1007,130 +925,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
               ),
             ),
 
-            // If Total View, show the side-by-side Tobacco vs Coffee vs General breakdown card
-            if (_reportCategoryTab == 0) ...[
-              SizedBox(height: 10),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.pie_chart_outline_rounded, size: 16, color: Colors.indigo),
-                        SizedBox(width: 6),
-                        Text(
-                          'توزيع الأرباح حسب الأقسام الرئيسية في المتجر:',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _reportCategoryTab = 1),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.shade50,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.amber.shade200),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('🚬 التبغ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                                      Text('${(grossProfit > 0 ? (tobaccoProfit / grossProfit * 100) : 0).toStringAsFixed(0)}%',
-                                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber.shade900, fontSize: 10.5)),
-                                    ],
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text('مبيعات: ${tobaccoRevenue.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 9.5, color: Colors.black87)),
-                                  Text('ربح: +${tobaccoProfit.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _reportCategoryTab = 2),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.brown.shade50,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.brown.shade200),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('☕ القهوة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                                      Text('${(grossProfit > 0 ? (coffeeProfit / grossProfit * 100) : 0).toStringAsFixed(0)}%',
-                                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.brown.shade900, fontSize: 10.5)),
-                                    ],
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text('مبيعات: ${coffeeRevenue.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 9.5, color: Colors.black87)),
-                                  Text('ربح: +${coffeeProfit.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _reportCategoryTab = 3),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.blue.shade200),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('🛒 العامة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                                      Text('${(grossProfit > 0 ? (generalProfit / grossProfit * 100) : 0).toStringAsFixed(0)}%',
-                                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade900, fontSize: 10.5)),
-                                    ],
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text('مبيعات: ${generalRevenue.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 9.5, color: Colors.black87)),
-                                  Text('ربح: +${generalProfit.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+
             SizedBox(height: 18),
 
             // Category-Level Performance & Visual Curves Section
@@ -1571,47 +1366,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
     );
   }
 
-  Widget _buildCategoryTabButton({required String label, required int index, required String badge, Color? badgeColor}) {
-    final isSelected = _reportCategoryTab == index;
-    return InkWell(
-      onTap: () {
-        SoundService.playTabSwitch();
-        setState(() => _reportCategoryTab = index);
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 7, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: Offset(0, 2))]
-              : null,
-        ),
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.black87 : Colors.grey.shade700,
-              ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              badge,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? (badgeColor ?? AppTheme.primaryColor) : Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildMetricCard({required String title, required String value, required IconData icon, required Color color}) {
     return Container(

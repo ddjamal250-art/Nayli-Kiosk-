@@ -18,16 +18,27 @@ class AddProductToCartEvent extends BillingEvent {
   final String unitLevel; // 'pack', 'piece', 'carton'
   final int quantity;
   final double? customPrice;
+  final String? customUnitName;
+  final double? customUnitCost;
 
   const AddProductToCartEvent(
     this.product, {
     this.unitLevel = 'pack',
     this.quantity = 1,
     this.customPrice,
+    this.customUnitName,
+    this.customUnitCost,
   });
 
   @override
-  List<Object> get props => [product, unitLevel, quantity, customPrice ?? 0.0];
+  List<Object> get props => [
+        product,
+        unitLevel,
+        quantity,
+        customPrice ?? 0.0,
+        customUnitName ?? '',
+        customUnitCost ?? 0.0,
+      ];
 }
 
 class SwitchCartItemUnitEvent extends BillingEvent {

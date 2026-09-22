@@ -704,11 +704,19 @@ class _UpdateDialogState extends State<_UpdateDialog> {
                 if (!_isDownloading) ...[
                   TextButton(
                     onPressed: () async {
+                      // تحديد هذا الإصدار كأنه "مثبت" لكي لا يظهر مجددا أبدا
+                      await HiveDatabase.settingsBox.put('last_installed_update_tag', widget.releaseInfo.tagName);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                    child: const Text('مُحدَّث بالفعل', style: TextStyle(color: Colors.grey)),
+                  ),
+                  TextButton(
+                    onPressed: () async {
                       await HiveDatabase.settingsBox.put('last_dismissed_update_tag', widget.releaseInfo.tagName);
                       await HiveDatabase.settingsBox.put('last_dismissed_update_time', DateTime.now().toIso8601String());
                       if (context.mounted) Navigator.pop(context);
                     },
-                    child: const Text('تذكيري لاحقاً'),
+                    child: const Text('ذكرني لاحقاً'),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(

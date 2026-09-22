@@ -271,7 +271,218 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     return 1;
   }
 
+  Future<void> _showCoffeeSaleDialog(Product product, int multiplier) async {
+    final TextEditingController priceCtrl = TextEditingController(text: product.resolvedPiecePrice.toStringAsFixed(0));
+    String deductType = 'cup'; // 'cup', 'full_pack'
+    
+    // Load accessories from state
+    final productsState = context.read<ProductBloc>().state;
+    List<Product> availableAccessories = [];
+    Set<String> selectedAccessoryIds = {};
+
+    if (productsState.status == ProductStatus.loaded) {
+      availableAccessories = productsState.products.where((p) {
+        if (p.id == product.id) return false;
+        final n = p.name.toLowerCase();
+        final c = p.category.toLowerCase();
+        return c.contains('قهوة') || c.contains('مستلزم') || n.contains('سكر') || n.contains('غوبلي') || n.contains('كأس') || n.contains('مغرف') || n.contains('ملعق') || n.contains('حليب') || n.contains('ماء');
+      }).toList();
+
+      // Auto-select standard accessories if they exist
+      for (var acc in availableAccessories) {
+        final n = acc.name.toLowerCase();
+        if (n.contains('غوبلي') || n.contains('gobelet') || n.contains('كأس') || n.contains('كاس') || 
+            n.contains('سكر') || n.contains('sucre') || 
+            n.contains('مغرف') || n.contains('ملعق') || n.contains('cuill')) {
+          selectedAccessoryIds.add(acc.id);
+        }
+      }
+    }
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final isFullPack = deductType == 'full_pack';
+            
+            // Calculate Total Cost
+            double totalCost = isFullPack ? product.costPrice : product.resolvedPieceCost;
+            if (!isFullPack) {
+              for (var accId in selectedAccessoryIds) {
+                final acc = availableAccessories.firstWhere((p) => p.id == accId);
+                totalCost += acc.resolvedPieceCost;
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  Icon(Icons.coffee_maker, color: Colors.brown),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('بيع / تحضير: ${product.name}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.brown.shade50, borderRadius: BorderRadius.circular(8)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('المخزون الحالي:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            isFullPack 
+                              ? '${product.stock} ${product.resolvedPackName}'
+                              : '${product.stock * product.cupsYield} ${product.resolvedSubUnitName}',
+                            style: TextStyle(color: Colors.brown.shade900, fontWeight: FontWeight.bold)
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text('نوع المبيعة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Column(
+                      children: [
+                        RadioListTile<String>(
+                          title: Text('تحضير كوب واحد (${product.resolvedSubUnitName})', style: TextStyle(fontSize: 13)),
+                          value: 'cup',
+                          groupValue: deductType,
+                          contentPadding: EdgeInsets.zero,
+                          onChanged: (v) {
+                            setDialogState(() {
+                              deductType = v!;
+                              priceCtrl.text = product.resolvedPiecePrice.toStringAsFixed(0);
+                            });
+                          },
+                        ),
+                        RadioListTile<String>(
+                          title: Text('بيع العلبة بالكامل (${product.resolvedPackName})', style: TextStyle(fontSize: 13)),
+                          value: 'full_pack',
+                          groupValue: deductType,
+                          contentPadding: EdgeInsets.zero,
+                          onChanged: (v) {
+                            setDialogState(() {
+                              deductType = v!;
+                              priceCtrl.text = product.price.toStringAsFixed(0);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    
+                    if (!isFullPack && availableAccessories.isNotEmpty) ...[
+                      SizedBox(height: 16),
+                      Text('إضافة مستلزمات للطلب (تخصم من المخزون وتُحسب تكلفتها):', style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: availableAccessories.map((acc) {
+                          final isSelected = selectedAccessoryIds.contains(acc.id);
+                          return FilterChip(
+                            label: Text('${acc.name} (${acc.resolvedPieceCost.toStringAsFixed(2)} دج)'),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setDialogState(() {
+                                if (selected) {
+                                  selectedAccessoryIds.add(acc.id);
+                                } else {
+                                  selectedAccessoryIds.remove(acc.id);
+                                }
+                              });
+                            },
+                            selectedColor: Colors.brown.shade100,
+                            checkmarkColor: Colors.brown,
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    
+                    SizedBox(height: 16),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('التكلفة الإجمالية:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text('${totalCost.toStringAsFixed(2)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade700, fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                    
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: priceCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'سعر البيع للزبون',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        suffixText: 'دج',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('إلغاء', style: TextStyle(color: Colors.grey.shade700)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.brown, foregroundColor: Colors.white),
+                  onPressed: () {
+                    final price = double.tryParse(priceCtrl.text) ?? (isFullPack ? product.price : product.resolvedPiecePrice);
+
+                    if (isFullPack) {
+                      context.read<BillingBloc>().add(AddProductToCartEvent(
+                        product,
+                        unitLevel: 'pack',
+                        quantity: 1 * multiplier,
+                        customPrice: price,
+                      ));
+                    } else {
+                      // 1. Add Main Coffee Product (1 Cup)
+                      context.read<BillingBloc>().add(AddProductToCartEvent(
+                        product,
+                        unitLevel: 'piece',
+                        quantity: 1 * multiplier,
+                        customPrice: price,
+                      ));
+
+                      // 2. Add Selected Accessories (1 piece each)
+                      for (var accId in selectedAccessoryIds) {
+                        final acc = availableAccessories.firstWhere((p) => p.id == accId);
+                        context.read<BillingBloc>().add(AddProductToCartEvent(
+                          acc, unitLevel: 'piece', quantity: 1 * multiplier, customPrice: 0.0, customUnitName: 'مستلزمات',
+                        ));
+                      }
+                    }
+                    
+                    Navigator.pop(ctx);
+                    SnackbarHelper.showSuccess(context, 'تمت الإضافة بنجاح!');
+                  },
+                  child: Text('تأكيد وإضافة'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _addProductToCartWithPricing(Product product, {int quantity = 1}) {
+    if (product.isCoffeeMachineProduct && !_isReturnMode) {
+      _showCoffeeSaleDialog(product, quantity);
+      return;
+    }
     double effectivePrice = product.price;
     if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
       effectivePrice = product.wholesalePrice;
@@ -3187,44 +3398,44 @@ $itemsSummary
                   ),
                 ),
                 const SizedBox(width: 8),
+                InkWell(
+                  onTap: _showCategorySettingsModal,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.category_rounded, size: 16, color: Colors.blue),
+                        const SizedBox(width: 4),
+                        const Text('تنظيم الأصناف', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 const SizedBox(height: 24, child: VerticalDivider(width: 1)),
                 const SizedBox(width: 8),
-                ..._categoriesDef.map((cat) {
-                  final trVal = context.tr(cat['tr'] ?? '');
-                  final catName = trVal != (cat['tr'] ?? '') && trVal.isNotEmpty
-                      ? trVal
-                      : (cat['ar'] ?? '');
-                  final iconStr = cat['icon'] ?? '🏷️';
+                ..._getOrderedVisibleCategories().map((cat) {
+                  final catName = cat['ar'] as String;
+                  final iconStr = cat['icon'] as String;
+                  final isCustom = cat['isCustom'] == true;
                   return Padding(
                     padding: const EdgeInsets.only(left: 6),
                     child: ActionChip(
                       avatar: Text(iconStr, style: const TextStyle(fontSize: 14)),
-                      label: Text(catName, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                      label: Text(catName, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: isCustom ? Colors.teal : null)),
                       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Colors.grey.shade300),
+                        side: BorderSide(color: isCustom ? Colors.teal.shade300 : Colors.grey.shade300),
                       ),
                       onPressed: () {
                         _showCategoryProductsModal(cat['key']!, catName);
-                      },
-                    ),
-                  );
-                }),
-                ...CategoryTaxonomy.getCustomCategories().map((customCat) {
-                  final iconStr = CategoryTaxonomy.getIconForCategory(customCat);
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: ActionChip(
-                      avatar: Text(iconStr, style: const TextStyle(fontSize: 14)),
-                      label: Text(customCat, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.teal)),
-                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Colors.teal.shade300),
-                      ),
-                      onPressed: () {
-                        _showCategoryProductsModal(customCat, customCat);
                       },
                     ),
                   );
@@ -3473,6 +3684,57 @@ $itemsSummary
     ).then((_) => setState(() {}));
   }
 
+  List<Map<String, dynamic>> _getAllCombinedCategories() {
+    final List<Map<String, dynamic>> all = [];
+    for (var def in _categoriesDef) {
+      final trVal = context.tr(def['tr'] ?? '');
+      final catName = trVal != (def['tr'] ?? '') && trVal.isNotEmpty ? trVal : (def['ar'] ?? '');
+      all.add({
+        'key': def['key'],
+        'ar': catName,
+        'icon': def['icon'] ?? '🏷️',
+        'isCustom': false,
+      });
+    }
+    for (var custom in CategoryTaxonomy.getCustomCategories()) {
+      all.add({
+        'key': custom,
+        'ar': custom,
+        'icon': CategoryTaxonomy.getIconForCategory(custom),
+        'isCustom': true,
+      });
+    }
+    return all;
+  }
+
+  List<Map<String, dynamic>> _getOrderedVisibleCategories() {
+    final all = _getAllCombinedCategories();
+    final hidden = CategoryTaxonomy.getHiddenCategories();
+    final order = CategoryTaxonomy.getCategoryOrder();
+
+    final visible = all.where((c) => !hidden.contains(c['ar'])).toList();
+
+    visible.sort((a, b) {
+      final idxA = order.indexOf(a['ar']);
+      final idxB = order.indexOf(b['ar']);
+      if (idxA != -1 && idxB != -1) return idxA.compareTo(idxB);
+      if (idxA != -1) return -1;
+      if (idxB != -1) return 1;
+      return 0;
+    });
+    return visible;
+  }
+
+  void _showCategorySettingsModal() {
+    final allCats = _getAllCombinedCategories();
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return _CategorySettingsDialog(allCategories: allCats);
+      },
+    ).then((_) => setState(() {}));
+  }
+
   Widget _buildBottomHotkeysBar() {
     return Container(
       height: 36,
@@ -3489,6 +3751,112 @@ $itemsSummary
     );
   }
 }
+
+class _CategorySettingsDialog extends StatefulWidget {
+  final List<Map<String, dynamic>> allCategories;
+  const _CategorySettingsDialog({Key? key, required this.allCategories}) : super(key: key);
+
+  @override
+  State<_CategorySettingsDialog> createState() => _CategorySettingsDialogState();
+}
+
+class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
+  late List<String> _orderedNames;
+  late Set<String> _hiddenNames;
+
+  @override
+  void initState() {
+    super.initState();
+    _hiddenNames = CategoryTaxonomy.getHiddenCategories().toSet();
+    final savedOrder = CategoryTaxonomy.getCategoryOrder();
+    
+    final allNames = widget.allCategories.map((e) => e['ar'] as String).toList();
+    
+    _orderedNames = [];
+    for (final name in savedOrder) {
+      if (allNames.contains(name)) {
+        _orderedNames.add(name);
+      }
+    }
+    for (final name in allNames) {
+      if (!_orderedNames.contains(name)) {
+        _orderedNames.add(name);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: const [
+          Icon(Icons.category, color: Colors.blue),
+          SizedBox(width: 8),
+          Text('إعدادات عرض الأصناف'),
+        ],
+      ),
+      content: SizedBox(
+        width: 400,
+        height: 500,
+        child: Column(
+          children: [
+            const Text('اسحب لإعادة الترتيب، واستخدم المربعات للإخفاء/الإظهار.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ReorderableListView.builder(
+                itemCount: _orderedNames.length,
+                onReorder: (oldIndex, newIndex) {
+                  if (oldIndex < newIndex) newIndex -= 1;
+                  setState(() {
+                    final item = _orderedNames.removeAt(oldIndex);
+                    _orderedNames.insert(newIndex, item);
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final name = _orderedNames[index];
+                  final cat = widget.allCategories.firstWhere((e) => e['ar'] == name);
+                  final isHidden = _hiddenNames.contains(name);
+                  return Card(
+                    key: ValueKey(name),
+                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    child: CheckboxListTile(
+                      secondary: Text(cat['icon'] as String, style: const TextStyle(fontSize: 18)),
+                      title: Text(name, style: TextStyle(fontWeight: FontWeight.bold, decoration: isHidden ? TextDecoration.lineThrough : null, color: isHidden ? Colors.grey : null)),
+                      value: !isHidden,
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            _hiddenNames.remove(name);
+                          } else {
+                            _hiddenNames.add(name);
+                          }
+                        });
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
+          onPressed: () async {
+            await CategoryTaxonomy.saveCategoryOrder(_orderedNames);
+            final box = HiveDatabase.settingsBox;
+            await box.put(CategoryTaxonomy.hiddenCategoriesSettingsKey, _hiddenNames.toList());
+            if (mounted) Navigator.pop(context);
+          },
+          child: const Text('حفظ التعديلات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+}
+
 
 
 
