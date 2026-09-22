@@ -14,7 +14,7 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
-import '../../billing/presentation/widgets/quick_items_manager_dialog.dart';
+import '../../../billing/presentation/widgets/quick_items_manager_dialog.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
 import '../widgets/product_image_picker_field.dart';
