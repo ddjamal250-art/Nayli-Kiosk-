@@ -957,7 +957,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                         ],
                       ),
                       SegmentedButton<bool>(
-                        segments: const [
+                        segments: [
                           ButtonSegment(value: false, label: Text(context.tr('جدول الأصناف 📋'), style: TextStyle(fontSize: 11))),
                           ButtonSegment(value: true, label: Text(context.tr('منحنى بياني 📈'), style: TextStyle(fontSize: 11))),
                         ],
@@ -1021,10 +1021,10 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
-                          children: const [
-                            Icon(Icons.add_circle_outline, color: Colors.teal, size: 16),
-                            SizedBox(width: 6),
-                            Text(context.tr('إيداعات وصرف إضافي للصندوق:'), style: TextStyle(fontSize: 11.5)),
+                          children: [
+                            const Icon(Icons.add_circle_outline, color: Colors.teal, size: 16),
+                            const SizedBox(width: 6),
+                            Text(context.tr('إيداعات وصرف إضافي للصندوق:'), style: const TextStyle(fontSize: 11.5)),
                           ],
                         ),
                         Text('+${totalDrawerIn.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal, fontSize: 13)),
@@ -1037,10 +1037,10 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
-                          children: const [
-                            Icon(Icons.remove_circle_outline, color: Colors.deepOrange, size: 16),
-                            SizedBox(width: 6),
-                            Text(context.tr('سحوبات ومصاريف كاش مسجلة:'), style: TextStyle(fontSize: 11.5)),
+                          children: [
+                            const Icon(Icons.remove_circle_outline, color: Colors.deepOrange, size: 16),
+                            const SizedBox(width: 6),
+                            Text(context.tr('سحوبات ومصاريف كاش مسجلة:'), style: const TextStyle(fontSize: 11.5)),
                           ],
                         ),
                         Text('-${totalDrawerOut.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange, fontSize: 13)),

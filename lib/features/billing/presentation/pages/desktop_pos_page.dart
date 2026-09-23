@@ -3969,9 +3969,9 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
-        children: const [
-          Icon(Icons.category, color: Colors.blue),
-          SizedBox(width: 8),
+        children: [
+          const Icon(Icons.category, color: Colors.blue),
+          const SizedBox(width: 8),
           Text(context.tr('تنظيم وترتيب شريط الأصناف')),
         ],
       ),
