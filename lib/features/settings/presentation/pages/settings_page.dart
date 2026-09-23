@@ -511,7 +511,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          title,
+                          context.tr(title),
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
                         ),
                       ),
@@ -521,13 +521,13 @@ class _SettingsPageState extends State<SettingsPage> {
                           color: badgeColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(badgeText, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor[800])),
+                        child: Text(context.tr(badgeText), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor[800])),
                       ),
                     ],
                   ),
                   SizedBox(height: 3),
                   Text(
-                    subtitle,
+                    context.tr(subtitle),
                     style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -696,10 +696,10 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       _buildDivider(),
       _buildTile(
-        icon: Icons.cell_tower_rounded,
+        icon: Icons.notifications_active_rounded,
         iconColor: Colors.blue,
-        title: 'إشعارات شريط الهاتف العلوي',
-        subtitle: isNotifOn ? 'تصلك التنبيهات خارج التطبيق' : 'التنبيهات تظهر داخل التطبيق فقط',
+        title: 'تنبيهات وإشعارات النظام',
+        subtitle: isNotifOn ? 'تصلك التنبيهات وإشعارات سطح المكتب' : 'التنبيهات تظهر داخل التطبيق فقط',
         trailing: Switch(
           value: isNotifOn,
           activeColor: AppTheme.primaryColor,
@@ -787,38 +787,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   /// Language & App Info Card
-    Widget _buildAppearanceAndThemeSection(BuildContext context) {
+  Widget _buildAppearanceAndThemeSection(BuildContext context) {
     return _buildCardGroup([
-
-        _buildTile(
-          icon: Icons.color_lens_rounded,
-          iconColor: Colors.deepPurple,
-          title: 'تخصيص ألوان الواجهة',
-          subtitle: 'تغيير اللون الرئيسي وشريط الكاشير',
-          onTap: () {
-             HeaderColorDialog.show(context);
-          },
-        ),
-        _buildDivider(),
-        _buildTile(
-          icon: Icons.image_rounded,
-          iconColor: Colors.pink,
-          title: 'شعار المحل التجاري',
-          subtitle: 'تغيير الشعار المعروض في الشاشة الرئيسية',
-          onTap: () async {
-             final picker = ImagePicker();
-             final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-             if (pickedFile != null) {
-                 HiveDatabase.settingsBox.put('shop_logo_path', pickedFile.path);
-                 if (context.mounted) {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                         SnackBar(content: Text('تم حفظ الشعار بنجاح!')),
-                     );
-                 }
-             }
-          },
-        ),
-        _buildDivider(),
       _buildTile(
         icon: Icons.palette_rounded,
         iconColor: Colors.deepPurple,
@@ -834,10 +804,29 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         onTap: () => HeaderColorDialog.show(context),
       ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.image_rounded,
+        iconColor: Colors.pink,
+        title: 'شعار المحل التجاري',
+        subtitle: 'تغيير الشعار المعروض في الشاشة الرئيسية',
+        onTap: () async {
+          final picker = ImagePicker();
+          final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+          if (pickedFile != null) {
+            HiveDatabase.settingsBox.put('shop_logo_path', pickedFile.path);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('تم حفظ الشعار بنجاح!')),
+              );
+            }
+          }
+        },
+      ),
     ]);
   }
 
-Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
+  Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
     return _buildCardGroup([
       BlocBuilder<LanguageCubit, Locale>(
         builder: (context, currentLocale) {
@@ -876,21 +865,6 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           );
         },
       ),
-      if (isActivated) ...[
-        _buildDivider(),
-        _buildTile(
-          icon: Icons.qr_code_scanner_rounded,
-          iconColor: Color(0xFF0284C7),
-          title: 'تفعيل برنامج الحاسوب عبر قارئ الباركود 🔫 📲',
-          subtitle: 'عرض رمز الاستجابة السريعة لتفعيل حاسوب الكاشير فوراً عبر الماسح',
-          trailing: Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: Color(0xFF0284C7).withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-            child: Text('كاشير 🖥️', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 11)),
-          ),
-          onTap: () => PcDouchetteActivationModal.show(context),
-        ),
-      ],
       _buildDivider(),
       _buildTile(
         icon: Icons.info_outline_rounded,
@@ -924,7 +898,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   children: [
                     Icon(Icons.bar_chart_rounded, color: Colors.green, size: 26),
                     SizedBox(width: 8),
-                    Text('مركز المالية والتقارير والأرباح 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(context.tr('مركز المالية والتقارير والأرباح 📊'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
                 IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
@@ -1002,7 +976,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                     children: [
                       Icon(Icons.inventory_2_rounded, color: Colors.blue, size: 26),
                       SizedBox(width: 8),
-                      Text('مركز المخزون والسلع والتوالف 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(context.tr('مركز المخزون والسلع والتوالف 📦'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ],
                   ),
                   IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
@@ -1114,7 +1088,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   children: [
                     Icon(Icons.groups_rounded, color: Colors.orange, size: 26),
                     SizedBox(width: 8),
-                    Text('مركز العلاقات والديون والموردين 👥', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(context.tr('مركز العلاقات والديون والموردين 👥'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
                 IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
@@ -1177,8 +1151,8 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
         decoration: BoxDecoration(color: iconColor.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
         child: Icon(icon, color: iconColor, size: 22),
       ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey)),
+      title: Text(context.tr(title), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+      subtitle: Text(context.tr(subtitle), style: TextStyle(fontSize: 11, color: Colors.grey)),
       trailing: Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
       onTap: onTap,
     );
@@ -1255,7 +1229,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('اختر لغة التطبيق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Text(context.tr('اختر لغة التطبيق'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             SizedBox(height: 14),
             _buildLangChoice(ctx, 'العربية', '🇩🇿', 'ar', currentLocale.languageCode == 'ar'),
             Divider(height: 1),
@@ -1376,7 +1350,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Text('معاينة القسم', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                                            Text(context.tr('معاينة القسم'), style: TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
                                             SizedBox(width: 2),
                                             Icon(Icons.arrow_forward_ios, size: 10, color: AppTheme.primaryColor),
                                           ],
@@ -1408,14 +1382,14 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           children: [
             Icon(Icons.lock_outline, color: AppTheme.primaryColor),
             SizedBox(width: 8),
-            Text('تعيين رمز سري PIN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(context.tr('تعيين رمز سري PIN'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('اختر رمزاً من 4 أرقام لحماية حسابات المتجر والأرباح:'),
+            Text(context.tr('اختر رمزاً من 4 أرقام لحماية حسابات المتجر والأرباح:')),
             SizedBox(height: 12),
             TextField(
               controller: pinController,
@@ -1431,7 +1405,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('إلغاء'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
             onPressed: () async {
@@ -1448,7 +1422,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 }
               }
             },
-            child: Text('حفظ وتفعيل', style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('حفظ وتفعيل'), style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1463,7 +1437,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('تغيير الرمز السري', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(context.tr('تغيير الرمز السري'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1491,7 +1465,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('إلغاء'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
             onPressed: () async {
@@ -1517,7 +1491,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 }
               }
             },
-            child: Text('تأكيد التغيير', style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('تأكيد التغيير'), style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1542,14 +1516,14 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
               children: [
                 Icon(Icons.table_chart, color: Colors.green, size: 24),
                 SizedBox(width: 8),
-                Text('النسخ الاحتياطي وتصدير البيانات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(context.tr('النسخ الاحتياطي وتصدير البيانات'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
             SizedBox(height: 16),
             ListTile(
               leading: CircleAvatar(backgroundColor: Color(0xFFE8F5E9), child: Icon(Icons.table_chart, color: Colors.green)),
-              title: Text('تصدير المخزون العام كملف Excel (CSV)'),
-              subtitle: Text('حفظ قائمة السلع والأسعار والكميات وقيمة رأس المال'),
+              title: Text(context.tr('تصدير المخزون العام كملف Excel (CSV)')),
+              subtitle: Text(context.tr('حفظ قائمة السلع والأسعار والكميات وقيمة رأس المال')),
               onTap: () {
                 Navigator.pop(ctx);
                 final csv = ExcelExportHelper.exportProductsToCsv();
@@ -1564,8 +1538,8 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Divider(height: 8),
             ListTile(
               leading: CircleAvatar(backgroundColor: Color(0xFFFFF3E0), child: Icon(Icons.people_alt_outlined, color: Colors.orange)),
-              title: Text('تصدير دفتر ديون الزبائن كملف Excel (CSV)'),
-              subtitle: Text('كشف حساب بالزبائن، أرقام الهواتف، والديون المعلقة'),
+              title: Text(context.tr('تصدير دفتر ديون الزبائن كملف Excel (CSV)')),
+              subtitle: Text(context.tr('كشف حساب بالزبائن، أرقام الهواتف، والديون المعلقة')),
               onTap: () {
                 Navigator.pop(ctx);
                 final custState = context.read<CustomerCubit>().state;
@@ -1587,8 +1561,8 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Divider(height: 8),
             ListTile(
               leading: CircleAvatar(backgroundColor: Color(0xFFE3F2FD), child: Icon(Icons.cloud_upload, color: Colors.blue)),
-              title: Text('إنشاء نسخة احتياطية شاملة للنظام'),
-              subtitle: Text('حفظ قاعدة بيانات المحل بالكامل في ملف آمن'),
+              title: Text(context.tr('إنشاء نسخة احتياطية شاملة للنظام')),
+              subtitle: Text(context.tr('حفظ قاعدة بيانات المحل بالكامل في ملف آمن')),
               onTap: () {
                 Navigator.pop(ctx);
                 final json = BackupHelper.exportDatabaseToJson();
@@ -1603,8 +1577,8 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
             Divider(height: 8),
             ListTile(
               leading: CircleAvatar(backgroundColor: Color(0xFFFFEBEE), child: Icon(Icons.settings_backup_restore_rounded, color: Colors.deepOrange)),
-              title: Text('استرجاع قاعدة البيانات من ملف خارجي (.nbak / ZIP) 📥'),
-              subtitle: Text('استيراد المنتجات والبيانات من فلاش ديسك أو قرص صلب (مثل G:\\data\\nayli_market_backup.nbak)'),
+              title: Text(context.tr('استرجاع قاعدة البيانات من ملف خارجي (.nbak / ZIP) 📥')),
+              subtitle: Text(context.tr('استيراد المنتجات والبيانات من فلاش ديسك أو قرص صلب (مثل G:\\data\\nayli_market_backup.nbak)')),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/backups');
@@ -1640,7 +1614,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                     children: [
                       Icon(Icons.music_note_rounded, color: Colors.amber, size: 24),
                       SizedBox(width: 8),
-                      Text('معرض نغمات الكاشير (10 نغمات تفاعلية) 🎵',
+                      Text(context.tr('معرض نغمات الكاشير (10 نغمات تفاعلية) 🎵'),
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
@@ -1659,7 +1633,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                   children: [
                     Icon(Icons.volume_up, size: 20, color: Colors.grey[700]),
                     SizedBox(width: 8),
-                    Text('مستوى الصوت (${(currentVol * 100).toInt()}%):',
+                    Text('${context.tr("مستوى الصوت")} (${(currentVol * 100).toInt()}%):',
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     Expanded(
                       child: Slider(
@@ -1676,7 +1650,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 ),
               ),
               SizedBox(height: 12),
-              Text('اضغط على "تجربة" للاستماع ثم اختر النغمة المفضلة لك:',
+              Text(context.tr('اضغط على "تجربة" للاستماع ثم اختر النغمة المفضلة لك:'),
                   style: TextStyle(fontSize: 11.5, color: Colors.grey, fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
               Expanded(
@@ -1718,7 +1692,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                                 color: Colors.green.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text('المفعلة ⚡',
+                              child: Text(context.tr('المفعلة ⚡'),
                                   style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.green)),
                             ),
                         ],
@@ -1807,7 +1781,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 minimumSize: Size(double.infinity, 44),
               ),
               onPressed: () => Navigator.pop(ctx),
-              child: Text('إغلاق', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(context.tr('إغلاق'), style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

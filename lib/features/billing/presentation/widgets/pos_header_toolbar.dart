@@ -208,21 +208,21 @@ class PosHeaderToolbar extends StatelessWidget {
 
               // 1. Direct Cash Drawer Quick Kick (F10)
               IconButton(
-                tooltip: 'درج النقود (F10)',
+                tooltip: context.tr('درج النقود (F10)'),
                 icon: const Icon(Icons.account_balance_rounded, color: Colors.amber, size: 22),
                 onPressed: onOpenDrawer,
               ),
 
               // 1.1 Cash Drawer Movements (إيداع / سحب كاش)
               IconButton(
-                tooltip: 'حركة الصندوق - إيداع / سحب كاش',
+                tooltip: context.tr('حركة الصندوق - إيداع / سحب كاش'),
                 icon: const Icon(Icons.payments_rounded, color: Colors.tealAccent, size: 22),
                 onPressed: () => CashDrawerActionDialog.show(context),
               ),
 
               // 2. Direct Inventory Access (F4)
               IconButton(
-                tooltip: 'إدارة المخزون (F4)',
+                tooltip: context.tr('إدارة المخزون (F4)'),
                 icon: Icon(Icons.inventory_2_outlined, color: isDarkHeader ? Colors.lightGreenAccent : Colors.green, size: 22),
                 onPressed: () => context.push('/products'),
               ),
@@ -287,7 +287,7 @@ class PosHeaderToolbar extends StatelessWidget {
 
               // 6. Direct Fullscreen Toggle (F11)
               IconButton(
-                tooltip: 'ملء الشاشة (F11)',
+                tooltip: context.tr('ملء الشاشة (F11)'),
                 icon: Icon(Icons.fullscreen_rounded, color: isDarkHeader ? Colors.white70 : Colors.indigo, size: 23),
                 onPressed: () {
                   final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;

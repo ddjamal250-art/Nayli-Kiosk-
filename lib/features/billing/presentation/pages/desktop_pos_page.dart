@@ -328,7 +328,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                 children: [
                   Icon(Icons.coffee_maker, color: Colors.brown),
                   SizedBox(width: 8),
-                  Expanded(child: Text('بيع / تحضير: ${product.name}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+                  Expanded(child: Text('${context.tr("بيع / تحضير:")} ${product.name}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
                 ],
               ),
               content: SingleChildScrollView(
@@ -342,7 +342,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('المخزون الحالي:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(context.tr('المخزون الحالي:'), style: TextStyle(fontWeight: FontWeight.bold)),
                           Text(
                             isFullPack 
                               ? '${product.stock} ${product.resolvedPackName}'
@@ -353,11 +353,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       ),
                     ),
                     SizedBox(height: 16),
-                    Text('نوع المبيعة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(context.tr('نوع المبيعة:'), style: TextStyle(fontWeight: FontWeight.bold)),
                     Column(
                       children: [
                         RadioListTile<String>(
-                          title: Text('تحضير وبيع بالأكواب (${product.resolvedSubUnitName})', style: TextStyle(fontSize: 13)),
+                          title: Text('${context.tr("تحضير وبيع بالأكواب")} (${product.resolvedSubUnitName})', style: TextStyle(fontSize: 13)),
                           value: 'cup',
                           groupValue: deductType,
                           contentPadding: EdgeInsets.zero,
@@ -369,7 +369,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           },
                         ),
                         RadioListTile<String>(
-                          title: Text('بيع العلبة بالكامل (${product.resolvedPackName})', style: TextStyle(fontSize: 13)),
+                          title: Text('${context.tr("بيع العلبة بالكامل")} (${product.resolvedPackName})', style: TextStyle(fontSize: 13)),
                           value: 'full_pack',
                           groupValue: deductType,
                           contentPadding: EdgeInsets.zero,
@@ -387,7 +387,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Text('عدد الكؤوس:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(context.tr('عدد الكؤوس:'), style: TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(width: 8),
                           IconButton(
                             icon: const Icon(Icons.remove_circle_outline, color: Colors.brown),
@@ -443,7 +443,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     
                     if (!isFullPack && availableAccessories.isNotEmpty) ...[
                       SizedBox(height: 14),
-                      Text('مستلزمات الطلب (تخصم تلقائياً من المخزون وتُحسب تكلفتها):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text(context.tr('مستلزمات الطلب (تخصم تلقائياً من المخزون وتُحسب تكلفتها):'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -476,7 +476,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(isFullPack ? 'التكلفة الإجمالية:' : 'التكلفة الإجمالية ($cupQty كؤوس):', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text(isFullPack ? context.tr('التكلفة الإجمالية:') : '${context.tr("التكلفة الإجمالية")} ($cupQty):', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
                           Text('${totalCost.toStringAsFixed(2)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade700, fontSize: 16)),
                         ],
                       ),
@@ -487,9 +487,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       controller: priceCtrl,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: isFullPack ? 'سعر بيع العلبة' : 'سعر بيع الكأس الواحد للزبون',
+                        labelText: isFullPack ? context.tr('سعر بيع العلبة') : context.tr('سعر بيع الكأس الواحد للزبون'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        suffixText: 'دج',
+                        suffixText: context.tr('currency_symbol'),
                       ),
                     ),
                   ],
@@ -498,7 +498,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: Text('إلغاء', style: TextStyle(color: Colors.grey.shade700)),
+                  child: Text(context.tr('إلغاء'), style: TextStyle(color: Colors.grey.shade700)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.brown, foregroundColor: Colors.white),
@@ -534,7 +534,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     Navigator.pop(ctx);
                     SnackbarHelper.showSuccess(context, 'تمت إضافة $finalQty بنجاح!');
                   },
-                  child: Text('تأكيد وإضافة'),
+                  child: Text(context.tr('تأكيد وإضافة')),
                 ),
               ],
             );
@@ -1042,7 +1042,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                     );
                                   },
                                   icon: const Icon(Icons.add, size: 16),
-                                  label: const Text('إضافة وبيع', style: TextStyle(fontSize: 11)),
+                                  label: Text(context.tr('إضافة وبيع'), style: const TextStyle(fontSize: 11)),
                                 ),
                               ],
                             ),
@@ -2178,7 +2178,7 @@ $itemsSummary
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('${context.tr("category_products")}: $catName (${productsInCat.length})',
+                              Text('${context.tr("category_products")}: ${context.tr(catName)} (${productsInCat.length})',
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                               Text(context.tr('click_to_add_cart'),
                                   style: TextStyle(color: Colors.grey, fontSize: 11)),
@@ -2404,8 +2404,8 @@ $itemsSummary
                 children: [
                   ListTile(
                     leading: const CircleAvatar(backgroundColor: Colors.grey, child: Icon(Icons.person_outline, color: Colors.white)),
-                    title: const Text('زبون عابر (صندوق المبيعات)', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Sans crédit ni fidélité'),
+                    title: Text(context.tr('زبون عابر (صندوق المبيعات)'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(context.tr('بدون ديون أو وفاء')),
                     onTap: () {
                       setState(() {
                         _selectedCustomerId = null;
@@ -2647,7 +2647,7 @@ $itemsSummary
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(_selectedCustomerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(context.tr(_selectedCustomerName), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               if (_customerCreditBalance > 0)
                                 Text('${context.tr("current_debt")}: ${_customerCreditBalance.toStringAsFixed(2)} DA',
                                     style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
@@ -3490,7 +3490,7 @@ $itemsSummary
                       children: [
                         const Icon(Icons.category_rounded, size: 16, color: Colors.blue),
                         const SizedBox(width: 4),
-                        const Text('تنظيم الأصناف', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
+                        Text(context.tr('تنظيم الأصناف'), style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
                       ],
                     ),
                   ),
@@ -3506,7 +3506,7 @@ $itemsSummary
                     padding: const EdgeInsets.only(left: 6),
                     child: ActionChip(
                       avatar: Text(iconStr, style: const TextStyle(fontSize: 14)),
-                      label: Text(catName, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: isCustom ? Colors.teal : null)),
+                      label: Text(context.tr(catName), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: isCustom ? Colors.teal : null)),
                       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -3972,7 +3972,7 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
         children: const [
           Icon(Icons.category, color: Colors.blue),
           SizedBox(width: 8),
-          Text('تنظيم وترتيب شريط الأصناف'),
+          Text(context.tr('تنظيم وترتيب شريط الأصناف')),
         ],
       ),
       content: SizedBox(
@@ -3981,8 +3981,8 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'اسحب لإعادة الترتيب، واستخدم المربعات لتحديد ما يظهر في الشريط الرئيسي.',
+            Text(
+              context.tr('اسحب لإعادة الترتيب، واستخدم المربعات لتحديد ما يظهر في الشريط الرئيسي.'),
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
             const SizedBox(height: 10),
@@ -4009,7 +4009,7 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
                     child: CheckboxListTile(
                       secondary: Text(cat['icon'] as String, style: const TextStyle(fontSize: 20)),
                       title: Text(
-                        name,
+                        context.tr(name),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -4040,7 +4040,7 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child: Text(context.tr('إلغاء')),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
@@ -4061,7 +4061,7 @@ class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
             await CategoryTaxonomy.saveHiddenCategories(toSaveHidden.toList());
             if (mounted) Navigator.pop(context, true);
           },
-          child: const Text('حفظ التعديلات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          child: Text(context.tr('حفظ التعديلات'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ],
     );

@@ -533,14 +533,14 @@ class _DailyReportPageState extends State<DailyReportPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCashReconciliationDialog(_cashFloat + netCashFlow),
         icon: Icon(Icons.calculate, color: Colors.white),
-        label: Text('تقفيل لاكيس', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(context.tr('تقفيل لاكيس'), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.primaryColor,
       ),
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('الداشبورد المالي 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(context.tr('الداشبورد المالي 📊'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             SizedBox(width: 8),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -570,7 +570,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh_rounded, color: AppTheme.primaryColor),
-            tooltip: 'تحديث الحسابات والبيانات اللحظية',
+            tooltip: context.tr('تحديث الحسابات والبيانات اللحظية'),
             onPressed: () {
               setState(() => _secondsRemaining = 20);
               SoundService.playScanBeep();
@@ -704,35 +704,35 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 scrollDirection: Axis.horizontal,
                 children: [
                   ChoiceChip(
-                    label: Text('اليوم', style: TextStyle(fontSize: 12)),
+                    label: Text(context.tr('اليوم'), style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 0,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 0),
                   ),
                   SizedBox(width: 6),
                   ChoiceChip(
-                    label: Text('7 أيام', style: TextStyle(fontSize: 12)),
+                    label: Text(context.tr('7 أيام'), style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 1,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 1),
                   ),
                   SizedBox(width: 6),
                   ChoiceChip(
-                    label: Text('30 يوم', style: TextStyle(fontSize: 12)),
+                    label: Text(context.tr('30 يوم'), style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 2,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 2),
                   ),
                   SizedBox(width: 6),
                   ChoiceChip(
-                    label: Text('هذا الشهر', style: TextStyle(fontSize: 12)),
+                    label: Text(context.tr('هذا الشهر'), style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 3,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 3),
                   ),
                   SizedBox(width: 6),
                   ChoiceChip(
-                    label: Text('الكل', style: TextStyle(fontSize: 12)),
+                    label: Text(context.tr('الكل'), style: TextStyle(fontSize: 12)),
                     selected: _selectedPeriod == 4,
                     selectedColor: AppTheme.primaryColor,
                     onSelected: (v) => setState(() => _selectedPeriod = 4),
@@ -958,8 +958,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       ),
                       SegmentedButton<bool>(
                         segments: const [
-                          ButtonSegment(value: false, label: Text('جدول الأصناف 📋', style: TextStyle(fontSize: 11))),
-                          ButtonSegment(value: true, label: Text('منحنى بياني 📈', style: TextStyle(fontSize: 11))),
+                          ButtonSegment(value: false, label: Text(context.tr('جدول الأصناف 📋'), style: TextStyle(fontSize: 11))),
+                          ButtonSegment(value: true, label: Text(context.tr('منحنى بياني 📈'), style: TextStyle(fontSize: 11))),
                         ],
                         selected: {_showVisualCurves},
                         onSelectionChanged: (set) => setState(() => _showVisualCurves = set.first),
@@ -976,7 +976,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
             ),
 
             // Section 2: Cash Flow (التدفق النقدي للكاسة)
-            Text('حركة الكاش والصندوق (Cash Flow) 💵', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Text(context.tr('حركة الكاش والصندوق (Cash Flow) 💵'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             SizedBox(height: 8),
             Container(
               padding: EdgeInsets.all(14),
@@ -1024,7 +1024,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           children: const [
                             Icon(Icons.add_circle_outline, color: Colors.teal, size: 16),
                             SizedBox(width: 6),
-                            Text('إيداعات وصرف إضافي للصندوق:', style: TextStyle(fontSize: 11.5)),
+                            Text(context.tr('إيداعات وصرف إضافي للصندوق:'), style: TextStyle(fontSize: 11.5)),
                           ],
                         ),
                         Text('+${totalDrawerIn.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal, fontSize: 13)),
@@ -1040,7 +1040,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           children: const [
                             Icon(Icons.remove_circle_outline, color: Colors.deepOrange, size: 16),
                             SizedBox(width: 6),
-                            Text('سحوبات ومصاريف كاش مسجلة:', style: TextStyle(fontSize: 11.5)),
+                            Text(context.tr('سحوبات ومصاريف كاش مسجلة:'), style: TextStyle(fontSize: 11.5)),
                           ],
                         ),
                         Text('-${totalDrawerOut.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange, fontSize: 13)),
@@ -1051,7 +1051,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('صافي حركة الدرج (Net Cash):', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      Text(context.tr('صافي حركة الدرج (Net Cash):'), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                       Text(
                         '${netCashFlow >= 0 ? '+' : ''}${netCashFlow.toStringAsFixed(0)} دج',
                         style: TextStyle(
@@ -1110,7 +1110,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('رأس المال المستثمر في السلع والرفوف', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      Text(context.tr('رأس المال المستثمر في السلع والرفوف'), style: TextStyle(fontSize: 11, color: Colors.grey)),
                       SizedBox(height: 2),
                       Text('${stockCapital.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.indigo)),
                     ],
@@ -1124,8 +1124,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('سجل المبيعات (${invoices.length} عملية)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text('إجمالي القطع: $totalItemsCount', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('${context.tr("سجل المبيعات")} (${invoices.length})', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text('${context.tr("إجمالي القطع:")} $totalItemsCount', style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
             SizedBox(height: 8),
@@ -1138,7 +1138,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text('لا توجد مبيعات مسجلة في هذه الفترة', style: TextStyle(color: Colors.grey)),
+                child: Text(context.tr('لا توجد مبيعات مسجلة في هذه الفترة'), style: TextStyle(color: Colors.grey)),
               )
             else
               ListView.separated(
@@ -1223,7 +1223,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                   children: [
                     Icon(isCredit ? Icons.credit_card : Icons.receipt_long, color: AppTheme.primaryColor),
                     SizedBox(width: 8),
-                    Text('تفاصيل الفاتورة #$invoiceId', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text('${context.tr("تفاصيل الفاتورة")} #$invoiceId', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
                 IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
@@ -1240,18 +1240,18 @@ class _DailyReportPageState extends State<DailyReportPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('📅 التاريخ: $dateFormatted', style: TextStyle(fontSize: 12)),
+                  Text('📅 ${context.tr("التاريخ")}: $dateFormatted', style: TextStyle(fontSize: 12)),
                   SizedBox(height: 4),
-                  Text('💳 طريقة الدفع: ${isCredit ? 'كريدي (دين)' : 'كاش (نقداً)'}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('💳 ${context.tr("طريقة الدفع:")} ${isCredit ? context.tr('كريدي (دين)') : context.tr('كاش (نقداً)')}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   if (customerName.isNotEmpty) ...[
                     SizedBox(height: 4),
-                    Text('👤 الزبون: $customerName', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                    Text('👤 ${context.tr("الزبون")}: $customerName', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
                   ],
                 ],
               ),
             ),
             SizedBox(height: 12),
-            Text('🛍️ السلع المشتراة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(context.tr('🛍️ السلع المشتراة:'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             SizedBox(height: 6),
             ConstrainedBox(
               constraints: BoxConstraints(maxHeight: 200),
@@ -1280,7 +1280,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('المجموع الإجمالي:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(context.tr('المجموع الإجمالي:'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 Text('${total.toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primaryColor)),
               ],
             ),
@@ -1294,7 +1294,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: Icon(Icons.share, size: 18, color: Colors.green),
-                    label: Text('مشاركة واتساب', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
+                    label: Text(context.tr('مشاركة واتساب'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
                     onPressed: () {
                       final buffer = StringBuffer();
                       buffer.writeln('🧾 *فاتورة مشتريات #$invoiceId*');
@@ -1327,7 +1327,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: Icon(Icons.print, size: 18),
-                    label: Text('إعادة طباعة الوصل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: Text(context.tr('إعادة طباعة الوصل'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       final printer = PrinterHelper();
@@ -1522,14 +1522,14 @@ class _DailyReportPageState extends State<DailyReportPage> {
         dataRowMinHeight: 44,
         dataRowMaxHeight: 48,
         headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Colors.black87),
-        columns: const [
-          DataColumn(label: Text('الصنف / القسم')),
-          DataColumn(label: Text('المبيعات')),
-          DataColumn(label: Text('التكلفة')),
-          DataColumn(label: Text('الأرباح')),
-          DataColumn(label: Text('الهامش %')),
-          DataColumn(label: Text('القطع')),
-          DataColumn(label: Text('التوالف')),
+        columns: [
+          DataColumn(label: Text(context.tr('الصنف / القسم'))),
+          DataColumn(label: Text(context.tr('المبيعات'))),
+          DataColumn(label: Text(context.tr('التكلفة'))),
+          DataColumn(label: Text(context.tr('الأرباح'))),
+          DataColumn(label: Text(context.tr('الهامش %'))),
+          DataColumn(label: Text(context.tr('القطع'))),
+          DataColumn(label: Text(context.tr('التوالف'))),
         ],
         rows: sortedEntries.map((e) {
           final name = e.key;
