@@ -232,7 +232,7 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                                 ),
                                 const SizedBox(height: 6),
                                 const Text(
-                                  'يمكنك تغيير كلمات البحث أعلاه أو التقاط صورة بالهاتف مباشرة 📷',
+                                  'يمكنك تغيير كلمات البحث أعلاه أو اختيار صورة من جهازك 🖼️',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
@@ -414,30 +414,13 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _pickImage(ImageSource.camera),
-                            icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                            label: const Text('كاميرا 📷', style: TextStyle(fontSize: 11)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _pickImage(ImageSource.gallery),
-                            icon: const Icon(Icons.photo_library_outlined, size: 16),
-                            label: const Text('معرض 🖼️', style: TextStyle(fontSize: 11)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                            ),
-                          ),
-                        ),
-                      ],
+                    OutlinedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library_outlined, size: 16),
+                      label: const Text('اختيار ملف صورة من الحاسوب 🖼️', style: TextStyle(fontSize: 11)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      ),
                     ),
                     if (_currentImageUrl != null && _currentImageUrl!.isNotEmpty)
                       Align(

@@ -165,49 +165,7 @@ class PosHeaderToolbar extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
 
-              // Discreet LAN Network Sync Indicator
-              Tooltip(
-                message: isServerRunning ? 'LAN OK: ' : 'LAN Standby',
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isServerRunning ? Colors.green.withOpacity(0.2) : Colors.amber.withOpacity(0.2),
-                    border: Border.all(color: isServerRunning ? Colors.green : Colors.amber),
-                  ),
-                  child: Icon(
-                    isServerRunning ? Icons.wifi_rounded : Icons.wifi_off_rounded,
-                    size: 16,
-                    color: isServerRunning ? Colors.greenAccent : Colors.amber,
-                  ),
-                ),
-              ),
-
-              if (pendingRemoteCartsCount > 0) ...[
-                const SizedBox(width: 8),
-                InkWell(
-                  onTap: onShowRemoteCartsQueue,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.indigo,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.phonelink_ring_rounded, size: 16, color: Colors.white),
-                        const SizedBox(width: 6),
-                        Text(
-                          'طلبات عن بعد: $pendingRemoteCartsCount (F9)',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
 
               const Spacer(),
 

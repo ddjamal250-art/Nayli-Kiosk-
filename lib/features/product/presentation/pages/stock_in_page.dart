@@ -810,7 +810,7 @@ class _StockInPageState extends State<StockInPage> {
                   color: Colors.indigo,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 18),
+                child: const Icon(Icons.file_open_rounded, color: Colors.white, size: 18),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -818,7 +818,7 @@ class _StockInPageState extends State<StockInPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'فاتورة الشراء الممسوحة (${_pendingOcrItems.length} سلع معلقة)',
+                      'فاتورة الشراء المستوردة (${_pendingOcrItems.length} سلع معلقة)',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo),
                     ),
                     if (_ocrSupplierName != null && _ocrSupplierName!.isNotEmpty)
@@ -941,8 +941,8 @@ class _StockInPageState extends State<StockInPage> {
         ),
         actions: [
           IconButton(
-            tooltip: 'مسح وصل المورد (OCR) 📸',
-            icon: const Icon(Icons.document_scanner_rounded, color: Colors.indigo),
+            tooltip: 'استيراد وتحليل فاتورة (PDF / Excel / Word / صورة) 📂',
+            icon: const Icon(Icons.file_open_rounded, color: Colors.indigo),
             onPressed: _scanSupplierPaperInvoice,
           ),
           IconButton(
@@ -950,11 +950,19 @@ class _StockInPageState extends State<StockInPage> {
             icon: const Icon(Icons.qr_code_2_rounded, color: Colors.teal),
             onPressed: _generateGreyProductBarcode,
           ),
-          IconButton(
-            tooltip: _isCameraOn ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا',
-            icon: Icon(_isCameraOn ? Icons.videocam : Icons.videocam_off, color: Colors.indigo),
-            onPressed: () => setState(() => _isCameraOn = !_isCameraOn),
-          ),
+          if (Platform.isAndroid || Platform.isIOS)
+            IconButton(
+              tooltip: _isCameraOn ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا',
+              icon: Icon(_isCameraOn ? Icons.videocam : Icons.videocam_off, color: Colors.indigo),
+              onPressed: () {
+                setState(() => _isCameraOn = !_isCameraOn);
+                if (_isCameraOn) {
+                  _scannerController.start();
+                } else {
+                  _scannerController.stop();
+                }
+              },
+            ),
         ],
       ),
       body: SingleChildScrollView(

@@ -57,7 +57,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadExistingShopInfo();
     _loadLocalIp();
     HardwareKeyboard.instance.addHandler(_handleDouchetteHardwareKey);
@@ -830,7 +830,6 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                                 unselectedLabelColor: Colors.grey[400],
                                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                                 tabs: const [
-                                  Tab(icon: Icon(Icons.qr_code_scanner_rounded, size: 18), text: 'الاقتران السريع 📲'),
                                   Tab(icon: Icon(Icons.cloud_sync_rounded, size: 18), text: 'تفعيل أونلاين 🚀'),
                                   Tab(icon: Icon(Icons.dialpad_rounded, size: 18), text: 'تفعيل أوفلاين 🔑'),
                                   Tab(icon: Icon(Icons.tv_rounded, size: 18), text: 'كشك الأسعار 🛍️'),
@@ -846,7 +845,6 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
                                 child: TabBarView(
                                   controller: _tabController,
                                   children: [
-                                    _buildSmartPairingTab(isDesktop, qrPayload, merchantId),
                                     _buildOnlineCloudTab(),
                                     _buildOfflineDouchetteTab(),
                                     _buildKioskModeTab(),
@@ -1841,11 +1839,11 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
             ),
             child: const Row(
               children: [
-                Icon(Icons.phone_android_rounded, color: Color(0xFF818CF8), size: 22),
+                Icon(Icons.key_rounded, color: Color(0xFF818CF8), size: 22),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '💡 لديك هاتف مفعل؟ افتح الإعدادات في الهاتف واضغط "تفعيل حاسوب بالباركود"، ثم امسح الكود الظاهر على شاشة الهاتف بقارئ الباركود (Douchette)!',
+                    '💡 يمكنك طلب كود التفعيل المباشر من المطور وإدخاله هنا أو مسحه بقارئ الباركود (Douchette) للتفعيل الفوري بدون إنترنت.',
                     style: TextStyle(color: Color(0xFFE0E7FF), fontSize: 11.5, height: 1.4),
                   ),
                 ),

@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:uuid/uuid.dart';
+
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/invoice_ocr_service.dart';
+import '../../../../core/utils/invoice_file_reader.dart';
 import '../../../../core/utils/receipt_ocr_parser.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
@@ -26,14 +27,33 @@ class ReceiptOcrScannerDialog extends StatefulWidget {
 }
 
 class _ReceiptOcrScannerDialogState extends State<ReceiptOcrScannerDialog> with SingleTickerProviderStateMixin {
-  final ImagePicker _picker = ImagePicker();
-  File? _selectedImage;
+  File? _selectedFile;
+  String? _selectedFileName;
+  String? _selectedFileFormat;
+  int _selectedFileSize = 0;
+
   bool _isProcessing = false;
+  String _processingStatus = '';
   final TextEditingController _rawTextCtrl = TextEditingController();
   final List<CommercialDocItem> _parsedItems = [];
   String _entityName = '';
   double _detectedTotal = 0.0;
   late TabController _tabController;
+
+  static const List<String> _allAllowedExtensions = [
+    'pdf',
+    'xlsx',
+    'xls',
+    'csv',
+    'tsv',
+    'docx',
+    'doc',
+    'txt',
+    'png',
+    'jpg',
+    'jpeg',
+    'webp',
+  ];
 
   @override
   void initState() {
@@ -48,63 +68,74 @@ class _ReceiptOcrScannerDialogState extends State<ReceiptOcrScannerDialog> with 
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickFile({List<String>? specificExtensions, String? dialogTitle}) async {
     try {
-      final XFile? photo = await _picker.pickImage(
-        source: source,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 85,
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: specificExtensions ?? _allAllowedExtensions,
+        dialogTitle: dialogTitle ?? 'اختر ملف الفاتورة (PDF / Excel / Word / صورة)',
       );
 
-      if (photo != null) {
-        setState(() {
-          _selectedImage = File(photo.path);
-          _isProcessing = true;
-        });
-
-        SoundService.playScanBeep();
-
-        // 1. Extract raw printed text using real OCR Service
-        final extractedText = await InvoiceOcrService.instance.extractTextFromImage(_selectedImage!);
-
-        if (extractedText != null && extractedText.trim().isNotEmpty) {
-          _rawTextCtrl.text = extractedText;
-          _processRawText();
-          if (mounted) {
-            SnackbarHelper.showSuccess(context, '✅ تم قراءة الفاتورة بنجاح عبر الذكاء الاصطناعي!');
-          }
-        } else {
-          // If offline or OCR returned empty, keep existing or provide friendly guidance
-          if (_rawTextCtrl.text.isEmpty) {
-            _rawTextCtrl.text = '''Designation   Qte   P.U   Total
-Marlboro Red   10    385   3850
-L&M Blue       10    300   3000
-Soummam Fraise 24    24    576
-Eau Ifri 1.5L  24    30    720''';
-          }
-          _processRawText();
-          if (mounted) {
-            SnackbarHelper.showWarning(context, 'تعذر الاتصال بخادم OCR التلقائي. تم فتح نافذة التعديل اليدوي.');
-          }
-        }
+      if (result != null && result.files.isNotEmpty && result.files.first.path != null) {
+        final filePath = result.files.first.path!;
+        final file = File(filePath);
+        await _processFile(file);
       }
     } catch (e) {
-      if (mounted) SnackbarHelper.showError(context, 'خطأ أثناء معالجة الصورة: $e');
+      if (mounted) SnackbarHelper.showError(context, 'خطأ أثناء اختيار الملف: $e');
+    }
+  }
+
+  Future<void> _processFile(File file) async {
+    setState(() {
+      _selectedFile = file;
+      _selectedFileName = file.uri.pathSegments.isNotEmpty ? file.uri.pathSegments.last : 'invoice';
+      _selectedFileSize = file.lengthSync();
+      _isProcessing = true;
+      _processingStatus = 'جاري تحليل وقراءة بيانات الفاتورة... 🔍';
+    });
+
+    SoundService.playScanBeep();
+
+    try {
+      final res = await InvoiceFileReader.instance.processFile(file);
+      if (res != null) {
+        _selectedFileFormat = res.formatName;
+        _rawTextCtrl.text = res.rawText;
+        setState(() {
+          _parsedItems.clear();
+          _parsedItems.addAll(res.parsedResult.items);
+          _entityName = res.parsedResult.entityName;
+          _detectedTotal = res.parsedResult.totalAmount;
+        });
+
+        if (mounted) {
+          if (_parsedItems.isNotEmpty) {
+            SnackbarHelper.showSuccess(context, '✅ تم استخراج ${_parsedItems.length} سلع بنجاح! يرجى المعاينة والتأكيد.');
+          } else {
+            SnackbarHelper.showWarning(context, 'تمت قراءة الملف لكن لم نكتشف سلعاً تلقائياً. يمكنك إضافة السلع أو تعديل النص.');
+          }
+        }
+      } else {
+        if (mounted) SnackbarHelper.showError(context, 'تعذر استخراج بيانات من هذا الملف.');
+      }
+    } catch (e) {
+      if (mounted) SnackbarHelper.showError(context, 'خطأ أثناء معالجة الملف: $e');
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
-  void _processRawText() {
+  void _reparseFromRawText() {
     final result = ReceiptOcrParser.parseRawText(_rawTextCtrl.text);
     setState(() {
       _parsedItems.clear();
       _parsedItems.addAll(result.items);
-      _entityName = result.entityName;
+      if (_entityName.isEmpty) _entityName = result.entityName;
       _detectedTotal = result.totalAmount;
     });
     SoundService.playCheckoutSuccess();
+    SnackbarHelper.showSuccess(context, 'تم إعادة التحليل! تم العثور على ${_parsedItems.length} سلع.');
   }
 
   void _addItemManually() {
@@ -120,6 +151,14 @@ Eau Ifri 1.5L  24    30    720''';
         ),
       );
     });
+    SoundService.playKeyTap();
+  }
+
+  void _removeItem(int index) {
+    setState(() {
+      _parsedItems.removeAt(index);
+    });
+    SoundService.playKeyTap();
   }
 
   void _commitResult() {
@@ -129,7 +168,7 @@ Eau Ifri 1.5L  24    30    720''';
     }
 
     final result = ParsedReceiptResult(
-      entityName: _entityName,
+      entityName: _entityName.trim(),
       items: _parsedItems,
       totalAmount: _detectedTotal > 0 ? _detectedTotal : _parsedItems.fold(0.0, (s, i) => s + i.totalHT),
       rawExtractedText: _rawTextCtrl.text,
@@ -139,50 +178,58 @@ Eau Ifri 1.5L  24    30    720''';
     Navigator.pop(context, result);
   }
 
+  String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isDesktop = screenSize.width >= 750;
+    final totalComputed = _parsedItems.fold(0.0, (s, i) => s + i.totalHT);
 
     return Dialog(
       backgroundColor: Theme.of(context).cardColor,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        width: isDesktop ? 840 : double.infinity,
-        height: isDesktop ? 640 : screenSize.height * 0.88,
+        width: isDesktop ? 880 : double.infinity,
+        height: isDesktop ? 680 : screenSize.height * 0.92,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header Bar
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.indigo.withOpacity(0.1),
+                    color: Colors.teal.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.document_scanner_rounded, color: Colors.indigo, size: 22),
+                  child: const Icon(Icons.file_open_rounded, color: Colors.teal, size: 24),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'مسح واستخراج فواتير الشراء (AI OCR) 🧾',
+                        'استيراد وتحليل ملف الفاتورة 📂 (PDF / Excel / Word / صور)',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                       Text(
-                        'استخراج الكميات وأسعار الشراء تلقائياً ونقلها للأريفاج',
-                        style: TextStyle(fontSize: 10.5, color: Colors.grey),
+                        'قراءة بيانات الفواتير الرقمية والورقية مع التحقق والمعاينة قبل الترحيل للمخزون',
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
+                  tooltip: 'إغلاق',
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -190,57 +237,106 @@ Eau Ifri 1.5L  24    30    720''';
             ),
             const SizedBox(height: 12),
 
-            // Top Action Capture Bar
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    icon: const Icon(Icons.camera_alt, size: 18),
-                    label: const Text('تصوير الفاتورة 📷', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                    onPressed: () => _pickImage(ImageSource.camera),
+            // File Selection & Quick Filter Row
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal.shade700,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.folder_open_rounded, size: 20),
+                          label: const Text(
+                            '📂 اختيار ملف الفاتورة من الحاسوب',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () => _pickFile(),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        const Text('الصيغ السريعة: ', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 4),
+                        _buildFormatChip('📄 PDF', ['pdf'], Colors.red.shade700),
+                        const SizedBox(width: 6),
+                        _buildFormatChip('📊 Excel / CSV', ['xlsx', 'xls', 'csv', 'tsv'], Colors.green.shade700),
+                        const SizedBox(width: 6),
+                        _buildFormatChip('🖼️ صورة / سكانير', ['png', 'jpg', 'jpeg', 'webp'], Colors.purple.shade700),
+                        const SizedBox(width: 6),
+                        _buildFormatChip('📝 Word / نص', ['docx', 'doc', 'txt'], Colors.blue.shade700),
+                      ],
                     ),
-                    icon: const Icon(Icons.photo_library_outlined, size: 18),
-                    label: const Text('من المعرض 🖼️', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                    onPressed: () => _pickImage(ImageSource.gallery),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 10),
 
-            // Tabs Header on Mobile
+            // Loaded File Card
+            if (_selectedFile != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.teal.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.insert_drive_file_outlined, color: Colors.teal, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'الملف المحدد: $_selectedFileName (${_selectedFileFormat ?? ""}) • ${_formatSize(_selectedFileSize)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Color(0xFF0F766E)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => _pickFile(),
+                      child: const Text('تغيير 🔄', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal)),
+                    ),
+                  ],
+                ),
+              ),
+
+            // Tabs Header
             Container(
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(10),
               ),
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                  color: Colors.indigo,
+                  color: Colors.teal.shade800,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.black87,
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                 tabs: [
-                  Tab(text: 'السلع المستخرجة (${_parsedItems.length}) 📋'),
-                  const Tab(text: 'نص الفاتورة الأصلي 📝'),
+                  Tab(text: 'السلع المستخرجة للمعاينة (${_parsedItems.length}) 📋'),
+                  const Tab(text: 'نص الفاتورة المستخرج 📝'),
                 ],
               ),
             ),
@@ -249,19 +345,19 @@ Eau Ifri 1.5L  24    30    720''';
             // Body Area
             Expanded(
               child: _isProcessing
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircularProgressIndicator(color: Colors.indigo),
-                          SizedBox(height: 16),
+                          CircularProgressIndicator(color: Colors.teal.shade700),
+                          const SizedBox(height: 16),
                           Text(
-                            'جاري فك تشفير وقراءة الوصل بالذكاء الاصطناعي... 🧠',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo, fontSize: 13),
+                            _processingStatus,
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal.shade800, fontSize: 13),
                           ),
-                          SizedBox(height: 6),
-                          Text(
-                            'استخراج أسماء المنتجات، الكميات وأسعار الشراء',
+                          const SizedBox(height: 6),
+                          const Text(
+                            'جاري استخراج السلع، الكميات وأسعار الشراء تلقائياً',
                             style: TextStyle(fontSize: 11, color: Colors.grey),
                           ),
                         ],
@@ -270,9 +366,7 @@ Eau Ifri 1.5L  24    30    720''';
                   : TabBarView(
                       controller: _tabController,
                       children: [
-                        // Tab 1: Extracted Items List
                         _buildItemsListTab(),
-                        // Tab 2: Raw Text Editor
                         _buildRawTextTab(),
                       ],
                     ),
@@ -288,28 +382,44 @@ Eau Ifri 1.5L  24    30    720''';
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'إجمالي الفاتورة: ${_detectedTotal > 0 ? _detectedTotal.toStringAsFixed(2) : _parsedItems.fold(0.0, (s, i) => s + i.totalHT).toStringAsFixed(2)} دج',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo),
+                      Row(
+                        children: [
+                          Text(
+                            'مجموع السلع المعاينة: ${totalComputed.toStringAsFixed(2)} دج',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F766E)),
+                          ),
+                          if (_detectedTotal > 0 && (_detectedTotal - totalComputed).abs() > 0.01) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '(المكتشف بالوصل: ${_detectedTotal.toStringAsFixed(2)} دج)',
+                              style: const TextStyle(fontSize: 11, color: Colors.deepOrange, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ],
                       ),
                       Text(
-                        '${_parsedItems.length} سلع مستخرجة',
-                        style: const TextStyle(fontSize: 10.5, color: Colors.grey),
+                        '${_parsedItems.length} سلع جاهزة للترحيل',
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                     ],
                   ),
                 ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('إلغاء'),
+                ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal[700],
+                    backgroundColor: Colors.teal.shade800,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: const Text(
-                    'نقل إلى صفحة الأريفاج 📥',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                  label: Text(
+                    'تأكيد واستيراد السلع (${_parsedItems.length}) ✅',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   onPressed: _parsedItems.isEmpty ? null : _commitResult,
                 ),
@@ -321,31 +431,50 @@ Eau Ifri 1.5L  24    30    720''';
     );
   }
 
+  Widget _buildFormatChip(String label, List<String> extensions, Color color) {
+    return InkWell(
+      onTap: () => _pickFile(specificExtensions: extensions, dialogTitle: 'اختر ملف $label'),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.4)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+        ),
+      ),
+    );
+  }
+
   Widget _buildItemsListTab() {
     if (_parsedItems.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.receipt_long_outlined, size: 52, color: Colors.grey[400]),
-              const SizedBox(height: 10),
+              Icon(Icons.inventory_2_outlined, size: 54, color: Colors.grey[400]),
+              const SizedBox(height: 12),
               const Text(
-                'لم يتم استخراج سلع بعد',
+                'لم يتم تحميل أو استخراج سلع بعد',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 4),
               const Text(
-                'التقط صورة للوصل الورقي أو الصق نصه من التبويب المجاور',
+                'اختر ملف الفاتورة (PDF / Excel / Word / صورة) بالزر أعلاه للبدء بالمعاينة',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11.5, color: Colors.grey),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               OutlinedButton.icon(
                 onPressed: _addItemManually,
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('إضافة سلعة يدوياً +', style: TextStyle(fontSize: 12)),
+                label: const Text('إضافة سلعة يدوياً ➕', style: TextStyle(fontSize: 12)),
               ),
             ],
           ),
@@ -355,14 +484,14 @@ Eau Ifri 1.5L  24    30    720''';
 
     return Column(
       children: [
-        // Supplier name header
+        // Supplier Header & Add Item Button
         Row(
           children: [
             Expanded(
               child: TextFormField(
                 initialValue: _entityName,
                 decoration: const InputDecoration(
-                  labelText: 'المورد / المؤسسة 🏢',
+                  labelText: 'اسم المورد / الشركة 🏢',
                   isDense: true,
                   border: OutlineInputBorder(),
                   contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -372,69 +501,90 @@ Eau Ifri 1.5L  24    30    720''';
               ),
             ),
             const SizedBox(width: 8),
-            IconButton.filledTonal(
-              tooltip: 'إضافة سلعة يدوياً',
-              icon: const Icon(Icons.add, size: 18),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal.shade100,
+                foregroundColor: Colors.teal.shade900,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('إضافة سلعة +', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               onPressed: _addItemManually,
             ),
           ],
         ),
         const SizedBox(height: 8),
+
+        // Table Header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            children: [
+              Expanded(flex: 4, child: Text('اسم السلعة / التعيين', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+              SizedBox(width: 8),
+              Expanded(flex: 2, child: Text('الكمية', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+              SizedBox(width: 8),
+              Expanded(flex: 2, child: Text('سعر الشراء (دج)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+              SizedBox(width: 8),
+              Expanded(flex: 2, child: Text('المجموع (دج)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+              SizedBox(width: 36),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+
         // Items list
         Expanded(
           child: ListView.separated(
             itemCount: _parsedItems.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 6),
+            separatorBuilder: (_, __) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final item = _parsedItems[index];
               return Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
                 ),
                 child: Row(
                   children: [
                     // Item Designation
                     Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextFormField(
-                            initialValue: item.designation,
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                              hintText: 'اسم السلعة',
-                            ),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            onChanged: (v) {
-                              _parsedItems[index] = item.copyWith(designation: v);
-                            },
-                          ),
-                          Text(
-                            'المجموع: ${item.totalHT.toStringAsFixed(2)} دج',
-                            style: TextStyle(fontSize: 10.5, color: Colors.teal[800], fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                      flex: 4,
+                      child: TextFormField(
+                        initialValue: item.designation,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                          hintText: 'اسم السلعة',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                        onChanged: (v) {
+                          _parsedItems[index] = item.copyWith(designation: v);
+                          setState(() {});
+                        },
                       ),
                     ),
                     const SizedBox(width: 8),
+
                     // Quantity
-                    SizedBox(
-                      width: 60,
+                    Expanded(
+                      flex: 2,
                       child: TextFormField(
-                        initialValue: item.quantity.toStringAsFixed(item.quantity.truncateToDouble() == item.quantity ? 0 : 2),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        initialValue: item.quantity % 1 == 0 ? item.quantity.toInt().toString() : item.quantity.toString(),
+                        keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          labelText: 'الكمية',
+                        decoration: const InputDecoration(
                           isDense: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                         ),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                         onChanged: (v) {
@@ -445,22 +595,21 @@ Eau Ifri 1.5L  24    30    720''';
                         },
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    // Unit purchase price
-                    SizedBox(
-                      width: 75,
+                    const SizedBox(width: 8),
+
+                    // Unit Price
+                    Expanded(
+                      flex: 2,
                       child: TextFormField(
-                        initialValue: item.unitPrice.toStringAsFixed(2),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        initialValue: item.unitPrice % 1 == 0 ? item.unitPrice.toInt().toString() : item.unitPrice.toStringAsFixed(2),
+                        keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          labelText: 'شراء',
-                          suffixText: 'دج',
+                        decoration: const InputDecoration(
                           isDense: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                         ),
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey),
                         onChanged: (v) {
                           final p = double.tryParse(v) ?? 0.0;
                           setState(() {
@@ -469,14 +618,23 @@ Eau Ifri 1.5L  24    30    720''';
                         },
                       ),
                     ),
-                    // Delete item
+                    const SizedBox(width: 8),
+
+                    // Total HT
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        item.totalHT.toStringAsFixed(2),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal.shade800),
+                      ),
+                    ),
+
+                    // Delete Item
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                      onPressed: () {
-                        setState(() => _parsedItems.removeAt(index));
-                      },
+                      icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                      tooltip: 'حذف السلعة',
+                      onPressed: () => _removeItem(index),
                     ),
                   ],
                 ),
@@ -496,29 +654,35 @@ Eau Ifri 1.5L  24    30    720''';
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'النص المستخرج من الوصل (يمكنك تعديله أو لصقه):',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+              'النص الكامل المستخرج من ملف الفاتورة:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             ),
-            TextButton.icon(
-              onPressed: _processRawText,
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal.shade700,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
               icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('إعادة تحليل النص 🔄', style: TextStyle(fontSize: 11)),
+              label: const Text('إعادة التحليل الذكي للنص', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              onPressed: _rawTextCtrl.text.trim().isEmpty ? null : _reparseFromRawText,
             ),
           ],
         ),
+        const SizedBox(height: 6),
         Expanded(
-          child: TextFormField(
+          child: TextField(
             controller: _rawTextCtrl,
             maxLines: null,
             expands: true,
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            textAlignVertical: TextAlignVertical.top,
             decoration: InputDecoration(
-              hintText: 'Designation  Qte  P.U  Total...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              fillColor: Colors.grey[50],
-              filled: true,
-              contentPadding: const EdgeInsets.all(10),
+              hintText: 'سيظهر هنا النص المقروء من ملف الفاتورة، أو يمكنك لصق أي نص جدول مباشرة...',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: const EdgeInsets.all(12),
             ),
+            style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
           ),
         ),
       ],

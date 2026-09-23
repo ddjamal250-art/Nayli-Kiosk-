@@ -282,7 +282,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            '📱 امسح كود QR من كاميرا الهاتف أو التابلت للفتح والتجربة الفورية بالشبكة',
+                            '🌐 رابط الشاشة الذكية أو المتصفح للفتح والتجربة الفورية بالشبكة',
                             style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11),
                             textAlign: TextAlign.center,
                           ),
@@ -353,7 +353,7 @@ class _KioskSettingsPageState extends State<KioskSettingsPage> {
                               ),
                               const SizedBox(height: 8),
                               const Text(
-                                '📱 امسح كود QR من كاميرا الهاتف أو التابلت للفتح والتجربة الفورية بالشبكة',
+                                '🌐 رابط الشاشة الذكية أو المتصفح للفتح والتجربة الفورية بالشبكة',
                                 style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11),
                               ),
                             ],

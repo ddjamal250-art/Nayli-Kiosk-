@@ -414,9 +414,9 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        icon: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 18),
+                        icon: const Icon(Icons.file_open_rounded, color: Colors.white, size: 18),
                         label: const Text(
-                          'مسح وتصوير الوصل الورقي 📸',
+                          'استيراد وتحليل فاتورة (PDF / Excel / صورة) 📂',
                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         onPressed: _scanPaperReceipt,
@@ -510,9 +510,9 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              icon: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 16),
+                              icon: const Icon(Icons.file_open_rounded, color: Colors.white, size: 16),
                               label: const Text(
-                                'مسح وتصوير الوصل 📸',
+                                'استيراد ملف فاتورة 📂',
                                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                               ),
                               onPressed: _scanPaperReceipt,

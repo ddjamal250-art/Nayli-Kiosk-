@@ -229,7 +229,7 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
               children: [
                 SwitchListTile(
                   title: const Text('تفعيل شاشة الزبون (بث الويب المحلي)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: const Text('بث السلة المباشرة إلى شاشة ثانية HDMI أو أي تابلات / هاتف متصل بنفس الويفي', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  subtitle: const Text('بث السلة المباشرة إلى شاشة ثانية HDMI أو أي شاشة زبائن متصلة بنفس الشبكة', style: TextStyle(fontSize: 11, color: Colors.grey)),
                   value: _customerDisplay,
                   activeColor: AppTheme.primaryColor,
                   onChanged: (v) async {

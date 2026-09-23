@@ -612,14 +612,7 @@ class _SettingsPageState extends State<SettingsPage> {
           onTap: () => PrinterSelectionDialog.show(context),
         ),
       ],
-      _buildDivider(),
-      _buildTile(
-        icon: Icons.wifi_tethering_rounded,
-        iconColor: Colors.teal,
-        title: 'إدارة الشبكة المحلية والمزامنة الفورية',
-        subtitle: 'ربط هواتف العمال عبر كود QR ومزامنة السلات لحظياً',
-        onTap: () => context.push('/lan-sync'),
-      ),
+
       _buildDivider(),
       _buildTile(
         icon: Icons.tv_rounded,
@@ -1617,16 +1610,7 @@ Widget _buildLanguageAndInfoSection(BuildContext context, bool isActivated) {
                 context.push('/backups');
               },
             ),
-            Divider(height: 8),
-            ListTile(
-              leading: CircleAvatar(backgroundColor: Color(0xFFE8EAF6), child: Icon(Icons.qr_code_scanner_rounded, color: Colors.indigo)),
-              title: Text('ربط الهاتف وتطبيق تيليغرام 📲'),
-              subtitle: Text('استقبال تقارير المبيعات والأرباح والنسخ السحابي ومسح الباركود بالهاتف'),
-              onTap: () {
-                Navigator.pop(ctx);
-                DevicePairingModal.show(context);
-              },
-            ),
+
             SizedBox(height: 10),
           ],
         ),
