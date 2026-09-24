@@ -140,11 +140,6 @@ end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
-  if CurPageID = wpLicense then
-  begin
-    WizardForm.LicenseMemo.BiDiMode := bdRightToLeft;
-  end;
-
   if IsUpdateMode and (CurPageID = wpReady) then
   begin
     if ActiveLanguage = 'arabic' then
