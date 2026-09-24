@@ -58,7 +58,8 @@ jobs:
         continue-on-error: true
 
       - name: Upload log to webhook
-        run: curl.exe -X POST -H "Content-Type: text/plain" --data-binary @build_runner_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
+        run: |
+          curl.exe -X POST -H "Content-Type: text/plain" --data-binary @build_runner_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
         continue-on-error: true
 
       - name: Generate App Icons
@@ -71,7 +72,8 @@ jobs:
         continue-on-error: true
 
       - name: Upload windows build log to webhook
-        run: curl.exe -X POST -H "Content-Type: text/plain" --data-binary @windows_build_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
+        run: |
+          curl.exe -X POST -H "Content-Type: text/plain" --data-binary @windows_build_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
         continue-on-error: true
 
       - name: Compile Inno Setup Installer
