@@ -109,8 +109,6 @@ begin
       WizardForm.Caption := 'تحديث برنامج ' + '{#MyAppName}';
       WizardForm.WelcomeLabel1.Caption := 'مرحباً بك في معالج تحديث ' + '{#MyAppName}';
       WizardForm.WelcomeLabel2.Caption := 'سيقوم هذا المعالج بتحديث البرنامج إلى الإصدار الأحدث دون المساس ببياناتك السابقة أو سجلاتك.' + #13#10#13#10 + 'اضغط على التالي للمتابعة وتطبيق التحديث.';
-      WizardForm.ReadyLabel.Caption := 'البرنامج جاهز لتطبيق التحديث الجديد على جهازك.';
-      WizardForm.InstallingLabel.Caption := 'جاري تحديث واستبدال ملفات البرنامج...';
       WizardForm.NextButton.Caption := 'تحديث >';
     end
     else if ActiveLanguage = 'french' then
@@ -118,8 +116,6 @@ begin
       WizardForm.Caption := 'Mise à jour de ' + '{#MyAppName}';
       WizardForm.WelcomeLabel1.Caption := 'Bienvenue dans l''assistant de mise à jour de ' + '{#MyAppName}';
       WizardForm.WelcomeLabel2.Caption := 'Cet assistant va mettre à jour le programme vers la dernière version sans altérer vos données ou bases de données existantes.' + #13#10#13#10 + 'Cliquez sur Suivant pour appliquer la mise à jour.';
-      WizardForm.ReadyLabel.Caption := 'Prêt à appliquer la mise à jour sur votre ordinateur.';
-      WizardForm.InstallingLabel.Caption := 'Mise à jour des fichiers en cours...';
       WizardForm.NextButton.Caption := 'Mettre à jour >';
     end
     else
@@ -127,8 +123,6 @@ begin
       WizardForm.Caption := 'Update ' + '{#MyAppName}';
       WizardForm.WelcomeLabel1.Caption := 'Welcome to ' + '{#MyAppName}' + ' Update Wizard';
       WizardForm.WelcomeLabel2.Caption := 'This will update the program to the latest version while keeping all your existing database, sales, and settings intact.' + #13#10#13#10 + 'Click Next to apply the update.';
-      WizardForm.ReadyLabel.Caption := 'Ready to apply update to your computer.';
-      WizardForm.InstallingLabel.Caption := 'Updating program files...';
       WizardForm.NextButton.Caption := 'Update >';
     end;
   end;
@@ -149,10 +143,22 @@ begin
   if IsUpdateMode and (CurPageID = wpReady) then
   begin
     if ActiveLanguage = 'arabic' then
-      WizardForm.NextButton.Caption := 'تحديث'
+    begin
+      WizardForm.PageNameLabel.Caption := 'جاهز للتحديث';
+      WizardForm.PageDescriptionLabel.Caption := 'البرنامج جاهز لتطبيق التحديث الجديد دون أي مساس ببياناتك.';
+      WizardForm.NextButton.Caption := 'تحديث';
+    end
     else if ActiveLanguage = 'french' then
-      WizardForm.NextButton.Caption := 'Mettre à jour'
+    begin
+      WizardForm.PageNameLabel.Caption := 'Prêt pour la mise à jour';
+      WizardForm.PageDescriptionLabel.Caption := 'Le programme est prêt à appliquer la mise à jour sans toucher à vos données.';
+      WizardForm.NextButton.Caption := 'Mettre à jour';
+    end
     else
+    begin
+      WizardForm.PageNameLabel.Caption := 'Ready to Update';
+      WizardForm.PageDescriptionLabel.Caption := 'Setup is ready to begin updating program files on your computer.';
       WizardForm.NextButton.Caption := 'Update';
+    end;
   end;
 end;

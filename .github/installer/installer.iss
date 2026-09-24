@@ -112,8 +112,6 @@ begin
                                           'سيقوم هذا المعالج بتحديث ملفات البرنامج إلى الإصدار ' + '{#MyAppVersion}' + ' مباشرة دون الحاجة لإنترنت.' + #13#10#13#10 +
                                           '✅ الحفاظ التام والمضمون 100% على كافة قواعد البيانات السابقة، المبيعات، والسلع.' + #13#10#13#10 +
                                           'اضغط على التالي لبدء التحديث.';
-      WizardForm.ReadyLabel.Caption := 'جاهز لبدء عملية التحديث على جهازك.';
-      WizardForm.InstallingLabel.Caption := 'جاري تحديث وتطبيق ملفات الإصدار الجديد...';
       WizardForm.NextButton.Caption := 'تحديث >';
     end
     else if ActiveLanguage = 'french' then
@@ -124,8 +122,6 @@ begin
                                           'Cet assistant va mettre à jour le programme vers la version ' + '{#MyAppVersion}' + '.' + #13#10#13#10 +
                                           '✅ Vos bases de données, stocks et ventes seront intégralement préservés sans aucune modification.' + #13#10#13#10 +
                                           'Cliquez sur Suivant pour continuer.';
-      WizardForm.ReadyLabel.Caption := 'Prêt à appliquer la mise à jour.';
-      WizardForm.InstallingLabel.Caption := 'Mise à jour des fichiers en cours...';
       WizardForm.NextButton.Caption := 'Mettre à jour >';
     end
     else
@@ -136,8 +132,6 @@ begin
                                           'This wizard will update your application files to version ' + '{#MyAppVersion}' + '.' + #13#10#13#10 +
                                           '✅ All your existing databases, store products, and sales are 100% preserved.' + #13#10#13#10 +
                                           'Click Next to proceed.';
-      WizardForm.ReadyLabel.Caption := 'Ready to apply update to your system.';
-      WizardForm.InstallingLabel.Caption := 'Updating application files...';
       WizardForm.NextButton.Caption := 'Update >';
     end;
   end;
@@ -148,11 +142,23 @@ begin
   if IsUpdateMode and (CurPageID = wpReady) then
   begin
     if ActiveLanguage = 'arabic' then
-      WizardForm.NextButton.Caption := 'تحديث'
+    begin
+      WizardForm.PageNameLabel.Caption := 'جاهز للتحديث';
+      WizardForm.PageDescriptionLabel.Caption := 'البرنامج جاهز لتطبيق التحديث الجديد دون أي مساس ببياناتك.';
+      WizardForm.NextButton.Caption := 'تحديث';
+    end
     else if ActiveLanguage = 'french' then
-      WizardForm.NextButton.Caption := 'Mettre à jour'
+    begin
+      WizardForm.PageNameLabel.Caption := 'Prêt pour la mise à jour';
+      WizardForm.PageDescriptionLabel.Caption := 'Le programme est prêt à appliquer la mise à jour sans toucher à vos données.';
+      WizardForm.NextButton.Caption := 'Mettre à jour';
+    end
     else
+    begin
+      WizardForm.PageNameLabel.Caption := 'Ready to Update';
+      WizardForm.PageDescriptionLabel.Caption := 'Setup is ready to begin updating program files on your computer.';
       WizardForm.NextButton.Caption := 'Update';
+    end;
   end;
 end;
 
