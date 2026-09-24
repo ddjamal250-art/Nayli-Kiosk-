@@ -15,6 +15,24 @@ class Product extends Equatable {
   final String? imageUrl;
   
   // New UOM fields
+
+  // Legacy fields for backward compatibility (ignored by new UI)
+  final String? packName;
+  final String? packBarcode;
+  final int packMultiplier;
+  final double packPrice;
+  final String? cartonBarcode;
+  final double cartonPrice;
+  final int packsPerCarton;
+  final bool isTobacco;
+  final bool hasCarton;
+  final bool hasMultiUnit;
+  final bool isCoffeeMachineProduct;
+  final bool isBeverage;
+  final double singlePiecePrice;
+
+  bool get isTobaccoProduct => category.contains('تبغ') || isTobacco;
+
   final String baseUnitName; 
   final List<ProductUnit> units;
 
@@ -30,6 +48,19 @@ class Product extends Equatable {
     this.wholesalePrice = 0.0,
     this.expiryDate,
     this.imageUrl,
+    this.packName,
+    this.packBarcode,
+    this.packMultiplier = 1,
+    this.packPrice = 0.0,
+    this.cartonBarcode,
+    this.cartonPrice = 0.0,
+    this.packsPerCarton = 10,
+    this.isTobacco = false,
+    this.hasCarton = false,
+    this.hasMultiUnit = false,
+    this.isCoffeeMachineProduct = false,
+    this.isBeverage = false,
+    this.singlePiecePrice = 0.0,
     this.baseUnitName = 'قطعة',
     this.units = const [],
   });

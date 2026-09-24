@@ -719,9 +719,9 @@ class LocalSyncServer {
           document.getElementById("prod-price").textContent = Number(data.price).toFixed(2);
           
           const packEl = document.getElementById("prod-pack");
-          if (data.packPrice > 0 && data.packMultiplier > 1) {
+          if (data.singlePrice > 0 && data.unitMultiplier > 1) {
             packEl.style.display = "block";
-            packEl.textContent = "🌟 متوفر أيضاً كـ " + (data.packName || "حزمة") + " x" + data.packMultiplier + " بسعر " + Number(data.packPrice).toFixed(2) + " DA";
+            packEl.textContent = "🌟 متوفر أيضاً كـ " + (data.unitName || "حزمة") + " x" + data.unitMultiplier + " بسعر " + Number(data.singlePrice).toFixed(2) + " DA";
           } else {
             packEl.style.display = "none";
           }

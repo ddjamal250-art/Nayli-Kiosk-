@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import '../../domain/entities/product.dart';
 import 'product_unit_model.dart';
+import '../../domain/entities/product_unit.dart';
 
 part 'product_model.g.dart'; // Hive generator
 
@@ -48,6 +49,38 @@ class ProductModel extends Product {
   @HiveField(12)
   final List<ProductUnitModel> units;
 
+  @override
+  @HiveField(13)
+  final String? packBarcode;
+
+  @override
+  @HiveField(14)
+  final String? packName;
+
+  @override
+  @HiveField(15)
+  final int packMultiplier;
+
+  @override
+  @HiveField(16)
+  final double packPrice;
+
+  @override
+  @HiveField(17)
+  final String? cartonBarcode;
+
+  @override
+  @HiveField(18)
+  final double cartonPrice;
+
+  @override
+  @HiveField(19)
+  final int packsPerCarton;
+
+  @override
+  @HiveField(20)
+  final bool isTobacco;
+
   const ProductModel({
     required this.id,
     required this.name,
@@ -60,6 +93,14 @@ class ProductModel extends Product {
     this.wholesalePrice = 0.0,
     this.expiryDate,
     this.imageUrl,
+    this.packBarcode,
+    this.packName,
+    this.packMultiplier = 1,
+    this.packPrice = 0.0,
+    this.cartonBarcode,
+    this.cartonPrice = 0.0,
+    this.packsPerCarton = 10,
+    this.isTobacco = false,
     this.baseUnitName = 'قطعة',
     this.units = const [],
   }) : super(
@@ -73,6 +114,14 @@ class ProductModel extends Product {
           wholesalePrice: wholesalePrice,
           expiryDate: expiryDate,
           imageUrl: imageUrl,
+          packName: packName,
+          packBarcode: packBarcode,
+          packMultiplier: packMultiplier,
+          packPrice: packPrice,
+          cartonBarcode: cartonBarcode,
+          cartonPrice: cartonPrice,
+          packsPerCarton: packsPerCarton,
+          isTobacco: isTobacco,
           baseUnitName: baseUnitName,
           units: units,
         );
@@ -122,6 +171,14 @@ class ProductModel extends Product {
       expiryDate: product.expiryDate,
       imageUrl: product.imageUrl,
       baseUnitName: product.baseUnitName,
+      packName: product.packName,
+      packBarcode: product.packBarcode,
+      packMultiplier: product.packMultiplier,
+      packPrice: product.packPrice,
+      cartonBarcode: product.cartonBarcode,
+      cartonPrice: product.cartonPrice,
+      packsPerCarton: product.packsPerCarton,
+      isTobacco: product.isTobacco,
       units: product.units.map((u) => ProductUnitModel.fromEntity(u)).toList(),
     );
   }
@@ -138,6 +195,14 @@ class ProductModel extends Product {
       wholesalePrice: wholesalePrice,
       expiryDate: expiryDate,
       imageUrl: imageUrl,
+      packName: packName,
+      packBarcode: packBarcode,
+      packMultiplier: packMultiplier,
+      packPrice: packPrice,
+      cartonBarcode: cartonBarcode,
+      cartonPrice: cartonPrice,
+      packsPerCarton: packsPerCarton,
+      isTobacco: isTobacco,
       baseUnitName: baseUnitName,
       units: units.map((u) => u.toEntity()).toList(),
     );

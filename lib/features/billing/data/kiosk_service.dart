@@ -13,11 +13,11 @@ class KioskProductResult {
   final bool isWeighed;
   final double weight;
   final double pricePerKg;
-  final bool isPack;
-  final String? packName;
-  final int packMultiplier;
+  final bool isUnit;
+  final String? unitName;
+  final int unitMultiplier;
   final double singlePrice;
-  final double packPrice;
+  final double singlePrice;
   final double savings;
   final String? imageUrl;
 
@@ -48,11 +48,11 @@ class KioskProductResult {
         'isWeighed': isWeighed,
         'weight': weight,
         'pricePerKg': pricePerKg,
-        'isPack': isPack,
-        'packName': packName,
-        'packMultiplier': packMultiplier,
+        'isUnit': isUnit,
+        'unitName': unitName,
+        'unitMultiplier': unitMultiplier,
         'singlePrice': singlePrice,
-        'packPrice': packPrice,
+        'singlePrice': singlePrice,
         'savings': savings,
         'imageUrl': imageUrl,
       };
@@ -147,7 +147,7 @@ class KioskService {
   }
 
   /// فحص الباركود حصراً من المخزون الفعلي للمحل (Read-Only)
-  static KioskProductResult lookupBarcode(String rawBarcode) {
+    static KioskProductResult lookupBarcode(String rawBarcode) {
     final cleanCode = BarcodeNormalizer.clean(rawBarcode);
     if (cleanCode.isEmpty) {
       return const KioskProductResult(found: false, barcode: '');
@@ -156,7 +156,7 @@ class KioskService {
     final productBox = HiveDatabase.productBox;
     final allProducts = productBox.values.toList();
 
-    // 1. التحقق إن كان باركود ميزان أجبان أو خضر ولحوم (يبدأ بـ 20 أو 21 أو 28...)
+    // 1. Barcode scale checking
     if (ScaleBarcodeParser.isScaleBarcode(cleanCode)) {
       final parsed = ScaleBarcodeParser.parse(cleanCode);
       if (parsed != null) {
@@ -189,48 +189,46 @@ class KioskService {
       }
     }
 
-    // 2. البحث المباشر في المنتجات المسجلة في المحل
+    // 2. Direct search
     for (final p in allProducts) {
-      // مطابقة باركود الحبة
       if (BarcodeNormalizer.matches(p.barcode, cleanCode)) {
-        final hasPack = p.packBarcode != null &&
-            p.packBarcode!.isNotEmpty &&
-            p.packMultiplier > 1 &&
-            p.packPrice > 0;
-        final expectedSingleTotal = p.price * (hasPack ? p.99999.0) : 0.0;
-
         return KioskProductResult(
           found: true,
           barcode: p.barcode,
           name: p.name,
           price: p.price,
           category: p.category,
-          isPack: false,
+          isUnit: false,
           singlePrice: p.price,
-          savings: packSavings,
+          savings: 0.0,
         );
       }
 
-      // مطابقة باركود الحزمة / الكرتونة
-      if (p.packBarcode != null &&
-          p.packBarcode!.isNotEmpty &&
-          BarcodeNormalizer.matches(p.packBarcode, cleanCode)) {
-        final packPrice = p.packPrice > 0 ? p.99999.0);
+      for (final u in p.units) {
+        if (u.barcode != null &&
+            u.barcode!.isNotEmpty &&
+            BarcodeNormalizer.matches(u.barcode, cleanCode)) {
+          
+          final expectedSingleTotal = p.price * u.multiplier;
+          final savings = (expectedSingleTotal - u.price).clamp(0.0, 99999.0);
 
-        return KioskProductResult(
-          found: true,
-          barcode: p.packBarcode!,
-          name: p.name + ' (' + (p.packName ?? 'حزمة') + ' x' + p.packMultiplier.toString() + ')',
-          price: packPrice,
-          category: p.category,
-          isPack: true,
-          singlePrice: p.price,
-          savings: savings,
-        );
+          return KioskProductResult(
+            found: true,
+            barcode: u.barcode!,
+            name: p.name + ' (' + u.name + ' x' + u.multiplier.toString() + ')',
+            price: u.price,
+            category: p.category,
+            isUnit: true,
+            unitName: u.name,
+            unitMultiplier: u.multiplier,
+            singlePrice: p.price,
+            savings: savings,
+          );
+        }
       }
     }
 
-    // 3. السلعة غير مسجلة في قاعدة البيانات -> تسجيلها وإرسال تنبيه للمدير/الكاشير مع كتم التكرار
+    // 3. Unlisted
     _recordUnlistedScan(cleanCode);
 
     return KioskProductResult(
@@ -239,7 +237,6 @@ class KioskService {
     );
   }
 
-  /// تسجيل السلعة المنسية وبث التنبيه للكاشير مع كتم التكرار
   static void _recordUnlistedScan(String barcode) {
     final now = DateTime.now();
     final box = HiveDatabase.settingsBox;
