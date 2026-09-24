@@ -37,7 +37,7 @@ Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 Name: "startup"; Description: "تشغيل البرنامج تلقائياً مع Windows / Lancer au démarrage"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
