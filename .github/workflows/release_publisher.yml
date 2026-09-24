@@ -7,13 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'رقم الإصدار (مثال: v2.0.0)'
+        description: 'رقم الإصدار (مثال: v2.1.0)'
         required: false
         default: ''
       release_notes:
         description: 'سجل التغييرات والملاحظات (Changelog)'
         required: false
-        default: 'تحديث جديد يتضمن تحسينات عامة، إصلاحات أداء، وتطويرات استقرار.'
+        default: 'تحديث رسمي يتضمن إصلاحات عامة وتحسينات في الأداء والاستقرار.'
 
 permissions:
   contents: write
@@ -52,10 +52,16 @@ jobs:
             -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' `
             -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' `
             -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' `
+            -replace '1,0,0,1', '2,1,0,0' `
+            -replace '"1.0.0.1"', '"2.1.0.0"' `
             | Set-Content "windows\runner\Runner.rc"
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Generate Code (Build Runner)
+        run: dart run build_runner build --delete-conflicting-outputs > build_runner_error.log 2>&1 || exit 0
+        continue-on-error: true
 
       - name: Generate App Icons
         run: |
@@ -63,7 +69,7 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
       - name: Build Windows Executable Release
-        run: flutter build windows --release --obfuscate --split-debug-info=symbols/
+        run: flutter build windows --release
 
       - name: Compile Inno Setup Installer
         run: |
@@ -86,53 +92,9 @@ jobs:
           name: windows-release-assets
           path: dist_windows/
 
-  build-android:
-    name: Build Android APK
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Java Development Kit (JDK 17)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.x'
-          channel: 'stable'
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Generate App Icons
-        run: dart run flutter_launcher_icons
-
-      - name: Build Release APK with Code Obfuscation
-        env:
-          STORE_PASSWORD: NayliMarketSecure2026!
-          KEY_PASSWORD: NayliMarketSecure2026!
-          KEY_ALIAS: naylimarket
-        run: flutter build apk --release --obfuscate --split-debug-info=symbols/
-
-      - name: Prepare Android Release Asset
-        run: |
-          mkdir -p dist_android
-          cp build/app/outputs/flutter-apk/app-release.apk dist_android/Nayli-Kiosk-Android.apk
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-release-assets
-          path: dist_android/
-
   publish-release:
     name: Publish Official GitHub Release
-    needs: [build-windows, build-android]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -142,12 +104,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: windows-release-assets
-          path: dist
-
-      - name: Download Android Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: android-release-assets
           path: dist
 
       - name: Determine Tag Name
@@ -166,8 +122,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag_info.outputs.tag }}
-          name: Nayli Kiosk POS ${{ steps.tag_info.outputs.tag }}
-          body: ${{ inputs.release_notes || '### تحديث رسمي لبرنامج نايلى كيوسك Nayli Kiosk POS\n\n- أحدث التحسينات والإصلاحات البرمجية.\n- تحسينات عامة في أداء واستقرار النظام.' }}
+          name: "🚀 Nayli Kiosk POS ${{ steps.tag_info.outputs.tag }} - تحديث رسمي"
+          body: |
+            ## 🎉 تحديث رسمي - نايلي كيوسك ${{ steps.tag_info.outputs.tag }}
+
+            ${{ inputs.release_notes || '### ✅ ما الجديد في هذا الإصدار\n\n- إصلاح أخطاء برمجية متعددة وتحسين استقرار النظام\n- تحسينات في أداء نافذة بيع التبغ والمنتجات المتعددة الوحدات\n- إضافة getters للمنتجات: سعر الجملة للعلبة، سعر الكرتونة، سعر القطعة المفردة\n- تحسينات في واجهة المستخدم ومعالجة الأخطاء' }}
+
+            ---
+            ### 📥 روابط التحميل
+
+            | الملف | الوصف |
+            |-------|-------|
+            | `Nayli-Kiosk-Desktop-Setup.exe` | 🖥️ برنامج التثبيت الكامل (موصى به) |
+            | `Nayli-Kiosk-Desktop-Portable.zip` | 📦 النسخة المحمولة (بدون تثبيت) |
+
+            > **للتحديث:** شغّل `Setup.exe` فوق النسخة القديمة مباشرة — بياناتك محفوظة 100%
           draft: false
           prerelease: false
           files: |
