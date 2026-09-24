@@ -149,6 +149,7 @@ class _EulaPageState extends State<EulaPage> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
