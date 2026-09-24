@@ -14,7 +14,7 @@ ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 DefaultDirName={autopf}\NayliMarket
 DisableProgramGroupPage=yes
-LicenseFile=License.txt
+LicenseFile=License.rtf
 OutputDir=Output
 OutputBaseFilename=NayliMarket_Setup_v{#MyAppVersion}
 Compression=lzma2/max
@@ -140,6 +140,11 @@ end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
+  if CurPageID = wpLicense then
+  begin
+    WizardForm.LicenseMemo.BiDiMode := bdRightToLeft;
+  end;
+
   if IsUpdateMode and (CurPageID = wpReady) then
   begin
     if ActiveLanguage = 'arabic' then

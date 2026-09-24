@@ -42,30 +42,14 @@ void main() async {
       FlutterError.presentError(details);
     };
 
-    // Single Instance Check - أول شيء!
-    final isFirst = await SingleInstanceService.acquireSingleInstance();
-    if (!isFirst) {
-      exit(0); // أغلق، الـ instance الأول هو اللي يظهر
-    }
-
-    // Window Manager Init (desktop only)
+    // Window Manager & Single Instance Init (desktop only)
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       await windowManager.ensureInitialized();
       
-      WindowOptions windowOptions = const WindowOptions(
-        size: Size(1280, 800),
-        minimumSize: Size(900, 650),
-        center: true,
-        backgroundColor: Colors.transparent,
-        skipTaskbar: false,
-        titleBarStyle: TitleBarStyle.normal,
-        title: 'Nayli Market POS',
-      );
-      
-      await windowManager.waitUntilReadyToShow(windowOptions, () async {
-        await windowManager.show();
-        await windowManager.focus();
-      });
+      final isFirst = await SingleInstanceService.acquireSingleInstance();
+      if (!isFirst) {
+        exit(0); // أغلق، الـ instance الأول هو اللي يظهر
+      }
     }
 
     // إقلاع تسامحي لقواعد البيانات والسيرفر
@@ -88,7 +72,26 @@ void main() async {
       debugPrint('Server init failed: $e');
     }
     
+    // 1. تشغيل التطبيق أولاً لرسم شجرة الـ Widgets
     runApp(const MyApp());
+
+    // 2. ضبط وإظهار النافذة بخلفية بيضاء صلبة (دون شفافية معطلة)
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      WindowOptions windowOptions = const WindowOptions(
+        size: Size(1280, 800),
+        minimumSize: Size(900, 650),
+        center: true,
+        backgroundColor: Colors.white,
+        skipTaskbar: false,
+        titleBarStyle: TitleBarStyle.normal,
+        title: 'Nayli Market POS',
+      );
+      
+      windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.focus();
+      });
+    }
   }, (error, stack) {
     debugPrint('Global App Error Handled: $error');
   });

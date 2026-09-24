@@ -17,7 +17,7 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\..\assets\images\app_icon.ico
-LicenseFile=..\..\windows\License.txt
+LicenseFile=..\..\windows\License.rtf
 
 ; Auto-detect system language (Arabic, French, English)
 ShowLanguageDialog=auto
@@ -139,6 +139,11 @@ end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
+  if CurPageID = wpLicense then
+  begin
+    WizardForm.LicenseMemo.BiDiMode := bdRightToLeft;
+  end;
+
   if IsUpdateMode and (CurPageID = wpReady) then
   begin
     if ActiveLanguage = 'arabic' then

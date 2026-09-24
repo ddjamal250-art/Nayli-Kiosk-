@@ -1,73 +1,62 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:window_manager/window_manager.dart';
 
 class SingleInstanceService {
-  static const String _lockFileName = 'nayli_kiosk.lock';
-  static File? _lockFile;
+  static ServerSocket? _serverSocket;
+  static const int _singleInstancePort = 48721;
 
-  /// يرجع true إذا هذا هو الـ instance الأول
-  /// يرجع false ويحضر النافذة الموجودة إذا كان في instance شغال
+  /// Returns true if this is the primary instance.
+  /// Returns false if another instance is already running (and activates it).
   static Future<bool> acquireSingleInstance() async {
-    if (!Platform.isWindows) return true;
-    
-    try {
-      final appData = await getApplicationSupportDirectory();
-      final lockPath = '${appData.path}\\$_lockFileName';
-      _lockFile = File(lockPath);
-      
-      // إذا الملف موجود، تحقق من الـ PID
-      if (await _lockFile!.exists()) {
-        final content = await _lockFile!.readAsString();
-        final oldPid = int.tryParse(content.trim());
-        
-        if (oldPid != null && _isProcessRunning(oldPid)) {
-          // Instance موجود ➜ أحضره للواجهة
-          await _bringExistingToFront(oldPid);
-          return false; // أغلق هذا الـ instance
-        }
-      }
-      
-      // اكتب الـ PID الحالي
-      await _lockFile!.writeAsString('${pid}');
-      return true; // هذا الـ instance الأول
-      
-    } catch (e) {
-      debugPrint('SingleInstance check error: $e');
-      return true; // fail-safe
+    if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
+      return true;
     }
-  }
-  
-  static bool _isProcessRunning(int targetPid) {
+
     try {
-      // على Windows: نرسل signal 0 للـ process (في dart نستعمل sigusr1 أو نتحقق من powershell)
-      // الأفضل والأضمن على الويندوز هو استدعاء powershell لفحص الـ ID
-      final result = Process.runSync('powershell', [
-        '-Command',
-        'Get-Process -Id $targetPid -ErrorAction SilentlyContinue'
-      ]);
-      return result.stdout.toString().trim().isNotEmpty;
+      _serverSocket = await ServerSocket.bind(
+        InternetAddress.loopbackIPv4,
+        _singleInstancePort,
+      );
+
+      // Listen for activation requests from subsequent instances
+      _serverSocket!.listen((Socket client) {
+        client.listen((data) async {
+          final message = String.fromCharCodes(data).trim();
+          if (message == 'ACTIVATE') {
+            try {
+              if (await windowManager.isMinimized()) {
+                await windowManager.restore();
+              }
+              await windowManager.show();
+              await windowManager.focus();
+            } catch (e) {
+              debugPrint('Error activating existing window: $e');
+            }
+          }
+        });
+      });
+
+      return true; // We are the primary instance
     } catch (_) {
-      return false;
+      // Port is already occupied -> Another instance is running!
+      try {
+        final client = await Socket.connect(
+          InternetAddress.loopbackIPv4,
+          _singleInstancePort,
+          timeout: const Duration(milliseconds: 500),
+        );
+        client.write('ACTIVATE\n');
+        await client.flush();
+        await client.close();
+      } catch (_) {}
+      return false; // Exit this instance
     }
   }
-  
-  static Future<void> _bringExistingToFront(int targetPid) async {
-    // استخدام Windows API عبر shell command
+
+  static Future<void> release() async {
     try {
-      await Process.run('powershell', [
-        '-Command',
-        '(Get-Process -Id $targetPid).MainWindowHandle | '
-        'ForEach-Object { if (\$_ -ne 0) { [void][Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms"); [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic"); [Microsoft.VisualBasic.Interaction]::AppActivate($targetPid) } }'
-      ]);
-    } catch (_) {}
-  }
-  
-  static Future<void> releaseLock() async {
-    try {
-      if (_lockFile != null && await _lockFile!.exists()) {
-        await _lockFile!.delete();
-      }
+      await _serverSocket?.close();
     } catch (_) {}
   }
 }
