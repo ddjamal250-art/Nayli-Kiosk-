@@ -68,12 +68,24 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
       - name: Build Windows Executable Release
-        run: flutter build windows 2>&1 | Tee-Object -FilePath windows_build_error.log; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: powershell
+        run: |
+          $output = flutter build windows 2>&1
+          $output | Out-File -FilePath windows_build_error.log -Encoding utf8
+          Write-Host $output
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload windows build log to webhook
         if: always()
+        shell: powershell
         run: |
-          curl.exe -X POST -H "Content-Type: text/plain" --data-binary @windows_build_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
+          if (Test-Path windows_build_error.log) {
+            $content = Get-Content windows_build_error.log -Raw
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+            $webClient = New-Object System.Net.WebClient
+            $webClient.Headers.Add("Content-Type", "text/plain")
+            $webClient.UploadData("https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356", $bytes)
+          }
         continue-on-error: true
 
       - name: Compile Inno Setup Installer
