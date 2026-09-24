@@ -453,13 +453,9 @@ class _StockInPageState extends State<StockInPage> {
         price: effectivePrice,
         costPrice: effectiveCost,
         stock: _currentStock + effectiveQty,
-        isWeighted: isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
-        unitType: unitType,
-        singlePiecePrice: singlePiecePrice,
-        piecesPerPack: piecesPerPack,
-      );
+        );
       productBloc.add(UpdateProduct(updatedProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         updatedProduct,
@@ -477,19 +473,10 @@ class _StockInPageState extends State<StockInPage> {
         price: effectivePrice,
         costPrice: effectiveCost,
         stock: effectiveQty,
-        isWeighted: isWeighted,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
-        isTobacco: isTobacco,
-        piecesPerPack: piecesPerPack,
-        packsPerCarton: packsPerCarton,
-        singlePiecePrice: singlePiecePrice,
-        cartonPrice: cartonPrice,
-        wholesaleCartonPrice: wholesaleCartonPrice,
-        wholesalePackPrice: wholesalePackPrice,
         cartonCostPrice: cartonCostPrice,
-        unitType: unitType,
-      );
+        );
       productBloc.add(AddProduct(newProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         newProduct,
@@ -742,16 +729,8 @@ class _StockInPageState extends State<StockInPage> {
           costPrice: costPrice,
           stock: qty,
           imageUrl: masterMatch?.imageUrl,
-          isTobacco: masterMatch?.isTobacco ?? false,
-          cartonPrice: masterMatch?.cartonPrice ?? 0.0,
           wholesalePrice: masterMatch?.wholesalePrice ?? 0.0,
-          wholesaleCartonPrice: masterMatch?.wholesaleCartonPrice ?? 0.0,
-          wholesalePackPrice: masterMatch?.wholesalePackPrice ?? 0.0,
-          singlePiecePrice: masterMatch?.singlePiecePrice ?? 0.0,
-          piecesPerPack: masterMatch?.piecesPerPack ?? 20,
-          packsPerCarton: masterMatch?.packsPerCarton ?? 10,
-          unitType: masterMatch?.unitType ?? 'unit',
-        );
+          );
         productBloc.add(AddProduct(newProduct));
         CatalogCrowdsourceHelper.silentHarvest(newProduct, category: ocrCat, unit: item.unit);
       }

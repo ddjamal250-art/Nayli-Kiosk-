@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'product_unit.dart';
 
 class Product extends Equatable {
   final String id;
@@ -11,21 +12,11 @@ class Product extends Equatable {
   final bool isWeighted;
   final double wholesalePrice;
   final String? expiryDate;
-  final String? packBarcode;
-  final int packMultiplier;
-  final double packPrice;
-  final String? packName;
   final String? imageUrl;
-  final bool isTobacco;
-  final int piecesPerPack;
-  final int packsPerCarton;
-  final double singlePiecePrice;
-  final double cartonPrice;
-  final double wholesaleCartonPrice;
-  final double wholesalePackPrice;
-  final double cartonCostPrice;
-  final String unitType; // 'unit', 'meter', 'ml'
-  final String? cartonBarcode;
+  
+  // New UOM fields
+  final String baseUnitName; 
+  final List<ProductUnit> units;
 
   const Product({
     required this.id,
@@ -38,21 +29,9 @@ class Product extends Equatable {
     this.isWeighted = false,
     this.wholesalePrice = 0.0,
     this.expiryDate,
-    this.packBarcode,
-    this.packMultiplier = 1,
-    this.packPrice = 0.0,
-    this.packName,
     this.imageUrl,
-    this.isTobacco = false,
-    this.piecesPerPack = 20,
-    this.packsPerCarton = 10,
-    this.singlePiecePrice = 0.0,
-    this.cartonPrice = 0.0,
-    this.wholesaleCartonPrice = 0.0,
-    this.wholesalePackPrice = 0.0,
-    this.cartonCostPrice = 0.0,
-    this.unitType = 'unit',
-    this.cartonBarcode,
+    this.baseUnitName = 'قطعة',
+    this.units = const [],
   });
 
   Product copyWith({
@@ -66,21 +45,9 @@ class Product extends Equatable {
     bool? isWeighted,
     double? wholesalePrice,
     String? expiryDate,
-    String? packBarcode,
-    int? packMultiplier,
-    double? packPrice,
-    String? packName,
     String? imageUrl,
-    bool? isTobacco,
-    int? piecesPerPack,
-    int? packsPerCarton,
-    double? singlePiecePrice,
-    double? cartonPrice,
-    double? wholesaleCartonPrice,
-    double? wholesalePackPrice,
-    double? cartonCostPrice,
-    String? unitType,
-    String? cartonBarcode,
+    String? baseUnitName,
+    List<ProductUnit>? units,
   }) {
     return Product(
       id: id ?? this.id,
@@ -90,24 +57,11 @@ class Product extends Equatable {
       costPrice: costPrice ?? this.costPrice,
       stock: stock ?? this.stock,
       category: category ?? this.category,
-      isWeighted: isWeighted ?? this.isWeighted,
       wholesalePrice: wholesalePrice ?? this.wholesalePrice,
       expiryDate: expiryDate ?? this.expiryDate,
-      packBarcode: packBarcode ?? this.packBarcode,
-      packMultiplier: packMultiplier ?? this.packMultiplier,
-      packPrice: packPrice ?? this.packPrice,
-      packName: packName ?? this.packName,
       imageUrl: imageUrl ?? this.imageUrl,
-      isTobacco: isTobacco ?? this.isTobacco,
-      piecesPerPack: piecesPerPack ?? this.piecesPerPack,
-      packsPerCarton: packsPerCarton ?? this.packsPerCarton,
-      singlePiecePrice: singlePiecePrice ?? this.singlePiecePrice,
-      cartonPrice: cartonPrice ?? this.cartonPrice,
-      wholesaleCartonPrice: wholesaleCartonPrice ?? this.wholesaleCartonPrice,
-      wholesalePackPrice: wholesalePackPrice ?? this.wholesalePackPrice,
-      cartonCostPrice: cartonCostPrice ?? this.cartonCostPrice,
-      unitType: unitType ?? this.unitType,
-      cartonBarcode: cartonBarcode ?? this.cartonBarcode,
+      baseUnitName: baseUnitName ?? this.baseUnitName,
+      units: units ?? this.units,
     );
   }
 
@@ -123,216 +77,10 @@ class Product extends Equatable {
         isWeighted,
         wholesalePrice,
         expiryDate,
-        packBarcode,
-        packMultiplier,
-        packPrice,
-        packName,
         imageUrl,
-        isTobacco,
-        piecesPerPack,
-        packsPerCarton,
-        singlePiecePrice,
-        cartonPrice,
-        wholesaleCartonPrice,
-        wholesalePackPrice,
-        cartonCostPrice,
-        unitType,
-        cartonBarcode,
+        baseUnitName,
+        units,
       ];
-
-  // --- Universal Multi-Unit Packaging Helpers ---
-  bool get isBeverage {
-    final cat = category.toLowerCase();
-    final n = name.toLowerCase();
-    return cat.contains('مشروب') ||
-        cat.contains('ماء') ||
-        cat.contains('عصير') ||
-        cat.contains('boisson') ||
-        cat.contains('jus') ||
-        cat.contains('eau') ||
-        cat.contains('soda') ||
-        cat.contains('غازي') ||
-        n.contains('قارورة ماء') ||
-        n.contains('eau') ||
-        n.contains('ماء') ||
-        n.contains('عصير') ||
-        n.contains('مشروب') ||
-        n.contains('كوكا') ||
-        n.contains('بيبسي') ||
-        n.contains('حمود') ||
-        n.contains('رويبة') ||
-        n.contains('إفري') ||
-        n.contains('رامي') ||
-        n.contains('سفن اب') ||
-        n.contains('ميراندا') ||
-        n.contains('فانتا');
-  }
-
-  bool get isTobaccoProduct {
-    final cat = category.toLowerCase();
-    final n = name.toLowerCase();
-    return isTobacco ||
-        cat.contains('تبغ') ||
-        cat.contains('سجائر') ||
-        cat.contains('شمة') ||
-        cat.contains('معسل') ||
-        cat.contains('tabac') ||
-        cat.contains('cigarette') ||
-        n.contains('مارلبورو') ||
-        n.contains('marlboro') ||
-        n.contains('ريم') ||
-        n.contains('rym') ||
-        n.contains('جولواز') ||
-        n.contains('gauloises') ||
-        n.contains('وينستون') ||
-        n.contains('winston') ||
-        n.contains('فيليب موريس') ||
-        n.contains('philip morris') ||
-        n.contains('سفير') ||
-        n.contains('safir') ||
-        n.contains('روثمان') ||
-        n.contains('rothmans') ||
-        n.contains('شمة') ||
-        n.contains('سجائر') ||
-        n.contains('دخان') ||
-        n.contains('سيكار');
-  }
-
-  bool get isCoffeeMachineProduct {
-    if (isTobaccoProduct) return false;
-    final cat = category.toLowerCase();
-    final n = name.toLowerCase();
-    // Strictly exclude packaged beverages/waters unless they are explicitly coffee/tea
-    if (isBeverage && !cat.contains('قهوة') && !cat.contains('شاي') && !n.contains('قهوة') && !n.contains('شاي') && !n.contains('كأس') && !n.contains('كاس')) {
-      return false;
-    }
-    return cat.contains('القهوة الجاهزة') ||
-        cat.contains('ماكينة') ||
-        cat.contains('آلة القهوة') ||
-        cat.contains('قهوة') ||
-        cat.contains('شاي') ||
-        cat.contains('كافيتيريا') ||
-        cat.contains('مقهى') ||
-        cat.contains('ساخنة') ||
-        n.contains('قهوة') ||
-        n.contains('شاي') ||
-        n.contains('كبسول') ||
-        n.contains('capsule') ||
-        n.contains('إكسبريسو') ||
-        n.contains('إسبريسو') ||
-        n.contains('اسبريسو') ||
-        n.contains('كأس قهوة') ||
-        n.contains('كاس قهوة') ||
-        n.contains('قهوة بريس') ||
-        n.contains('قهوة كبريس') ||
-        n.contains('قهوة حليب') ||
-        n.contains('كأس شاي') ||
-        n.contains('كاس شاي') ||
-        n.contains('شاي بالنعناع') ||
-        n.contains('حبوب بن') ||
-        n.contains('مسحوق قهوة') ||
-        n.contains('نسكافيه') ||
-        n.contains('كابتشينو') ||
-        n.contains('express') ||
-        n.contains('coffee') ||
-        n.contains('tea');
-  }
-
-  int get cupsYield => piecesPerPack > 0 ? piecesPerPack : 100;
-
-  bool get hasSubUnit {
-    if (isTobaccoProduct || isCoffeeMachineProduct) return true;
-    if (isBeverage) return false; // Water/Drinks never sold by 1/20th of a bottle!
-    return singlePiecePrice > 0;
-  }
-
-  bool get hasCustomQuantityPricing => packMultiplier > 1 && packPrice > 0;
-  int get customQuantity => packMultiplier > 1 ? packMultiplier : 1;
-  double get customQuantityPrice => packPrice > 0 ? packPrice : (price * customQuantity);
-  String get customQuantityLabel {
-    if (packName != null && packName!.trim().isNotEmpty) return packName!.trim();
-    return '$customQuantity قطع = ${customQuantityPrice.toStringAsFixed(0)} دج';
-  }
-
-  bool get hasCartonBarcode => cartonBarcode != null && cartonBarcode!.trim().isNotEmpty;
-
-  bool get hasPack => packsPerCarton > 1 || price > 0;
-
-  bool get hasCarton {
-    if (isTobaccoProduct) return true;
-    if (isBeverage) return true; // Drinks can be sold as Fardeau or Bottle
-    return (packsPerCarton > 1 && cartonPrice > 0) || (packMultiplier > 1 && packPrice > 0) || cartonPrice > 0;
-  }
-
-  bool get hasMultiUnit => hasSubUnit || hasCarton;
-  bool get hasMultiUnitPricing => hasMultiUnit;
-
-  int get effectivePacksPerCarton {
-    if (packsPerCarton > 0) return packsPerCarton;
-    if (packMultiplier > 0) return packMultiplier;
-    if (isBeverage) return 6;
-    if (isTobaccoProduct) return 10;
-    return 10;
-  }
-
-  int get effectivePiecesPerPack {
-    if (piecesPerPack > 0) return piecesPerPack;
-    if (isTobaccoProduct) return 20;
-    if (isCoffeeMachineProduct) return 100;
-    return 1;
-  }
-
-  String get resolvedSubUnitName {
-    if (isTobaccoProduct) return 'سيجارة';
-    if (isCoffeeMachineProduct) return 'كأس / كوب';
-    if (category.contains('جبن') || category.contains('أجبان') || category.toLowerCase().contains('fromage')) return 'مثلث / حبة';
-    if (category.contains('بيض')) return 'بيضة';
-    if (category.contains('قهوة') || category.contains('شاي')) return 'ساشي';
-    return 'حبة';
-  }
-
-  String get resolvedPackName {
-    if (isBeverage) return 'قارورة';
-    if (isCoffeeMachineProduct) return 'علبة / 1 كغ بن';
-    if (category.contains('جبن') || category.contains('أجبان')) return 'علبة / بواطة';
-    if (category.contains('بيض')) return 'بلاطو';
-    if (isTobaccoProduct) return 'علبة / باكي';
-    return 'علبة';
-  }
-
-  String get resolvedCartonName {
-    if (packName != null && packName!.trim().isNotEmpty) return packName!.trim();
-    if (isTobaccoProduct) return 'كرطوشة';
-    if (isBeverage) return 'فاردو';
-    if (isCoffeeMachineProduct) return 'كرتونة بن / شاي';
-    if (category.contains('بيض')) return 'كرتونة بيض';
-    if (category.contains('علك') || category.contains('حلويات')) return 'شكارة / كرتونة';
-    return 'كرتونة / فاردو';
-  }
-
-  double get resolvedPiecePrice {
-    if (singlePiecePrice > 0) return singlePiecePrice;
-    if (effectivePiecesPerPack > 1) {
-      return (price / effectivePiecesPerPack).ceilToDouble();
-    }
-    return price;
-  }
-
-  double get resolvedCartonPrice {
-    if (cartonPrice > 0) return cartonPrice;
-    if (packPrice > 0) return packPrice;
-    return (price * effectivePacksPerCarton).roundToDouble();
-  }
-
-  double get resolvedPieceCost {
-    if (effectivePiecesPerPack > 1) return costPrice / effectivePiecesPerPack;
-    return costPrice;
-  }
-
-  double get resolvedCartonCost {
-    if (cartonCostPrice > 0) return cartonCostPrice;
-    return costPrice * effectivePacksPerCarton;
-  }
 }
 
 

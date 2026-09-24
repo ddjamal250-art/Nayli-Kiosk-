@@ -197,8 +197,7 @@ class KioskService {
             p.packBarcode!.isNotEmpty &&
             p.packMultiplier > 1 &&
             p.packPrice > 0;
-        final expectedSingleTotal = p.price * (hasPack ? p.packMultiplier : 1);
-        final packSavings = hasPack ? (expectedSingleTotal - p.packPrice).clamp(0.0, 99999.0) : 0.0;
+        final expectedSingleTotal = p.price * (hasPack ? p.99999.0) : 0.0;
 
         return KioskProductResult(
           found: true,
@@ -207,10 +206,7 @@ class KioskService {
           price: p.price,
           category: p.category,
           isPack: false,
-          packName: p.packName,
-          packMultiplier: p.packMultiplier,
           singlePrice: p.price,
-          packPrice: p.packPrice,
           savings: packSavings,
         );
       }
@@ -219,9 +215,7 @@ class KioskService {
       if (p.packBarcode != null &&
           p.packBarcode!.isNotEmpty &&
           BarcodeNormalizer.matches(p.packBarcode, cleanCode)) {
-        final packPrice = p.packPrice > 0 ? p.packPrice : (p.price * p.packMultiplier);
-        final singleTotal = p.price * p.packMultiplier;
-        final savings = (singleTotal - packPrice).clamp(0.0, 99999.0);
+        final packPrice = p.packPrice > 0 ? p.99999.0);
 
         return KioskProductResult(
           found: true,
@@ -230,10 +224,7 @@ class KioskService {
           price: packPrice,
           category: p.category,
           isPack: true,
-          packName: p.packName ?? 'حزمة',
-          packMultiplier: p.packMultiplier,
           singlePrice: p.price,
-          packPrice: packPrice,
           savings: savings,
         );
       }

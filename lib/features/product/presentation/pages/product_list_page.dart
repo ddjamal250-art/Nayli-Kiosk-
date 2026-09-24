@@ -227,7 +227,6 @@ class _ProductListPageState extends State<ProductListPage> {
           wholesalePrice: p.wholesalePrice,
           stock: p.stock,
           category: selectedCat,
-          isWeighted: p.isWeighted,
           expiryDate: p.expiryDate,
         );
         bloc.add(UpdateProduct(updated));
@@ -321,7 +320,6 @@ class _ProductListPageState extends State<ProductListPage> {
           wholesalePrice: p.wholesalePrice,
           stock: p.stock + selectedQty,
           category: p.category,
-          isWeighted: p.isWeighted,
           expiryDate: p.expiryDate,
         );
         bloc.add(UpdateProduct(updated));
@@ -623,7 +621,6 @@ class _ProductListPageState extends State<ProductListPage> {
                         wholesalePrice: product.wholesalePrice,
                         stock: (product.stock + netWeight.round()).toInt(),
                         category: product.category,
-                        isWeighted: true,
                         expiryDate: product.expiryDate,
                       );
                       context.read<ProductBloc>().add(UpdateProduct(updated));
@@ -730,7 +727,6 @@ class _ProductListPageState extends State<ProductListPage> {
                     wholesalePrice: product.wholesalePrice,
                     stock: product.stock + addQty,
                     category: product.category,
-                    isWeighted: product.isWeighted,
                     expiryDate: product.expiryDate,
                   );
                   context.read<ProductBloc>().add(UpdateProduct(updated));

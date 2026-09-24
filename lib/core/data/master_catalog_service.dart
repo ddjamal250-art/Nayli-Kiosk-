@@ -59,15 +59,7 @@ class MasterCatalogService {
               defaultPrice: retailPrice > 0 ? retailPrice : 300.0,
               defaultCost: costPrice > 0 ? costPrice : 270.0,
               imageUrl: raw['image_url']?.toString(),
-              isTobacco: isTobacco,
-              cartonPrice: cartonPrice,
-              wholesaleCartonPrice: wholesaleCartonPrice,
-              wholesalePackPrice: wholesalePrice,
-              singlePiecePrice: singlePiecePrice,
-              piecesPerPack: piecesPerPack,
-              packsPerCarton: packsPerCarton,
-              unitType: unitType,
-            );
+              );
 
             _barcodeMap[barcode] = catalogItem;
             _allItems.removeWhere((i) => i.barcode == barcode);

@@ -100,52 +100,8 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
   double get _singlePiecePrice {
     final p = widget.product;
     if (p.singlePiecePrice > 0) return p.singlePiecePrice;
-    final pieces = p.piecesPerPack > 0 ? p.piecesPerPack : 20;
-    return (p.price / pieces).ceilToDouble();
-  }
-
-  double get _singlePieceCost {
-    final p = widget.product;
-    final pieces = p.piecesPerPack > 0 ? p.piecesPerPack : 20;
-    return p.costPrice / pieces;
-  }
-
-  double get _packPrice {
-    final p = widget.product;
-    if (_isWholesale) {
-      if (p.wholesalePackPrice > 0) return p.wholesalePackPrice;
-      if (p.wholesalePrice > 0) return p.wholesalePrice;
-    }
-    return p.price;
-  }
-
-  double get _cartonPrice {
-    final p = widget.product;
-    final multiplier = p.packsPerCarton > 0 ? p.packsPerCarton : 10;
-    if (_isWholesale) {
-      if (p.wholesaleCartonPrice > 0) return p.wholesaleCartonPrice;
-      if (p.cartonPrice > 0) return p.cartonPrice;
-    }
-    if (p.cartonPrice > 0) return p.cartonPrice;
-    return _packPrice * multiplier;
-  }
-
-  double get _cartonCost {
-    final p = widget.product;
-    final multiplier = p.packsPerCarton > 0 ? p.packsPerCarton : 10;
-    if (p.cartonCostPrice > 0) return p.cartonCostPrice;
-    return p.costPrice * multiplier;
-  }
-
-  // --- Add Actions ---
-  void _addPackToCart() {
-    final p = widget.product;
-    context.read<BillingBloc>().add(AddProductToCartEvent(
-      p,
-      unitLevel: 'pack',
-      quantity: _packQty,
-      customPrice: _isWholesale ? _packPrice : null,
-    ));
+    final pieces = p.piecesPerPack > 0 ? p.quantity: _packQty,
+      customPrice: _isWholesale ? _));
 
     SoundService.playScanBeep();
     Navigator.pop(context);
@@ -158,8 +114,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
       p,
       unitLevel: 'carton',
       quantity: _cartonQty,
-      customPrice: _isWholesale ? _cartonPrice : null,
-    ));
+      customPrice: _isWholesale ? _));
 
     SoundService.playScanBeep();
     Navigator.pop(context);
@@ -192,8 +147,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
       costPrice: totalCost,
       stock: p.stock,
       category: p.category,
-      unitType: 'meter',
-    );
+      );
 
     context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
     SoundService.playScanBeep();
@@ -214,8 +168,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
       costPrice: totalCost,
       stock: p.stock,
       category: p.category,
-      unitType: 'ml',
-    );
+      );
 
     context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct));
     SoundService.playScanBeep();
@@ -485,10 +438,7 @@ class _KioskTobaccoModalState extends State<KioskTobaccoModal> with SingleTicker
 
   // --- TAB 2: Carton Tab ---
   Widget _buildCartonTab() {
-    final multiplier = widget.product.packsPerCarton > 0 ? widget.product.packsPerCarton : 10;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
+    final multiplier = widget.product.packsPerCarton > 0 ? widget.product.children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(

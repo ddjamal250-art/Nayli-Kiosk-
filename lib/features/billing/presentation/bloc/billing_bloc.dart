@@ -104,17 +104,16 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       (failure) =>
           emit(state.copyWith(error: 'Product not found: ${event.barcode}')),
       (product) {
-        if ((product.cartonBarcode?.isNotEmpty ?? false) && BarcodeNormalizer.matches(product.cartonBarcode!, event.barcode)) {
-          add(AddProductToCartEvent(product, unitLevel: 'carton'));
-        } else if ((product.packBarcode?.isNotEmpty ?? false) && BarcodeNormalizer.matches(product.packBarcode!, event.barcode)) {
-          add(AddProductToCartEvent(product, unitLevel: 'pack'));
+        String targetUnitName = 'base';
+        if (BarcodeNormalizer.matches(product.barcode, event.barcode)) {
+          targetUnitName = 'base';
         } else {
-          if (product.hasSubUnit && !product.hasPack) {
-            add(AddProductToCartEvent(product, unitLevel: 'piece'));
-          } else {
-            add(AddProductToCartEvent(product, unitLevel: 'pack'));
+          final matchedUnit = product.units.where((u) => u.barcode != null && u.barcode!.isNotEmpty && BarcodeNormalizer.matches(u.barcode!, event.barcode)).firstOrNull;
+          if (matchedUnit != null) {
+            targetUnitName = matchedUnit.name;
           }
         }
+        add(AddProductToCartEvent(product, unitLevel: targetUnitName));
       },
     );
   }
@@ -368,8 +367,6 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                 'qty': item.quantity,
                 'price': item.unitPrice,
                 'costPrice': item.unitCost,
-                'isTobacco': item.product.isTobaccoProduct,
-                'isCoffeeMachine': item.product.isCoffeeMachineProduct,
                 'category': item.product.category,
                 'total': item.total,
                 'profit': (item.unitPrice - item.unitCost) * item.quantity,
@@ -394,35 +391,12 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
         final productModel = productBox.get(originalId);
         if (productModel != null) {
-          int newStock = productModel.stock;
-          if (cartItem.unitLevel == 'carton' || cartItem.product.id.contains('_carton_')) {
-            final multiplier = productModel.effectivePacksPerCarton;
-            final deductAmount = cartItem.quantity * multiplier;
-            newStock = (productModel.stock - deductAmount).clamp(0, 999999);
-            productBox.put(originalId, productModel.copyWith(stock: newStock));
-          } else if (cartItem.unitLevel == 'piece' || cartItem.product.id.contains('_piece_')) {
-            // Smart Break-Case Logic (UOM Multi-tier style)
-            final pPerPack = productModel.effectivePiecesPerPack > 1 ? productModel.effectivePiecesPerPack : 20;
-            final qtyToDeduct = cartItem.quantity;
-            int currentLoose = (HiveDatabase.loosePiecesBox.get(originalId, defaultValue: 0) as num).toInt();
-
-            if (currentLoose >= qtyToDeduct) {
-              currentLoose -= qtyToDeduct;
-              await HiveDatabase.loosePiecesBox.put(originalId, currentLoose);
-            } else {
-              final deficit = qtyToDeduct - currentLoose;
-              final packsToBreak = (deficit / pPerPack).ceil();
-              newStock = (productModel.stock - packsToBreak).clamp(0, 999999);
-              currentLoose = (currentLoose + (packsToBreak * pPerPack)) - qtyToDeduct;
-
-              productBox.put(originalId, productModel.copyWith(stock: newStock));
-              await HiveDatabase.loosePiecesBox.put(originalId, currentLoose);
-            }
-          } else {
-            final deductAmount = cartItem.quantity;
-            newStock = (productModel.stock - deductAmount).clamp(0, 999999);
-            productBox.put(originalId, productModel.copyWith(stock: newStock));
-          }
+          int deductAmount = cartItem.totalBaseQuantity;
+          int newStock = state.isReturnMode 
+              ? (productModel.stock + deductAmount)
+              : (productModel.stock - deductAmount).clamp(0, 999999);
+          
+          productBox.put(originalId, productModel.copyWith(stock: newStock));
 
           // SMART SHOPPING LIST AUTOMATION
           if (newStock <= 5) {
@@ -456,7 +430,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final discountRatio = (subtotal > 0) ? (state.totalAmount / subtotal) : 1.0;
 
       final tobaccoItems = state.cartItems.where(
-        (i) => i.product.isTobaccoProduct,
+        (i) => i.product.category.toLowerCase().contains('تبغ') || i.product.category.toLowerCase().contains('سجائر'),
       );
       final rawTobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
       final tobaccoSales = rawTobaccoSales * discountRatio;
@@ -464,7 +438,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final tobaccoProfit = tobaccoSales - tobaccoCost;
 
       final coffeeItems = state.cartItems.where(
-        (i) => i.product.isCoffeeMachineProduct,
+        (i) => i.product.category.toLowerCase().contains('قهوة') || i.product.category.toLowerCase().contains('شاي'),
       );
       final rawCoffeeSales = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.total);
       final coffeeSales = rawCoffeeSales * discountRatio;

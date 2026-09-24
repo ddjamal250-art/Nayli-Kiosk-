@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../domain/entities/product.dart';
+import 'product_unit_model.dart';
 
 part 'product_model.g.dart'; // Hive generator
 
@@ -37,49 +38,15 @@ class ProductModel extends Product {
   final String? expiryDate;
   @override
   @HiveField(10)
-  final String? packBarcode;
+  final String? imageUrl;
+  
+  // New UOM Fields (Reusing some old indexes, this requires wiping the DB as user agreed)
   @override
   @HiveField(11)
-  final int packMultiplier;
+  final String baseUnitName;
   @override
   @HiveField(12)
-  final double packPrice;
-  @override
-  @HiveField(13)
-  final String? packName;
-  @override
-  @HiveField(14)
-  final String? imageUrl;
-  @override
-  @HiveField(15)
-  final bool isTobacco;
-  @override
-  @HiveField(16)
-  final int piecesPerPack;
-  @override
-  @HiveField(17)
-  final int packsPerCarton;
-  @override
-  @HiveField(18)
-  final double singlePiecePrice;
-  @override
-  @HiveField(19)
-  final double cartonPrice;
-  @override
-  @HiveField(20)
-  final double wholesaleCartonPrice;
-  @override
-  @HiveField(21)
-  final double wholesalePackPrice;
-  @override
-  @HiveField(22)
-  final double cartonCostPrice;
-  @override
-  @HiveField(23)
-  final String unitType;
-  @override
-  @HiveField(24)
-  final String? cartonBarcode;
+  final List<ProductUnitModel> units;
 
   const ProductModel({
     required this.id,
@@ -92,21 +59,9 @@ class ProductModel extends Product {
     this.isWeighted = false,
     this.wholesalePrice = 0.0,
     this.expiryDate,
-    this.packBarcode,
-    this.packMultiplier = 1,
-    this.packPrice = 0.0,
-    this.packName,
     this.imageUrl,
-    this.isTobacco = false,
-    this.piecesPerPack = 20,
-    this.packsPerCarton = 10,
-    this.singlePiecePrice = 0.0,
-    this.cartonPrice = 0.0,
-    this.wholesaleCartonPrice = 0.0,
-    this.wholesalePackPrice = 0.0,
-    this.cartonCostPrice = 0.0,
-    this.unitType = 'unit',
-    this.cartonBarcode,
+    this.baseUnitName = 'قطعة',
+    this.units = const [],
   }) : super(
           id: id,
           name: name,
@@ -115,24 +70,11 @@ class ProductModel extends Product {
           stock: stock,
           costPrice: costPrice,
           category: category,
-          isWeighted: isWeighted,
           wholesalePrice: wholesalePrice,
           expiryDate: expiryDate,
-          packBarcode: packBarcode,
-          packMultiplier: packMultiplier,
-          packPrice: packPrice,
-          packName: packName,
           imageUrl: imageUrl,
-          isTobacco: isTobacco,
-          piecesPerPack: piecesPerPack,
-          packsPerCarton: packsPerCarton,
-          singlePiecePrice: singlePiecePrice,
-          cartonPrice: cartonPrice,
-          wholesaleCartonPrice: wholesaleCartonPrice,
-          wholesalePackPrice: wholesalePackPrice,
-          cartonCostPrice: cartonCostPrice,
-          unitType: unitType,
-          cartonBarcode: cartonBarcode,
+          baseUnitName: baseUnitName,
+          units: units,
         );
 
   @override
@@ -147,21 +89,9 @@ class ProductModel extends Product {
     bool? isWeighted,
     double? wholesalePrice,
     String? expiryDate,
-    String? packBarcode,
-    int? packMultiplier,
-    double? packPrice,
-    String? packName,
     String? imageUrl,
-    bool? isTobacco,
-    int? piecesPerPack,
-    int? packsPerCarton,
-    double? singlePiecePrice,
-    double? cartonPrice,
-    double? wholesaleCartonPrice,
-    double? wholesalePackPrice,
-    double? cartonCostPrice,
-    String? unitType,
-    String? cartonBarcode,
+    String? baseUnitName,
+    List<ProductUnit>? units,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -171,24 +101,11 @@ class ProductModel extends Product {
       costPrice: costPrice ?? this.costPrice,
       stock: stock ?? this.stock,
       category: category ?? this.category,
-      isWeighted: isWeighted ?? this.isWeighted,
       wholesalePrice: wholesalePrice ?? this.wholesalePrice,
       expiryDate: expiryDate ?? this.expiryDate,
-      packBarcode: packBarcode ?? this.packBarcode,
-      packMultiplier: packMultiplier ?? this.packMultiplier,
-      packPrice: packPrice ?? this.packPrice,
-      packName: packName ?? this.packName,
       imageUrl: imageUrl ?? this.imageUrl,
-      isTobacco: isTobacco ?? this.isTobacco,
-      piecesPerPack: piecesPerPack ?? this.piecesPerPack,
-      packsPerCarton: packsPerCarton ?? this.packsPerCarton,
-      singlePiecePrice: singlePiecePrice ?? this.singlePiecePrice,
-      cartonPrice: cartonPrice ?? this.cartonPrice,
-      wholesaleCartonPrice: wholesaleCartonPrice ?? this.wholesaleCartonPrice,
-      wholesalePackPrice: wholesalePackPrice ?? this.wholesalePackPrice,
-      cartonCostPrice: cartonCostPrice ?? this.cartonCostPrice,
-      unitType: unitType ?? this.unitType,
-      cartonBarcode: cartonBarcode ?? this.cartonBarcode,
+      baseUnitName: baseUnitName ?? this.baseUnitName,
+      units: (units as List<ProductUnitModel>?) ?? this.units,
     );
   }
 
@@ -201,24 +118,11 @@ class ProductModel extends Product {
       stock: product.stock,
       costPrice: product.costPrice,
       category: product.category,
-      isWeighted: product.isWeighted,
       wholesalePrice: product.wholesalePrice,
       expiryDate: product.expiryDate,
-      packBarcode: product.packBarcode,
-      packMultiplier: product.packMultiplier,
-      packPrice: product.packPrice,
-      packName: product.packName,
       imageUrl: product.imageUrl,
-      isTobacco: product.isTobacco,
-      piecesPerPack: product.piecesPerPack,
-      packsPerCarton: product.packsPerCarton,
-      singlePiecePrice: product.singlePiecePrice,
-      cartonPrice: product.cartonPrice,
-      wholesaleCartonPrice: product.wholesaleCartonPrice,
-      wholesalePackPrice: product.wholesalePackPrice,
-      cartonCostPrice: product.cartonCostPrice,
-      unitType: product.unitType,
-      cartonBarcode: product.cartonBarcode,
+      baseUnitName: product.baseUnitName,
+      units: product.units.map((u) => ProductUnitModel.fromEntity(u)).toList(),
     );
   }
 
@@ -231,29 +135,16 @@ class ProductModel extends Product {
       stock: stock,
       costPrice: costPrice,
       category: category,
-      isWeighted: isWeighted,
       wholesalePrice: wholesalePrice,
       expiryDate: expiryDate,
-      packBarcode: packBarcode,
-      packMultiplier: packMultiplier,
-      packPrice: packPrice,
-      packName: packName,
       imageUrl: imageUrl,
-      isTobacco: isTobacco,
-      piecesPerPack: piecesPerPack,
-      packsPerCarton: packsPerCarton,
-      singlePiecePrice: singlePiecePrice,
-      cartonPrice: cartonPrice,
-      wholesaleCartonPrice: wholesaleCartonPrice,
-      wholesalePackPrice: wholesalePackPrice,
-      cartonCostPrice: cartonCostPrice,
-      unitType: unitType,
+      baseUnitName: baseUnitName,
+      units: units.map((u) => u.toEntity()).toList(),
     );
   }
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     final rawIsWeighted = json['isWeighted'];
-    final rawIsTobacco = json['isTobacco'];
     return ProductModel(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
@@ -262,24 +153,14 @@ class ProductModel extends Product {
       stock: (json['stock'] as num?)?.toInt() ?? 0,
       costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0.0,
       category: json['category']?.toString() ?? 'عام',
-      isWeighted: rawIsWeighted == true || rawIsWeighted == 1 || rawIsWeighted == 'true',
       wholesalePrice: (json['wholesalePrice'] as num?)?.toDouble() ?? 0.0,
       expiryDate: json['expiryDate']?.toString(),
-      packBarcode: json['packBarcode']?.toString(),
-      packMultiplier: (json['packMultiplier'] as num?)?.toInt() ?? 1,
-      packPrice: (json['packPrice'] as num?)?.toDouble() ?? 0.0,
-      packName: json['packName']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
-      isTobacco: rawIsTobacco == true || rawIsTobacco == 1 || rawIsTobacco == 'true',
-      piecesPerPack: (json['piecesPerPack'] as num?)?.toInt() ?? 20,
-      packsPerCarton: (json['packsPerCarton'] as num?)?.toInt() ?? 10,
-      singlePiecePrice: (json['singlePiecePrice'] as num?)?.toDouble() ?? 0.0,
-      cartonPrice: (json['cartonPrice'] as num?)?.toDouble() ?? 0.0,
-      wholesaleCartonPrice: (json['wholesaleCartonPrice'] as num?)?.toDouble() ?? 0.0,
-      wholesalePackPrice: (json['wholesalePackPrice'] as num?)?.toDouble() ?? 0.0,
-      cartonCostPrice: (json['cartonCostPrice'] as num?)?.toDouble() ?? 0.0,
-      unitType: json['unitType']?.toString() ?? 'unit',
-      cartonBarcode: json['cartonBarcode']?.toString(),
+      baseUnitName: json['baseUnitName']?.toString() ?? 'قطعة',
+      units: (json['units'] as List<dynamic>?)
+              ?.map((u) => ProductUnitModel.fromJson(Map<String, dynamic>.from(u)))
+              .toList() ??
+          [],
     );
   }
 
@@ -295,21 +176,9 @@ class ProductModel extends Product {
       'isWeighted': isWeighted,
       'wholesalePrice': wholesalePrice,
       'expiryDate': expiryDate,
-      'packBarcode': packBarcode,
-      'packMultiplier': packMultiplier,
-      'packPrice': packPrice,
-      'packName': packName,
       'imageUrl': imageUrl,
-      'isTobacco': isTobacco,
-      'piecesPerPack': piecesPerPack,
-      'packsPerCarton': packsPerCarton,
-      'singlePiecePrice': singlePiecePrice,
-      'cartonPrice': cartonPrice,
-      'wholesaleCartonPrice': wholesaleCartonPrice,
-      'wholesalePackPrice': wholesalePackPrice,
-      'cartonCostPrice': cartonCostPrice,
-      'unitType': unitType,
-      'cartonBarcode': cartonBarcode,
+      'baseUnitName': baseUnitName,
+      'units': units.map((u) => u.toJson()).toList(),
     };
   }
 }

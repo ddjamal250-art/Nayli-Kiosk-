@@ -241,15 +241,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       costPrice: item.costPrice > 0 ? item.costPrice : (item.price * 0.8),
       stock: 999,
       category: isTob ? 'المواد التبغية' : (isBev ? 'المشروبات' : detectedSub.titleAr),
-      isTobacco: isTob,
-      packsPerCarton: effectivePacksPerCarton,
-      piecesPerPack: effectivePiecesPerPack,
-      singlePiecePrice: singlePiecePrice,
-      cartonPrice: cartonPrice,
-      packPrice: cartonPrice,
-      packMultiplier: effectivePacksPerCarton,
-      packName: isTob ? 'كرطوشة' : (isBev ? 'فاردو' : null),
-    );
+      );
   }
 
   void _addQuickItem(QuickItem item) {

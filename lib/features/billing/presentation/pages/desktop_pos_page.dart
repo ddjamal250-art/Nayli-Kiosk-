@@ -569,17 +569,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       stock: product.stock,
       category: product.category,
       imageUrl: product.imageUrl,
-      isTobacco: product.isTobacco,
       wholesalePrice: product.wholesalePrice,
-      cartonPrice: product.cartonPrice,
-      wholesaleCartonPrice: product.wholesaleCartonPrice,
-      wholesalePackPrice: product.wholesalePackPrice,
-      singlePiecePrice: product.singlePiecePrice,
-      piecesPerPack: product.piecesPerPack,
-      packsPerCarton: product.packsPerCarton,
-      unitType: product.unitType,
-      isWeighted: product.isWeighted,
-    );
+      );
 
     context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct, quantity: quantity));
     _onItemScanned();
@@ -1024,14 +1015,6 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                       stock: 50,
                                       category: item.category,
                                       imageUrl: item.imageUrl,
-                                      isTobacco: item.isTobacco,
-                                      cartonPrice: item.cartonPrice,
-                                      wholesaleCartonPrice: item.wholesaleCartonPrice,
-                                      wholesalePackPrice: item.wholesalePackPrice,
-                                      singlePiecePrice: item.singlePiecePrice,
-                                      piecesPerPack: item.piecesPerPack,
-                                      packsPerCarton: item.packsPerCarton,
-                                      unitType: item.unitType,
                                       wholesalePrice: item.wholesalePrice > 0 ? item.wholesalePrice : item.defaultPrice,
                                     );
                                     context.read<ProductBloc>().add(AddProduct(newProduct));
@@ -1145,8 +1128,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
             costPrice: scaleProduct.costPrice * (scaleResult.isWeightBased ? scaleResult.weightKg : 1.0),
             stock: scaleProduct.stock,
             category: scaleProduct.category,
-            isWeighted: true,
-          );
+            );
 
           context.read<BillingBloc>().add(AddProductToCartEvent(scaleCartProduct));
           _onItemScanned();
@@ -3621,15 +3603,7 @@ $itemsSummary
       costPrice: cost,
       stock: stock,
       category: isTob ? 'المواد التبغية' : (isCoffee ? 'القهوة الجاهزة' : (isBev ? 'المشروبات والعصائر' : detectedSub.titleAr)),
-      isTobacco: isTob,
-      packsPerCarton: effectivePacksPerCarton,
-      piecesPerPack: effectivePiecesPerPack,
-      singlePiecePrice: singlePiecePrice,
-      cartonPrice: cartonPrice,
-      packPrice: cartonPrice,
-      packMultiplier: effectivePacksPerCarton,
-      packName: isTob ? 'كرطوشة' : (isBev ? 'فاردو' : null),
-    );
+      );
   }
 
   Widget _buildQuickItemsGrid() {

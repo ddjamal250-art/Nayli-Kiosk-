@@ -850,7 +850,6 @@ class UniversalDatabaseImporter {
         stock: stock,
         category: category,
         imageUrl: imageUrl,
-        unitType: unit,
         wholesalePrice: wholesale > 0 ? wholesale : price,
       );
 
@@ -1003,8 +1002,7 @@ class UniversalDatabaseImporter {
                   category: p.category != 'عام' ? p.category : existing.category,
                   imageUrl: (p.imageUrl != null && p.imageUrl!.isNotEmpty) ? p.imageUrl : existing.imageUrl,
                   wholesalePrice: p.wholesalePrice > 0 ? p.wholesalePrice : existing.wholesalePrice,
-                  unitType: p.unitType.isNotEmpty ? p.unitType : existing.unitType,
-                );
+                  );
                 await HiveDatabase.productBox.put(existingKey, merged);
               }
             } else {

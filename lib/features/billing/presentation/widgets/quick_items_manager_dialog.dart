@@ -260,10 +260,8 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
       costPrice: item.costPrice,
       stock: existing != null ? existing.stock : item.stock,
       category: isCoffee ? 'القهوة الجاهزة' : (existing?.category ?? 'بيع سريع'),
-      isWeighted: false,
       wholesalePrice: item.price,
-      singlePiecePrice: isCoffee ? item.price : (existing?.singlePiecePrice ?? 0.0),
-    );
+      );
 
     productBox.put(productModel.id, productModel);
     CatalogCrowdsourceHelper.silentHarvest(

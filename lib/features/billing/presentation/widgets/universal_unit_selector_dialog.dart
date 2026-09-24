@@ -58,36 +58,35 @@ class UniversalUnitSelectorDialog extends StatefulWidget {
 }
 
 class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialog> {
-  late String _selectedUnit; // 'piece', 'pack', 'carton', 'custom'
+  late String _selectedUnit; // e.g. 'base', 'فاردو', 'custom'
   late int _quantity;
   late final TextEditingController _qtyController;
 
   // Custom Quantity & Deal Controllers
   late final TextEditingController _customQtyController;
   late final TextEditingController _customPriceController;
-  String _customBaseUnit = 'piece'; // 'piece' or 'pack'
+  String _customBaseUnit = 'base'; 
   final FocusNode _keyboardFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _selectedUnit = widget.initialUnit;
-    if (_selectedUnit == 'piece' && !p.hasSubUnit) {
-      _selectedUnit = 'pack';
+    
+    // Validate selected unit still exists
+    if (_selectedUnit != 'base' && _selectedUnit != 'custom') {
+      final exists = p.units.any((u) => u.name == _selectedUnit);
+      if (!exists) _selectedUnit = 'base';
     }
-    if (_selectedUnit == 'carton' && !p.hasCarton) {
-      _selectedUnit = 'pack';
-    }
+
     _quantity = widget.initialQuantity;
     _qtyController = TextEditingController(text: _quantity.toString());
 
     // Init custom deal controllers
-    final initialCustomQty = p.packMultiplier > 1 ? p.packMultiplier : 3;
-    final initialCustomPrice = p.packPrice > 0
-        ? p.packPrice
-        : (p.hasSubUnit ? (p.resolvedPiecePrice * initialCustomQty) : (p.price * initialCustomQty));
+    final initialCustomQty = 3;
+    final initialCustomPrice = p.price * initialCustomQty;
 
-    _customBaseUnit = p.hasSubUnit ? 'piece' : 'pack';
+    _customBaseUnit = 'base';
     _customQtyController = TextEditingController(text: initialCustomQty.toString());
     _customPriceController = TextEditingController(text: initialCustomPrice.toStringAsFixed(0));
   }
@@ -103,22 +102,23 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
 
   Product get p => widget.product;
 
+  ProductUnit? get _activeProductUnit {
+    if (_selectedUnit == 'base' || _selectedUnit == 'custom') return null;
+    return p.units.where((u) => u.name == _selectedUnit).firstOrNull;
+  }
+
   double get _currentUnitPrice {
-    if (_selectedUnit == 'piece') return p.resolvedPiecePrice;
-    if (_selectedUnit == 'carton') return p.resolvedCartonPrice;
     if (_selectedUnit == 'custom') {
       final q = int.tryParse(_customQtyController.text.trim()) ?? 1;
       final pr = double.tryParse(_customPriceController.text.trim()) ?? 0.0;
       return q > 0 ? (pr / q) : 0.0;
     }
-    return p.price;
+    return _activeProductUnit?.price ?? p.price;
   }
 
   String get _currentUnitName {
-    if (_selectedUnit == 'piece') return p.resolvedSubUnitName;
-    if (_selectedUnit == 'carton') return p.resolvedCartonName;
     if (_selectedUnit == 'custom') return 'سعر كمية مخصص';
-    return p.resolvedPackName;
+    return _activeProductUnit?.name ?? p.baseUnitName;
   }
 
   double get _totalPrice {
@@ -146,13 +146,13 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
 
-    // Fast Numeric Shortcuts (1: Piece, 2: Pack, 3: Carton, 4: Custom Deal)
+    // Fast Numeric Shortcuts (1: Base, 2: Unit1, 3: Unit2, 4: Custom Deal)
     if (event.logicalKey == LogicalKeyboardKey.digit1 || event.logicalKey == LogicalKeyboardKey.numpad1) {
-      if (p.hasSubUnit) _selectUnit('piece');
+      _selectUnit('base');
     } else if (event.logicalKey == LogicalKeyboardKey.digit2 || event.logicalKey == LogicalKeyboardKey.numpad2) {
-      _selectUnit('pack');
+      if (p.units.isNotEmpty) _selectUnit(p.units[0].name);
     } else if (event.logicalKey == LogicalKeyboardKey.digit3 || event.logicalKey == LogicalKeyboardKey.numpad3) {
-      if (p.hasCarton) _selectUnit('carton');
+      if (p.units.length > 1) _selectUnit(p.units[1].name);
     } else if (event.logicalKey == LogicalKeyboardKey.digit4 ||
         event.logicalKey == LogicalKeyboardKey.numpad4 ||
         event.logicalKey == LogicalKeyboardKey.keyB) {
@@ -171,14 +171,14 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       final qty = (int.tryParse(_customQtyController.text.trim()) ?? 1).clamp(1, 9999);
       final total = (double.tryParse(_customPriceController.text.trim()) ?? 0.0).clamp(0.0, 999999.0);
       final unitEffectivePrice = qty > 0 ? (total / qty) : 0.0;
-      final baseUnitLabel = _customBaseUnit == 'piece' ? p.resolvedSubUnitName : p.resolvedPackName;
+      final baseUnitLabel = p.baseUnitName;
       final customName = '$qty $baseUnitLabel = ${total.toStringAsFixed(0)} دج';
 
       if (widget.cartItem != null) {
         context.read<BillingBloc>().add(
               SwitchCartItemUnitEvent(
                 cartKey: widget.cartItem!.cartKey,
-                targetUnit: _customBaseUnit,
+                targetUnit: 'custom',
                 newQuantity: qty,
                 customUnitPrice: unitEffectivePrice,
                 customUnitName: customName,
@@ -189,7 +189,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
         context.read<BillingBloc>().add(
               AddProductToCartEvent(
                 p,
-                unitLevel: _customBaseUnit,
+                unitLevel: 'custom',
                 quantity: qty,
                 customPrice: unitEffectivePrice,
               ),
@@ -239,66 +239,51 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
 
     final List<Widget> unitCards = [];
 
-    // 1. Piece Level Card (Key 1)
-    if (p.hasSubUnit) {
-      unitCards.add(
-        Expanded(
-          child: _buildUnitOptionCard(
-            unitKey: 'piece',
-            title: p.resolvedSubUnitName,
-            subtitle: '1/${p.effectivePiecesPerPack} ${p.resolvedPackName}',
-            price: p.resolvedPiecePrice,
-            iconData: p.isTobaccoProduct ? Icons.smoking_rooms_rounded : Icons.grain_rounded,
-            accentColor: Colors.amber,
-            shortcutKey: '1',
-            isDark: isDark,
-          ),
-        ),
-      );
-    }
-
-    // 2. Pack Level Card (Key 2)
+    // 1. Base Unit Card (Key 1)
     unitCards.add(
       Expanded(
         child: _buildUnitOptionCard(
-          unitKey: 'pack',
-          title: p.resolvedPackName,
-          subtitle: p.isBeverage ? 'قارورة مفردة' : 'علبة أساسية',
+          unitKey: 'base',
+          title: p.baseUnitName,
+          subtitle: 'الوحدة الأساسية',
           price: p.price,
-          iconData: p.isBeverage ? Icons.local_drink_rounded : Icons.check_box_outline_blank_rounded,
+          iconData: Icons.check_box_outline_blank_rounded,
           accentColor: Colors.blue,
-          shortcutKey: '2',
+          shortcutKey: '1',
           isDark: isDark,
         ),
       ),
     );
 
-    // 3. Carton Level Card (Key 3)
-    if (p.hasCarton) {
+    // 2. Additional Units (Keys 2, 3...)
+    int shortcut = 2;
+    for (final unit in p.units) {
+      if (shortcut > 3) break; // Limit shortcut keys for now to 1, 2, 3
       unitCards.add(
         Expanded(
           child: _buildUnitOptionCard(
-            unitKey: 'carton',
-            title: p.resolvedCartonName,
-            subtitle: 'x${p.effectivePacksPerCarton} ${p.resolvedPackName}',
-            price: p.resolvedCartonPrice,
-            iconData: p.isBeverage ? Icons.inventory_2_rounded : Icons.all_inbox_rounded,
-            accentColor: Colors.purple,
-            shortcutKey: '3',
+            unitKey: unit.name,
+            title: unit.name,
+            subtitle: 'x${unit.multiplier} ${p.baseUnitName}',
+            price: unit.price,
+            iconData: Icons.inventory_2_rounded,
+            accentColor: shortcut == 2 ? Colors.amber : Colors.purple,
+            shortcutKey: shortcut.toString(),
             isDark: isDark,
           ),
         ),
       );
+      shortcut++;
     }
 
-    // 4. Custom Quantity Deal Card (Key 4 / B)
+    // 3. Custom Quantity Deal Card (Key 4 / B)
     unitCards.add(
       Expanded(
         child: _buildUnitOptionCard(
           unitKey: 'custom',
           title: 'سعر مخصص للكمية',
-          subtitle: p.hasCustomQuantityPricing ? '${p.packMultiplier} بـ ${p.packPrice.toStringAsFixed(0)} دج' : 'تحديد عدد بسعر',
-          price: p.hasCustomQuantityPricing ? p.packPrice : (p.price * 3),
+          subtitle: 'تحديد عدد بسعر',
+          price: p.price * 3, // fallback display
           iconData: Icons.local_offer_rounded,
           accentColor: Colors.teal,
           shortcutKey: '4',
