@@ -70,33 +70,27 @@ jobs:
       - name: Build Windows Executable Release
         shell: powershell
         run: |
-          $output = flutter build windows 2>&1
-          $output | Out-File -FilePath windows_build_error.log -Encoding utf8
-          Write-Host $output
+          flutter build windows 2>&1 | Out-String | Tee-Object -FilePath windows_build_error.log
+          Write-Host "Exit code: $LASTEXITCODE"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Upload windows build log to webhook
+      - name: Upload windows build log as artifact
         if: always()
-        shell: powershell
-        run: |
-          if (Test-Path windows_build_error.log) {
-            $content = Get-Content windows_build_error.log -Raw
-            $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
-            $webClient = New-Object System.Net.WebClient
-            $webClient.Headers.Add("Content-Type", "text/plain")
-            $webClient.UploadData("https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356", $bytes)
-          }
-        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-log
+          path: windows_build_error.log
 
       - name: Compile Inno Setup Installer
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .github\installer\installer.iss 2>&1 | Tee-Object -FilePath inno_error.log; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Upload Inno Setup log to webhook
+      - name: Upload Inno Setup log as artifact
         if: failure()
-        run: |
-          curl.exe -X POST -H "Content-Type: text/plain" --data-binary @inno_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
-        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: inno-setup-log
+          path: inno_error.log
 
       - name: Archive Portable Release Folder
         run: |
