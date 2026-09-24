@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../features/product/data/models/product_unit_model.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../features/product/data/models/product_model.dart';
@@ -22,6 +25,31 @@ class HiveDatabase {
   static const String attendanceBoxName = 'attendance_records_box';
   static const String shoppingListBoxName = 'shopping_list_box';
   static const String loosePiecesBoxName = 'loose_pieces_box';
+
+  static Future<void> initSafe() async {
+    try {
+      await init();
+    } catch (e) {
+      debugPrint('Hive init failed, attempting recovery: $e');
+      await _backupAndReset();
+      await init(); // إعادة المحاولة بعد الحذف
+    }
+  }
+
+  static Future<void> _backupAndReset() async {
+    try {
+      await Hive.close();
+      final dir = await getApplicationDocumentsDirectory();
+      final hiveDir = Directory('${dir.path}/nayli_kiosk_data');
+      if (await hiveDir.exists()) {
+        final backup = '${dir.path}/nayli_backup_${DateTime.now().millisecondsSinceEpoch}';
+        await hiveDir.rename(backup);
+        debugPrint('Hive data backed up to: $backup');
+      }
+    } catch (e) {
+      debugPrint('Backup failed: $e');
+    }
+  }
 
   static Future<void> init() async {
     await Hive.initFlutter('nayli_kiosk_data');

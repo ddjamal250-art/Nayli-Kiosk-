@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
+import 'core/services/single_instance_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -39,10 +42,52 @@ void main() async {
       FlutterError.presentError(details);
     };
 
-    await HiveDatabase.init();
-    await di.init();
-    MasterCatalogService.instance.init();
-    await LocalSyncServer.startServer();
+    // Single Instance Check - أول شيء!
+    final isFirst = await SingleInstanceService.acquireSingleInstance();
+    if (!isFirst) {
+      exit(0); // أغلق، الـ instance الأول هو اللي يظهر
+    }
+
+    // Window Manager Init (desktop only)
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      await windowManager.ensureInitialized();
+      
+      WindowOptions windowOptions = const WindowOptions(
+        size: Size(1280, 800),
+        minimumSize: Size(900, 650),
+        center: true,
+        backgroundColor: Colors.transparent,
+        skipTaskbar: false,
+        titleBarStyle: TitleBarStyle.normal,
+        title: 'Nayli Market POS',
+      );
+      
+      await windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.focus();
+      });
+    }
+
+    // إقلاع تسامحي لقواعد البيانات والسيرفر
+    try {
+      await HiveDatabase.initSafe();
+    } catch (e) {
+      debugPrint('Hive init failed: $e');
+    }
+    
+    try {
+      await di.init();
+    } catch (e) {
+      debugPrint('DI init failed: $e');
+    }
+
+    try {
+      MasterCatalogService.instance.init();
+      await LocalSyncServer.startServer();
+    } catch (e) {
+      debugPrint('Server init failed: $e');
+    }
+    
     runApp(const MyApp());
   }, (error, stack) {
     debugPrint('Global App Error Handled: $error');
