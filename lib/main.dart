@@ -35,62 +35,110 @@ class TouchAndMouseScrollBehavior extends MaterialScrollBehavior {
   };
 }
 
+void _log(String message) {
+  try {
+    final userProfile = Platform.environment['USERPROFILE'] ?? '';
+    if (userProfile.isNotEmpty) {
+      final file = File('$userProfile\\Documents\\nayli_kiosk_data\\startup_debug.log');
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync('[${DateTime.now().toIso8601String()}] $message\r\n', mode: FileMode.append);
+    }
+  } catch (_) {}
+  debugPrint(message);
+}
+
 void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    _log('🚀 [STARTUP] WidgetsFlutterBinding initialized');
+
     FlutterError.onError = (FlutterErrorDetails details) {
-      FlutterError.presentError(details);
+      _log('❌ [FLUTTER_ERROR] ${details.exceptionAsString()}\n${details.stack}');
+    };
+
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      _log('⚠️ [ERROR_WIDGET] ${details.exceptionAsString()}');
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.orange),
+                const SizedBox(height: 16),
+                const Text('تنبيه أثناء تشغيل الواجهة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(details.exceptionAsString(), style: const TextStyle(color: Colors.red)),
+              ],
+            ),
+          ),
+        ),
+      );
     };
 
     // Window Manager & Single Instance Init (desktop only)
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       await windowManager.ensureInitialized();
+      _log('🖥️ [STARTUP] windowManager initialized');
       
       final isFirst = await SingleInstanceService.acquireSingleInstance();
       if (!isFirst) {
-        exit(0); // أغلق، الـ instance الأول هو اللي يظهر
+        _log('ℹ️ [STARTUP] Another instance is already active. Exiting.');
+        exit(0);
       }
 
-      // إظهار وضبط أبعاد النافذة فوراً دون أي انتظار
-      await windowManager.setSize(const Size(1280, 800));
-      await windowManager.setMinimumSize(const Size(900, 650));
+      await windowManager.setSize(const Size(1200, 720));
+      await windowManager.setMinimumSize(const Size(800, 550));
       await windowManager.center();
       await windowManager.setTitle('Nayli Market POS');
       await windowManager.show();
       await windowManager.focus();
+      _log('🖥️ [STARTUP] Window displayed and focused at 1200x720');
     }
 
     // إقلاع تسامحي لقواعد البيانات والسيرفر
     try {
+      _log('📦 [STARTUP] Initializing HiveDatabase...');
       await HiveDatabase.initSafe();
+      _log('📦 [STARTUP] HiveDatabase initialized successfully');
     } catch (e) {
-      debugPrint('Hive init failed: $e');
+      _log('❌ [STARTUP] Hive init failed: $e');
     }
     
     try {
+      _log('💉 [STARTUP] Initializing Service Locator (DI)...');
       await di.init();
+      _log('💉 [STARTUP] Service Locator (DI) initialized successfully');
     } catch (e) {
-      debugPrint('DI init failed: $e');
+      _log('❌ [STARTUP] DI init failed: $e');
     }
     
-    // 1. تشغيل التطبيق فوراً لظهور الواجهة للمستخدم في أجزاء من الثانية
+    // 1. تشغيل التطبيق فوراً لظهور الواجهة للمستخدم
+    _log('🎨 [STARTUP] Calling runApp(const MyApp())...');
     runApp(const MyApp());
+    _log('🎨 [STARTUP] runApp executed');
 
     // 2. تحميل كتالوج الـ 60 ألف سلعة والسيرفر في الخلفية دون حجب الواجهة
     Future.microtask(() async {
       try {
+        _log('📚 [STARTUP] Indexing Master Catalog in background...');
         await MasterCatalogService.instance.init();
+        _log('📚 [STARTUP] Master Catalog indexed successfully');
       } catch (e) {
-        debugPrint('MasterCatalogService init error: $e');
+        _log('❌ [STARTUP] MasterCatalogService init error: $e');
       }
       try {
+        _log('🌐 [STARTUP] Starting LocalSyncServer in background...');
         await LocalSyncServer.startServer();
+        _log('🌐 [STARTUP] LocalSyncServer started successfully');
       } catch (e) {
-        debugPrint('Server init failed: $e');
+        _log('❌ [STARTUP] Server init failed: $e');
       }
     });
   }, (error, stack) {
-    debugPrint('Global App Error Handled: $error');
+    _log('💥 [GLOBAL_ZONE_ERROR] $error\n$stack');
   });
 }
 

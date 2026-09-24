@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
@@ -15,16 +15,29 @@ class AppTheme {
   static const Color amoledInput = Color(0xFF131C31);
   static const Color amoledBorder = Color(0xFF1E293B);
 
-  static final TextTheme textTheme = GoogleFonts.ibmPlexSansTextTheme().copyWith(
-    bodyLarge: GoogleFonts.ibmPlexSans(
+  static const String defaultFontFamily = 'Segoe UI';
+  static const List<String> defaultFontFallbacks = ['Tahoma', 'Arial', 'sans-serif'];
+
+  static final TextTheme textTheme = const TextTheme().apply(
+    fontFamily: defaultFontFamily,
+    fontFamilyFallback: defaultFontFallbacks,
+  ).copyWith(
+    bodyLarge: const TextStyle(
+      fontFamily: defaultFontFamily,
+      fontFamilyFallback: defaultFontFallbacks,
       fontSize: 15,
       fontWeight: FontWeight.w500,
       color: Colors.black,
     ),
   );
 
-  static final TextTheme darkTextTheme = GoogleFonts.ibmPlexSansTextTheme().copyWith(
-    bodyLarge: GoogleFonts.ibmPlexSans(
+  static final TextTheme darkTextTheme = const TextTheme().apply(
+    fontFamily: defaultFontFamily,
+    fontFamilyFallback: defaultFontFallbacks,
+  ).copyWith(
+    bodyLarge: const TextStyle(
+      fontFamily: defaultFontFamily,
+      fontFamilyFallback: defaultFontFallbacks,
       fontSize: 15,
       fontWeight: FontWeight.w500,
       color: Colors.white,

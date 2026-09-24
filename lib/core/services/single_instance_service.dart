@@ -49,8 +49,12 @@ class SingleInstanceService {
         client.write('ACTIVATE\n');
         await client.flush();
         await client.close();
-      } catch (_) {}
-      return false; // Exit this instance
+        return false; // Exit this instance ONLY because the active instance was notified!
+      } catch (_) {
+        // If connecting to the port failed, no instance is actually alive!
+        // The port might have been in TIME_WAIT or dead. Proceed as primary!
+        return true;
+      }
     }
   }
 

@@ -36,7 +36,9 @@ class _EulaPageState extends State<EulaPage> {
 
   void _accept() {
     HiveDatabase.settingsBox.put('eula_accepted', true);
-    context.go('/');
+    if (mounted) {
+      context.go('/');
+    }
   }
 
   void _decline() {
@@ -51,10 +53,11 @@ class _EulaPageState extends State<EulaPage> {
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Card(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800, maxHeight: 700),
+            child: Card(
             margin: const EdgeInsets.all(24.0),
             elevation: 4,
             child: Padding(

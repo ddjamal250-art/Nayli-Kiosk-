@@ -48,6 +48,7 @@ final router = GoRouter(
   redirect: (context, state) {
     // 1. EULA Check
     final bool eulaAccepted = HiveDatabase.settingsBox.get('eula_accepted', defaultValue: false);
+    debugPrint('🚦 [ROUTER] target: ${state.matchedLocation}, eulaAccepted: $eulaAccepted');
     if (!eulaAccepted && state.matchedLocation != '/eula') {
       return '/eula';
     }
