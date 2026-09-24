@@ -68,17 +68,23 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
       - name: Build Windows Executable Release
-        run: flutter build windows > windows_build_error.log 2>&1 || exit 0
-        continue-on-error: true
+        run: flutter build windows 2>&1 | Tee-Object -FilePath windows_build_error.log; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload windows build log to webhook
+        if: always()
         run: |
           curl.exe -X POST -H "Content-Type: text/plain" --data-binary @windows_build_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
         continue-on-error: true
 
       - name: Compile Inno Setup Installer
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .github\installer\installer.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .github\installer\installer.iss 2>&1 | Tee-Object -FilePath inno_error.log; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload Inno Setup log to webhook
+        if: failure()
+        run: |
+          curl.exe -X POST -H "Content-Type: text/plain" --data-binary @inno_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
+        continue-on-error: true
 
       - name: Archive Portable Release Folder
         run: |
