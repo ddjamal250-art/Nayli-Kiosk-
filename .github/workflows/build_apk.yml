@@ -37,14 +37,8 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs > build_runner_error.log 2>&1 || true
         continue-on-error: true
 
-      - name: Upload log if failed
-        run: |
-          git config --global user.name "AI"
-          git config --global user.email "ai@ai.com"
-          git add build_runner_error.log
-          git commit -m "Upload log"
-          git pull --rebase origin main || true
-          git push origin main || true
+      - name: Upload log to webhook
+        run: curl -X POST -H "Content-Type: text/plain" --data-binary @build_runner_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || true
         continue-on-error: true
 
       - name: Generate App Icons

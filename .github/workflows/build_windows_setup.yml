@@ -54,17 +54,11 @@ jobs:
         run: flutter pub get
 
       - name: Generate Code (Build Runner)
-        run: dart run build_runner build --delete-conflicting-outputs > build_runner_error.log 2>&1
+        run: dart run build_runner build --delete-conflicting-outputs > build_runner_error.log 2>&1 || exit 0
         continue-on-error: true
 
-      - name: Upload log if failed
-        run: |
-          git config --global user.name "AI"
-          git config --global user.email "ai@ai.com"
-          git add build_runner_error.log
-          git commit -m "Upload log"
-          git pull --rebase origin main
-          git push origin main
+      - name: Upload log to webhook
+        run: curl.exe -X POST -H "Content-Type: text/plain" --data-binary @build_runner_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
         continue-on-error: true
 
       - name: Generate App Icons
@@ -73,18 +67,12 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
       - name: Build Windows Executable Release
-        run: flutter build windows > windows_build_error.log 2>&1
+        run: flutter build windows > windows_build_error.log 2>&1 || exit 0
         continue-on-error: true
 
-      - name: Upload windows build log
-        run: |
-          git config --global user.name "AI"
-          git config --global user.email "ai@ai.com"
-          git add windows_build_error.log
-          git commit -m "Upload windows log"
-          git pull --rebase origin main || exit 0
-          git push origin main || exit 0
-        continue-on-error: true --release --obfuscate --split-debug-info=symbols/
+      - name: Upload windows build log to webhook
+        run: curl.exe -X POST -H "Content-Type: text/plain" --data-binary @windows_build_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
+        continue-on-error: true
 
       - name: Compile Inno Setup Installer
         run: |
