@@ -33,6 +33,21 @@ class Product extends Equatable {
 
   bool get isTobaccoProduct => category.contains('تبغ') || isTobacco;
 
+  // Legacy getters - computed from units list or defaults
+  double get wholesalePackPrice => units.isNotEmpty ? (units.firstWhere((u) => u.level == 'pack', orElse: () => units.first).wholesalePrice ?? 0.0) : 0.0;
+  double get wholesaleCartonPrice => units.isNotEmpty ? (units.firstWhere((u) => u.level == 'carton', orElse: () => units.first).wholesalePrice ?? 0.0) : 0.0;
+  double get cartonCostPrice => units.isNotEmpty ? (units.firstWhere((u) => u.level == 'carton', orElse: () => units.first).costPrice ?? 0.0) : 0.0;
+  int get piecesPerPack => units.isNotEmpty ? (units.firstWhere((u) => u.level == 'piece', orElse: () => units.first).multiplier) : 20;
+  int get packsPerCartonCount => units.isNotEmpty ? (units.firstWhere((u) => u.level == 'pack', orElse: () => units.first).multiplier) : 10;
+  String get unitType => units.isNotEmpty ? units.first.type ?? 'piece' : 'piece';
+  double get resolvedPiecePrice => singlePiecePrice > 0 ? singlePiecePrice : (piecesPerPack > 0 ? price / piecesPerPack : price);
+  double get resolvedPieceCost => piecesPerPack > 0 ? costPrice / piecesPerPack : costPrice;
+  String get resolvedPackName => packName ?? 'علبة';
+  String get resolvedSubUnitName => baseUnitName;
+  double get cupsYield => 0.0;
+  bool get hasSubUnit => piecesPerPack > 1;
+  bool get hasCustomQuantityPricing => false;
+
   final String baseUnitName; 
   final List<ProductUnit> units;
 

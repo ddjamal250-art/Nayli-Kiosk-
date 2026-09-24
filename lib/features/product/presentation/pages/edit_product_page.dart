@@ -125,7 +125,7 @@ class _EditProductPageState extends State<EditProductPage> {
     context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
     
     if (mounted) {
-      SnackBarHelper.showSuccess(context, 'تم تعديل المنتج بنجاح');
+      SnackbarHelper.showSuccess(context, 'تم تعديل المنتج بنجاح');
       context.pop();
     }
   }

@@ -17,7 +17,6 @@ class KioskProductResult {
   final String? unitName;
   final int unitMultiplier;
   final double singlePrice;
-  final double singlePrice;
   final double savings;
   final String? imageUrl;
 
@@ -30,11 +29,10 @@ class KioskProductResult {
     this.isWeighed = false,
     this.weight = 0.0,
     this.pricePerKg = 0.0,
-    this.isPack = false,
-    this.packName,
-    this.packMultiplier = 1,
+    this.isUnit = false,
+    this.unitName,
+    this.unitMultiplier = 1,
     this.singlePrice = 0.0,
-    this.packPrice = 0.0,
     this.savings = 0.0,
     this.imageUrl,
   });
@@ -51,7 +49,6 @@ class KioskProductResult {
         'isUnit': isUnit,
         'unitName': unitName,
         'unitMultiplier': unitMultiplier,
-        'singlePrice': singlePrice,
         'singlePrice': singlePrice,
         'savings': savings,
         'imageUrl': imageUrl,

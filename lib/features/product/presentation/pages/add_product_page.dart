@@ -95,7 +95,7 @@ class _AddProductPageState extends State<AddProductPage> {
           ),
         ),
         actions: [
-          TextButton(onSelected: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () {
               if (nameCtrl.text.isNotEmpty && multiCtrl.text.isNotEmpty && priceCtrl.text.isNotEmpty) {
@@ -142,7 +142,7 @@ class _AddProductPageState extends State<AddProductPage> {
     context.read<ProductBloc>().add(AddProduct(product));
     
     if (mounted) {
-      SnackBarHelper.showSuccess(context, 'تم إضافة المنتج بنجاح');
+      SnackbarHelper.showSuccess(context, 'تم إضافة المنتج بنجاح');
       context.pop();
     }
   }
@@ -181,7 +181,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     Row(
                       children: [
                         Expanded(child: TextFormField(controller: _barcodeCtrl)),
-                        IconButton(icon: const Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor), onPressed: _scanBarcode),
+                        IconButton(icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor), onPressed: _scanBarcode),
                       ],
                     ),
                     const SizedBox(height: 12),
