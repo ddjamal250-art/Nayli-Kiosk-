@@ -70,16 +70,7 @@ jobs:
       - name: Build Windows Executable Release
         shell: powershell
         run: |
-          flutter build windows 2>&1 | Out-String | Tee-Object -FilePath windows_build_error.log
-          Write-Host "Exit code: $LASTEXITCODE"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-      - name: Upload windows build log as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-build-log
-          path: windows_build_error.log
+          flutter build windows --verbose
 
       - name: Compile Inno Setup Installer
         run: |
