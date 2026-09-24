@@ -50,6 +50,14 @@ void main() async {
       if (!isFirst) {
         exit(0); // أغلق، الـ instance الأول هو اللي يظهر
       }
+
+      // إظهار وضبط أبعاد النافذة فوراً دون أي انتظار
+      await windowManager.setSize(const Size(1280, 800));
+      await windowManager.setMinimumSize(const Size(900, 650));
+      await windowManager.center();
+      await windowManager.setTitle('Nayli Market POS');
+      await windowManager.show();
+      await windowManager.focus();
     }
 
     // إقلاع تسامحي لقواعد البيانات والسيرفر
@@ -64,34 +72,23 @@ void main() async {
     } catch (e) {
       debugPrint('DI init failed: $e');
     }
-
-    try {
-      MasterCatalogService.instance.init();
-      await LocalSyncServer.startServer();
-    } catch (e) {
-      debugPrint('Server init failed: $e');
-    }
     
-    // 1. تشغيل التطبيق أولاً لرسم شجرة الـ Widgets
+    // 1. تشغيل التطبيق فوراً لظهور الواجهة للمستخدم في أجزاء من الثانية
     runApp(const MyApp());
 
-    // 2. ضبط وإظهار النافذة بخلفية بيضاء صلبة (دون شفافية معطلة)
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      WindowOptions windowOptions = const WindowOptions(
-        size: Size(1280, 800),
-        minimumSize: Size(900, 650),
-        center: true,
-        backgroundColor: Colors.white,
-        skipTaskbar: false,
-        titleBarStyle: TitleBarStyle.normal,
-        title: 'Nayli Market POS',
-      );
-      
-      windowManager.waitUntilReadyToShow(windowOptions, () async {
-        await windowManager.show();
-        await windowManager.focus();
-      });
-    }
+    // 2. تحميل كتالوج الـ 60 ألف سلعة والسيرفر في الخلفية دون حجب الواجهة
+    Future.microtask(() async {
+      try {
+        await MasterCatalogService.instance.init();
+      } catch (e) {
+        debugPrint('MasterCatalogService init error: $e');
+      }
+      try {
+        await LocalSyncServer.startServer();
+      } catch (e) {
+        debugPrint('Server init failed: $e');
+      }
+    });
   }, (error, stack) {
     debugPrint('Global App Error Handled: $error');
   });
