@@ -475,7 +475,6 @@ class _StockInPageState extends State<StockInPage> {
         stock: effectiveQty,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
-        cartonCostPrice: cartonCostPrice,
         );
       productBloc.add(AddProduct(newProduct));
       CatalogCrowdsourceHelper.silentHarvest(

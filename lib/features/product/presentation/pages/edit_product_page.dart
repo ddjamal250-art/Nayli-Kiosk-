@@ -85,7 +85,7 @@ class _EditProductPageState extends State<EditProductPage> {
           ),
         ),
         actions: [
-          TextButton(onSelected: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () {
               if (nameCtrl.text.isNotEmpty && multiCtrl.text.isNotEmpty && priceCtrl.text.isNotEmpty) {
@@ -158,7 +158,7 @@ class _EditProductPageState extends State<EditProductPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const InputLabel(text: 'اسم المنتج'),
-                    TextFormField(controller: _nameCtrl, validator: AppValidators.required),
+                    TextFormField(controller: _nameCtrl, validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null),
                     const SizedBox(height: 12),
                     const InputLabel(text: 'الباركود'),
                     TextFormField(controller: _barcodeCtrl),

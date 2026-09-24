@@ -175,7 +175,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const InputLabel(text: 'اسم المنتج'),
-                    TextFormField(controller: _nameCtrl, validator: AppValidators.required),
+                    TextFormField(controller: _nameCtrl, validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null),
                     const SizedBox(height: 12),
                     const InputLabel(text: 'الباركود'),
                     Row(

@@ -568,7 +568,7 @@ class _KioskPriceCheckerPageState extends State<KioskPriceCheckerPage>
           ],
 
           // عرض سعر الحزمة / الفاردو التوفيري
-          if (p.packPrice > 0 && p.packMultiplier > 1) ...[
+          if (p.singlePrice > 0 && p.unitMultiplier > 1) ...[
             const SizedBox(height: 14),
             Container(
               width: double.infinity,
