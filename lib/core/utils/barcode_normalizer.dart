@@ -73,7 +73,7 @@ class BarcodeNormalizer {
   }
 
   /// البحث عن المنتج المطابق في قائمة المنتجات بدقة ومرونة عالية
-  static Product? findProduct(List<Product> products, String scannedBarcode) {
+  static T? findProduct<T extends Product>(List<T> products, String scannedBarcode) {
     final cleanScan = clean(scannedBarcode);
     if (cleanScan.isEmpty) return null;
 
@@ -156,7 +156,7 @@ class BarcodeNormalizer {
   }
 
   /// البحث عن منتج ميزان إلكتروني باستخدام نتيجة تفكيك باركود الميزان
-  static Product? findScaleProduct(List<Product> products, ScaleBarcodeResult scaleResult) {
+  static T? findScaleProduct<T extends Product>(List<T> products, ScaleBarcodeResult scaleResult) {
     // 1. مطابقة مباشرة لكود السلعة أو كود الميزان
     for (final p in products) {
       final cleanBarcode = clean(p.barcode);
