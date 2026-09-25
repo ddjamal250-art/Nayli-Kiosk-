@@ -61,6 +61,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main
           git add flutter_build.log
           git commit -m "Upload build log"
-          git push
+          git push origin main
