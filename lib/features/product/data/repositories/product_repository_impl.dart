@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/error/failure.dart';
@@ -24,9 +25,25 @@ class ProductRepositoryImpl implements ProductRepository {
     try {
       final box = HiveDatabase.productBox;
       final products = box.values.toList();
+
+      // بحث PLU: للميزان التجاري — الباركود يأتي بالشكل 'PLU_42'
+      if (barcode.startsWith('PLU_')) {
+        final pluSearch = barcode.substring(4).replaceFirst(RegExp(r'^0+'), '');
+        if (pluSearch.isNotEmpty) {
+          final pluMatch = products.firstWhereOrNull((p) {
+            final plu = (p.pluCode ?? '').trim().replaceFirst(RegExp(r'^0+'), '');
+            return plu.isNotEmpty && plu == pluSearch;
+          });
+          if (pluMatch != null) return Right(pluMatch.toEntity());
+        }
+        // لم يجد بـ PLU → لا تكمل بحثاً بالباركود المشوَّه
+        return Left(CacheFailure('Product not found by PLU: $barcode'));
+      }
+
+      // بحث عادي بالباركود
       final matched = BarcodeNormalizer.findProduct(products, barcode);
       if (matched != null) {
-        return Right(matched);
+        return Right(matched.toEntity());
       }
       return Left(CacheFailure('Product not found: $barcode'));
     } catch (e) {

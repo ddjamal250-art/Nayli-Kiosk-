@@ -1,25 +1,17 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/data/hive_database.dart';
-import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/app_constants.dart';
-import '../../../../core/utils/app_validators.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
-import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
-import '../../../billing/presentation/widgets/quick_items_manager_dialog.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
 import '../bloc/product_bloc.dart';
-import '../widgets/product_image_picker_field.dart';
-import '../widgets/ready_coffee_calculator_card.dart';
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -30,19 +22,17 @@ class AddProductPage extends StatefulWidget {
 
 class _AddProductPageState extends State<AddProductPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _barcodeCtrl = TextEditingController();
-  final TextEditingController _nameCtrl = TextEditingController();
-  final TextEditingController _priceCtrl = TextEditingController();
-  final TextEditingController _costPriceCtrl = TextEditingController();
-  final TextEditingController _stockCtrl = TextEditingController(text: '10');
-  final TextEditingController _baseUnitNameCtrl = TextEditingController(text: 'حبة');
+  final _barcodeCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _costPriceCtrl = TextEditingController();
+  final _stockCtrl = TextEditingController(text: '10');
+  final _baseUnitNameCtrl = TextEditingController(text: 'Ø­Ø¨Ø©');
+  final _pluCodeCtrl = TextEditingController();
 
-  String _selectedCategory = 'عام';
-  bool _isCategoryUserSelected = false;
+  String _selectedCategory = 'Ø¹Ø§Ù…';
   String? _imageUrl;
-  DateTime? _expiryDate;
   bool _isSaving = false;
-  
   List<ProductUnit> _dynamicUnits = [];
   List<String> _availableCategories = [];
 
@@ -60,57 +50,125 @@ class _AddProductPageState extends State<AddProductPage> {
     _costPriceCtrl.dispose();
     _stockCtrl.dispose();
     _baseUnitNameCtrl.dispose();
+    _pluCodeCtrl.dispose();
     super.dispose();
   }
 
   void _scanBarcode() async {
     final result = await context.push<String>('/scanner');
     if (result != null && result.isNotEmpty) {
-      setState(() {
-        _barcodeCtrl.text = result;
-      });
+      setState(() => _barcodeCtrl.text = result);
       SoundService.playScanBeep();
     }
   }
 
-  void _addUnitDialog() {
-    final nameCtrl = TextEditingController();
-    final multiCtrl = TextEditingController();
-    final priceCtrl = TextEditingController();
-    final barcodeCtrl = TextEditingController();
+  void _addOrEditUnitDialog({ProductUnit? existing, int? editIndex}) {
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    final multiCtrl = TextEditingController(text: existing?.multiplier.toString() ?? '');
+    final priceCtrl = TextEditingController(text: existing?.price.toString() ?? '');
+    final costCtrl = TextEditingController(text: existing?.cost.toString() ?? '');
+    final barcodeCtrl = TextEditingController(text: existing?.barcode ?? '');
+    bool isEnabled = existing?.isEnabled ?? true;
+    bool isWeighable = existing?.isWeighable ?? false;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('إضافة وحدة جديدة (مثال: كرتونة)'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'اسم الوحدة (كرتونة, فاردو...)')),
-              TextField(controller: multiCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'عدد الحبات (المعامل)')),
-              TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'سعر الوحدة')),
-              TextField(controller: barcodeCtrl, decoration: const InputDecoration(labelText: 'باركود الوحدة (اختياري)')),
-            ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setDlg) => AlertDialog(
+          title: Text(existing == null ? 'Ø¥Ø¶Ø§ÙØ© ÙˆØ­Ø¯Ø© Ø¬Ø¯ÙŠØ¯Ø©' : 'ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„ÙˆØ­Ø¯Ø©'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Ø§Ø³Ù… Ø§Ù„ÙˆØ­Ø¯Ø© (ÙƒØ±ØªÙˆÙ†Ø©ØŒ ÙƒØº...)')),
+                const SizedBox(height: 8),
+                TextField(controller: multiCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Ø¹Ø¯Ø¯ Ø§Ù„Ø­Ø¨Ø§Øª / Ø§Ù„Ù…Ø¹Ø§Ù…Ù„')),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: priceCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: isWeighable ? 'Ø³Ø¹Ø± Ø§Ù„Ø¨ÙŠØ¹ / ÙƒØº (Ø¯Ø¬)' : 'Ø³Ø¹Ø± Ø§Ù„Ø¨ÙŠØ¹'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: costCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: isWeighable ? 'Ø³Ø¹Ø± Ø§Ù„Ø´Ø±Ø§Ø¡ / ÙƒØº (Ø¯Ø¬)' : 'Ø³Ø¹Ø± Ø§Ù„Ø´Ø±Ø§Ø¡'),
+                ),
+                const SizedBox(height: 8),
+                TextField(controller: barcodeCtrl, decoration: const InputDecoration(labelText: 'Ø¨Ø§Ø±ÙƒÙˆØ¯ Ø§Ù„ÙˆØ­Ø¯Ø© (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)')),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  title: const Text('Ù…ÙÙØ¹ÙŽÙ‘Ù„Ø© ÙÙŠ Ø§Ù„ÙƒØ§Ø´ÙŠØ±'),
+                  subtitle: const Text('Ø£ÙˆÙ‚ÙÙ‡Ø§ Ù„Ø¥Ø®ÙØ§Ø¦Ù‡Ø§ Ù…Ø¤Ù‚ØªØ§Ù‹'),
+                  value: isEnabled,
+                  onChanged: (v) => setDlg(() => isEnabled = v),
+                  dense: true,
+                ),
+                SwitchListTile(
+                  title: const Text('âš–ï¸ ÙˆØ­Ø¯Ø© Ù…ÙŠØ²Ø§Ù†'),
+                  subtitle: const Text('Ø§Ù„Ø³Ø¹Ø± Ø¨Ø§Ù„ÙƒØº â€” ÙŠØ­ØªØ§Ø¬ Ù…ÙŠØ²Ø§Ù† ØªØ¬Ø§Ø±ÙŠ'),
+                  value: isWeighable,
+                  onChanged: (v) => setDlg(() => isWeighable = v),
+                  dense: true,
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx2), child: const Text('Ø¥Ù„ØºØ§Ø¡')),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                final unit = ProductUnit(
+                  name: name,
+                  multiplier: int.tryParse(multiCtrl.text.trim()) ?? 1,
+                  price: double.tryParse(priceCtrl.text.trim()) ?? 0.0,
+                  cost: double.tryParse(costCtrl.text.trim()) ?? 0.0,
+                  barcode: barcodeCtrl.text.trim().isNotEmpty ? barcodeCtrl.text.trim() : null,
+                  isEnabled: isEnabled,
+                  isWeighable: isWeighable,
+                );
+                setState(() {
+                  if (editIndex != null) {
+                    _dynamicUnits[editIndex] = unit;
+                  } else {
+                    _dynamicUnits.add(unit);
+                  }
+                });
+                Navigator.pop(ctx2);
+              },
+              child: const Text('Ø­ÙØ¸'),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  void _addCustomCategoryDialog() {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ØªØµÙ†ÙŠÙ Ø¬Ø¯ÙŠØ¯'),
+        content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: 'Ø§Ø³Ù… Ø§Ù„ØªØµÙ†ÙŠÙ')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Ø¥Ù„ØºØ§Ø¡')),
           ElevatedButton(
             onPressed: () {
-              if (nameCtrl.text.isNotEmpty && multiCtrl.text.isNotEmpty && priceCtrl.text.isNotEmpty) {
+              final name = ctrl.text.trim();
+              if (name.isNotEmpty) {
+                CategoryTaxonomy.addCustomCategory(name);
                 setState(() {
-                  _dynamicUnits.add(ProductUnit(
-                    name: nameCtrl.text.trim(),
-                    multiplier: int.tryParse(multiCtrl.text.trim()) ?? 1,
-                    price: double.tryParse(priceCtrl.text.trim()) ?? 0.0,
-                    barcode: barcodeCtrl.text.trim().isNotEmpty ? barcodeCtrl.text.trim() : null,
-                  ));
+                  _availableCategories = CategoryTaxonomy.getDropdownCategories();
+                  _selectedCategory = name;
                 });
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('إضافة'),
+            child: const Text('Ø¥Ø¶Ø§ÙØ©'),
           ),
         ],
       ),
@@ -120,29 +178,28 @@ class _AddProductPageState extends State<AddProductPage> {
   void _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-    
+
     final barcode = _barcodeCtrl.text.trim();
-    final retailPrice = double.tryParse(_priceCtrl.text.trim()) ?? 0.0;
-    
+    final plu = _pluCodeCtrl.text.trim();
     final product = Product(
       id: const Uuid().v4(),
       name: _nameCtrl.text.trim(),
       barcode: barcode.isNotEmpty ? barcode : 'NO_BARCODE_${DateTime.now().millisecondsSinceEpoch}',
-      price: retailPrice,
+      price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
       costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0,
       wholesalePrice: 0.0,
       stock: int.tryParse(_stockCtrl.text.trim()) ?? 10,
       category: _selectedCategory,
-      expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
       imageUrl: _imageUrl,
-      baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
+      baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'Ø­Ø¨Ø©',
       units: _dynamicUnits,
+      pluCode: plu.isNotEmpty ? plu : null,
     );
 
     context.read<ProductBloc>().add(AddProduct(product));
-    
+
     if (mounted) {
-      SnackbarHelper.showSuccess(context, 'تم إضافة المنتج بنجاح');
+      SnackbarHelper.showSuccess(context, 'ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù…Ù†ØªØ¬ Ø¨Ù†Ø¬Ø§Ø­');
       context.pop();
     }
   }
@@ -151,7 +208,7 @@ class _AddProductPageState extends State<AddProductPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إضافة منتج جديد'),
+        title: const Text('Ø¥Ø¶Ø§ÙØ© Ù…Ù†ØªØ¬ Ø¬Ø¯ÙŠØ¯'),
         actions: [
           if (_isSaving)
             const Center(child: Padding(padding: EdgeInsets.symmetric(horizontal: 16.0), child: CircularProgressIndicator(color: Colors.white)))
@@ -164,133 +221,143 @@ class _AddProductPageState extends State<AddProductPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Basic Info
-            Card(
-              elevation: 0,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            // --- Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ© ---
+            _SectionCard(
+              title: 'Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ©',
+              icon: Icons.info_outline,
+              children: [
+                const InputLabel(text: 'Ø§Ø³Ù… Ø§Ù„Ù…Ù†ØªØ¬'),
+                TextFormField(
+                  controller: _nameCtrl,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Ù‡Ø°Ø§ Ø§Ù„Ø­Ù‚Ù„ Ù…Ø·Ù„ÙˆØ¨' : null,
+                ),
+                const SizedBox(height: 12),
+                const InputLabel(text: 'Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯'),
+                Row(
                   children: [
-                    const InputLabel(text: 'اسم المنتج'),
-                    TextFormField(controller: _nameCtrl, validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null),
-                    const SizedBox(height: 12),
-                    const InputLabel(text: 'الباركود'),
-                    Row(
-                      children: [
-                        Expanded(child: TextFormField(controller: _barcodeCtrl)),
-                        IconButton(icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor), onPressed: _scanBarcode),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    const InputLabel(text: 'التصنيف'),
-                    DropdownButtonFormField<String>(
-                      value: _availableCategories.contains(_selectedCategory) ? _selectedCategory : 'عام',
-                      items: _availableCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (v) {
-                        if (v != null) setState(() { _selectedCategory = v; _isCategoryUserSelected = true; });
-                      },
+                    Expanded(child: TextFormField(controller: _barcodeCtrl)),
+                    IconButton(icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor), onPressed: _scanBarcode),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const InputLabel(text: 'ÙƒÙˆØ¯ PLU Ù„Ù„Ù…ÙŠØ²Ø§Ù† Ø§Ù„ØªØ¬Ø§Ø±ÙŠ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)'),
+                TextFormField(
+                  controller: _pluCodeCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: 'Ù…Ø«Ø§Ù„: 1ØŒ 42...',
+                    prefixIcon: Icon(Icons.scale, size: 18),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const InputLabel(text: 'Ø§Ù„ØªØµÙ†ÙŠÙ'),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: _addCustomCategoryDialog,
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('ØªØµÙ†ÙŠÙ Ø¬Ø¯ÙŠØ¯'),
                     ),
                   ],
                 ),
-              ),
+                DropdownButtonFormField<String>(
+                  value: _availableCategories.contains(_selectedCategory) ? _selectedCategory : 'Ø¹Ø§Ù…',
+                  isExpanded: true,
+                  items: _availableCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) { if (v != null) setState(() => _selectedCategory = v); },
+                ),
+              ],
             ),
             const SizedBox(height: 16),
-            // Pricing
-            Card(
-              elevation: 0,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            // --- Ø§Ù„ØªØ³Ø¹ÙŠØ± ÙˆØ§Ù„Ù…Ø®Ø²ÙˆÙ† ---
+            _SectionCard(
+              title: 'Ø§Ù„ØªØ³Ø¹ÙŠØ± ÙˆØ§Ù„Ù…Ø®Ø²ÙˆÙ†',
+              icon: Icons.attach_money,
+              children: [
+                const InputLabel(text: 'Ø§Ø³Ù… Ø§Ù„ÙˆØ­Ø¯Ø© Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ© (Ø­Ø¨Ø©ØŒ ÙƒØº...)'),
+                TextFormField(controller: _baseUnitNameCtrl),
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    const InputLabel(text: 'الوحدة الأساسية (مثال: حبة، كغ)'),
-                    TextFormField(controller: _baseUnitNameCtrl),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const InputLabel(text: 'سعر البيع'),
-                              TextFormField(controller: _priceCtrl, keyboardType: TextInputType.number),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const InputLabel(text: 'سعر الشراء (التكلفة)'),
-                              TextFormField(controller: _costPriceCtrl, keyboardType: TextInputType.number),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    const InputLabel(text: 'الكمية الحالية في المخزون (بالوحدة الأساسية)'),
-                    TextFormField(controller: _stockCtrl, keyboardType: TextInputType.number),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const InputLabel(text: 'Ø³Ø¹Ø± Ø§Ù„Ø¨ÙŠØ¹'),
+                      TextFormField(controller: _priceCtrl, keyboardType: TextInputType.number),
+                    ])),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const InputLabel(text: 'Ø³Ø¹Ø± Ø§Ù„Ø´Ø±Ø§Ø¡'),
+                      TextFormField(controller: _costPriceCtrl, keyboardType: TextInputType.number),
+                    ])),
                   ],
                 ),
-              ),
+                const SizedBox(height: 12),
+                const InputLabel(text: 'Ø§Ù„Ù…Ø®Ø²ÙˆÙ† Ø§Ù„Ø­Ø§Ù„ÙŠ'),
+                TextFormField(controller: _stockCtrl, keyboardType: TextInputType.number),
+              ],
             ),
             const SizedBox(height: 16),
-            // Dynamic Units
-            Card(
-              elevation: 0,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.teal.shade200)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('الوحدات الفرعية (كرتونة، فاردو...)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        TextButton.icon(
-                          onPressed: _addUnitDialog,
-                          icon: const Icon(Icons.add),
-                          label: const Text('إضافة وحدة'),
-                        )
-                      ],
-                    ),
-                    const Divider(),
-                    if (_dynamicUnits.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('لا توجد وحدات فرعية. سيتم بيع المنتج كحبة فقط.', style: TextStyle(color: Colors.grey)),
-                      )
-                    else
-                      ..._dynamicUnits.asMap().entries.map((e) {
-                        final idx = e.key;
-                        final unit = e.value;
-                        return ListTile(
-                          title: Text('${unit.name} (${unit.multiplier} ${_baseUnitNameCtrl.text})'),
-                          subtitle: Text('السعر: ${unit.price} دج'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => setState(() => _dynamicUnits.removeAt(idx)),
-                          ),
-                        );
-                      }).toList(),
-                  ],
-                ),
+            // --- Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„ÙØ±Ø¹ÙŠØ© ---
+            _SectionCard(
+              title: 'Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„ÙØ±Ø¹ÙŠØ©',
+              icon: Icons.layers,
+              borderColor: Colors.teal.shade200,
+              trailing: TextButton.icon(
+                onPressed: () => _addOrEditUnitDialog(),
+                icon: const Icon(Icons.add),
+                label: const Text('Ø¥Ø¶Ø§ÙØ© ÙˆØ­Ø¯Ø©'),
               ),
+              children: [
+                if (_dynamicUnits.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Ù„Ø§ ØªÙˆØ¬Ø¯ ÙˆØ­Ø¯Ø§Øª ÙØ±Ø¹ÙŠØ© â€” Ø³ÙŠÙØ¨Ø§Ø¹ Ø§Ù„Ù…Ù†ØªØ¬ Ø¨Ø§Ù„ÙˆØ­Ø¯Ø© Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ© ÙÙ‚Ø·.', style: TextStyle(color: Colors.grey)),
+                  )
+                else
+                  ..._dynamicUnits.asMap().entries.map((e) {
+                    final idx = e.key;
+                    final unit = e.value;
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      color: unit.isEnabled ? Colors.white : Colors.grey.shade100,
+                      child: ListTile(
+                        leading: Icon(
+                          unit.isWeighable ? Icons.scale : Icons.inventory_2_outlined,
+                          color: unit.isEnabled ? Colors.teal : Colors.grey,
+                        ),
+                        title: Text(
+                          '${unit.name}  Ã—${unit.multiplier}  â€” ${unit.price} Ø¯Ø¬${unit.isWeighable ? '/ÙƒØº' : ''}',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: unit.isEnabled ? null : Colors.grey),
+                        ),
+                        subtitle: Wrap(
+                          spacing: 4,
+                          children: [
+                            if (!unit.isEnabled) const Chip(label: Text('Ù…ÙØ¹Ø·ÙŽÙ‘Ù„Ø©', style: TextStyle(fontSize: 11)), backgroundColor: Colors.orange, padding: EdgeInsets.zero),
+                            if (unit.isWeighable) const Chip(label: Text('âš–ï¸ Ù…ÙŠØ²Ø§Ù†', style: TextStyle(fontSize: 11)), backgroundColor: Color(0xFFE0F2F1), padding: EdgeInsets.zero),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(unit.isEnabled ? Icons.toggle_on : Icons.toggle_off, color: unit.isEnabled ? Colors.green : Colors.grey, size: 28),
+                              tooltip: unit.isEnabled ? 'ØªØ¹Ø·ÙŠÙ„' : 'ØªÙØ¹ÙŠÙ„',
+                              onPressed: () => setState(() { _dynamicUnits[idx] = unit.copyWith(isEnabled: !unit.isEnabled); }),
+                            ),
+                            IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () => _addOrEditUnitDialog(existing: unit, editIndex: idx)),
+                            IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 18), onPressed: () => setState(() => _dynamicUnits.removeAt(idx))),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+              ],
             ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _saveProduct,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: AppTheme.primaryColor),
-              child: const Text('حفظ المنتج', style: TextStyle(fontSize: 18, color: Colors.white)),
+              child: const Text('Ø­ÙØ¸ Ø§Ù„Ù…Ù†ØªØ¬', style: TextStyle(fontSize: 18, color: Colors.white)),
             ),
             const SizedBox(height: 32),
           ],
@@ -299,3 +366,39 @@ class _AddProductPageState extends State<AddProductPage> {
     );
   }
 }
+
+// ===================== Helper Widget =====================
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+  final Color? borderColor;
+  final Widget? trailing;
+  const _SectionCard({required this.title, required this.icon, required this.children, this.borderColor, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: borderColor ?? Colors.grey.shade200)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(icon, size: 18, color: Colors.teal),
+              const SizedBox(width: 8),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              if (trailing != null) ...[const Spacer(), trailing!],
+            ]),
+            const Divider(height: 16),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+

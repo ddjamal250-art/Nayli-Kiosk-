@@ -59,7 +59,7 @@ class UniversalUnitSelectorDialog extends StatefulWidget {
 }
 
 class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialog> {
-  late String _selectedUnit; // e.g. 'base', 'فاردو', 'custom'
+  late String _selectedUnit;
   late int _quantity;
   late final TextEditingController _qtyController;
 
@@ -69,12 +69,16 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   String _customBaseUnit = 'base'; 
   final FocusNode _keyboardFocusNode = FocusNode();
 
+  // ⚖️ حقول الميزان
+  final TextEditingController _weightKgController = TextEditingController();
+  final TextEditingController _weightPriceController = TextEditingController();
+  bool _weightByPrice = false; // false = أدخل وزن، true = أدخل سعر إجمالي
+
   @override
   void initState() {
     super.initState();
     _selectedUnit = widget.initialUnit;
     
-    // Validate selected unit still exists
     if (_selectedUnit != 'base' && _selectedUnit != 'custom') {
       final exists = p.units.any((u) => u.name == _selectedUnit);
       if (!exists) _selectedUnit = 'base';
@@ -83,7 +87,6 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     _quantity = widget.initialQuantity;
     _qtyController = TextEditingController(text: _quantity.toString());
 
-    // Init custom deal controllers
     final initialCustomQty = 3;
     final initialCustomPrice = p.price * initialCustomQty;
 
@@ -98,6 +101,8 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     _customQtyController.dispose();
     _customPriceController.dispose();
     _keyboardFocusNode.dispose();
+    _weightKgController.dispose();
+    _weightPriceController.dispose();
     super.dispose();
   }
 
@@ -201,33 +206,52 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       return;
     }
 
+    final isWeighable = _activeProductUnit?.isWeighable == true;
+    double? resolvedWeightKg;
+
+    if (isWeighable) {
+      if (_weightByPrice) {
+        final total = double.tryParse(_weightPriceController.text.trim()) ?? 0.0;
+        resolvedWeightKg = _currentUnitPrice > 0 ? (total / _currentUnitPrice) : 0.0;
+      } else {
+        resolvedWeightKg = double.tryParse(_weightKgController.text.trim()) ?? 0.0;
+      }
+      if (resolvedWeightKg <= 0) {
+        SnackbarHelper.showError(context, 'الرجاء إدخال وزن أو سعر صحيح للميزان');
+        return;
+      }
+    }
+
     if (widget.cartItem != null) {
       context.read<BillingBloc>().add(
             SwitchCartItemUnitEvent(
               cartKey: widget.cartItem!.cartKey,
               targetUnit: _selectedUnit,
-              newQuantity: _quantity,
+              newQuantity: isWeighable ? 1 : _quantity,
+              weightKg: resolvedWeightKg,
             ),
           );
       SnackbarHelper.showSuccess(
         context,
-        '${context.tr("unit_switched_msg")}: "${p.name}" ($posUnitLabel x$_quantity)',
+        '${context.tr("unit_switched_msg")}: "${p.name}" (${isWeighable ? '${(resolvedWeightKg! * 1000).toStringAsFixed(0)}غ' : '$posUnitLabel x$_quantity'})',
       );
     } else {
       context.read<BillingBloc>().add(
             AddProductToCartEvent(
               p,
               unitLevel: _selectedUnit,
-              quantity: _quantity,
+              quantity: isWeighable ? 1 : _quantity,
+              weightKg: resolvedWeightKg,
             ),
           );
       SnackbarHelper.showSuccess(
         context,
-        '${context.tr("added_to_cart")}: $_quantity $posUnitLabel (${p.name})',
+        '${context.tr("added_to_cart")}: ${isWeighable ? '${(resolvedWeightKg! * 1000).toStringAsFixed(0)}غ' : '$_quantity $posUnitLabel'} (${p.name})',
       );
     }
     Navigator.pop(context);
   }
+
 
   String get posUnitLabel => _currentUnitName;
 
@@ -256,19 +280,24 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       ),
     );
 
-    // 2. Additional Units (Keys 2, 3...)
+    // 2. Additional Units — فلتر الوحدات المعطَّلة (isEnabled = false لا تظهر)
     int shortcut = 2;
-    for (final unit in p.units) {
-      if (shortcut > 3) break; // Limit shortcut keys for now to 1, 2, 3
+    for (final unit in p.units.where((u) => u.isEnabled)) {
+      if (shortcut > 4) break;
+      final isScale = unit.isWeighable;
       unitCards.add(
         Expanded(
           child: _buildUnitOptionCard(
             unitKey: unit.name,
             title: unit.name,
-            subtitle: 'x${unit.multiplier} ${p.baseUnitName}',
+            subtitle: isScale
+                ? '⚖️ ${unit.price} دج/كغ'
+                : 'x${unit.multiplier} ${p.baseUnitName}',
             price: unit.price,
-            iconData: Icons.inventory_2_rounded,
-            accentColor: shortcut == 2 ? Colors.amber : Colors.purple,
+            iconData: isScale ? Icons.scale : Icons.inventory_2_rounded,
+            accentColor: isScale
+                ? Colors.teal
+                : (shortcut == 2 ? Colors.amber : Colors.purple),
             shortcutKey: shortcut.toString(),
             isDark: isDark,
           ),
@@ -277,14 +306,14 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       shortcut++;
     }
 
-    // 3. Custom Quantity Deal Card (Key 4 / B)
+    // 3. Custom Quantity Deal Card
     unitCards.add(
       Expanded(
         child: _buildUnitOptionCard(
           unitKey: 'custom',
           title: 'سعر مخصص للكمية',
           subtitle: 'تحديد عدد بسعر',
-          price: p.price * 3, // fallback display
+          price: p.price * 3,
           iconData: Icons.local_offer_rounded,
           accentColor: Colors.teal,
           shortcutKey: '4',
@@ -414,99 +443,103 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                 ),
                 const SizedBox(height: 14),
 
-                // Section 1: Standard Quantity Selector (If piece, pack, carton)
+                // Section 1: Standard Quantity Selector OR Scale Inputs
                 if (_selectedUnit != 'custom') ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF131C31) : const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'الكمية المراد بيعها ($_currentUnitName):',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: textColor,
-                              ),
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove_circle, color: Colors.red, size: 28),
-                                  onPressed: () => _setQuantity(_quantity - 1),
-                                ),
-                                SizedBox(
-                                  width: 55,
-                                  child: TextField(
-                                    controller: _qtyController,
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: textColor,
-                                    ),
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    onChanged: (val) {
-                                      final n = int.tryParse(val);
-                                      if (n != null && n > 0) {
-                                        setState(() => _quantity = n);
-                                      }
-                                    },
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle, color: Colors.green, size: 28),
-                                  onPressed: () => _setQuantity(_quantity + 1),
-                                ),
-                              ],
-                            ),
-                          ],
+                  if (_activeProductUnit?.isWeighable == true)
+                    _buildScaleInputs(isDark, textColor)
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF131C31) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                         ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [1, 2, 3, 4, 5, 6, 10, 12, 20].map((q) {
-                            final isSelected = _quantity == q;
-                            return ChoiceChip(
-                              label: Text(
-                                '$q',
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'الكمية المراد بيعها ($_currentUnitName):',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: isSelected ? Colors.white : textColor,
+                                  fontSize: 13,
+                                  color: textColor,
                                 ),
                               ),
-                              selected: isSelected,
-                              selectedColor: AppTheme.primaryColor,
-                              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                              onSelected: (_) => _setQuantity(q),
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove_circle, color: Colors.red, size: 28),
+                                    onPressed: () => _setQuantity(_quantity - 1),
+                                  ),
+                                  SizedBox(
+                                    width: 55,
+                                    child: TextField(
+                                      controller: _qtyController,
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: textColor,
+                                      ),
+                                      decoration: InputDecoration(
+                                        isDense: true,
+                                        fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onChanged: (val) {
+                                        final n = int.tryParse(val);
+                                        if (n != null && n > 0) {
+                                          setState(() => _quantity = n);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add_circle, color: Colors.green, size: 28),
+                                    onPressed: () => _setQuantity(_quantity + 1),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [1, 2, 3, 4, 5, 6, 10, 12, 20].map((q) {
+                              final isSelected = _quantity == q;
+                              return ChoiceChip(
+                                label: Text(
+                                  '$q',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: isSelected ? Colors.white : textColor,
+                                  ),
+                                ),
+                                selected: isSelected,
+                                selectedColor: AppTheme.primaryColor,
+                                backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                onSelected: (_) => _setQuantity(q),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
+
 
                 // Section 2: Custom Multi-Quantity Pricing Deal (If custom selected)
                 if (_selectedUnit == 'custom') ...[
@@ -829,6 +862,82 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildScaleInputs(bool isDark, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF042F2E) : const Color(0xFFF0FDFA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.teal.shade700 : Colors.teal.shade300,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.scale, color: Colors.teal),
+              const SizedBox(width: 8),
+              Text(
+                'بيع بالميزان:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: isDark ? Colors.teal.shade200 : Colors.teal.shade900,
+                ),
+              ),
+              const Spacer(),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('وزن (كغ)')),
+                  ButtonSegment(value: true, label: Text('سعر إجمالي (دج)')),
+                ],
+                selected: {_weightByPrice},
+                onSelectionChanged: (set) {
+                  setState(() => _weightByPrice = set.first);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (!_weightByPrice)
+            TextField(
+              controller: _weightKgController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
+              decoration: InputDecoration(
+                labelText: 'الوزن بالكيلوغرام (كغ)',
+                hintText: 'مثال: 1.5',
+                suffixText: 'كغ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                filled: true,
+                fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              ),
+              onSubmitted: (_) => _applySelection(),
+            )
+          else
+            TextField(
+              controller: _weightPriceController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
+              decoration: InputDecoration(
+                labelText: 'السعر الإجمالي (دج)',
+                hintText: 'مثال: 500',
+                suffixText: 'دج',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                filled: true,
+                fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              ),
+              onSubmitted: (_) => _applySelection(),
+            ),
+        ],
       ),
     );
   }

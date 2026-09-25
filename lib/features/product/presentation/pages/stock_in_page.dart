@@ -374,7 +374,16 @@ class _StockInPageState extends State<StockInPage> {
     final name = _nameController.text.trim();
     final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
     final costPrice = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
-    final qty = int.tryParse(_qtyController.text.trim()) ?? 0;
+    
+    final productBloc = context.read<ProductBloc>();
+    final products = productBloc.state.products;
+    final existingProduct = _existingProductId != null
+        ? products.where((p) => p.id == _existingProductId).firstOrNull
+        : null;
+
+    final isScaleProduct = existingProduct?.units.any((u) => u.isWeighable) ?? false;
+    final rawQtyDouble = double.tryParse(_qtyController.text.trim()) ?? 0.0;
+    final qty = isScaleProduct ? (rawQtyDouble * 1000).round() : rawQtyDouble.round();
 
     if (name.isEmpty) {
       SnackbarHelper.showWarning(context, 'يرجى إدخال اسم السلعة');
@@ -400,12 +409,6 @@ class _StockInPageState extends State<StockInPage> {
       effectiveCost = _coffeeData.totalCupCost;
       _selectedCategory = 'القهوة الجاهزة';
     }
-
-    final productBloc = context.read<ProductBloc>();
-    final products = productBloc.state.products;
-    final existingProduct = _existingProductId != null
-        ? products.where((p) => p.id == _existingProductId).firstOrNull
-        : null;
 
     // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
     if (_isExistingInShop && _currentStock > 0 && costPrice > 0 && !isCoffee) {
@@ -1264,13 +1267,29 @@ class _StockInPageState extends State<StockInPage> {
                       ],
                     ),
                   ] else ...[
-                    TextField(
-                      controller: _qtyController,
-                      focusNode: _qtyFocusNode,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _saveStockIn(),
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'الكمية المستلمة (بالحبة)', suffixText: 'حبة', border: OutlineInputBorder()),
+                    Builder(
+                      builder: (context) {
+                        final products = context.read<ProductBloc>().state.products;
+                        final existingProduct = _existingProductId != null
+                            ? products.where((p) => p.id == _existingProductId).firstOrNull
+                            : null;
+                        final isScaleProduct = existingProduct?.units.any((u) => u.isWeighable) ?? false;
+                        
+                        return TextField(
+                          controller: _qtyController,
+                          focusNode: _qtyFocusNode,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _saveStockIn(),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(
+                            labelText: isScaleProduct ? 'الوزن المستلم (كغ)' : 'الكمية المستلمة (بالحبة)',
+                            suffixText: isScaleProduct ? 'كغ' : 'حبة',
+                            border: const OutlineInputBorder(),
+                            filled: isScaleProduct,
+                            fillColor: isScaleProduct ? Colors.teal.shade50 : null,
+                          ),
+                        );
+                      }
                     ),
                   ],
 

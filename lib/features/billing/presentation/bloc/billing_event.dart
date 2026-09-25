@@ -15,11 +15,13 @@ class ScanBarcodeEvent extends BillingEvent {
 
 class AddProductToCartEvent extends BillingEvent {
   final Product product;
-  final String unitLevel; // 'pack', 'piece', 'carton'
+  final String unitLevel; // 'pack', 'piece', 'carton', 'base'
   final int quantity;
   final double? customPrice;
   final String? customUnitName;
   final double? customUnitCost;
+  /// وزن بالكغ للمنتجات الميزانية
+  final double? weightKg;
 
   const AddProductToCartEvent(
     this.product, {
@@ -28,6 +30,7 @@ class AddProductToCartEvent extends BillingEvent {
     this.customPrice,
     this.customUnitName,
     this.customUnitCost,
+    this.weightKg,
   });
 
   @override
@@ -38,6 +41,7 @@ class AddProductToCartEvent extends BillingEvent {
         customPrice ?? 0.0,
         customUnitName ?? '',
         customUnitCost ?? 0.0,
+        weightKg ?? 0.0,
       ];
 }
 
@@ -47,6 +51,8 @@ class SwitchCartItemUnitEvent extends BillingEvent {
   final int? newQuantity;
   final double? customUnitPrice;
   final String? customUnitName;
+  /// وزن بالكغ للمنتجات الميزانية عند التبديل
+  final double? weightKg;
 
   const SwitchCartItemUnitEvent({
     required this.cartKey,
@@ -54,6 +60,7 @@ class SwitchCartItemUnitEvent extends BillingEvent {
     this.newQuantity,
     this.customUnitPrice,
     this.customUnitName,
+    this.weightKg,
   });
 
   @override
@@ -63,6 +70,7 @@ class SwitchCartItemUnitEvent extends BillingEvent {
         newQuantity ?? 0,
         customUnitPrice ?? 0.0,
         customUnitName ?? '',
+        weightKg ?? 0.0,
       ];
 }
 

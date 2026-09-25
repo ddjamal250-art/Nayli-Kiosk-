@@ -50,6 +50,8 @@ class Product extends Equatable {
 
   final String baseUnitName; 
   final List<ProductUnit> units;
+  /// كود PLU للميزان التجاري (مثال: "1", "42") — null إذا لا يوجد ميزان
+  final String? pluCode;
 
   const Product({
     required this.id,
@@ -78,6 +80,7 @@ class Product extends Equatable {
     this.singlePiecePrice = 0.0,
     this.baseUnitName = 'قطعة',
     this.units = const [],
+    this.pluCode,
   });
 
   Product copyWith({
@@ -94,6 +97,7 @@ class Product extends Equatable {
     String? imageUrl,
     String? baseUnitName,
     List<ProductUnit>? units,
+    String? pluCode,
   }) {
     return Product(
       id: id ?? this.id,
@@ -108,6 +112,7 @@ class Product extends Equatable {
       imageUrl: imageUrl ?? this.imageUrl,
       baseUnitName: baseUnitName ?? this.baseUnitName,
       units: units ?? this.units,
+      pluCode: pluCode ?? this.pluCode,
     );
   }
 
@@ -126,6 +131,7 @@ class Product extends Equatable {
         imageUrl,
         baseUnitName,
         units,
+        pluCode,
       ];
 }
 

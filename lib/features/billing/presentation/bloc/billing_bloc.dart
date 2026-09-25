@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:bloc/bloc.dart';
+import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/held_cart.dart';
@@ -63,6 +64,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     final scaleResult = ScaleBarcodeParser.parse(event.barcode);
     if (scaleResult.isScaleBarcode) {
       if (scaleResult.embeddedPrice != null) {
+        // باركود يحتوي على سعر جاهز مباشرة
         add(AddCustomItemEvent(
           name: 'سلعة ميزان (${scaleResult.productCode})',
           price: scaleResult.embeddedPrice!,
@@ -70,28 +72,50 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         ));
         return;
       } else if (scaleResult.weightKg != null) {
-        var result = await getProductByBarcodeUseCase(scaleResult.productCode);
+        // باركود يحتوي على وزن → ابحث عن المنتج بـ PLU أولاً
+        final pluNum = scaleResult.productCode.replaceFirst(RegExp(r'^0+'), '');
+
+        // محاولة 1: بحث بـ PLU
+        var result = await getProductByBarcodeUseCase('PLU_$pluNum');
+        // محاولة 2: بحث بكود المنتج 5 أرقام
+        if (result.isLeft()) {
+          result = await getProductByBarcodeUseCase(scaleResult.productCode);
+        }
+        // محاولة 3: بكود مختصر
         if (result.isLeft() && scaleResult.productCodeAlt.isNotEmpty) {
           result = await getProductByBarcodeUseCase(scaleResult.productCodeAlt);
         }
+
         result.fold(
           (_) {
-            // Add as generic weight item
+            // لم يُجد المنتج → أضف عنصر ميزان مجهول بسعر 0
             final weightGrams = (scaleResult.weightKg! * 1000).toInt();
             add(AddCustomItemEvent(
-              name: 'ميزان $weightGrams غرام (${scaleResult.productCode})',
-              price: (scaleResult.weightKg! * 200).roundToDouble(), // default rate if not found
+              name: '⚖️ ميزان ${weightGrams}غ [PLU $pluNum]',
+              price: 0.0,
               barcode: event.barcode,
             ));
           },
           (prod) {
-            final weightGrams = (scaleResult.weightKg! * 1000).toInt();
-            final totalPrice = (prod.price * scaleResult.weightKg!).roundToDouble();
-            add(AddCustomItemEvent(
-              name: '${prod.name} ($weightGrams غ)',
-              price: totalPrice,
-              costPrice: (prod.costPrice * scaleResult.weightKg!).roundToDouble(),
-              barcode: event.barcode,
+            final weightKg = scaleResult.weightKg!;
+            final weightGrams = (weightKg * 1000).toInt();
+            // إيجاد وحدة الميزان المفعّلة
+            final weighableUnit = prod.units.firstWhereOrNull(
+                (u) => u.isWeighable && u.isEnabled);
+            final pricePerKg = weighableUnit?.price ?? prod.price;
+            final costPerKg = (weighableUnit != null && weighableUnit.cost > 0)
+                ? weighableUnit.cost : prod.costPrice;
+            final totalSale = weightKg * pricePerKg;
+            final totalCost = weightKg * costPerKg;
+
+            add(AddProductToCartEvent(
+              prod,
+              unitLevel: weighableUnit?.name ?? 'base',
+              quantity: 1,
+              customPrice: totalSale,
+              customUnitCost: totalCost,
+              customUnitName: '${weightGrams}غ',
+              weightKg: weightKg,
             ));
           },
         );
@@ -140,10 +164,14 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     // Clear error when adding
     final cleanState = state.copyWith(error: null);
 
+    // للمنتجات الميزانية: كل مسح = عنصر جديد (لا ندمج بالوزن)
+    final isWeighableAdd = event.weightKg != null;
+
     final targetKey = '${event.product.id}_${event.unitLevel}';
     final existingIndex = cleanState.cartItems
         .indexWhere((item) => item.cartKey == targetKey);
-    if (existingIndex >= 0) {
+    if (!isWeighableAdd && existingIndex >= 0) {
+      // منتج عادي موجود → نزيد الكمية
       final existingItem = cleanState.cartItems[existingIndex];
       final backendItems = List<CartItem>.from(cleanState.cartItems);
       backendItems[existingIndex] = existingItem.copyWith(
@@ -154,6 +182,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       emit(cleanState.copyWith(cartItems: backendItems, error: null));
     } else {
+      // منتج جديد أو منتج ميزاني (يُضاف دائماً كعنصر جديد)
       final newItem = CartItem(
         product: event.product,
         quantity: event.quantity,
@@ -161,6 +190,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         customUnitPrice: event.customPrice,
         customUnitName: event.customUnitName,
         customUnitCost: event.customUnitCost,
+        weightKg: event.weightKg,
       );
       emit(cleanState.copyWith(
           cartItems: [...cleanState.cartItems, newItem], error: null));
@@ -175,6 +205,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     final currentItem = state.cartItems[index];
     final updatedCart = List<CartItem>.from(state.cartItems);
     final targetQuantity = event.newQuantity ?? currentItem.quantity;
+    final targetWeight = event.weightKg ?? currentItem.weightKg;
+    final isWeighableSwitch = targetWeight != null;
 
     // Direct update of custom price, custom name, or quantity on same unit
     if (currentItem.unitLevel == event.targetUnit) {
@@ -182,6 +214,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         quantity: targetQuantity,
         customUnitPrice: event.customUnitPrice ?? currentItem.customUnitPrice,
         customUnitName: event.customUnitName ?? currentItem.customUnitName,
+        weightKg: targetWeight,
       );
       emit(state.copyWith(cartItems: updatedCart, error: null));
       return;
@@ -190,7 +223,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     final targetKey = '${currentItem.product.id}_${event.targetUnit}';
     final targetExistingIndex = state.cartItems.indexWhere((item) => item.cartKey == targetKey);
 
-    if (targetExistingIndex >= 0 && targetExistingIndex != index) {
+    // Only merge if it's NOT a weighable item
+    if (!isWeighableSwitch && targetExistingIndex >= 0 && targetExistingIndex != index) {
       final existingTarget = updatedCart[targetExistingIndex];
       updatedCart[targetExistingIndex] = existingTarget.copyWith(
         quantity: existingTarget.quantity + targetQuantity,
@@ -204,6 +238,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         quantity: targetQuantity,
         customUnitPrice: event.customUnitPrice,
         customUnitName: event.customUnitName,
+        weightKg: targetWeight,
       );
     }
 
@@ -365,11 +400,12 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                 'unitLevel': item.unitLevel,
                 'unitName': item.unitDisplayName,
                 'qty': item.quantity,
+                'weightKg': item.weightKg,
                 'price': item.unitPrice,
                 'costPrice': item.unitCost,
                 'category': item.product.category,
                 'total': item.total,
-                'profit': (item.unitPrice - item.unitCost) * item.quantity,
+                'profit': item.profit,
               })
           .toList();
 
@@ -391,11 +427,22 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
         final productModel = productBox.get(originalId);
         if (productModel != null) {
-          int deductAmount = cartItem.totalBaseQuantity;
-          int newStock = state.isReturnMode 
-              ? (productModel.stock + deductAmount)
-              : (productModel.stock - deductAmount).clamp(0, 999999);
-          
+          int newStock;
+          // منتج ميزاني: stock بالغرام، deduct = weightKg × 1000
+          final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled);
+          if (hasWeighable && cartItem.weightKg != null) {
+            final deductGrams = (cartItem.weightKg! * 1000).round();
+            newStock = state.isReturnMode
+                ? (productModel.stock + deductGrams)
+                : (productModel.stock - deductGrams).clamp(0, 9999999);
+          } else {
+            // منتج عادي: stock بالحبة
+            final deductInt = cartItem.totalStockDeduct.round();
+            newStock = state.isReturnMode
+                ? (productModel.stock + deductInt)
+                : (productModel.stock - deductInt).clamp(0, 999999);
+          }
+
           productBox.put(originalId, productModel.copyWith(stock: newStock));
 
           // SMART SHOPPING LIST AUTOMATION
@@ -421,9 +468,10 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       // 2. Record sale invoice in invoicesBox with separate Tobacco vs General analytics
       final invoicesBox = HiveDatabase.invoicesBox;
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
+      // استخدم totalCostForInvoice لدعم المنتجات الميزانية (وزن × تكلفة/كغ)
       final totalCost = state.cartItems.fold<double>(
         0.0,
-        (sum, i) => sum + (i.unitCost * i.quantity),
+        (sum, i) => sum + i.totalCostForInvoice,
       );
 
       final subtotal = state.subTotalAmount;
@@ -434,7 +482,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       final rawTobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
       final tobaccoSales = rawTobaccoSales * discountRatio;
-      final tobaccoCost = tobaccoItems.fold<double>(0.0, (sum, i) => sum + (i.unitCost * i.quantity));
+      final tobaccoCost = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.totalCostForInvoice);
       final tobaccoProfit = tobaccoSales - tobaccoCost;
 
       final coffeeItems = state.cartItems.where(
@@ -442,7 +490,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       final rawCoffeeSales = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.total);
       final coffeeSales = rawCoffeeSales * discountRatio;
-      final coffeeCost = coffeeItems.fold<double>(0.0, (sum, i) => sum + (i.unitCost * i.quantity));
+      final coffeeCost = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.totalCostForInvoice);
       final coffeeProfit = coffeeSales - coffeeCost;
       final coffeeCupsCount = coffeeItems.fold<int>(0, (sum, i) => sum + i.quantity);
 

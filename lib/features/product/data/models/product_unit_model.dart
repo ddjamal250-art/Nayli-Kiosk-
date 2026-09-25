@@ -3,7 +3,7 @@ import '../../domain/entities/product_unit.dart';
 
 part 'product_unit_model.g.dart';
 
-@HiveType(typeId: 2) // Assuming 0 is Product, 1 is maybe Shop. I should check if 2 is free.
+@HiveType(typeId: 2)
 class ProductUnitModel extends ProductUnit {
   @override
   @HiveField(0)
@@ -20,6 +20,12 @@ class ProductUnitModel extends ProductUnit {
   @override
   @HiveField(4)
   final double cost;
+  @override
+  @HiveField(5)
+  final bool isEnabled;
+  @override
+  @HiveField(6)
+  final bool isWeighable;
 
   const ProductUnitModel({
     required this.name,
@@ -27,12 +33,16 @@ class ProductUnitModel extends ProductUnit {
     this.barcode,
     required this.price,
     this.cost = 0.0,
+    this.isEnabled = true,
+    this.isWeighable = false,
   }) : super(
           name: name,
           multiplier: multiplier,
           barcode: barcode,
           price: price,
           cost: cost,
+          isEnabled: isEnabled,
+          isWeighable: isWeighable,
         );
 
   factory ProductUnitModel.fromEntity(ProductUnit unit) {
@@ -42,6 +52,8 @@ class ProductUnitModel extends ProductUnit {
       barcode: unit.barcode,
       price: unit.price,
       cost: unit.cost,
+      isEnabled: unit.isEnabled,
+      isWeighable: unit.isWeighable,
     );
   }
 
@@ -52,6 +64,8 @@ class ProductUnitModel extends ProductUnit {
       barcode: barcode,
       price: price,
       cost: cost,
+      isEnabled: isEnabled,
+      isWeighable: isWeighable,
     );
   }
 
@@ -62,6 +76,8 @@ class ProductUnitModel extends ProductUnit {
       barcode: json['barcode']?.toString(),
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
+      isEnabled: json['isEnabled'] as bool? ?? true,
+      isWeighable: json['isWeighable'] as bool? ?? false,
     );
   }
 
@@ -72,6 +88,8 @@ class ProductUnitModel extends ProductUnit {
       'barcode': barcode,
       'price': price,
       'cost': cost,
+      'isEnabled': isEnabled,
+      'isWeighable': isWeighable,
     };
   }
 }

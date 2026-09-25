@@ -10,6 +10,8 @@ class CartItem extends Equatable {
   final String? customUnitName;
   final double? customUnitPrice;
   final double? customUnitCost;
+  /// وزن حقيقي بالكيلوغرام للمنتجات الميزانية (null = منتج عادي)
+  final double? weightKg;
 
   const CartItem({
     required this.product,
@@ -18,6 +20,7 @@ class CartItem extends Equatable {
     this.customUnitName,
     this.customUnitPrice,
     this.customUnitCost,
+    this.weightKg,
   });
 
   ProductUnit? get selectedUnit {
@@ -55,14 +58,44 @@ class CartItem extends Equatable {
 
   String get cartKey => '${product.id}_$unitLevel';
 
-  double get total => unitPrice * quantity;
+  /// المجموع الإجمالي للبيع
+  double get total {
+    if (weightKg != null) return customUnitPrice ?? (weightKg! * unitPrice);
+    return unitPrice * quantity;
+  }
 
-  // Real quantity in terms of Base Unit (important for inventory deduction)
+  /// الكمية الحقيقية للخصم من المخزون:
+  /// - منتج ميزاني: weightKg (بالكغ — يُضرب ×1000 عند الخزن بالغرام)
+  /// - منتج عادي: quantity × multiplier
+  double get totalStockDeduct {
+    if (weightKg != null) return weightKg!;
+    final unit = selectedUnit;
+    final multiplier = unit?.multiplier ?? 1;
+    return (quantity * multiplier).toDouble();
+  }
+
+  /// للتوافق مع الكود القديم (المنتجات العادية فقط)
   int get totalBaseQuantity {
+    if (weightKg != null) return 1; // الخصم الحقيقي عبر totalStockDeduct
     final unit = selectedUnit;
     final multiplier = unit?.multiplier ?? 1;
     return quantity * multiplier;
   }
+
+  /// التكلفة الحقيقية للفاتورة:
+  /// - منتج ميزاني: وزن × تكلفة/كغ
+  /// - منتج عادي: تكلفة × عدد
+  double get totalCostForInvoice {
+    if (weightKg != null) {
+      final unit = selectedUnit;
+      final costPerKg = (unit != null && unit.cost > 0) ? unit.cost : product.costPrice;
+      return weightKg! * costPerKg;
+    }
+    return unitCost * quantity;
+  }
+
+  /// الربح = إجمالي البيع - إجمالي التكلفة
+  double get profit => total - totalCostForInvoice;
 
   CartItem copyWith({
     Product? product,
@@ -71,6 +104,7 @@ class CartItem extends Equatable {
     String? customUnitName,
     double? customUnitPrice,
     double? customUnitCost,
+    double? weightKg,
   }) {
     return CartItem(
       product: product ?? this.product,
@@ -79,9 +113,13 @@ class CartItem extends Equatable {
       customUnitName: customUnitName ?? this.customUnitName,
       customUnitPrice: customUnitPrice ?? this.customUnitPrice,
       customUnitCost: customUnitCost ?? this.customUnitCost,
+      weightKg: weightKg ?? this.weightKg,
     );
   }
 
   @override
-  List<Object?> get props => [product, quantity, unitLevel, customUnitName, customUnitPrice, customUnitCost];
+  List<Object?> get props => [
+    product, quantity, unitLevel, customUnitName,
+    customUnitPrice, customUnitCost, weightKg,
+  ];
 }

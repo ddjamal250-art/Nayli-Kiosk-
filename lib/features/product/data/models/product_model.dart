@@ -81,6 +81,10 @@ class ProductModel extends Product {
   @HiveField(20)
   final bool isTobacco;
 
+  @override
+  @HiveField(21)
+  final String? pluCode;
+
   const ProductModel({
     required this.id,
     required this.name,
@@ -103,6 +107,7 @@ class ProductModel extends Product {
     this.isTobacco = false,
     this.baseUnitName = 'قطعة',
     this.units = const [],
+    this.pluCode,
   }) : super(
           id: id,
           name: name,
@@ -124,6 +129,7 @@ class ProductModel extends Product {
           isTobacco: isTobacco,
           baseUnitName: baseUnitName,
           units: units,
+          pluCode: pluCode,
         );
 
   @override
@@ -141,6 +147,7 @@ class ProductModel extends Product {
     String? imageUrl,
     String? baseUnitName,
     List<ProductUnit>? units,
+    String? pluCode,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -154,7 +161,10 @@ class ProductModel extends Product {
       expiryDate: expiryDate ?? this.expiryDate,
       imageUrl: imageUrl ?? this.imageUrl,
       baseUnitName: baseUnitName ?? this.baseUnitName,
-      units: (units as List<ProductUnitModel>?) ?? this.units,
+      units: units != null
+          ? units.map((u) => ProductUnitModel.fromEntity(u)).toList()
+          : this.units,
+      pluCode: pluCode ?? this.pluCode,
     );
   }
 
@@ -180,6 +190,7 @@ class ProductModel extends Product {
       packsPerCarton: product.packsPerCarton,
       isTobacco: product.isTobacco,
       units: product.units.map((u) => ProductUnitModel.fromEntity(u)).toList(),
+      pluCode: product.pluCode,
     );
   }
 
@@ -205,11 +216,11 @@ class ProductModel extends Product {
       isTobacco: isTobacco,
       baseUnitName: baseUnitName,
       units: units.map((u) => u.toEntity()).toList(),
+      pluCode: pluCode,
     );
   }
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
-    final rawIsWeighted = json['isWeighted'];
     return ProductModel(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
@@ -226,6 +237,7 @@ class ProductModel extends Product {
               ?.map((u) => ProductUnitModel.fromJson(Map<String, dynamic>.from(u)))
               .toList() ??
           [],
+      pluCode: json['pluCode']?.toString(),
     );
   }
 
@@ -244,6 +256,7 @@ class ProductModel extends Product {
       'imageUrl': imageUrl,
       'baseUnitName': baseUnitName,
       'units': units.map((u) => u.toJson()).toList(),
+      'pluCode': pluCode,
     };
   }
 }
