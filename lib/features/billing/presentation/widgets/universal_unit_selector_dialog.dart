@@ -216,7 +216,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       } else {
         resolvedWeightKg = double.tryParse(_weightKgController.text.trim()) ?? 0.0;
       }
-      if (resolvedWeightKg <= 0) {
+      if (resolvedWeightKg == null || resolvedWeightKg <= 0) {
         SnackbarHelper.showError(context, 'الرجاء إدخال وزن أو سعر صحيح للميزان');
         return;
       }
