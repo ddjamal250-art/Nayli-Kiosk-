@@ -1,0 +1,692 @@
+[  +65 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[   +4 ms] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[   +3 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[  +48 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[   +2 ms] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +61 ms] Skipping pub get: version match.
+[  +34 ms] Found plugin app_settings at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\app_settings-7.0.0\
+[  +12 ms] Found plugin audioplayers at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers-6.4.0\
+[   +2 ms] Found plugin audioplayers_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_android-5.2.0\
+[   +2 ms] Found plugin audioplayers_darwin at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_darwin-6.2.0\
+[   +2 ms] Found plugin audioplayers_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_linux-4.2.0\
+[   +5 ms] Found plugin audioplayers_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_web-5.1.0\
+[   +2 ms] Found plugin audioplayers_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_windows-4.2.0\
+[  +44 ms] Found plugin device_info_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\device_info_plus-11.3.0\
+[  +12 ms] Found plugin file_picker at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_picker-8.3.7\
+[   +3 ms] Found plugin file_selector at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector-1.0.3\
+[   +2 ms] Found plugin file_selector_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_android-0.5.1+12\
+[   +2 ms] Found plugin file_selector_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_ios-0.5.3+1\
+[   +2 ms] Found plugin file_selector_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_linux-0.9.3+2\
+[   +3 ms] Found plugin file_selector_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_macos-0.9.4+2\
+[   +4 ms] Found plugin file_selector_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_web-0.9.4+2\
+[   +2 ms] Found plugin file_selector_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_windows-0.9.3+4\
+[   +8 ms] Found plugin flutter_plugin_android_lifecycle at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_plugin_android_lifecycle-2.0.26\
+[  +22 ms] Found plugin image_picker at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker-1.1.2\
+[   +1 ms] Found plugin image_picker_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+21\
+[   +1 ms] Found plugin image_picker_for_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_for_web-3.0.6\
+[   +1 ms] Found plugin image_picker_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_ios-0.8.12+2\
+[   +2 ms] Found plugin image_picker_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_linux-0.2.1+2\
+[   +1 ms] Found plugin image_picker_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_macos-0.2.1+2\
+[   +2 ms] Found plugin image_picker_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_windows-0.2.1+1\
+[  +15 ms] Found plugin mobile_scanner at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\mobile_scanner-5.2.3\
+[   +4 ms] Found plugin package_info_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-8.3.1\
+[   +4 ms] Found plugin path_provider at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider-2.1.5\
+[   +1 ms] Found plugin path_provider_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_android-2.2.15\
+[   +1 ms] Found plugin path_provider_foundation at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_foundation-2.4.1\
+[   +1 ms] Found plugin path_provider_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_linux-2.2.1\
+[   +2 ms] Found plugin path_provider_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_windows-2.3.0\
+[   +3 ms] Found plugin permission_handler at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler-11.4.0\
+[   +1 ms] Found plugin permission_handler_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_android-12.1.0\
+[   +1 ms] Found plugin permission_handler_apple at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_apple-9.4.7\
+[   +1 ms] Found plugin permission_handler_html at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_html-0.1.3+5\
+[   +2 ms] Found plugin permission_handler_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_windows-0.2.1\
+[   +5 ms] Found plugin print_bluetooth_thermal at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\print_bluetooth_thermal-1.1.9\
+[   +1 ms] Found plugin printing at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\printing-5.14.3\
+[   +5 ms] Found plugin screen_retriever at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever-0.2.2\
+[   +1 ms] Found plugin screen_retriever_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_linux-0.2.2\
+[   +1 ms] Found plugin screen_retriever_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_macos-0.2.2\
+[   +2 ms] Found plugin screen_retriever_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_windows-0.2.2\
+[   +1 ms] Found plugin share_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\share_plus-10.1.4\
+[  +13 ms] Found plugin url_launcher at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher-6.3.1\
+[   +1 ms] Found plugin url_launcher_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_android-6.3.14\
+[   +1 ms] Found plugin url_launcher_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_ios-6.3.3\
+[   +1 ms] Found plugin url_launcher_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_linux-3.2.1\
+[   +1 ms] Found plugin url_launcher_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_macos-3.2.2\
+[   +2 ms] Found plugin url_launcher_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_web-2.3.3\
+[   +1 ms] Found plugin url_launcher_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_windows-3.1.4\
+[   +3 ms] Found plugin vibration at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\vibration-3.1.8\
+[  +13 ms] Found plugin window_manager at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\window_manager-0.4.3\
+[  +43 ms] Found plugin app_settings at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\app_settings-7.0.0\
+[   +4 ms] Found plugin audioplayers at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers-6.4.0\
+[   +1 ms] Found plugin audioplayers_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_android-5.2.0\
+[   +1 ms] Found plugin audioplayers_darwin at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_darwin-6.2.0\
+[   +1 ms] Found plugin audioplayers_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_linux-4.2.0\
+[   +2 ms] Found plugin audioplayers_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_web-5.1.0\
+[   +1 ms] Found plugin audioplayers_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_windows-4.2.0\
+[  +24 ms] Found plugin device_info_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\device_info_plus-11.3.0\
+[   +6 ms] Found plugin file_picker at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_picker-8.3.7\
+[   +3 ms] Found plugin file_selector at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector-1.0.3\
+[   +1 ms] Found plugin file_selector_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_android-0.5.1+12\
+[   +1 ms] Found plugin file_selector_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_ios-0.5.3+1\
+[   +1 ms] Found plugin file_selector_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_linux-0.9.3+2\
+[   +1 ms] Found plugin file_selector_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_macos-0.9.4+2\
+[   +2 ms] Found plugin file_selector_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_web-0.9.4+2\
+[   +1 ms] Found plugin file_selector_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_windows-0.9.3+4\
+[   +5 ms] Found plugin flutter_plugin_android_lifecycle at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_plugin_android_lifecycle-2.0.26\
+[  +17 ms] Found plugin image_picker at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker-1.1.2\
+[   +1 ms] Found plugin image_picker_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+21\
+[   +1 ms] Found plugin image_picker_for_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_for_web-3.0.6\
+[   +1 ms] Found plugin image_picker_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_ios-0.8.12+2\
+[   +1 ms] Found plugin image_picker_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_linux-0.2.1+2\
+[   +1 ms] Found plugin image_picker_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_macos-0.2.1+2\
+[   +2 ms] Found plugin image_picker_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_windows-0.2.1+1\
+[  +13 ms] Found plugin mobile_scanner at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\mobile_scanner-5.2.3\
+[   +3 ms] Found plugin package_info_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-8.3.1\
+[   +3 ms] Found plugin path_provider at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider-2.1.5\
+[   +1 ms] Found plugin path_provider_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_android-2.2.15\
+[   +1 ms] Found plugin path_provider_foundation at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_foundation-2.4.1\
+[   +1 ms] Found plugin path_provider_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_linux-2.2.1\
+[   +1 ms] Found plugin path_provider_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_windows-2.3.0\
+[   +2 ms] Found plugin permission_handler at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler-11.4.0\
+[        ] Found plugin permission_handler_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_android-12.1.0\
+[        ] Found plugin permission_handler_apple at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_apple-9.4.7\
+[        ] Found plugin permission_handler_html at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_html-0.1.3+5\
+[   +1 ms] Found plugin permission_handler_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_windows-0.2.1\
+[   +3 ms] Found plugin print_bluetooth_thermal at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\print_bluetooth_thermal-1.1.9\
+[   +1 ms] Found plugin printing at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\printing-5.14.3\
+[   +4 ms] Found plugin screen_retriever at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever-0.2.2\
+[        ] Found plugin screen_retriever_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_linux-0.2.2\
+[        ] Found plugin screen_retriever_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_macos-0.2.2\
+[   +1 ms] Found plugin screen_retriever_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_windows-0.2.2\
+[   +1 ms] Found plugin share_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\share_plus-10.1.4\
+[  +16 ms] Found plugin url_launcher at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher-6.3.1\
+[   +1 ms] Found plugin url_launcher_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_android-6.3.14\
+[        ] Found plugin url_launcher_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_ios-6.3.3\
+[        ] Found plugin url_launcher_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_linux-3.2.1\
+[        ] Found plugin url_launcher_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_macos-3.2.2\
+[   +1 ms] Found plugin url_launcher_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_web-2.3.3\
+[        ] Found plugin url_launcher_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_windows-3.1.4\
+[   +2 ms] Found plugin vibration at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\vibration-3.1.8\
+[   +8 ms] Found plugin window_manager at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\window_manager-0.4.3\
+[  +34 ms] Found plugin app_settings at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\app_settings-7.0.0\
+[   +3 ms] Found plugin audioplayers at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers-6.4.0\
+[   +1 ms] Found plugin audioplayers_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_android-5.2.0\
+[        ] Found plugin audioplayers_darwin at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_darwin-6.2.0\
+[        ] Found plugin audioplayers_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_linux-4.2.0\
+[   +1 ms] Found plugin audioplayers_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_web-5.1.0\
+[        ] Found plugin audioplayers_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_windows-4.2.0\
+[  +17 ms] Found plugin device_info_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\device_info_plus-11.3.0\
+[   +4 ms] Found plugin file_picker at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_picker-8.3.7\
+[   +1 ms] Found plugin file_selector at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector-1.0.3\
+[   +1 ms] Found plugin file_selector_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_android-0.5.1+12\
+[   +1 ms] Found plugin file_selector_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_ios-0.5.3+1\
+[   +1 ms] Found plugin file_selector_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_linux-0.9.3+2\
+[   +1 ms] Found plugin file_selector_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_macos-0.9.4+2\
+[   +1 ms] Found plugin file_selector_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_web-0.9.4+2\
+[        ] Found plugin file_selector_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_windows-0.9.3+4\
+[   +4 ms] Found plugin flutter_plugin_android_lifecycle at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_plugin_android_lifecycle-2.0.26\
+[  +11 ms] Found plugin image_picker at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker-1.1.2\
+[   +1 ms] Found plugin image_picker_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+21\
+[        ] Found plugin image_picker_for_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_for_web-3.0.6\
+[   +1 ms] Found plugin image_picker_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_ios-0.8.12+2\
+[        ] Found plugin image_picker_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_linux-0.2.1+2\
+[        ] Found plugin image_picker_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_macos-0.2.1+2\
+[   +1 ms] Found plugin image_picker_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_windows-0.2.1+1\
+[  +10 ms] Found plugin mobile_scanner at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\mobile_scanner-5.2.3\
+[   +2 ms] Found plugin package_info_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-8.3.1\
+[   +3 ms] Found plugin path_provider at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider-2.1.5\
+[        ] Found plugin path_provider_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_android-2.2.15\
+[        ] Found plugin path_provider_foundation at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_foundation-2.4.1\
+[        ] Found plugin path_provider_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_linux-2.2.1\
+[   +1 ms] Found plugin path_provider_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_windows-2.3.0\
+[   +3 ms] Found plugin permission_handler at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler-11.4.0\
+[   +1 ms] Found plugin permission_handler_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_android-12.1.0\
+[        ] Found plugin permission_handler_apple at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_apple-9.4.7\
+[   +1 ms] Found plugin permission_handler_html at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_html-0.1.3+5\
+[   +1 ms] Found plugin permission_handler_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_windows-0.2.1\
+[   +3 ms] Found plugin print_bluetooth_thermal at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\print_bluetooth_thermal-1.1.9\
+[   +1 ms] Found plugin printing at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\printing-5.14.3\
+[   +4 ms] Found plugin screen_retriever at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever-0.2.2\
+[   +1 ms] Found plugin screen_retriever_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_linux-0.2.2\
+[        ] Found plugin screen_retriever_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_macos-0.2.2\
+[   +1 ms] Found plugin screen_retriever_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_windows-0.2.2\
+[   +1 ms] Found plugin share_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\share_plus-10.1.4\
+[  +13 ms] Found plugin url_launcher at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher-6.3.1\
+[   +1 ms] Found plugin url_launcher_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_android-6.3.14\
+[   +1 ms] Found plugin url_launcher_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_ios-6.3.3\
+[        ] Found plugin url_launcher_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_linux-3.2.1\
+[        ] Found plugin url_launcher_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_macos-3.2.2\
+[   +1 ms] Found plugin url_launcher_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_web-2.3.3\
+[        ] Found plugin url_launcher_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_windows-3.1.4\
+[   +2 ms] Found plugin vibration at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\vibration-3.1.8\
+[   +6 ms] Found plugin window_manager at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\window_manager-0.4.3\
+[  +14 ms] Generating D:\a\Nayli-Kiosk-\Nayli-Kiosk-\android\app\src\main\java\io\flutter\plugins\GeneratedPluginRegistrant.java
+[  +65 ms] executing: C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe -format json -products * -utf8 -latest -version 16 -requires Microsoft.VisualStudio.Workload.NativeDesktop Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.CMake.Project
+[ +137 ms] Exit code 0 from: C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe -format json -products * -utf8 -latest -version 16 -requires Microsoft.VisualStudio.Workload.NativeDesktop Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.CMake.Project
+[        ] [
+             {
+               "instanceId": "51e05679",
+               "installDate": "2026-09-20T21:58:53Z",
+               "installationName": "VisualStudio/17.14.41+37710.0.-september.2026-",
+               "installationPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise",
+               "installationVersion": "17.14.37710.0",
+               "productId": "Microsoft.VisualStudio.Product.Enterprise",
+               "productPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\IDE\\devenv.exe",
+               "state": 4294967295,
+               "isComplete": true,
+               "isLaunchable": true,
+               "isPrerelease": false,
+               "isRebootRequired": false,
+               "displayName": "Visual Studio Enterprise 2022",
+               "description": "Scalable, end-to-end solution for teams of any size",
+               "channelId": "VisualStudio.17.Release",
+               "channelUri": "https://aka.ms/vs/17/release/channel",
+               "enginePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\resources\\app\\ServiceHub\\Services\\Microsoft.VisualStudio.Setup.Service",
+               "installChannelUri": "https://aka.ms/vs/17/release/channel",
+               "installedChannelId": "VisualStudio.17.Release",
+               "installedChannelUri": "https://aka.ms/vs/17/release/channel",
+               "releaseNotes": "https://docs.microsoft.com/en-us/visualstudio/releases/2022/release-notes-v17.14#17.14.41",
+               "resolvedInstallationPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise",
+               "thirdPartyNotices": "https://go.microsoft.com/fwlink/?LinkId=661288",
+               "updateDate": "2026-09-20T21:58:53.8736942Z",
+               "catalog": {
+                 "buildBranch": "d17.14",
+                 "buildVersion": "17.14.37710.0",
+                 "id": "VisualStudio/17.14.41+37710.0.-september.2026-",
+                 "localBuild": "build-lab",
+                 "manifestName": "VisualStudio",
+                 "manifestType": "installer",
+                 "productDisplayVersion": "17.14.41 (September 2026)",
+                 "productLine": "Dev17",
+                 "productLineVersion": "2022",
+                 "productMilestone": "RTW",
+                 "productMilestoneIsPreRelease": "False",
+                 "productName": "Visual Studio",
+                 "productPatchVersion": "41",
+                 "productPreReleaseMilestoneSuffix": "1.0",
+                 "productReleaseNameSuffix": "(September 2026)",
+                 "productSemanticVersion": "17.14.41+37710.0.-september.2026-",
+                 "requiredEngineVersion": "3.14.2094.42856"
+               },
+               "properties": {
+                 "campaignId": "",
+                 "channelManifestId": "VisualStudio.17.Release/17.14.41+37710.0.-september.2026-",
+                 "includeRecommended": "1",
+                 "nickname": "",
+                 "setupEngineFilePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\setup.exe"
+               }
+             }
+           ]
+[   +3 ms] Building Windows application...
+[   +3 ms] executing: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -S D:\a\Nayli-Kiosk-\Nayli-Kiosk-\windows -B D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64 -G Visual Studio 17 2022 -A x64 -DFLUTTER_TARGET_PLATFORM=windows-x64
+[+1550 ms] -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.20348.
+[+18142 ms] -- The CXX compiler identification is MSVC 19.44.35229.0
+[ +266 ms] -- Detecting CXX compiler ABI info
+[+1487 ms] -- Detecting CXX compiler ABI info - done
+[  +16 ms] -- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+[   +1 ms] -- Detecting CXX compile features
+[  +17 ms] -- Detecting CXX compile features - done
+[+3363 ms] Feeds used:
+[        ]   https://api.nuget.org/v3/index.json
+[        ]   C:\Program Files (x86)\Microsoft SDKs\NuGetPackages\
+[ +129 ms] Attempting to gather dependency information for package 'Microsoft.Windows.ImplementationLibrary.1.0.210803.1' with respect to project 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\packages', targeting 'Any,Version=v0.0'
+[ +540 ms] Gathering dependency information took 518 ms
+[   +8 ms] Attempting to resolve dependencies for package 'Microsoft.Windows.ImplementationLibrary.1.0.210803.1' with DependencyBehavior 'Lowest'
+[  +51 ms] Resolving dependency information took 0 ms
+[        ] Resolving actions to install package 'Microsoft.Windows.ImplementationLibrary.1.0.210803.1'
+[   +1 ms] Resolved actions to install package 'Microsoft.Windows.ImplementationLibrary.1.0.210803.1'
+[  +24 ms] Retrieving package 'Microsoft.Windows.ImplementationLibrary 1.0.210803.1' from 'nuget.org'.
+[ +348 ms]   GET https://api.nuget.org/v3-flatcontainer/microsoft.windows.implementationlibrary/1.0.210803.1/microsoft.windows.implementationlibrary.1.0.210803.1.nupkg
+[   +4 ms]   OK https://api.nuget.org/v3-flatcontainer/microsoft.windows.implementationlibrary/1.0.210803.1/microsoft.windows.implementationlibrary.1.0.210803.1.nupkg 4ms
+[ +760 ms] Installed Microsoft.Windows.ImplementationLibrary 1.0.210803.1 from https://api.nuget.org/v3/index.json to C:\Users\runneradmin\.nuget\packages\microsoft.windows.implementationlibrary\1.0.210803.1 with content hash CTpgURZcCeLDkZbKv3073npyN8mlPowsuvkF7qvkfVW/q0EiyA/YkYlod7wKaKtBqKi49/GlwHC6huNoPMmMxA==.
+[  +13 ms] Adding package 'Microsoft.Windows.ImplementationLibrary.1.0.210803.1' to folder 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\packages'
+[  +29 ms] Added package 'Microsoft.Windows.ImplementationLibrary.1.0.210803.1' to folder 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\packages'
+[        ] Successfully installed 'Microsoft.Windows.ImplementationLibrary 1.0.210803.1' to D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\packages
+[  +10 ms] Executing nuget actions took 1.18 sec
+[ +747 ms] Feeds used:
+[        ]   C:\Users\runneradmin\.nuget\packages\
+[        ]   https://api.nuget.org/v3/index.json
+[        ]   C:\Program Files (x86)\Microsoft SDKs\NuGetPackages\
+[  +90 ms] Attempting to gather dependency information for package 'Microsoft.Windows.CppWinRT.2.0.210806.1' with respect to project 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\packages', targeting 'Any,Version=v0.0'
+[ +424 ms] Gathering dependency information took 412 ms
+[   +9 ms] Attempting to resolve dependencies for package 'Microsoft.Windows.CppWinRT.2.0.210806.1' with DependencyBehavior 'Lowest'
+[  +44 ms] Resolving dependency information took 0 ms
+[        ] Resolving actions to install package 'Microsoft.Windows.CppWinRT.2.0.210806.1'
+[   +1 ms] Resolved actions to install package 'Microsoft.Windows.CppWinRT.2.0.210806.1'
+[  +23 ms] Retrieving package 'Microsoft.Windows.CppWinRT 2.0.210806.1' from 'nuget.org'.
+[ +133 ms]   GET https://api.nuget.org/v3-flatcontainer/microsoft.windows.cppwinrt/2.0.210806.1/microsoft.windows.cppwinrt.2.0.210806.1.nupkg
+[   +4 ms]   OK https://api.nuget.org/v3-flatcontainer/microsoft.windows.cppwinrt/2.0.210806.1/microsoft.windows.cppwinrt.2.0.210806.1.nupkg 4ms
+[ +432 ms] Installed Microsoft.Windows.CppWinRT 2.0.210806.1 from https://api.nuget.org/v3/index.json to C:\Users\runneradmin\.nuget\packages\microsoft.windows.cppwinrt\2.0.210806.1 with content hash tFrggjZuIHT1i/aKPfVD6ow+9gZuHj6LQwB01+cbnezjWv/KE5BDLYVBuv7V4cFxhPTWNwl4864k+rN4yR/JVQ==.
+[  +13 ms] Adding package 'Microsoft.Windows.CppWinRT.2.0.210806.1' to folder 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\packages'
+[  +22 ms] Added package 'Microsoft.Windows.CppWinRT.2.0.210806.1' to folder 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\packages'
+[        ] Successfully installed 'Microsoft.Windows.CppWinRT 2.0.210806.1' to D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\packages
+[   +1 ms] Executing nuget actions took 617 ms
+[+1874 ms] -- Downloading/updating pdfium
+[  +38 ms] -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.20348.
+[ +473 ms] -- Configuring done (0.5s)
+[  +24 ms] -- Generating done (0.0s)
+[        ] -- Build files have been written to: D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64/pdfium-download
+[ +132 ms] MSBuild version 17.14.60+43b635718 for .NET Framework
+[ +396 ms]   1>Checking Build System
+[ +207 ms]   Creating directories for 'pdfium-download'
+[  +45 ms]   Building Custom Rule D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64/pdfium-download/CMakeLists.txt
+[  +26 ms]   Performing download step (download, verify and extract) for 'pdfium-download'
+[  +19 ms]   -- Downloading...
+[        ]      dst='D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64/pdfium-download/pdfium-download-prefix/src/pdfium-win-x64.tgz'
+[        ]      timeout='none'
+[        ]      inactivity timeout='none'
+[        ]   -- Using src='https://github.com/bblanchon/pdfium-binaries/releases/download/chromium/5200/pdfium-win-x64.tgz'
+[ +413 ms]   -- [download 0% complete]
+[   +3 ms]   -- [download 1% complete]
+[   +1 ms]   -- [download 2% complete]
+[        ]   -- [download 3% complete]
+[        ]   -- [download 4% complete]
+[   +2 ms]   -- [download 5% complete]
+[   +1 ms]   -- [download 6% complete]
+[        ]   -- [download 7% complete]
+[        ]   -- [download 8% complete]
+[        ]   -- [download 9% complete]
+[        ]   -- [download 10% complete]
+[        ]   -- [download 11% complete]
+[        ]   -- [download 12% complete]
+[        ]   -- [download 13% complete]
+[        ]   -- [download 14% complete]
+[        ]   -- [download 15% complete]
+[        ]   -- [download 16% complete]
+[        ]   -- [download 17% complete]
+[        ]   -- [download 18% complete]
+[        ]   -- [download 19% complete]
+[        ]   -- [download 20% complete]
+[        ]   -- [download 21% complete]
+[        ]   -- [download 22% complete]
+[        ]   -- [download 23% complete]
+[        ]   -- [download 24% complete]
+[        ]   -- [download 25% complete]
+[        ]   -- [download 26% complete]
+[        ]   -- [download 27% complete]
+[        ]   -- [download 28% complete]
+[        ]   -- [download 29% complete]
+[        ]   -- [download 30% complete]
+[        ]   -- [download 31% complete]
+[        ]   -- [download 32% complete]
+[        ]   -- [download 33% complete]
+[        ]   -- [download 34% complete]
+[        ]   -- [download 35% complete]
+[        ]   -- [download 36% complete]
+[        ]   -- [download 37% complete]
+[        ]   -- [download 38% complete]
+[        ]   -- [download 39% complete]
+[        ]   -- [download 40% complete]
+[        ]   -- [download 41% complete]
+[        ]   -- [download 42% complete]
+[        ]   -- [download 43% complete]
+[        ]   -- [download 44% complete]
+[        ]   -- [download 45% complete]
+[        ]   -- [download 46% complete]
+[        ]   -- [download 47% complete]
+[        ]   -- [download 48% complete]
+[        ]   -- [download 49% complete]
+[        ]   -- [download 50% complete]
+[        ]   -- [download 51% complete]
+[        ]   -- [download 52% complete]
+[        ]   -- [download 53% complete]
+[        ]   -- [download 54% complete]
+[        ]   -- [download 55% complete]
+[        ]   -- [download 56% complete]
+[        ]   -- [download 57% complete]
+[        ]   -- [download 58% complete]
+[        ]   -- [download 59% complete]
+[        ]   -- [download 60% complete]
+[        ]   -- [download 61% complete]
+[        ]   -- [download 62% complete]
+[        ]   -- [download 63% complete]
+[        ]   -- [download 64% complete]
+[        ]   -- [download 65% complete]
+[        ]   -- [download 66% complete]
+[        ]   -- [download 67% complete]
+[        ]   -- [download 68% complete]
+[        ]   -- [download 69% complete]
+[        ]   -- [download 70% complete]
+[        ]   -- [download 71% complete]
+[        ]   -- [download 72% complete]
+[        ]   -- [download 73% complete]
+[        ]   -- [download 74% complete]
+[        ]   -- [download 75% complete]
+[        ]   -- [download 76% complete]
+[        ]   -- [download 77% complete]
+[        ]   -- [download 78% complete]
+[        ]   -- [download 79% complete]
+[        ]   -- [download 80% complete]
+[        ]   -- [download 81% complete]
+[        ]   -- [download 82% complete]
+[        ]   -- [download 83% complete]
+[        ]   -- [download 84% complete]
+[        ]   -- [download 85% complete]
+[        ]   -- [download 86% complete]
+[        ]   -- [download 87% complete]
+[        ]   -- [download 88% complete]
+[        ]   -- [download 89% complete]
+[        ]   -- [download 90% complete]
+[        ]   -- [download 91% complete]
+[        ]   -- [download 92% complete]
+[        ]   -- [download 93% complete]
+[        ]   -- [download 94% complete]
+[        ]   -- [download 95% complete]
+[        ]   -- [download 96% complete]
+[        ]   -- [download 97% complete]
+[        ]   -- [download 98% complete]
+[        ]   -- [download 99% complete]
+[        ]   -- [download 100% complete]
+[        ]   -- Downloading... done
+[  +41 ms]   -- extracting...
+[        ]        src='D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64/pdfium-download/pdfium-download-prefix/src/pdfium-win-x64.tgz'
+[        ]        dst='D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64/pdfium-src'
+[        ]   -- extracting... [tar xfz]
+[ +269 ms]   -- extracting... [analysis]
+[        ]   -- extracting... [rename]
+[        ]   -- extracting... [clean up]
+[        ]   -- extracting... done
+[  +28 ms]   No update step for 'pdfium-download'
+[  +45 ms]   No patch step for 'pdfium-download'
+[  +44 ms]   No configure step for 'pdfium-download'
+[  +45 ms]   No build step for 'pdfium-download'
+[  +44 ms]   No install step for 'pdfium-download'
+[  +44 ms]   No test step for 'pdfium-download'
+[  +44 ms]   Completed 'pdfium-download'
+[ +117 ms]   Building Custom Rule D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64/pdfium-download/CMakeLists.txt
+[ +525 ms] -- Found PDFium: D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64/pdfium-src/bin/pdfium.dll (found version "106.0.5200.0")
+[  +17 ms] -- Configuring done (32.4s)
+[ +181 ms] -- Generating done (0.2s)
+[        ] -- Build files have been written to: D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64
+[  +16 ms] executing: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe --build D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64 --config Release --target INSTALL --verbose
+[  +66 ms] Change Dir: 'D:/a/Nayli-Kiosk-/Nayli-Kiosk-/build/windows/x64'
+[        ] Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/MSBuild/Current/Bin/amd64/MSBuild.exe" INSTALL.vcxproj /p:Configuration=Release /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+[  +70 ms] MSBuild version 17.14.60+43b635718 for .NET Framework
+[  +34 ms] Build started 9/25/2026 3:03:27 PM.
+[ +221 ms] Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\INSTALL.vcxproj" on node 1 (default targets).
+[        ] Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\INSTALL.vcxproj" (1) is building "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\ZERO_CHECK.vcxproj" (2) on node 1 (default targets).
+[        ] PrepareForBuild:
+[        ]   Creating directory "x64\Release\ZERO_CHECK\".
+[   +5 ms]   Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+[        ]   Creating directory "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\".
+[   +2 ms] InitializeBuildStatus:
+[        ]   Creating "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+[        ]   Touching "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild".
+[  +97 ms] CustomBuild:
+[        ]   1>Checking Build System
+[  +71 ms] FinalizeBuildStatus:
+[        ]   Deleting file "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild".
+[        ]   Touching "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\ZERO_CHECK.lastbuildstate".
+[   +1 ms] Done Building Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\ZERO_CHECK.vcxproj" (default targets).
+[ +101 ms] Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\INSTALL.vcxproj" (1) is building "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\ALL_BUILD.vcxproj" (3) on node 1 (default targets).
+[        ] Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\ALL_BUILD.vcxproj" (3) is building "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\runner\Nayli-Kiosk.vcxproj" (4) on node 1 (default targets).
+[        ] Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\runner\Nayli-Kiosk.vcxproj" (4) is building "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\flutter\flutter_assemble.vcxproj" (5) on node 1 (default targets).
+[        ] PrepareForBuild:
+[        ]   Creating directory "x64\Release\flutter_assemble\".
+[   +1 ms]   Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+[        ]   Creating directory "x64\Release\flutter_assemble\flutter_assemble.tlog\".
+[   +5 ms] InitializeBuildStatus:
+[        ]   Creating "x64\Release\flutter_assemble\flutter_assemble.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+[        ]   Touching "x64\Release\flutter_assemble\flutter_assemble.tlog\unsuccessfulbuild".
+[        ] ComputeCustomBuildOutput:
+[        ]   Creating directory "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\windows\flutter\ephemeral\cpp_client_wrapper\".
+[   +1 ms] CustomBuild:
+[        ]   "The build of 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\CMakeFiles\9a52e6f6140f7a6df13683b57c2ad70c\flutter_assemble.rule' depends on 'D:\A\NAYLI-KIOSK-\NAYLI-KIOSK-\WINDOWS\FLUTTER\EPHEMERAL\FLUTTER_WINDOWS.DLL' which is produced by the build of 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\CMakeFiles\c2bcaf5442be3639a95bb884054d9bef\flutter_windows.dll.rule'. The items cannot be built in parallel."
+[  +30 ms]   Generating D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/flutter_windows.dll, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/flutter_export.h, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/flutter_windows.h, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/flutter_messenger.h, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/flutter_plugin_registrar.h, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/flutter_texture_registrar.h, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/cpp_client_wrapper/core_implementations.cc, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/cpp_client_wrapper/standard_codec.cc, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/cpp_client_wrapper/plugin_registrar.cc, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/cpp_client_wrapper/flutter_engine.cc, D:/a/Nayli-Kiosk-/Nayli-Kiosk-/windows/flutter/ephemeral/cpp_client_wrapper/flutter_view_controller.cc, _phony_
+[ +551 ms]   [  +53 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ]   [   +4 ms] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ]   [   +3 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[  +95 ms]   [ +102 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[   +1 ms]   [   +2 ms] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +18 ms]   [  +18 ms] Initializing file store
+[  +19 ms]   [  +19 ms] Skipping target: gen_localizations
+[  +12 ms]   [  +12 ms] gen_dart_plugin_registrant: Starting due to {InvalidatedReasonKind.inputChanged: The following inputs have updated contents: D:\a\Nayli-Kiosk-\Nayli-Kiosk-\.dart_tool\package_config_subset}
+[   +5 ms]   [   +5 ms] unpack_windows: Starting due to {}
+[ +118 ms]   [ +117 ms] unpack_windows: Complete
+[+2369 ms]   [+2369 ms] Found plugin app_settings at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\app_settings-7.0.0\
+[  +11 ms]   [  +12 ms] Found plugin audioplayers at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers-6.4.0\
+[   +2 ms]   [   +2 ms] Found plugin audioplayers_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_android-5.2.0\
+[   +2 ms]   [   +2 ms] Found plugin audioplayers_darwin at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_darwin-6.2.0\
+[   +2 ms]   [   +2 ms] Found plugin audioplayers_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_linux-4.2.0\
+[   +4 ms]   [   +4 ms] Found plugin audioplayers_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_web-5.1.0\
+[   +2 ms]   [   +2 ms] Found plugin audioplayers_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\audioplayers_windows-4.2.0\
+[  +38 ms]   [  +37 ms] Found plugin device_info_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\device_info_plus-11.3.0\
+[   +9 ms]   [   +9 ms] Found plugin file_picker at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_picker-8.3.7\
+[   +3 ms]   [   +4 ms] Found plugin file_selector at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector-1.0.3\
+[   +2 ms]   [   +2 ms] Found plugin file_selector_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_android-0.5.1+12\
+[   +2 ms]   [   +2 ms] Found plugin file_selector_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_ios-0.5.3+1\
+[   +2 ms]   [   +2 ms] Found plugin file_selector_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_linux-0.9.3+2\
+[   +3 ms]   [   +3 ms] Found plugin file_selector_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_macos-0.9.4+2\
+[   +4 ms]   [   +4 ms] Found plugin file_selector_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_web-0.9.4+2\
+[   +1 ms]   [   +2 ms] Found plugin file_selector_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\file_selector_windows-0.9.3+4\
+[   +8 ms]   [   +8 ms] Found plugin flutter_plugin_android_lifecycle at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_plugin_android_lifecycle-2.0.26\
+[  +27 ms]   [  +25 ms] Found plugin image_picker at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker-1.1.2\
+[        ]   [   +1 ms] Found plugin image_picker_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+21\
+[   +1 ms]   [   +1 ms] Found plugin image_picker_for_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_for_web-3.0.6\
+[   +1 ms]   [   +1 ms] Found plugin image_picker_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_ios-0.8.12+2\
+[   +1 ms]   [   +1 ms] Found plugin image_picker_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_linux-0.2.1+2\
+[   +1 ms]   [   +1 ms] Found plugin image_picker_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_macos-0.2.1+2\
+[   +3 ms]   [   +3 ms] Found plugin image_picker_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_windows-0.2.1+1\
+[  +16 ms]   [  +16 ms] Found plugin mobile_scanner at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\mobile_scanner-5.2.3\
+[   +4 ms]   [   +4 ms] Found plugin package_info_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-8.3.1\
+[   +4 ms]   [   +4 ms] Found plugin path_provider at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider-2.1.5\
+[   +1 ms]   [   +1 ms] Found plugin path_provider_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_android-2.2.15\
+[   +1 ms]   [   +1 ms] Found plugin path_provider_foundation at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_foundation-2.4.1\
+[   +1 ms]   [   +1 ms] Found plugin path_provider_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_linux-2.2.1\
+[   +2 ms]   [   +2 ms] Found plugin path_provider_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_windows-2.3.0\
+[   +4 ms]   [   +4 ms] Found plugin permission_handler at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler-11.4.0\
+[   +1 ms]   [   +1 ms] Found plugin permission_handler_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_android-12.1.0\
+[   +1 ms]   [   +1 ms] Found plugin permission_handler_apple at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_apple-9.4.7\
+[   +1 ms]   [   +1 ms] Found plugin permission_handler_html at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_html-0.1.3+5\
+[   +2 ms]   [   +2 ms] Found plugin permission_handler_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_windows-0.2.1\
+[   +5 ms]   [   +5 ms] Found plugin print_bluetooth_thermal at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\print_bluetooth_thermal-1.1.9\
+[   +2 ms]   [   +2 ms] Found plugin printing at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\printing-5.14.3\
+[   +6 ms]   [   +6 ms] Found plugin screen_retriever at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever-0.2.2\
+[   +1 ms]   [   +1 ms] Found plugin screen_retriever_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_linux-0.2.2\
+[   +1 ms]   [   +1 ms] Found plugin screen_retriever_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_macos-0.2.2\
+[   +2 ms]   [   +2 ms] Found plugin screen_retriever_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_windows-0.2.2\
+[   +1 ms]   [   +1 ms] Found plugin share_plus at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\share_plus-10.1.4\
+[  +14 ms]   [  +13 ms] Found plugin url_launcher at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher-6.3.1\
+[   +1 ms]   [   +1 ms] Found plugin url_launcher_android at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_android-6.3.14\
+[   +1 ms]   [   +1 ms] Found plugin url_launcher_ios at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_ios-6.3.3\
+[   +1 ms]   [   +1 ms] Found plugin url_launcher_linux at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_linux-3.2.1\
+[   +1 ms]   [   +1 ms] Found plugin url_launcher_macos at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_macos-3.2.2\
+[   +2 ms]   [   +2 ms] Found plugin url_launcher_web at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_web-2.3.3\
+[   +1 ms]   [   +1 ms] Found plugin url_launcher_windows at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_windows-3.1.4\
+[   +2 ms]   [   +2 ms] Found plugin vibration at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\vibration-3.1.8\
+[  +13 ms]   [  +13 ms] Found plugin window_manager at C:\Users\runneradmin\AppData\Local\Pub\Cache\hosted\pub.dev\window_manager-0.4.3\
+[  +38 ms]   [  +38 ms] gen_dart_plugin_registrant: Complete
+[   +1 ms]   [   +1 ms] kernel_snapshot_program: Starting due to {}
+[  +12 ms]   [  +12 ms] C:\hostedtoolcache\windows\flutter\stable-3.24.5-x64\flutter\bin\cache\dart-sdk\bin\dartaotruntime.exe --disable-dart-dev C:\hostedtoolcache\windows\flutter\stable-3.24.5-x64\flutter\bin\cache\dart-sdk\bin\snapshots\frontend_server_aot.dart.snapshot --sdk-root C:\hostedtoolcache\windows\flutter\stable-3.24.5-x64\flutter\bin\cache\artifacts\engine\common\flutter_patched_sdk_product/ --target=flutter --no-print-incremental-dependencies -Ddart.vm.profile=false -Ddart.vm.product=true --delete-tostring-package-uri=dart:ui --delete-tostring-package-uri=package:flutter --aot --tfa --target-os windows --packages D:\a\Nayli-Kiosk-\Nayli-Kiosk-\.dart_tool\package_config.json --output-dill D:\a\Nayli-Kiosk-\Nayli-Kiosk-\.dart_tool\flutter_build\eba52f1ac5b804d410986baa5a0c6f35\program.dill --depfile D:\a\Nayli-Kiosk-\Nayli-Kiosk-\.dart_tool\flutter_build\eba52f1ac5b804d410986baa5a0c6f35\kernel_snapshot_program.d --source file:///D:/a/Nayli-Kiosk-/Nayli-Kiosk-/.dart_tool/flutter_build/dart_plugin_registrant.dart --source package:flutter/src/dart_plugin_registrant.dart -Dflutter.dart_plugin_registrant=file:///D:/a/Nayli-Kiosk-/Nayli-Kiosk-/.dart_tool/flutter_build/dart_plugin_registrant.dart --verbosity=error package:billing_app/main.dart
+[+6453 ms] [+6432 ms] lib/features/product/data/repositories/product_repository_impl.dart(46,30): error GE5CFE876: The method 'toEntity' isn't defined for the class 'Product'. [D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\flutter\flutter_assemble.vcxproj]
+[   +1 ms]   [   +1 ms]  - 'Product' is from 'package:billing_app/features/product/domain/entities/product.dart' ('lib/features/product/domain/entities/product.dart').
+[        ]   [        ] Try correcting the name to the name of an existing method, or defining a method named 'toEntity'.
+[        ]   [        ]         return Right(matched.toEntity());
+[        ]   [        ]                              ^^^^^^^^
+[+11323 ms]   [+11344 ms] Persisting file store
+[   +3 ms]   [   +3 ms] Done persisting file store
+[   +2 ms]   [   +3 ms] Target kernel_snapshot_program failed: Exception
+[        ]              #0      KernelSnapshotProgram.build (package:flutter_tools/src/build_system/targets/common.dart:276:7)
+[        ]              <asynchronous suspension>
+[        ]              #1      _BuildInstance._invokeInternal (package:flutter_tools/src/build_system/build_system.dart:875:9)
+[        ]              <asynchronous suspension>
+[        ]              #2      Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+[        ]              <asynchronous suspension>
+[        ]              #3      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+[        ]              <asynchronous suspension>
+[        ]              #4      Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+[        ]              <asynchronous suspension>
+[        ]              #5      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+[        ]              <asynchronous suspension>
+[        ]              #6      Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+[        ]              <asynchronous suspension>
+[        ]              #7      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+[        ]              <asynchronous suspension>
+[        ]              #8      Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+[        ]              <asynchronous suspension>
+[        ]              #9      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+[        ]              <asynchronous suspension>
+[        ]              #10     Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+[        ]              <asynchronous suspension>
+[        ]              #11     _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+[        ]              <asynchronous suspension>
+[        ]              #12     Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+[        ]              <asynchronous suspension>
+[        ]              #13     _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+[        ]              <asynchronous suspension>
+[        ]              #14     FlutterBuildSystem.build (package:flutter_tools/src/build_system/build_system.dart:635:16)
+[        ]              <asynchronous suspension>
+[        ]              #15     AssembleCommand.runCommand (package:flutter_tools/src/commands/assemble.dart:328:32)
+[        ]              <asynchronous suspension>
+[        ]              #16     FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1408:27)
+[        ]              <asynchronous suspension>
+[        ]              #17     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #18     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+[        ]              <asynchronous suspension>
+[        ]              #19     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:420:9)
+[        ]              <asynchronous suspension>
+[        ]              #20     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #21     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:364:5)
+[        ]              <asynchronous suspension>
+[        ]              #22     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:130:9)
+[        ]              <asynchronous suspension>
+[        ]              #23     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #24     main (package:flutter_tools/executable.dart:93:3)
+[        ]              <asynchronous suspension>
+[   +4 ms]   [   +9 ms] "flutter assemble" took 20,764ms.
+[   +2 ms]   [   +2 ms] 
+[        ]              #0      throwToolExit (package:flutter_tools/src/base/common.dart:10:3)
+[        ]              #1      AssembleCommand.runCommand (package:flutter_tools/src/commands/assemble.dart:345:7)
+[        ]              <asynchronous suspension>
+[        ]              #2      FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1408:27)
+[        ]              <asynchronous suspension>
+[        ]              #3      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #4      CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+[        ]              <asynchronous suspension>
+[        ]              #5      FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:420:9)
+[        ]              <asynchronous suspension>
+[        ]              #6      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #7      FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:364:5)
+[        ]              <asynchronous suspension>
+[        ]              #8      run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:130:9)
+[        ]              <asynchronous suspension>
+[        ]              #9      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #10     main (package:flutter_tools/executable.dart:93:3)
+[        ]              <asynchronous suspension>
+[        ]   [        ] ensureAnalyticsSent: 0ms
+[        ]   [        ] Running 1 shutdown hook
+[        ]   [        ] Shutdown hooks complete
+[        ]   [        ] exiting with code 1
+[  +41 ms] C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\Microsoft.CppCommon.targets(254,5): error MSB8066: Custom build for 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\CMakeFiles\c2bcaf5442be3639a95bb884054d9bef\flutter_windows.dll.rule;D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\CMakeFiles\9a52e6f6140f7a6df13683b57c2ad70c\flutter_assemble.rule;D:\a\Nayli-Kiosk-\Nayli-Kiosk-\windows\flutter\CMakeLists.txt' exited with code 1. [D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\flutter\flutter_assemble.vcxproj]
+[  +34 ms] Done Building Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\flutter\flutter_assemble.vcxproj" (default targets) -- FAILED.
+[   +1 ms] Done Building Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\runner\Nayli-Kiosk.vcxproj" (default targets) -- FAILED.
+[ +271 ms] Done Building Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\ALL_BUILD.vcxproj" (default targets) -- FAILED.
+[        ] Done Building Project "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\INSTALL.vcxproj" (default targets) -- FAILED.
+[   +2 ms] Build FAILED.
+[        ] "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\INSTALL.vcxproj" (default target) (1) ->
+[        ] "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\ALL_BUILD.vcxproj" (default target) (3) ->
+[        ] "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\runner\Nayli-Kiosk.vcxproj" (default target) (4) ->
+[        ] "D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\flutter\flutter_assemble.vcxproj" (default target) (5) ->
+[        ] (CustomBuild target) -> 
+[        ]   [+6432 ms] lib/features/product/data/repositories/product_repository_impl.dart(46,30): error GE5CFE876: The method 'toEntity' isn't defined for the class 'Product'. [D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\flutter\flutter_assemble.vcxproj]
+[        ]   C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\Microsoft.CppCommon.targets(254,5): error MSB8066: Custom build for 'D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\CMakeFiles\c2bcaf5442be3639a95bb884054d9bef\flutter_windows.dll.rule;D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\CMakeFiles\9a52e6f6140f7a6df13683b57c2ad70c\flutter_assemble.rule;D:\a\Nayli-Kiosk-\Nayli-Kiosk-\windows\flutter\CMakeLists.txt' exited with code 1. [D:\a\Nayli-Kiosk-\Nayli-Kiosk-\build\windows\x64\flutter\flutter_assemble.vcxproj]
+[        ]     0 Warning(s)
+[        ]     2 Error(s)
+[        ] Time Elapsed 00:00:22.18
+[  +28 ms] Building Windows application... (completed in 56.3s)
+[        ] "flutter windows" took 57,294ms.
+[   +2 ms] Build process failed.
+[        ] 
+           #0      throwToolExit (package:flutter_tools/src/base/common.dart:10:3)
+           #1      _runBuild (package:flutter_tools/src/windows/build_windows.dart:266:5)
+           <asynchronous suspension>
+           #2      buildWindows (package:flutter_tools/src/windows/build_windows.dart:111:5)
+           <asynchronous suspension>
+           #3      BuildWindowsCommand.runCommand (package:flutter_tools/src/commands/build_windows.dart:64:5)
+           <asynchronous suspension>
+           #4      FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1408:27)
+           <asynchronous suspension>
+           #5      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+           <asynchronous suspension>
+           #6      CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+           <asynchronous suspension>
+           #7      FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:420:9)
+           <asynchronous suspension>
+           #8      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+           <asynchronous suspension>
+           #9      FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:364:5)
+           <asynchronous suspension>
+           #10     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:130:9)
+           <asynchronous suspension>
+           #11     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+           <asynchronous suspension>
+           #12     main (package:flutter_tools/executable.dart:93:3)
+           <asynchronous suspension>
+
+
+[        ] ensureAnalyticsSent: 0ms
+[        ] Running 1 shutdown hook
+[        ] Shutdown hooks complete
+[        ] exiting with code 1
