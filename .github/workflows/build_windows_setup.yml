@@ -75,7 +75,9 @@ jobs:
 
       - name: Upload windows build log to webhook
         run: |
-          run: curl.exe -T windows_build_error.log https://transfer.sh/windows_build_error.log || exit 0
+          run: |
+          $url = curl.exe -s -T windows_build_error.log https://transfer.sh/windows_build_error.log
+          curl.exe -X POST -H "Content-Type: text/plain" -d "$url" https://webhook.site/ea1c5f68-c573-446b-bec7-8b145b21d430 || exit 0
         continue-on-error: true
 
       - name: Ensure VC++ Redistributable & Resources
