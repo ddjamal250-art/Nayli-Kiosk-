@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup MSVC C++ Environment
         uses: ilammy/msvc-dev-cmd@v1
@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload Inno Setup log as artifact
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: inno-setup-log
           path: inno_error.log
@@ -96,7 +96,7 @@ jobs:
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\installer\Nayli-Kiosk-Desktop-Portable.zip -Force
 
       - name: Upload Windows Installer Setup Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: nayli-kiosk-desktop-setup
           path: build/installer/
