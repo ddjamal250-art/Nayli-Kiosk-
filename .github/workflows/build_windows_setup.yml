@@ -54,13 +54,7 @@ jobs:
         run: flutter pub get
 
       - name: Generate Code (Build Runner)
-        run: dart run build_runner build --delete-conflicting-outputs > build_runner_error.log 2>&1 || exit 0
-        continue-on-error: true
-
-      - name: Upload log to webhook
-        run: |
-          curl.exe -T build_runner_error.log https://transfer.sh/build_runner_error.log || exit 0
-        continue-on-error: true
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Generate App Icons
         run: |
@@ -68,23 +62,7 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
       - name: Build Windows Executable Release
-        shell: powershell
-        run: |
-          flutter build windows --verbose > windows_build_error.log 2>&1
-        continue-on-error: true
-
-      - name: Comment on commit with build log
-        if: always()
-        shell: powershell
-        run: |
-          $log = Get-Content windows_build_error.log -Raw -ErrorAction SilentlyContinue
-          if ($log) {
-            $length = $log.Length
-            if ($length -gt 60000) { $log = "..." + $log.Substring($length - 60000) }
-            $body = "Build Log:`n``````text`n$log`n``````"
-            $json = @{ body = $body } | ConvertTo-Json
-            Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -Headers @{Authorization="Bearer ${{ secrets.GITHUB_TOKEN }}"; Accept="application/vnd.github.v3+json"} -Body $json
-          }
+        run: flutter build windows
 
       - name: Ensure VC++ Redistributable & Resources
         shell: powershell
@@ -106,6 +84,7 @@ jobs:
           path: inno_error.log
 
       - name: Archive Portable Release Folder
+        shell: powershell
         run: |
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\installer\Nayli-Kiosk-Desktop-Portable.zip -Force
 
@@ -114,4 +93,3 @@ jobs:
         with:
           name: nayli-kiosk-desktop-setup
           path: build/installer/
-
