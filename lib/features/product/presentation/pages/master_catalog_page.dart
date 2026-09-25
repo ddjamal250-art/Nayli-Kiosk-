@@ -469,7 +469,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
                           stock: qty,
                           category: item.category,
                           imageUrl: item.imageUrl,
-                          wholesalePrice: item.wholesalePackPrice > 0 ? item.wholesalePackPrice : 0,);
+                          wholesalePrice: item.wholesalePackPrice,);
                         context.read<ProductBloc>().add(AddProduct(newProduct));
                       }
 
@@ -513,7 +513,7 @@ class _MasterCatalogPageState extends State<MasterCatalogPage> {
           stock: 12,
           category: item.category,
           imageUrl: item.imageUrl,
-          wholesalePrice: item.wholesalePackPrice > 0 ? item.wholesalePackPrice : 0,);
+          wholesalePrice: item.wholesalePackPrice,);
         context.read<ProductBloc>().add(AddProduct(newProduct));
       }
     }

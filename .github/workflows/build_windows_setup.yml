@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload log to webhook
         run: |
-          curl.exe -X POST -H "Content-Type: text/plain" --data-binary @build_runner_error.log https://webhook.site/6613c6f7-f0c1-4a47-9b3f-6daf622dc356 || exit 0
+          curl.exe -X POST -H "Content-Type: text/plain" --data-binary @build_runner_error.log https://webhook.site/ea1c5f68-c573-446b-bec7-8b145b21d430 || exit 0
         continue-on-error: true
 
       - name: Generate App Icons
