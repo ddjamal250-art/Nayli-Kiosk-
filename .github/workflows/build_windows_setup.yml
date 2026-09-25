@@ -8,8 +8,6 @@ on:
 jobs:
   build-windows:
     runs-on: windows-2022
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
@@ -54,17 +52,8 @@ jobs:
 
       - name: Build Windows Executable Release
         shell: cmd
-        run: flutter build windows -v > flutter_build.txt 2>&1
-        continue-on-error: true
-
-      - name: Commit build text
-        if: always()
-        shell: cmd
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout main
-          git add flutter_build.txt
+        run: flutter build windows
+                  git add flutter_build.txt
           git commit -m "Upload build log"
           git push origin main
 
