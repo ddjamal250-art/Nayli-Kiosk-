@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Setup MSVC C++ Environment
         uses: ilammy/msvc-dev-cmd@v1
@@ -32,23 +34,10 @@ jobs:
       - name: Apply Custom Nayli Kiosk Branding, Icon & Executable Name
         shell: powershell
         run: |
-          # 1. Replace default Flutter icon with official Nayli Kiosk multi-res icon
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
-
-          # 2. Rename executable binary from billing_app.exe to Nayli-Kiosk.exe
           (Get-Content "windows\CMakeLists.txt") -replace 'set\(BINARY_NAME "billing_app"\)', 'set(BINARY_NAME "Nayli-Kiosk")' | Set-Content "windows\CMakeLists.txt"
-
-          # 3. Set Windows native Title Bar text to "Nayli Kiosk POS"
           (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Kiosk POS"' | Set-Content "windows\runner\main.cpp"
-
-          # 4. Set Windows File Description and Product Name metadata
-          (Get-Content "windows\runner\Runner.rc") `
-            -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' `
-            -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' `
-            -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' `
-            -replace '1,0,0,1', '2,0,2,0' `
-            -replace '"1.0.0.1"', '"2.0.2.0"' `
-            | Set-Content "windows\runner\Runner.rc"
+          (Get-Content "windows\runner\Runner.rc") -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' -replace '1,0,0,1', '2,0,2,0' -replace '"1.0.0.1"', '"2.0.2.0"' | Set-Content "windows\runner\Runner.rc"
 
       - name: Install dependencies
         run: flutter pub get
@@ -62,34 +51,16 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
       - name: Build Windows Executable Release
-        run: flutter build windows
+        shell: cmd
+        run: flutter build windows > flutter_build.log 2>&1
+        continue-on-error: true
 
-      - name: Ensure VC++ Redistributable & Resources
-        shell: powershell
+      - name: Commit log
+        if: always()
+        shell: cmd
         run: |
-          New-Item -ItemType Directory -Force -Path "windows\redist"
-          if (-not (Test-Path "windows\redist\vc_redist.x64.exe")) {
-            Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "windows\redist\vc_redist.x64.exe"
-          }
-
-      - name: Compile Inno Setup Installer
-        run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .github\installer\installer.iss 2>&1 | Tee-Object -FilePath inno_error.log; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-      - name: Upload Inno Setup log as artifact
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: inno-setup-log
-          path: inno_error.log
-
-      - name: Archive Portable Release Folder
-        shell: powershell
-        run: |
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\installer\Nayli-Kiosk-Desktop-Portable.zip -Force
-
-      - name: Upload Windows Installer Setup Artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: nayli-kiosk-desktop-setup
-          path: build/installer/
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add flutter_build.log
+          git commit -m "Upload build log"
+          git push
