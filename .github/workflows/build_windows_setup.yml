@@ -81,10 +81,7 @@ jobs:
           if ($log) {
             $length = $log.Length
             if ($length -gt 60000) { $log = "..." + $log.Substring($length - 60000) }
-            $body = "Build Log:
-```text
-$log
-```"
+            $body = "Build Log:`n``````text`n$log`n``````"
             $json = @{ body = $body } | ConvertTo-Json
             Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -Headers @{Authorization="Bearer ${{ secrets.GITHUB_TOKEN }}"; Accept="application/vnd.github.v3+json"} -Body $json
           }
