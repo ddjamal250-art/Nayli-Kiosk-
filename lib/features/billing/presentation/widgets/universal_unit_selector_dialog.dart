@@ -136,7 +136,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   }
 
   void _setQuantity(double q) {
-    final validQ = q.clamp(1, 9999);
+    final double validQ = q.clamp(1.0, 9999.0);
     setState(() {
       _quantity = validQ;
       _qtyController.text = validQ.toString();
@@ -499,7 +499,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                                         ),
                                       ),
                                       onChanged: (val) {
-                                        final n = int.tryParse(val);
+                                        final double? n = double.tryParse(val);
                                         if (n != null && n > 0) {
                                           setState(() => _quantity = n);
                                         }
@@ -518,11 +518,11 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                           Wrap(
                             spacing: 6,
                             runSpacing: 6,
-                            children: [1, 2, 3, 4, 5, 6, 10, 12, 20].map((q) {
+                            children: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 10.0, 12.0, 20.0].map((q) {
                               final isSelected = _quantity == q;
                               return ChoiceChip(
                                 label: Text(
-                                  '$q',
+                                  q.toStringAsFixed(0),
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
