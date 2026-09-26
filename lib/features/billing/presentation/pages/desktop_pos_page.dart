@@ -740,7 +740,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       return InkWell(
                         onTap: () {
                           Navigator.pop(dialogCtx);
-                          _addProductToCartWithPricing(product, quantity: multiplier);
+                          _addProductToCartWithPricing(product, quantity: multiplier.toDouble());
                           SnackbarHelper.showSuccess(
                             context,
                             '${context.tr("added_to_cart")}: ${product.name} (x$multiplier)',
@@ -853,7 +853,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                     ),
                                     onPressed: () {
                                       Navigator.pop(dialogCtx);
-                                      _addProductToCartWithPricing(product, quantity: multiplier);
+                                      _addProductToCartWithPricing(product, quantity: multiplier.toDouble());
                                       SnackbarHelper.showSuccess(
                                         context,
                                         '${context.tr("added_to_cart")}: ${product.name} (x$multiplier)',
@@ -1018,7 +1018,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                       wholesalePrice: item.wholesalePrice > 0 ? item.wholesalePrice : item.defaultPrice,
                                     );
                                     context.read<ProductBloc>().add(AddProduct(newProduct));
-                                    _addProductToCartWithPricing(newProduct, quantity: multiplier);
+                                    _addProductToCartWithPricing(newProduct, quantity: multiplier.toDouble());
                                     SnackbarHelper.showSuccess(
                                       context,
                                       'تمت إضافة "${item.name}" إلى مخزون المحل والسلة بنجاح',
@@ -1144,14 +1144,14 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     final barcodeProduct = BarcodeNormalizer.findProduct(products, barcodeToScan);
 
     if (barcodeProduct != null) {
-      _addProductToCartWithPricing(barcodeProduct, quantity: multiplier);
+      _addProductToCartWithPricing(barcodeProduct, quantity: multiplier.toDouble());
       return;
     }
 
     // 4. Search by product name / keyword in local inventory
     final nameMatches = _findProductsByNameOrBarcode(barcodeToScan);
     if (nameMatches.length == 1) {
-      _addProductToCartWithPricing(nameMatches.first, quantity: multiplier);
+      _addProductToCartWithPricing(nameMatches.first, quantity: multiplier.toDouble());
       SnackbarHelper.showSuccess(
         context,
         '${context.tr("added_to_cart")}: ${nameMatches.first.name} (x$multiplier)',
@@ -3247,7 +3247,7 @@ $itemsSummary
 
                 return InkWell(
                   onTap: () {
-                    _addProductToCartWithPricing(product, quantity: multiplier);
+                    _addProductToCartWithPricing(product, quantity: multiplier.toDouble());
                     SnackbarHelper.showSuccess(
                       context,
                       '${context.tr("added_to_cart")}: ${product.name} (x$multiplier)',

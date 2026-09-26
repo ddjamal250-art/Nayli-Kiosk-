@@ -702,12 +702,12 @@ class _StockInPageState extends State<StockInPage> {
         (item.reference.isNotEmpty && p.barcode == item.reference)
       ).firstOrNull;
 
-      final qty = item.quantity.toInt();
+      final double qty = item.quantity.toDouble();
       final costPrice = item.unitPrice;
 
       if (existing != null) {
         final updatedProduct = existing.copyWith(
-          stock: existing.stock + qty,
+          stock: (existing.stock + qty).toDouble(),
           costPrice: costPrice > 0 ? costPrice : existing.costPrice,
         );
         productBloc.add(UpdateProduct(updatedProduct));
@@ -729,7 +729,7 @@ class _StockInPageState extends State<StockInPage> {
           category: ocrCat,
           price: price,
           costPrice: costPrice,
-          stock: qty,
+          stock: qty.toDouble(),
           imageUrl: masterMatch?.imageUrl,
           wholesalePrice: masterMatch?.wholesalePrice ?? 0.0,
           );

@@ -138,10 +138,7 @@ final router = GoRouter(
         ),
       ],
     ),
-    GoRoute(
-      path: '/master-catalog',
-      builder: (context, state) => MasterCatalogPage(),
-    ),
+    
     GoRoute(
       path: '/reports',
       builder: (context, state) => DailyReportPage(),
@@ -198,10 +195,7 @@ final router = GoRouter(
           path: 'supplier-invoice/new',
           builder: (context, state) => NewSupplierInvoicePage(),
         ),
-        GoRoute(
-          path: 'catalog',
-          builder: (context, state) => MasterCatalogPage(),
-        ),
+        
         GoRoute(
           path: 'shelf-labels',
           builder: (context, state) => ShelfLabelsPage(),

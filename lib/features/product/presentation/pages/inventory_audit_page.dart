@@ -291,7 +291,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
           double totalCostCapital = 0.0;
           double totalRetailValue = 0.0;
           double totalVarianceCost = 0.0;
-          int totalItemsCount = 0;
+          double totalItemsCount = 0.0;
           int discrepancyItemsCount = 0;
 
           for (final p in products) {

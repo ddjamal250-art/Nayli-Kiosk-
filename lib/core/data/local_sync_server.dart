@@ -14,7 +14,7 @@ class RemoteCartItem {
   final String name;
   final double price;
   final double costPrice;
-  final int quantity;
+  final double quantity;
   final String? unit;
 
   RemoteCartItem({
@@ -40,7 +40,7 @@ class RemoteCartItem {
     name: map['name']?.toString() ?? 'سلعة',
     price: (map['price'] as num?)?.toDouble() ?? 0.0,
     costPrice: (map['costPrice'] as num?)?.toDouble() ?? 0.0,
-    quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+    quantity: (map['quantity'] as num?)?.toDouble() ?? 1.0,
     unit: map['unit']?.toString() ?? 'قطعة',
   );
 }
@@ -413,7 +413,7 @@ class LocalSyncServer {
             .firstOrNull;
 
         if (product != null && product is ProductModel) {
-          final newStock = (product.stock - qty.toInt()).clamp(0, 999999);
+          final double newStock = (product.stock - qty.toDouble()).toDouble().clamp(0.0, 999999.0);
           final updatedProduct = product.copyWith(stock: newStock);
           await HiveDatabase.productBox.put(product.id, updatedProduct);
         }
