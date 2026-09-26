@@ -15,7 +15,7 @@ class KioskProductResult {
   final double pricePerKg;
   final bool isUnit;
   final String? unitName;
-  final int unitMultiplier;
+  final double unitMultiplier;
   final double singlePrice;
   final double savings;
   final String? imageUrl;

@@ -2893,7 +2893,7 @@ $itemsSummary
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('${context.tr("cart_items_count")}: ${state.cartItems.length} (${state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity)})',
+                        Text('${context.tr("cart_items_count")}: ${state.cartItems.length} (${state.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity).toInt()})',
                             style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600)),
                         Row(
                           children: [
@@ -3521,7 +3521,7 @@ $itemsSummary
     final linkedProductId = item['linkedProductId']?.toString() ?? '';
     final price = (item['price'] as num?)?.toDouble() ?? 0.0;
     final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
-    final stock = (item['stock'] as num?)?.toInt() ?? 999;
+    final stock = (item['stock'] as num?)?.toDouble() ?? 999.0;
 
     // 1. Try finding in productBox
     Product? matched;
@@ -3669,7 +3669,7 @@ $itemsSummary
         final barcode = item['barcode']?.toString() ?? '';
         final id = item['id']?.toString() ?? barcode;
         final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
-        final stock = (item['stock'] as num?)?.toInt() ?? 999;
+        final stock = (item['stock'] as num?)?.toDouble() ?? 999.0;
 
         return InkWell(
           borderRadius: BorderRadius.circular(16),
