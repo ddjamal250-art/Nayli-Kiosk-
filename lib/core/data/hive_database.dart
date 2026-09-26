@@ -58,6 +58,7 @@ class HiveDatabase {
     Hive.registerAdapter(ProductModelAdapter());
     Hive.registerAdapter(ProductUnitModelAdapter());
     Hive.registerAdapter(ShopModelAdapter());
+    Hive.registerAdapter(PurchaseBatchModelAdapter());
 
     // Open Boxes
     await Hive.openBox<ProductModel>(productBoxName);
@@ -100,3 +101,4 @@ class HiveDatabase {
   static Box get shoppingListBox => Hive.box(shoppingListBoxName);
   static Box get loosePiecesBox => Hive.box(loosePiecesBoxName);
 }
+

@@ -587,7 +587,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     if (rawQuery.trim().isEmpty) return [];
     final query = rawQuery.trim();
     final normQuery = _normalizeSearchText(query);
-    final products = context.read<ProductBloc>().state.products;
+    final products = context.read<ProductBloc>().state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
 
     // 1. Check exact barcode match first
     final exactBarcode = products.where((p) => BarcodeNormalizer.matches(p.barcode, query)).toList();
@@ -1101,7 +1101,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       );
       if (scaleResult != null) {
         final productBloc = context.read<ProductBloc>();
-        final products = productBloc.state.products;
+        final products = productBloc.state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
         final scaleProduct = BarcodeNormalizer.findScaleProduct(products, scaleResult);
         if (scaleProduct != null) {
           double effectiveUnitPrice = scaleProduct.price;
@@ -1140,7 +1140,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     // 3. Find product in local inventory by barcode (exact or normalized)
     final productBloc = context.read<ProductBloc>();
-    final products = productBloc.state.products;
+    final products = productBloc.state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
     final barcodeProduct = BarcodeNormalizer.findProduct(products, barcodeToScan);
 
     if (barcodeProduct != null) {
@@ -2037,7 +2037,7 @@ $itemsSummary
             final allProducts = context.read<ProductBloc>().state.products;
             final query = searchController.text.trim().toLowerCase();
 
-            final productsInCat = allProducts.where((p) {
+            final productsInCat = allProducts.where((p) { if (p.category == 'مقهى - مواد خام') return false;
                 final catL = p.category.toLowerCase();
                 final nameL = p.name.toLowerCase();
 
@@ -2309,7 +2309,7 @@ $itemsSummary
                     ),
                     onSubmitted: (code) {
                       final productBloc = context.read<ProductBloc>();
-                      final products = productBloc.state.products;
+                      final products = productBloc.state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
                       final match = products.where((p) => p.barcode == code.trim()).firstOrNull;
                       setModalState(() {
                         foundProduct = match;

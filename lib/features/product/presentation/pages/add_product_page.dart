@@ -11,6 +11,9 @@ import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
+import '../../domain/entities/product_unit.dart' show UnitTier;
+import '../../domain/entities/product_unit.dart';
+import '../../domain/entities/product_unit.dart' show UnitTier;
 import '../bloc/product_bloc.dart';
 
 class AddProductPage extends StatefulWidget {
@@ -27,14 +30,15 @@ class _AddProductPageState extends State<AddProductPage> {
   final _priceCtrl = TextEditingController();
   final _costPriceCtrl = TextEditingController();
   final _stockCtrl = TextEditingController(text: '10');
-  final _baseUnitNameCtrl = TextEditingController(text: 'Ø­Ø¨Ø©');
+  final _baseUnitNameCtrl = TextEditingController(text: 'Ã˜Â­Ã˜Â¨Ã˜Â©');
   final _pluCodeCtrl = TextEditingController();
 
-  String _selectedCategory = 'Ø¹Ø§Ù…';
+  String _selectedCategory = 'Ã˜Â¹Ã˜Â§Ã™â€¦';
   String? _imageUrl;
   bool _isSaving = false;
   List<ProductUnit> _dynamicUnits = [];
   List<String> _availableCategories = [];
+  UnitSystemType _unitSystemType = UnitSystemType.discrete;
 
   @override
   void initState() {
@@ -70,44 +74,45 @@ class _AddProductPageState extends State<AddProductPage> {
     final barcodeCtrl = TextEditingController(text: existing?.barcode ?? '');
     bool isEnabled = existing?.isEnabled ?? true;
     bool isWeighable = existing?.isWeighable ?? false;
+    UnitTier _tier = existing?.tier ?? UnitTier.small;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx2, setDlg) => AlertDialog(
-          title: Text(existing == null ? 'Ø¥Ø¶Ø§ÙØ© ÙˆØ­Ø¯Ø© Ø¬Ø¯ÙŠØ¯Ø©' : 'ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„ÙˆØ­Ø¯Ø©'),
+          title: Text(existing == null ? 'Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯Ã˜Â©' : 'Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ™Ë†Ã˜Â­Ã˜Â¯Ã˜Â©'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Ø§Ø³Ù… Ø§Ù„ÙˆØ­Ø¯Ø© (ÙƒØ±ØªÙˆÙ†Ø©ØŒ ÙƒØº...)')),
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© (Ã™Æ’Ã˜Â±Ã˜ÂªÃ™Ë†Ã™â€ Ã˜Â©Ã˜Å’ Ã™Æ’Ã˜Âº...)')),
                 const SizedBox(height: 8),
-                TextField(controller: multiCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Ø¹Ø¯Ø¯ Ø§Ù„Ø­Ø¨Ø§Øª / Ø§Ù„Ù…Ø¹Ø§Ù…Ù„')),
+                TextField(controller: multiCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Ã˜Â¹Ã˜Â¯Ã˜Â¯ Ã˜Â§Ã™â€žÃ˜Â­Ã˜Â¨Ã˜Â§Ã˜Âª / Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¹Ã˜Â§Ã™â€¦Ã™â€ž')),
                 const SizedBox(height: 8),
                 TextField(
                   controller: priceCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: isWeighable ? 'Ø³Ø¹Ø± Ø§Ù„Ø¨ÙŠØ¹ / ÙƒØº (Ø¯Ø¬)' : 'Ø³Ø¹Ø± Ø§Ù„Ø¨ÙŠØ¹'),
+                  decoration: InputDecoration(labelText: isWeighable ? 'Ã˜Â³Ã˜Â¹Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â¨Ã™Å Ã˜Â¹ / Ã™Æ’Ã˜Âº (Ã˜Â¯Ã˜Â¬)' : 'Ã˜Â³Ã˜Â¹Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â¨Ã™Å Ã˜Â¹'),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: costCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: isWeighable ? 'Ø³Ø¹Ø± Ø§Ù„Ø´Ø±Ø§Ø¡ / ÙƒØº (Ø¯Ø¬)' : 'Ø³Ø¹Ø± Ø§Ù„Ø´Ø±Ø§Ø¡'),
+                  decoration: InputDecoration(labelText: isWeighable ? 'Ã˜Â³Ã˜Â¹Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â´Ã˜Â±Ã˜Â§Ã˜Â¡ / Ã™Æ’Ã˜Âº (Ã˜Â¯Ã˜Â¬)' : 'Ã˜Â³Ã˜Â¹Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â´Ã˜Â±Ã˜Â§Ã˜Â¡'),
                 ),
                 const SizedBox(height: 8),
-                TextField(controller: barcodeCtrl, decoration: const InputDecoration(labelText: 'Ø¨Ø§Ø±ÙƒÙˆØ¯ Ø§Ù„ÙˆØ­Ø¯Ø© (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)')),
+                TextField(controller: barcodeCtrl, decoration: const InputDecoration(labelText: 'Ã˜Â¨Ã˜Â§Ã˜Â±Ã™Æ’Ã™Ë†Ã˜Â¯ Ã˜Â§Ã™â€žÃ™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© (Ã˜Â§Ã˜Â®Ã˜ÂªÃ™Å Ã˜Â§Ã˜Â±Ã™Å )')),
                 const SizedBox(height: 12),
                 SwitchListTile(
-                  title: const Text('Ù…ÙÙØ¹ÙŽÙ‘Ù„Ø© ÙÙŠ Ø§Ù„ÙƒØ§Ø´ÙŠØ±'),
-                  subtitle: const Text('Ø£ÙˆÙ‚ÙÙ‡Ø§ Ù„Ø¥Ø®ÙØ§Ø¦Ù‡Ø§ Ù…Ø¤Ù‚ØªØ§Ù‹'),
+                  title: const Text('Ã™â€¦Ã™ÂÃ™ÂÃ˜Â¹Ã™Å½Ã™â€˜Ã™â€žÃ˜Â© Ã™ÂÃ™Å  Ã˜Â§Ã™â€žÃ™Æ’Ã˜Â§Ã˜Â´Ã™Å Ã˜Â±'),
+                  subtitle: const Text('Ã˜Â£Ã™Ë†Ã™â€šÃ™ÂÃ™â€¡Ã˜Â§ Ã™â€žÃ˜Â¥Ã˜Â®Ã™ÂÃ˜Â§Ã˜Â¦Ã™â€¡Ã˜Â§ Ã™â€¦Ã˜Â¤Ã™â€šÃ˜ÂªÃ˜Â§Ã™â€¹'),
                   value: isEnabled,
                   onChanged: (v) => setDlg(() => isEnabled = v),
                   dense: true,
                 ),
                 SwitchListTile(
-                  title: const Text('âš–ï¸ ÙˆØ­Ø¯Ø© Ù…ÙŠØ²Ø§Ù†'),
-                  subtitle: const Text('Ø§Ù„Ø³Ø¹Ø± Ø¨Ø§Ù„ÙƒØº â€” ÙŠØ­ØªØ§Ø¬ Ù…ÙŠØ²Ø§Ù† ØªØ¬Ø§Ø±ÙŠ'),
+                  title: const Text('Ã¢Å¡â€“Ã¯Â¸Â Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã™â€¦Ã™Å Ã˜Â²Ã˜Â§Ã™â€ '),
+                  subtitle: const Text('Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â± Ã˜Â¨Ã˜Â§Ã™â€žÃ™Æ’Ã˜Âº Ã¢â‚¬â€ Ã™Å Ã˜Â­Ã˜ÂªÃ˜Â§Ã˜Â¬ Ã™â€¦Ã™Å Ã˜Â²Ã˜Â§Ã™â€  Ã˜ÂªÃ˜Â¬Ã˜Â§Ã˜Â±Ã™Å '),
                   value: isWeighable,
                   onChanged: (v) => setDlg(() => isWeighable = v),
                   dense: true,
@@ -116,19 +121,20 @@ class _AddProductPageState extends State<AddProductPage> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx2), child: const Text('Ø¥Ù„ØºØ§Ø¡')),
+            TextButton(onPressed: () => Navigator.pop(ctx2), child: const Text('Ã˜Â¥Ã™â€žÃ˜ÂºÃ˜Â§Ã˜Â¡')),
             ElevatedButton(
               onPressed: () {
                 final name = nameCtrl.text.trim();
                 if (name.isEmpty) return;
                 final unit = ProductUnit(
                   name: name,
-                  multiplier: int.tryParse(multiCtrl.text.trim()) ?? 1,
+                  multiplier: double.tryParse(multiCtrl.text.trim()) ?? 1.0,
                   price: double.tryParse(priceCtrl.text.trim()) ?? 0.0,
                   cost: double.tryParse(costCtrl.text.trim()) ?? 0.0,
                   barcode: barcodeCtrl.text.trim().isNotEmpty ? barcodeCtrl.text.trim() : null,
                   isEnabled: isEnabled,
                   isWeighable: isWeighable,
+                  tier: _tier,
                 );
                 setState(() {
                   if (editIndex != null) {
@@ -139,7 +145,7 @@ class _AddProductPageState extends State<AddProductPage> {
                 });
                 Navigator.pop(ctx2);
               },
-              child: const Text('Ø­ÙØ¸'),
+              child: const Text('Ã˜Â­Ã™ÂÃ˜Â¸'),
             ),
           ],
         ),
@@ -152,10 +158,10 @@ class _AddProductPageState extends State<AddProductPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('ØªØµÙ†ÙŠÙ Ø¬Ø¯ÙŠØ¯'),
-        content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: 'Ø§Ø³Ù… Ø§Ù„ØªØµÙ†ÙŠÙ')),
+        title: const Text('Ã˜ÂªÃ˜ÂµÃ™â€ Ã™Å Ã™Â Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯'),
+        content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: 'Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ˜ÂªÃ˜ÂµÃ™â€ Ã™Å Ã™Â')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Ø¥Ù„ØºØ§Ø¡')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Ã˜Â¥Ã™â€žÃ˜ÂºÃ˜Â§Ã˜Â¡')),
           ElevatedButton(
             onPressed: () {
               final name = ctrl.text.trim();
@@ -168,7 +174,7 @@ class _AddProductPageState extends State<AddProductPage> {
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('Ø¥Ø¶Ø§ÙØ©'),
+            child: const Text('Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â©'),
           ),
         ],
       ),
@@ -188,18 +194,19 @@ class _AddProductPageState extends State<AddProductPage> {
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
       costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0,
       wholesalePrice: 0.0,
-      stock: int.tryParse(_stockCtrl.text.trim()) ?? 10,
+      stock: double.tryParse(_stockCtrl.text.trim()) ?? 10.0,
       category: _selectedCategory,
       imageUrl: _imageUrl,
-      baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'Ø­Ø¨Ø©',
+      baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'Ã˜Â­Ã˜Â¨Ã˜Â©',
       units: _dynamicUnits,
       pluCode: plu.isNotEmpty ? plu : null,
+      unitSystemType: _unitSystemType,
     );
 
     context.read<ProductBloc>().add(AddProduct(product));
 
     if (mounted) {
-      SnackbarHelper.showSuccess(context, 'ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù…Ù†ØªØ¬ Ø¨Ù†Ø¬Ø§Ø­');
+      SnackbarHelper.showSuccess(context, 'Ã˜ÂªÃ™â€¦ Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜ÂªÃ˜Â¬ Ã˜Â¨Ã™â€ Ã˜Â¬Ã˜Â§Ã˜Â­');
       context.pop();
     }
   }
@@ -208,7 +215,7 @@ class _AddProductPageState extends State<AddProductPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ø¥Ø¶Ø§ÙØ© Ù…Ù†ØªØ¬ Ø¬Ø¯ÙŠØ¯'),
+        title: const Text('Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã™â€¦Ã™â€ Ã˜ÂªÃ˜Â¬ Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯'),
         actions: [
           if (_isSaving)
             const Center(child: Padding(padding: EdgeInsets.symmetric(horizontal: 16.0), child: CircularProgressIndicator(color: Colors.white)))
@@ -221,18 +228,18 @@ class _AddProductPageState extends State<AddProductPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // --- Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ© ---
+            // --- Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¹Ã™â€žÃ™Ë†Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â§Ã˜Â³Ã™Å Ã˜Â© ---
             _SectionCard(
-              title: 'Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ©',
+              title: 'Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¹Ã™â€žÃ™Ë†Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â§Ã˜Â³Ã™Å Ã˜Â©',
               icon: Icons.info_outline,
               children: [
-                const InputLabel(text: 'Ø§Ø³Ù… Ø§Ù„Ù…Ù†ØªØ¬'),
+                const InputLabel(text: 'Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜ÂªÃ˜Â¬'),
                 TextFormField(
                   controller: _nameCtrl,
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Ù‡Ø°Ø§ Ø§Ù„Ø­Ù‚Ù„ Ù…Ø·Ù„ÙˆØ¨' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Ã™â€¡Ã˜Â°Ã˜Â§ Ã˜Â§Ã™â€žÃ˜Â­Ã™â€šÃ™â€ž Ã™â€¦Ã˜Â·Ã™â€žÃ™Ë†Ã˜Â¨' : null,
                 ),
                 const SizedBox(height: 12),
-                const InputLabel(text: 'Ø§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯'),
+                const InputLabel(text: 'Ã˜Â§Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Â±Ã™Æ’Ã™Ë†Ã˜Â¯'),
                 Row(
                   children: [
                     Expanded(child: TextFormField(controller: _barcodeCtrl)),
@@ -240,29 +247,29 @@ class _AddProductPageState extends State<AddProductPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const InputLabel(text: 'ÙƒÙˆØ¯ PLU Ù„Ù„Ù…ÙŠØ²Ø§Ù† Ø§Ù„ØªØ¬Ø§Ø±ÙŠ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)'),
+                const InputLabel(text: 'Ã™Æ’Ã™Ë†Ã˜Â¯ PLU Ã™â€žÃ™â€žÃ™â€¦Ã™Å Ã˜Â²Ã˜Â§Ã™â€  Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â¬Ã˜Â§Ã˜Â±Ã™Å  (Ã˜Â§Ã˜Â®Ã˜ÂªÃ™Å Ã˜Â§Ã˜Â±Ã™Å )'),
                 TextFormField(
                   controller: _pluCodeCtrl,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    hintText: 'Ù…Ø«Ø§Ù„: 1ØŒ 42...',
+                    hintText: 'Ã™â€¦Ã˜Â«Ã˜Â§Ã™â€ž: 1Ã˜Å’ 42...',
                     prefixIcon: Icon(Icons.scale, size: 18),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const InputLabel(text: 'Ø§Ù„ØªØµÙ†ÙŠÙ'),
+                    const InputLabel(text: 'Ã˜Â§Ã™â€žÃ˜ÂªÃ˜ÂµÃ™â€ Ã™Å Ã™Â'),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: _addCustomCategoryDialog,
                       icon: const Icon(Icons.add, size: 16),
-                      label: const Text('ØªØµÙ†ÙŠÙ Ø¬Ø¯ÙŠØ¯'),
+                      label: const Text('Ã˜ÂªÃ˜ÂµÃ™â€ Ã™Å Ã™Â Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯'),
                     ),
                   ],
                 ),
                 DropdownButtonFormField<String>(
-                  value: _availableCategories.contains(_selectedCategory) ? _selectedCategory : 'Ø¹Ø§Ù…',
+                  value: _availableCategories.contains(_selectedCategory) ? _selectedCategory : 'Ã˜Â¹Ã˜Â§Ã™â€¦',
                   isExpanded: true,
                   items: _availableCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                   onChanged: (v) { if (v != null) setState(() => _selectedCategory = v); },
@@ -270,48 +277,48 @@ class _AddProductPageState extends State<AddProductPage> {
               ],
             ),
             const SizedBox(height: 16),
-            // --- Ø§Ù„ØªØ³Ø¹ÙŠØ± ÙˆØ§Ù„Ù…Ø®Ø²ÙˆÙ† ---
+            // --- Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â³Ã˜Â¹Ã™Å Ã˜Â± Ã™Ë†Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â®Ã˜Â²Ã™Ë†Ã™â€  ---
             _SectionCard(
-              title: 'Ø§Ù„ØªØ³Ø¹ÙŠØ± ÙˆØ§Ù„Ù…Ø®Ø²ÙˆÙ†',
+              title: 'Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â³Ã˜Â¹Ã™Å Ã˜Â± Ã™Ë†Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â®Ã˜Â²Ã™Ë†Ã™â€ ',
               icon: Icons.attach_money,
               children: [
-                const InputLabel(text: 'Ø§Ø³Ù… Ø§Ù„ÙˆØ­Ø¯Ø© Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ© (Ø­Ø¨Ø©ØŒ ÙƒØº...)'),
+                const InputLabel(text: 'Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â§Ã˜Â³Ã™Å Ã˜Â© (Ã˜Â­Ã˜Â¨Ã˜Â©Ã˜Å’ Ã™Æ’Ã˜Âº...)'),
                 TextFormField(controller: _baseUnitNameCtrl),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const InputLabel(text: 'Ø³Ø¹Ø± Ø§Ù„Ø¨ÙŠØ¹'),
+                      const InputLabel(text: 'Ã˜Â³Ã˜Â¹Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â¨Ã™Å Ã˜Â¹'),
                       TextFormField(controller: _priceCtrl, keyboardType: TextInputType.number),
                     ])),
                     const SizedBox(width: 12),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const InputLabel(text: 'Ø³Ø¹Ø± Ø§Ù„Ø´Ø±Ø§Ø¡'),
+                      const InputLabel(text: 'Ã˜Â³Ã˜Â¹Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â´Ã˜Â±Ã˜Â§Ã˜Â¡'),
                       TextFormField(controller: _costPriceCtrl, keyboardType: TextInputType.number),
                     ])),
                   ],
                 ),
                 const SizedBox(height: 12),
-                const InputLabel(text: 'Ø§Ù„Ù…Ø®Ø²ÙˆÙ† Ø§Ù„Ø­Ø§Ù„ÙŠ'),
+                const InputLabel(text: 'Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â®Ã˜Â²Ã™Ë†Ã™â€  Ã˜Â§Ã™â€žÃ˜Â­Ã˜Â§Ã™â€žÃ™Å '),
                 TextFormField(controller: _stockCtrl, keyboardType: TextInputType.number),
               ],
             ),
             const SizedBox(height: 16),
-            // --- Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„ÙØ±Ø¹ÙŠØ© ---
+            // --- Ã˜Â§Ã™â€žÃ™Ë†Ã˜Â­Ã˜Â¯Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ™ÂÃ˜Â±Ã˜Â¹Ã™Å Ã˜Â© ---
             _SectionCard(
-              title: 'Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„ÙØ±Ø¹ÙŠØ©',
+              title: 'Ã˜Â§Ã™â€žÃ™Ë†Ã˜Â­Ã˜Â¯Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ™ÂÃ˜Â±Ã˜Â¹Ã™Å Ã˜Â©',
               icon: Icons.layers,
               borderColor: Colors.teal.shade200,
               trailing: TextButton.icon(
                 onPressed: () => _addOrEditUnitDialog(),
                 icon: const Icon(Icons.add),
-                label: const Text('Ø¥Ø¶Ø§ÙØ© ÙˆØ­Ø¯Ø©'),
+                label: const Text('Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â©'),
               ),
               children: [
                 if (_dynamicUnits.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Ù„Ø§ ØªÙˆØ¬Ø¯ ÙˆØ­Ø¯Ø§Øª ÙØ±Ø¹ÙŠØ© â€” Ø³ÙŠÙØ¨Ø§Ø¹ Ø§Ù„Ù…Ù†ØªØ¬ Ø¨Ø§Ù„ÙˆØ­Ø¯Ø© Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ© ÙÙ‚Ø·.', style: TextStyle(color: Colors.grey)),
+                    child: Text('Ã™â€žÃ˜Â§ Ã˜ÂªÃ™Ë†Ã˜Â¬Ã˜Â¯ Ã™Ë†Ã˜Â­Ã˜Â¯Ã˜Â§Ã˜Âª Ã™ÂÃ˜Â±Ã˜Â¹Ã™Å Ã˜Â© Ã¢â‚¬â€ Ã˜Â³Ã™Å Ã™ÂÃ˜Â¨Ã˜Â§Ã˜Â¹ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜ÂªÃ˜Â¬ Ã˜Â¨Ã˜Â§Ã™â€žÃ™Ë†Ã˜Â­Ã˜Â¯Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â§Ã˜Â³Ã™Å Ã˜Â© Ã™ÂÃ™â€šÃ˜Â·.', style: TextStyle(color: Colors.grey)),
                   )
                 else
                   ..._dynamicUnits.asMap().entries.map((e) {
@@ -326,14 +333,14 @@ class _AddProductPageState extends State<AddProductPage> {
                           color: unit.isEnabled ? Colors.teal : Colors.grey,
                         ),
                         title: Text(
-                          '${unit.name}  Ã—${unit.multiplier}  â€” ${unit.price} Ø¯Ø¬${unit.isWeighable ? '/ÙƒØº' : ''}',
+                          '${unit.name}  Ãƒâ€”${unit.multiplier}  Ã¢â‚¬â€ ${unit.price} Ã˜Â¯Ã˜Â¬${unit.isWeighable ? '/Ã™Æ’Ã˜Âº' : ''}',
                           style: TextStyle(fontWeight: FontWeight.bold, color: unit.isEnabled ? null : Colors.grey),
                         ),
                         subtitle: Wrap(
                           spacing: 4,
                           children: [
-                            if (!unit.isEnabled) const Chip(label: Text('Ù…ÙØ¹Ø·ÙŽÙ‘Ù„Ø©', style: TextStyle(fontSize: 11)), backgroundColor: Colors.orange, padding: EdgeInsets.zero),
-                            if (unit.isWeighable) const Chip(label: Text('âš–ï¸ Ù…ÙŠØ²Ø§Ù†', style: TextStyle(fontSize: 11)), backgroundColor: Color(0xFFE0F2F1), padding: EdgeInsets.zero),
+                            if (!unit.isEnabled) const Chip(label: Text('Ã™â€¦Ã™ÂÃ˜Â¹Ã˜Â·Ã™Å½Ã™â€˜Ã™â€žÃ˜Â©', style: TextStyle(fontSize: 11)), backgroundColor: Colors.orange, padding: EdgeInsets.zero),
+                            if (unit.isWeighable) const Chip(label: Text('Ã¢Å¡â€“Ã¯Â¸Â Ã™â€¦Ã™Å Ã˜Â²Ã˜Â§Ã™â€ ', style: TextStyle(fontSize: 11)), backgroundColor: Color(0xFFE0F2F1), padding: EdgeInsets.zero),
                           ],
                         ),
                         trailing: Row(
@@ -341,7 +348,7 @@ class _AddProductPageState extends State<AddProductPage> {
                           children: [
                             IconButton(
                               icon: Icon(unit.isEnabled ? Icons.toggle_on : Icons.toggle_off, color: unit.isEnabled ? Colors.green : Colors.grey, size: 28),
-                              tooltip: unit.isEnabled ? 'ØªØ¹Ø·ÙŠÙ„' : 'ØªÙØ¹ÙŠÙ„',
+                              tooltip: unit.isEnabled ? 'Ã˜ÂªÃ˜Â¹Ã˜Â·Ã™Å Ã™â€ž' : 'Ã˜ÂªÃ™ÂÃ˜Â¹Ã™Å Ã™â€ž',
                               onPressed: () => setState(() { _dynamicUnits[idx] = unit.copyWith(isEnabled: !unit.isEnabled); }),
                             ),
                             IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () => _addOrEditUnitDialog(existing: unit, editIndex: idx)),
@@ -357,7 +364,7 @@ class _AddProductPageState extends State<AddProductPage> {
             ElevatedButton(
               onPressed: _saveProduct,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: AppTheme.primaryColor),
-              child: const Text('Ø­ÙØ¸ Ø§Ù„Ù…Ù†ØªØ¬', style: TextStyle(fontSize: 18, color: Colors.white)),
+              child: const Text('Ã˜Â­Ã™ÂÃ˜Â¸ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜ÂªÃ˜Â¬', style: TextStyle(fontSize: 18, color: Colors.white)),
             ),
             const SizedBox(height: 32),
           ],
@@ -401,4 +408,5 @@ class _SectionCard extends StatelessWidget {
     );
   }
 }
+
 

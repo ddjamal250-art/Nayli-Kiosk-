@@ -383,7 +383,7 @@ class _StockInPageState extends State<StockInPage> {
 
     final isScaleProduct = existingProduct?.units.any((u) => u.isWeighable) ?? false;
     final rawQtyDouble = double.tryParse(_qtyController.text.trim()) ?? 0.0;
-    final qty = isScaleProduct ? (rawQtyDouble * 1000).round() : rawQtyDouble.round();
+    final double qty = isScaleProduct ? (rawQtyDouble * 1000) : rawQtyDouble;
 
     if (name.isEmpty) {
       SnackbarHelper.showWarning(context, 'يرجى إدخال اسم السلعة');
@@ -398,14 +398,14 @@ class _StockInPageState extends State<StockInPage> {
     }
 
     final isWeighted = _unitMode == ArrivageUnitMode.vracSacs;
-    int effectiveQty = qty;
+    double effectiveQty = qty;
     double effectiveCost = costPrice;
 
     final isCoffee = _unitMode == ArrivageUnitMode.coffeeMachine;
 
     if (isCoffee) {
       final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
-      effectiveQty = (bags > 0 ? bags : 1) * _coffeeData.baseYieldCount;
+      effectiveQty = ((bags > 0 ? bags : 1) * _coffeeData.baseYieldCount).toDouble();
       effectiveCost = _coffeeData.totalCupCost;
       _selectedCategory = 'القهوة الجاهزة';
     }

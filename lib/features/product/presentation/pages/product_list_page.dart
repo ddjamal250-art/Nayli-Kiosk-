@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +22,8 @@ import '../../../../core/widgets/product_image_display.dart';
 import '../../../shop/data/models/shop_model.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
+import '../widgets/quick_receive_modal.dart';
+import '../widgets/coffee_recipe_modal.dart';
 
 class ProductListPage extends StatefulWidget {
   ProductListPage({super.key});
@@ -39,24 +41,24 @@ class _ProductListPageState extends State<ProductListPage> {
   final Set<String> _selectedProductIds = {};
 
   static const List<Map<String, String>> _categoryTabsDef = [
-    {'key': 'all', 'ar': 'الكل', 'fr': 'Tous', 'en': 'All'},
-    {'key': 'coffee_ready', 'ar': '☕ القهوة الجاهزة', 'fr': '☕ Café Prêt', 'en': '☕ Ready Coffee'},
-    {'key': 'scale', 'ar': '⚖️ مواد الميزان', 'fr': '⚖️ Vrac & Balance', 'en': '⚖️ Scale & Bulk'},
-    {'key': 'stationery', 'ar': '📚 أدوات مدرسية', 'fr': '📚 Papeterie', 'en': '📚 Stationery'},
-    {'key': 'tobacco', 'ar': '🚬 تبغ وسجائر', 'fr': '🚬 Tabac', 'en': '🚬 Tobacco'},
-    {'key': 'food', 'ar': 'مواد غذائية', 'fr': 'Alimentation', 'en': 'Groceries'},
-    {'key': 'dairy', 'ar': 'حليب ومشتقاته', 'fr': 'Produits Laitiers', 'en': 'Dairy'},
-    {'key': 'bakery', 'ar': 'مخبوزات وعجائن', 'fr': 'Boulangerie & Pâtes', 'en': 'Bakery & Pasta'},
-    {'key': 'beverages', 'ar': 'مشروبات ومياه', 'fr': 'Boissons & Eaux', 'en': 'Beverages & Water'},
-    {'key': 'cleaning', 'ar': 'نظافة وتجميل', 'fr': 'Entretien & Hygiène', 'en': 'Cleaning & Hygiene'},
-    {'key': 'sweets', 'ar': 'حلويات وسكاكر', 'fr': 'Confiserie & Biscuits', 'en': 'Sweets & Biscuits'},
-    {'key': 'fruits', 'ar': 'خضر وفواكه', 'fr': 'Fruits & Légumes', 'en': 'Fruits & Veg'},
-    {'key': 'other', 'ar': 'أخرى', 'fr': 'Autres', 'en': 'Other'},
+    {'key': 'all', 'ar': 'Ø§Ù„ÙƒÙ„', 'fr': 'Tous', 'en': 'All'},
+    {'key': 'coffee_ready', 'ar': 'â˜• Ø§Ù„Ù‚Ù‡ÙˆØ© Ø§Ù„Ø¬Ø§Ù‡Ø²Ø©', 'fr': 'â˜• CafÃ© PrÃªt', 'en': 'â˜• Ready Coffee'},
+    {'key': 'scale', 'ar': 'âš–ï¸ Ù…ÙˆØ§Ø¯ Ø§Ù„Ù…ÙŠØ²Ø§Ù†', 'fr': 'âš–ï¸ Vrac & Balance', 'en': 'âš–ï¸ Scale & Bulk'},
+    {'key': 'stationery', 'ar': 'ðŸ“š Ø£Ø¯ÙˆØ§Øª Ù…Ø¯Ø±Ø³ÙŠØ©', 'fr': 'ðŸ“š Papeterie', 'en': 'ðŸ“š Stationery'},
+    {'key': 'tobacco', 'ar': 'ðŸš¬ ØªØ¨Øº ÙˆØ³Ø¬Ø§Ø¦Ø±', 'fr': 'ðŸš¬ Tabac', 'en': 'ðŸš¬ Tobacco'},
+    {'key': 'food', 'ar': 'Ù…ÙˆØ§Ø¯ ØºØ°Ø§Ø¦ÙŠØ©', 'fr': 'Alimentation', 'en': 'Groceries'},
+    {'key': 'dairy', 'ar': 'Ø­Ù„ÙŠØ¨ ÙˆÙ…Ø´ØªÙ‚Ø§ØªÙ‡', 'fr': 'Produits Laitiers', 'en': 'Dairy'},
+    {'key': 'bakery', 'ar': 'Ù…Ø®Ø¨ÙˆØ²Ø§Øª ÙˆØ¹Ø¬Ø§Ø¦Ù†', 'fr': 'Boulangerie & PÃ¢tes', 'en': 'Bakery & Pasta'},
+    {'key': 'beverages', 'ar': 'Ù…Ø´Ø±ÙˆØ¨Ø§Øª ÙˆÙ…ÙŠØ§Ù‡', 'fr': 'Boissons & Eaux', 'en': 'Beverages & Water'},
+    {'key': 'cleaning', 'ar': 'Ù†Ø¸Ø§ÙØ© ÙˆØªØ¬Ù…ÙŠÙ„', 'fr': 'Entretien & HygiÃ¨ne', 'en': 'Cleaning & Hygiene'},
+    {'key': 'sweets', 'ar': 'Ø­Ù„ÙˆÙŠØ§Øª ÙˆØ³ÙƒØ§ÙƒØ±', 'fr': 'Confiserie & Biscuits', 'en': 'Sweets & Biscuits'},
+    {'key': 'fruits', 'ar': 'Ø®Ø¶Ø± ÙˆÙÙˆØ§ÙƒÙ‡', 'fr': 'Fruits & LÃ©gumes', 'en': 'Fruits & Veg'},
+    {'key': 'other', 'ar': 'Ø£Ø®Ø±Ù‰', 'fr': 'Autres', 'en': 'Other'},
   ];
 
   List<String> get _categoryTabs => _categoryTabsDef.map((c) => c['ar']!).toList();
   String get _selectedCategoryFilter =>
-      _selectedCategoryIndex < _categoryTabsDef.length ? _categoryTabsDef[_selectedCategoryIndex]['ar']! : 'الكل';
+      _selectedCategoryIndex < _categoryTabsDef.length ? _categoryTabsDef[_selectedCategoryIndex]['ar']! : 'Ø§Ù„ÙƒÙ„';
 
   bool _productMatchesTab(Product p, int tabIdx) {
     if (tabIdx == 0) return true;
@@ -67,20 +69,20 @@ class _ProductListPageState extends State<ProductListPage> {
     final pName = p.name.toLowerCase();
 
     if (key == 'coffee_ready') {
-      return p.isCoffeeMachineProduct || pCat.contains('قهوة') || pCat.contains('شاي') || pCat.contains('كافيتيريا');
+      return p.isCoffeeMachineProduct || pCat.contains('Ù‚Ù‡ÙˆØ©') || pCat.contains('Ø´Ø§ÙŠ') || pCat.contains('ÙƒØ§ÙÙŠØªÙŠØ±ÙŠØ§');
     }
     if (key == 'scale') {
-      return p.isWeighted || p.barcode.startsWith('SCALE_') || pName.contains('ميزان') || pName.contains('كغ');
+      return p.isWeighted || p.barcode.startsWith('SCALE_') || pName.contains('Ù…ÙŠØ²Ø§Ù†') || pName.contains('ÙƒØº');
     }
     if (key == 'stationery') {
-      return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
+      return pCat.contains('Ù…Ø¯Ø±Ø³') || pCat.contains('Ù…ÙƒØªØ¨') || pCat.contains('ÙˆØ±Ù‚') || pCat.contains('ÙƒØ±Ø§Ø³') || pCat.contains('Ù‚Ù„Ù…') || pCat.contains('papeterie');
     }
     if (key == 'tobacco') {
-      return p.isTobacco || pCat.contains('تبغ') || pCat.contains('سجائر') || pCat.contains('شمة') || pCat.contains('معسل');
+      return p.isTobacco || pCat.contains('ØªØ¨Øº') || pCat.contains('Ø³Ø¬Ø§Ø¦Ø±') || pCat.contains('Ø´Ù…Ø©') || pCat.contains('Ù…Ø¹Ø³Ù„');
     }
     if (key == 'beverages') {
-      final isDrink = p.isBeverage || pCat.contains('مشروب') || pCat.contains('ماء') || pCat.contains('عصير') || pCat.contains('غازي');
-      return isDrink && !p.isCoffeeMachineProduct && !pCat.contains('قهوة') && !pCat.contains('شاي');
+      final isDrink = p.isBeverage || pCat.contains('Ù…Ø´Ø±ÙˆØ¨') || pCat.contains('Ù…Ø§Ø¡') || pCat.contains('Ø¹ØµÙŠØ±') || pCat.contains('ØºØ§Ø²ÙŠ');
+      return isDrink && !p.isCoffeeMachineProduct && !pCat.contains('Ù‚Ù‡ÙˆØ©') && !pCat.contains('Ø´Ø§ÙŠ');
     }
 
     final arName = (catDef['ar'] ?? '').toLowerCase();
@@ -125,7 +127,7 @@ class _ProductListPageState extends State<ProductListPage> {
   Future<void> _batchDelete(BuildContext context) async {
     if (_selectedProductIds.isEmpty) return;
     final count = _selectedProductIds.length;
-    final auth = await SecurityPinHelper.authenticate(context, title: 'تأكيد الحذف الجماعي');
+    final auth = await SecurityPinHelper.authenticate(context, title: 'ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø­Ø°Ù Ø§Ù„Ø¬Ù…Ø§Ø¹ÙŠ');
     if (!auth || !context.mounted) return;
 
     final confirm = await showDialog<bool>(
@@ -136,10 +138,10 @@ class _ProductListPageState extends State<ProductListPage> {
           children: [
             Icon(Icons.delete_forever_rounded, color: Colors.red, size: 24),
             SizedBox(width: 8),
-            Text('حذف $count سلع محددة؟', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text('Ø­Ø°Ù $count Ø³Ù„Ø¹ Ù…Ø­Ø¯Ø¯Ø©ØŸ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
-        content: Text('هل أنت متأكد من رغبتك في حذف $count سلع نهائياً من المخزون؟ لا يمكن التراجع عن هذه العملية.'),
+        content: Text('Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø±ØºØ¨ØªÙƒ ÙÙŠ Ø­Ø°Ù $count Ø³Ù„Ø¹ Ù†Ù‡Ø§Ø¦ÙŠØ§Ù‹ Ù…Ù† Ø§Ù„Ù…Ø®Ø²ÙˆÙ†ØŸ Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø§Ù„ØªØ±Ø§Ø¬Ø¹ Ø¹Ù† Ù‡Ø°Ù‡ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
           ElevatedButton(
@@ -157,7 +159,7 @@ class _ProductListPageState extends State<ProductListPage> {
         bloc.add(DeleteProduct(id));
       }
       SoundService.playDeleteSound();
-      context.showAppSnackBar('🗑️ تم حذف $count سلع بنجاح من المخزن!', backgroundColor: Colors.red[800]!);
+      context.showAppSnackBar('ðŸ—‘ï¸ ØªÙ… Ø­Ø°Ù $count Ø³Ù„Ø¹ Ø¨Ù†Ø¬Ø§Ø­ Ù…Ù† Ø§Ù„Ù…Ø®Ø²Ù†!', backgroundColor: Colors.red[800]!);
       _clearSelection();
     }
   }
@@ -166,7 +168,7 @@ class _ProductListPageState extends State<ProductListPage> {
   Future<void> _batchMoveCategory(BuildContext context, List<Product> allProducts) async {
     if (_selectedProductIds.isEmpty) return;
     final count = _selectedProductIds.length;
-    String targetCat = 'مواد غذائية ومعلبات';
+    String targetCat = 'Ù…ÙˆØ§Ø¯ ØºØ°Ø§Ø¦ÙŠØ© ÙˆÙ…Ø¹Ù„Ø¨Ø§Øª';
 
     final selectedCat = await showDialog<String>(
       context: context,
@@ -177,14 +179,14 @@ class _ProductListPageState extends State<ProductListPage> {
             children: [
               Icon(Icons.drive_file_move_rounded, color: AppTheme.primaryColor, size: 24),
               SizedBox(width: 8),
-              Text('نقل $count سلع لقسم آخر 📂', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              Text('Ù†Ù‚Ù„ $count Ø³Ù„Ø¹ Ù„Ù‚Ø³Ù… Ø¢Ø®Ø± ðŸ“‚', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('اختر القسم المستهدف لنقل السلع المحددة إليه:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('Ø§Ø®ØªØ± Ø§Ù„Ù‚Ø³Ù… Ø§Ù„Ù…Ø³ØªÙ‡Ø¯Ù Ù„Ù†Ù‚Ù„ Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ù…Ø­Ø¯Ø¯Ø© Ø¥Ù„ÙŠÙ‡:', style: TextStyle(fontSize: 12, color: Colors.grey)),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: targetCat,
@@ -193,7 +195,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-                items: _categoryTabs.where((c) => c != 'الكل' && c != '⚖️ مواد الميزان').map((cat) {
+                items: _categoryTabs.where((c) => c != 'Ø§Ù„ÙƒÙ„' && c != 'âš–ï¸ Ù…ÙˆØ§Ø¯ Ø§Ù„Ù…ÙŠØ²Ø§Ù†').map((cat) {
                   return DropdownMenuItem(value: cat, child: Text(cat, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)));
                 }).toList(),
                 onChanged: (val) {
@@ -232,7 +234,7 @@ class _ProductListPageState extends State<ProductListPage> {
         bloc.add(UpdateProduct(updated));
       }
       SoundService.playSaveSuccess();
-      context.showAppSnackBar('✅ تم نقل $count سلع إلى قسم ($selectedCat) بنجاح!');
+      context.showAppSnackBar('âœ… ØªÙ… Ù†Ù‚Ù„ $count Ø³Ù„Ø¹ Ø¥Ù„Ù‰ Ù‚Ø³Ù… ($selectedCat) Ø¨Ù†Ø¬Ø§Ø­!');
       _clearSelection();
     }
   }
@@ -252,13 +254,13 @@ class _ProductListPageState extends State<ProductListPage> {
             children: [
               Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 24),
               SizedBox(width: 8),
-              Text('استلام شحنة لـ $count سلع 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              Text('Ø§Ø³ØªÙ„Ø§Ù… Ø´Ø­Ù†Ø© Ù„Ù€ $count Ø³Ù„Ø¹ ðŸ“¦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('اختر الكمية المضافة لكل سلعة من السلع المحددة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('Ø§Ø®ØªØ± Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„Ù…Ø¶Ø§ÙØ© Ù„ÙƒÙ„ Ø³Ù„Ø¹Ø© Ù…Ù† Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ù…Ø­Ø¯Ø¯Ø©:', style: TextStyle(fontSize: 12, color: Colors.grey)),
               SizedBox(height: 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -300,7 +302,7 @@ class _ProductListPageState extends State<ProductListPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(ctx, addQty),
-              child: Text('إضافة +$addQty للكل 🚀', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text('Ø¥Ø¶Ø§ÙØ© +$addQty Ù„Ù„ÙƒÙ„ ðŸš€', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -325,7 +327,7 @@ class _ProductListPageState extends State<ProductListPage> {
         bloc.add(UpdateProduct(updated));
       }
       SoundService.playRestockSound();
-      context.showAppSnackBar('✅ تم استلام الشحنة (+ $selectedQty) لـ $count سلع بنجاح!');
+      context.showAppSnackBar('âœ… ØªÙ… Ø§Ø³ØªÙ„Ø§Ù… Ø§Ù„Ø´Ø­Ù†Ø© (+ $selectedQty) Ù„Ù€ $count Ø³Ù„Ø¹ Ø¨Ù†Ø¬Ø§Ø­!');
       _clearSelection();
     }
   }
@@ -365,7 +367,7 @@ class _ProductListPageState extends State<ProductListPage> {
   /// Real Excel / CSV Export saving directly to disk with loading indicator
   Future<void> _exportAndSaveExcel(BuildContext context, List<Product> products) async {
     if (products.isEmpty) {
-      context.showAppSnackBar('المخزون فارغ لا توجد سلع لتصديرها!', backgroundColor: Colors.orange[800]!);
+      context.showAppSnackBar('Ø§Ù„Ù…Ø®Ø²ÙˆÙ† ÙØ§Ø±Øº Ù„Ø§ ØªÙˆØ¬Ø¯ Ø³Ù„Ø¹ Ù„ØªØµØ¯ÙŠØ±Ù‡Ø§!', backgroundColor: Colors.orange[800]!);
       return;
     }
 
@@ -382,7 +384,7 @@ class _ProductListPageState extends State<ProductListPage> {
             SizedBox(width: 16),
             Expanded(
               child: Text(
-                'جاري تجهيز وتصدير ملف الإكسل وحفظه... ⏳',
+                'Ø¬Ø§Ø±ÙŠ ØªØ¬Ù‡ÙŠØ² ÙˆØªØµØ¯ÙŠØ± Ù…Ù„Ù Ø§Ù„Ø¥ÙƒØ³Ù„ ÙˆØ­ÙØ¸Ù‡... â³',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
@@ -419,25 +421,25 @@ class _ProductListPageState extends State<ProductListPage> {
       // Trigger Android native share/save to storage dialog
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'text/csv', name: fileName)],
-        text: '📊 تقرير مخزون نايلـي ماركت - $dateStr (${products.length} سلعة)',
+        text: 'ðŸ“Š ØªÙ‚Ø±ÙŠØ± Ù…Ø®Ø²ÙˆÙ† Ù†Ø§ÙŠÙ„Ù€ÙŠ Ù…Ø§Ø±ÙƒØª - $dateStr (${products.length} Ø³Ù„Ø¹Ø©)',
       );
 
       if (context.mounted) {
         context.showAppSnackBar(
-          '✅ تم إنشاء وحفظ ملف الإكسل بنجاح ($fileName)',
+          'âœ… ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ ÙˆØ­ÙØ¸ Ù…Ù„Ù Ø§Ù„Ø¥ÙƒØ³Ù„ Ø¨Ù†Ø¬Ø§Ø­ ($fileName)',
           backgroundColor: Colors.green[800]!,
         );
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context);
-        context.showAppSnackBar('حدث خطأ أثناء تصدير الملف: $e', backgroundColor: Colors.red[800]!);
+        context.showAppSnackBar('Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ ØªØµØ¯ÙŠØ± Ø§Ù„Ù…Ù„Ù: $e', backgroundColor: Colors.red[800]!);
       }
       setState(() => _isExporting = false);
     }
   }
 
-  /// Advanced Weighable Restock Modal (استلام سلع الميزان بالكغ والأكياس والفاقد)
+  /// Advanced Weighable Restock Modal (Ø§Ø³ØªÙ„Ø§Ù… Ø³Ù„Ø¹ Ø§Ù„Ù…ÙŠØ²Ø§Ù† Ø¨Ø§Ù„ÙƒØº ÙˆØ§Ù„Ø£ÙƒÙŠØ§Ø³ ÙˆØ§Ù„ÙØ§Ù‚Ø¯)
   void _showWeighableRestockModal(Product product) {
     double grossWeight = 10.0;
     double tareLossPercent = 0.0;
@@ -478,7 +480,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         children: [
                           Icon(Icons.scale_rounded, color: Colors.teal, size: 24),
                           SizedBox(width: 8),
-                          Text('استلام شحنة بالميزان ⚖️📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('Ø§Ø³ØªÙ„Ø§Ù… Ø´Ø­Ù†Ø© Ø¨Ø§Ù„Ù…ÙŠØ²Ø§Ù† âš–ï¸ðŸ“¦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
                       IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
@@ -486,19 +488,19 @@ class _ProductListPageState extends State<ProductListPage> {
                   ),
                   SizedBox(height: 4),
                   Text(product.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text('المخزون الحالي: ${product.stock} كغ • سعر البيع: ${product.price.toStringAsFixed(0)} دج/كغ',
+                  Text('Ø§Ù„Ù…Ø®Ø²ÙˆÙ† Ø§Ù„Ø­Ø§Ù„ÙŠ: ${product.stock} ÙƒØº â€¢ Ø³Ø¹Ø± Ø§Ù„Ø¨ÙŠØ¹: ${product.price.toStringAsFixed(0)} Ø¯Ø¬/ÙƒØº',
                       style: TextStyle(fontSize: 11.5, color: Colors.grey)),
                   SizedBox(height: 14),
 
                   // Gross Weight Input & Presets
-                  Text('الوزن الإجمالي المستلم (بالكيلوغرام):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                  Text('Ø§Ù„ÙˆØ²Ù† Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø³ØªÙ„Ù… (Ø¨Ø§Ù„ÙƒÙŠÙ„ÙˆØºØ±Ø§Ù…):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                   SizedBox(height: 6),
                   TextFormField(
                     controller: grossWeightCtrl,
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
                       hintText: '0.0',
-                      suffixText: 'كغ (Kg)',
+                      suffixText: 'ÙƒØº (Kg)',
                       prefixIcon: Icon(Icons.fitness_center),
                     ),
                     onChanged: (_) => setModalState(() {}),
@@ -508,7 +510,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     spacing: 6,
                     children: [2.5, 5.0, 10.0, 25.0, 50.0].map((amt) {
                       return ActionChip(
-                        label: Text('+$amt كغ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: Text('+$amt ÙƒØº', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         backgroundColor: Colors.teal.withOpacity(0.1),
                         side: BorderSide(color: Colors.teal.withOpacity(0.3)),
                         onPressed: () {
@@ -528,12 +530,12 @@ class _ProductListPageState extends State<ProductListPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('سعر تكلفة الكيلو (Achat):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                            Text('Ø³Ø¹Ø± ØªÙƒÙ„ÙØ© Ø§Ù„ÙƒÙŠÙ„Ùˆ (Achat):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
                             SizedBox(height: 4),
                             TextFormField(
                               controller: costCtrl,
                               keyboardType: TextInputType.numberWithOptions(decimal: true),
-                              decoration: InputDecoration(hintText: '0', suffixText: 'دج/كغ'),
+                              decoration: InputDecoration(hintText: '0', suffixText: 'Ø¯Ø¬/ÙƒØº'),
                               onChanged: (_) => setModalState(() {}),
                             ),
                           ],
@@ -544,7 +546,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('نسبة الفاقد/الرطوبة (Tare):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                            Text('Ù†Ø³Ø¨Ø© Ø§Ù„ÙØ§Ù‚Ø¯/Ø§Ù„Ø±Ø·ÙˆØ¨Ø© (Tare):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
                             SizedBox(height: 4),
                             TextFormField(
                               controller: tareCtrl,
@@ -572,8 +574,8 @@ class _ProductListPageState extends State<ProductListPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('الوزن الصافي المضاف للستوك:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                            Text('${netWeight.toStringAsFixed(2)} كغ',
+                            Text('Ø§Ù„ÙˆØ²Ù† Ø§Ù„ØµØ§ÙÙŠ Ø§Ù„Ù…Ø¶Ø§Ù Ù„Ù„Ø³ØªÙˆÙƒ:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text('${netWeight.toStringAsFixed(2)} ÙƒØº',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal)),
                           ],
                         ),
@@ -581,8 +583,8 @@ class _ProductListPageState extends State<ProductListPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('إجمالي تكلفة الشحنة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                            Text('${totalBatchCost.toStringAsFixed(0)} دج',
+                            Text('Ø¥Ø¬Ù…Ø§Ù„ÙŠ ØªÙƒÙ„ÙØ© Ø§Ù„Ø´Ø­Ù†Ø©:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            Text('${totalBatchCost.toStringAsFixed(0)} Ø¯Ø¬',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           ],
                         ),
@@ -590,8 +592,8 @@ class _ProductListPageState extends State<ProductListPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('الربح الصافي المتوقع:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
-                            Text('+${estimatedProfit.toStringAsFixed(0)} دج',
+                            Text('Ø§Ù„Ø±Ø¨Ø­ Ø§Ù„ØµØ§ÙÙŠ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
+                            Text('+${estimatedProfit.toStringAsFixed(0)} Ø¯Ø¬',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
                           ],
                         ),
@@ -608,7 +610,7 @@ class _ProductListPageState extends State<ProductListPage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: Icon(Icons.check_circle_outline),
-                    label: Text('تأكيد استلام ${netWeight.toStringAsFixed(1)} كغ (المجموع: ${(product.stock + netWeight).toStringAsFixed(1)} كغ)',
+                    label: Text('ØªØ£ÙƒÙŠØ¯ Ø§Ø³ØªÙ„Ø§Ù… ${netWeight.toStringAsFixed(1)} ÙƒØº (Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹: ${(product.stock + netWeight).toStringAsFixed(1)} ÙƒØº)',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: () {
                       Navigator.pop(ctx);
@@ -625,7 +627,7 @@ class _ProductListPageState extends State<ProductListPage> {
                       );
                       context.read<ProductBloc>().add(UpdateProduct(updated));
                       SoundService.playRestockSound();
-                      context.showAppSnackBar('✅ تم استلام شحنة الميزان وتحديث المخزون بدقة!');
+                      context.showAppSnackBar('âœ… ØªÙ… Ø§Ø³ØªÙ„Ø§Ù… Ø´Ø­Ù†Ø© Ø§Ù„Ù…ÙŠØ²Ø§Ù† ÙˆØªØ­Ø¯ÙŠØ« Ø§Ù„Ù…Ø®Ø²ÙˆÙ† Ø¨Ø¯Ù‚Ø©!');
                     },
                   ),
                 ],
@@ -638,107 +640,11 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   void _showQuickRestockModal(Product product) {
-    if (product.isWeighted || product.barcode.startsWith('SCALE_') || product.name.contains('ميزان') || product.name.contains('كغ')) {
+    if (product.isWeighted || product.barcode.startsWith('SCALE_') || product.name.contains('ميزان') || product.name.contains('وزن')) {
       _showWeighableRestockModal(product);
       return;
     }
-
-    int addQty = 10;
-    AdaptiveModalHelper.showAdaptiveModal(
-      context: context,
-      desktopMaxWidth: 540,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 24),
-                      SizedBox(width: 8),
-                      Text('استلام شحنة جديدة 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ],
-                  ),
-                  IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-                ],
-              ),
-              SizedBox(height: 6),
-              Text(product.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              Text('المخزون الحالي: ${product.stock} قطعة', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              SizedBox(height: 16),
-              Text('اختر الكمية المضافة للشحنة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-              SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton.filledTonal(
-                    icon: Icon(Icons.remove),
-                    onPressed: addQty > 1 ? () => setModalState(() => addQty--) : null,
-                  ),
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 16),
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text('+$addQty', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
-                  ),
-                  IconButton.filledTonal(
-                    icon: Icon(Icons.add),
-                    onPressed: () => setModalState(() => addQty++),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                children: [5, 10, 24, 50, 100].map((amt) {
-                  return ActionChip(
-                    label: Text('+$amt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    backgroundColor: addQty == amt ? Colors.green.withOpacity(0.2) : Colors.grey[100],
-                    onPressed: () => setModalState(() => addQty = amt),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                icon: Icon(Icons.check_circle_outline),
-                label: Text('تأكيد إضافة +$addQty إلى المخزن (المجموع: ${product.stock + addQty})', style: TextStyle(fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  final updated = Product(
-                    id: product.id,
-                    name: product.name,
-                    barcode: product.barcode,
-                    price: product.price,
-                    costPrice: product.costPrice,
-                    wholesalePrice: product.wholesalePrice,
-                    stock: product.stock + addQty,
-                    category: product.category,
-                    expiryDate: product.expiryDate,
-                  );
-                  context.read<ProductBloc>().add(UpdateProduct(updated));
-                  SoundService.playRestockSound();
-                  context.showAppSnackBar('✅ تم استلام الشحنة وتحديث المخزون بنجاح!');
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    QuickReceiveModal.show(context, product);
   }
 
   void _pinToQuickSale(BuildContext context, Product product) async {
@@ -749,14 +655,14 @@ class _ProductListPageState extends State<ProductListPage> {
       'name': product.name,
       'price': product.price,
       'costPrice': product.costPrice,
-      'icon': '🛍️',
+      'icon': 'ðŸ›ï¸',
       'linkedProductId': product.id,
     };
     await box.put(id, item);
     SoundService.playScanBeep();
     if (context.mounted) {
       context.showAppSnackBar(
-        '⚡ تم تثبيت (${product.name}) في شريط البيع السريع بنجاح!',
+        'âš¡ ØªÙ… ØªØ«Ø¨ÙŠØª (${product.name}) ÙÙŠ Ø´Ø±ÙŠØ· Ø§Ù„Ø¨ÙŠØ¹ Ø§Ù„Ø³Ø±ÙŠØ¹ Ø¨Ù†Ø¬Ø§Ø­!',
         backgroundColor: Colors.teal[800]!,
       );
     }
@@ -776,7 +682,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 onPressed: _clearSelection,
               ),
               title: Text(
-                'المحدد: ${_selectedProductIds.length}',
+                'Ø§Ù„Ù…Ø­Ø¯Ø¯: ${_selectedProductIds.length}',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
               ),
               actions: [
@@ -791,7 +697,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
                     return TextButton(
                       onPressed: () => _selectAllFiltered(filtered),
-                      child: Text('تحديد الكل', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: Text('ØªØ­Ø¯ÙŠØ¯ Ø§Ù„ÙƒÙ„', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                     );
                   },
                 ),
@@ -824,39 +730,20 @@ class _ProductListPageState extends State<ProductListPage> {
                 ),
                 IconButton(
                   icon: Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
-                  tooltip: 'كتالوج السلع الجزائرية (15,500+)',
+                  tooltip: 'ÙƒØªØ§Ù„ÙˆØ¬ Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ø¬Ø²Ø§Ø¦Ø±ÙŠØ© (15,500+)',
                   onPressed: () => context.push('/products/catalog'),
                 ),
               ],
             ),
       body: Column(
         children: [
-          // Master Catalog Quick Banner
-          Padding(
-            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: InkWell(
-              onTap: () => context.push('/products/catalog'),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppTheme.primaryColor.withOpacity(0.12), AppTheme.primaryColor.withOpacity(0.04)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.menu_book_rounded, color: AppTheme.primaryColor, size: 22),
-                    SizedBox(width: 10),
-                    Expanded(
+          Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('مكتبة السلع الجزائرية (15,500+ منتج)',
+                          Text('Ù…ÙƒØªØ¨Ø© Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ø¬Ø²Ø§Ø¦Ø±ÙŠØ© (15,500+ Ù…Ù†ØªØ¬)',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.primaryColor)),
-                          Text('استورد السلع الجاهزة وأسعارها لمخزونك بدون مسح فردي',
+                          Text('Ø§Ø³ØªÙˆØ±Ø¯ Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ø¬Ø§Ù‡Ø²Ø© ÙˆØ£Ø³Ø¹Ø§Ø±Ù‡Ø§ Ù„Ù…Ø®Ø²ÙˆÙ†Ùƒ Ø¨Ø¯ÙˆÙ† Ù…Ø³Ø­ ÙØ±Ø¯ÙŠ',
                               style: TextStyle(fontSize: 10, color: Colors.black87)),
                         ],
                       ),
@@ -889,7 +776,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         children: [
                           Icon(Icons.inventory_rounded, size: 15, color: Colors.teal),
                           SizedBox(width: 4),
-                          Text('الجرد ورأس المال 📋', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text('Ø§Ù„Ø¬Ø±Ø¯ ÙˆØ±Ø£Ø³ Ø§Ù„Ù…Ø§Ù„ ðŸ“‹', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
                         ],
                       ),
                     ),
@@ -912,7 +799,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         children: [
                           Icon(Icons.label_important_outline, size: 15, color: Colors.amber),
                           SizedBox(width: 4),
-                          Text('ملصقات الرفوف 🏷️', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text('Ù…Ù„ØµÙ‚Ø§Øª Ø§Ù„Ø±ÙÙˆÙ ðŸ·ï¸', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
                         ],
                       ),
                     ),
@@ -935,7 +822,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         children: [
                           Icon(Icons.receipt_long_outlined, size: 15, color: Colors.blue),
                           SizedBox(width: 4),
-                          Text('فواتير الموردين 🚚', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text('ÙÙˆØ§ØªÙŠØ± Ø§Ù„Ù…ÙˆØ±Ø¯ÙŠÙ† ðŸšš', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
                         ],
                       ),
                     ),
@@ -1073,7 +960,7 @@ class _ProductListPageState extends State<ProductListPage> {
                       children: [
                         Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
                         SizedBox(height: 8),
-                        Text('لا توجد سلع في قسم "$_selectedCategoryFilter"', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                        Text('Ù„Ø§ ØªÙˆØ¬Ø¯ Ø³Ù„Ø¹ ÙÙŠ Ù‚Ø³Ù… "$_selectedCategoryFilter"', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                       ],
                     ),
                   );
@@ -1087,7 +974,7 @@ class _ProductListPageState extends State<ProductListPage> {
                       SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final product = filteredProducts[index];
-                    final isWeighable = product.isWeighted || product.barcode.startsWith('SCALE_') || product.name.contains('ميزان') || product.name.contains('كغ');
+                    final isWeighable = product.isWeighted || product.barcode.startsWith('SCALE_') || product.name.contains('Ù…ÙŠØ²Ø§Ù†') || product.name.contains('ÙƒØº');
                     final isSelected = _selectedProductIds.contains(product.id);
 
                     return InkWell(
@@ -1158,7 +1045,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                             borderRadius: BorderRadius.circular(6),
                                             border: Border.all(color: Colors.teal.withOpacity(0.3)),
                                           ),
-                                          child: Text('⚖️ ميزان', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.teal)),
+                                          child: Text('âš–ï¸ Ù…ÙŠØ²Ø§Ù†', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.teal)),
                                         ),
                                         SizedBox(width: 4),
                                       ],
@@ -1187,7 +1074,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                         ),
                                         child: Text(
                                           isWeighable
-                                              ? '${product.stock} كغ'
+                                              ? '${product.stock} ÙƒØº'
                                               : '${product.stock} ${context.tr('in_stock')}',
                                           style: TextStyle(
                                             fontSize: 10,
@@ -1200,7 +1087,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                           ),
                                         ),
                                       ),
-                                      if (product.category.isNotEmpty && product.category != 'عام') ...[
+                                      if (product.category.isNotEmpty && product.category != 'Ø¹Ø§Ù…') ...[
                                         SizedBox(width: 6),
                                         Container(
                                           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1218,7 +1105,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             ),
                             // Modern Options Dropdown Menu (Arrow / More Button)
                             PopupMenuButton<String>(
-                              tooltip: 'خيارات وإدارة السلعة',
+                              tooltip: 'Ø®ÙŠØ§Ø±Ø§Øª ÙˆØ¥Ø¯Ø§Ø±Ø© Ø§Ù„Ø³Ù„Ø¹Ø©',
                               icon: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                 decoration: BoxDecoration(
@@ -1410,7 +1297,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
                                 icon: Icon(Icons.delete_forever, size: 16),
-                                label: Text('حذف ($selectedCount) 🗑️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                label: Text('Ø­Ø°Ù ($selectedCount) ðŸ—‘ï¸', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                 onPressed: () => _batchDelete(context),
                               ),
                             ],
@@ -1423,8 +1310,16 @@ class _ProductListPageState extends State<ProductListPage> {
               },
             )
           : null,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
+      floatingActionButton: _selectedCategoryIndex == 1
+          ? FloatingActionButton.extended(
+              onPressed: () => CoffeeRecipeModal.show(context),
+              icon: const Icon(Icons.coffee),
+              label: const Text('إضافة وصفة', style: TextStyle(fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.brown,
+              foregroundColor: Colors.white,
+            )
+          : FloatingActionButton(
+              onPressed: () async {
           final auth = await SecurityPinHelper.authenticate(
             context,
             title: context.tr('add_new_product'),
@@ -1453,7 +1348,7 @@ class _ProductListPageState extends State<ProductListPage> {
       builder: (innerContext) {
         return AlertDialog(
           title: Text(context.tr('delete_product')),
-          content: Text('هل أنت متأكد من حذف ${product.name} نهائياً؟'),
+          content: Text('Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø­Ø°Ù ${product.name} Ù†Ù‡Ø§Ø¦ÙŠØ§Ù‹ØŸ'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(innerContext),
@@ -1465,7 +1360,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 context.read<ProductBloc>().add(DeleteProduct(product.id));
                 Navigator.pop(innerContext);
                 SoundService.playDeleteSound();
-                context.showAppSnackBar('🗑️ تم حذف "$pName" بنجاح', backgroundColor: Colors.red[800]!);
+                context.showAppSnackBar('ðŸ—‘ï¸ ØªÙ… Ø­Ø°Ù "$pName" Ø¨Ù†Ø¬Ø§Ø­', backgroundColor: Colors.red[800]!);
               },
               child: Text(context.tr('delete'), style: TextStyle(color: Colors.red)),
             ),
@@ -1495,7 +1390,7 @@ class _ProductListPageState extends State<ProductListPage> {
             includeDate: true,
             includeBarcode: true,
             showHriDigits: true,
-            currencySymbol: 'دج',
+            currencySymbol: 'Ø¯Ø¬',
             shopName: shopName,
           );
 
@@ -1505,7 +1400,7 @@ class _ProductListPageState extends State<ProductListPage> {
               children: [
                 Icon(Icons.label_important_rounded, color: Colors.amber),
                 SizedBox(width: 8),
-                Text('طباعة ملصق وباركود السلعة 🏷️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text('Ø·Ø¨Ø§Ø¹Ø© Ù…Ù„ØµÙ‚ ÙˆØ¨Ø§Ø±ÙƒÙˆØ¯ Ø§Ù„Ø³Ù„Ø¹Ø© ðŸ·ï¸', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             content: SingleChildScrollView(
@@ -1524,7 +1419,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     ),
                     child: Column(
                       children: [
-                        Text('🏪 $shopName', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                        Text('ðŸª $shopName', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
                         SizedBox(height: 2),
                         Text(product.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                         SizedBox(height: 4),
@@ -1541,7 +1436,7 @@ class _ProductListPageState extends State<ProductListPage> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              'كود: ${product.barcode}',
+                              'ÙƒÙˆØ¯: ${product.barcode}',
                               style: TextStyle(fontSize: 10, fontFamily: 'monospace', fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -1610,12 +1505,12 @@ class _ProductListPageState extends State<ProductListPage> {
                           ChoiceChip(
                             label: Text(
                               sz == ShelfLabelSize.standard50x30
-                                  ? '50×30 مم'
+                                  ? '50Ã—30 Ù…Ù…'
                                   : sz == ShelfLabelSize.compact40x30
-                                      ? '40×30 مم'
+                                      ? '40Ã—30 Ù…Ù…'
                                       : sz == ShelfLabelSize.mini38x25
-                                          ? '38×25 مم'
-                                          : 'رول 80 مم',
+                                          ? '38Ã—25 Ù…Ù…'
+                                          : 'Ø±ÙˆÙ„ 80 Ù…Ù…',
                               style: TextStyle(fontSize: 10.5),
                             ),
                             selected: selectedSize == sz,
@@ -1663,7 +1558,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 ),
                 icon: Icon(Icons.bluetooth_connected, size: 16),
-                label: Text('بلوتوث ($copies)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                label: Text('Ø¨Ù„ÙˆØªÙˆØ« ($copies)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                 onPressed: () async {
                   Navigator.pop(ctx);
                   bool isConnected = false;
@@ -1674,7 +1569,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   if (!isConnected) {
                     if (context.mounted) {
                       context.showAppSnackBar(
-                        '⚠️ الطابعة الحرارية غير متصلة! يرجى تشغيل البلوتوث وتوصيلها في الإعدادات أو استخدام طباعة ويندوز/PDF.',
+                        'âš ï¸ Ø§Ù„Ø·Ø§Ø¨Ø¹Ø© Ø§Ù„Ø­Ø±Ø§Ø±ÙŠØ© ØºÙŠØ± Ù…ØªØµÙ„Ø©! ÙŠØ±Ø¬Ù‰ ØªØ´ØºÙŠÙ„ Ø§Ù„Ø¨Ù„ÙˆØªÙˆØ« ÙˆØªÙˆØµÙŠÙ„Ù‡Ø§ ÙÙŠ Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø£Ùˆ Ø§Ø³ØªØ®Ø¯Ø§Ù… Ø·Ø¨Ø§Ø¹Ø© ÙˆÙŠÙ†Ø¯ÙˆØ²/PDF.',
                         backgroundColor: Colors.orange[800]!,
                       );
                     }
@@ -1692,13 +1587,13 @@ class _ProductListPageState extends State<ProductListPage> {
                     SoundService.playCheckoutSuccess();
                     if (context.mounted) {
                       context.showAppSnackBar(
-                        '✅ تم إرسال $copies ملصق لـ (${product.name}) إلى الطابعة الحرارية بنجاح!',
+                        'âœ… ØªÙ… Ø¥Ø±Ø³Ø§Ù„ $copies Ù…Ù„ØµÙ‚ Ù„Ù€ (${product.name}) Ø¥Ù„Ù‰ Ø§Ù„Ø·Ø§Ø¨Ø¹Ø© Ø§Ù„Ø­Ø±Ø§Ø±ÙŠØ© Ø¨Ù†Ø¬Ø§Ø­!',
                         backgroundColor: Colors.green[800]!,
                       );
                     }
                   } catch (e) {
                     if (context.mounted) {
-                      context.showAppSnackBar('حدث خطأ أثناء الطباعة: $e', backgroundColor: Colors.red[800]!);
+                      context.showAppSnackBar('Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©: $e', backgroundColor: Colors.red[800]!);
                     }
                   }
                 },
@@ -1711,7 +1606,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 ),
                 icon: Icon(Icons.print_rounded, size: 16),
-                label: Text('ويندوز/PDF ($copies)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                label: Text('ÙˆÙŠÙ†Ø¯ÙˆØ²/PDF ($copies)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                 onPressed: () async {
                   Navigator.pop(ctx);
                   await Printing.layoutPdf(
@@ -1733,5 +1628,6 @@ class _ProductListPageState extends State<ProductListPage> {
     );
   }
 }
+
 
 

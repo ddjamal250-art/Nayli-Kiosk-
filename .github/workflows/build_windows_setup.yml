@@ -53,6 +53,18 @@ jobs:
       - name: Build Windows Executable Release
         shell: cmd
         run: flutter build windows
+
+      - name: Generate Self-Signed Code Certificate
+        shell: powershell
+        run: |
+           = New-SelfSignedCertificate -Subject "CN=Nayli Kiosk" -Type CodeSigningCert -CertStoreLocation "Cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(5)
+           = ConvertTo-SecureString -String "Nayli2026!" -Force -AsPlainText
+          Export-PfxCertificate -Cert  -FilePath "nayli_code_sign.pfx" -Password 
+
+      - name: Sign Windows Executable
+        shell: cmd
+        run: |
+          signtool sign /f "nayli_code_sign.pfx" /p "Nayli2026!" /fd SHA256 /tr "http://timestamp.digicert.com" /td SHA256 "build\windows\x64\runner\Release\Nayli-Kiosk.exe"
                   git add flutter_build.txt
           git commit -m "Upload build log"
           git push origin main
@@ -68,6 +80,11 @@ jobs:
       - name: Compile Inno Setup Installer
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .github\installer\installer.iss
+
+      - name: Sign Windows Installer Setup
+        shell: cmd
+        run: |
+          signtool sign /f "nayli_code_sign.pfx" /p "Nayli2026!" /fd SHA256 /tr "http://timestamp.digicert.com" /td SHA256 "build\installer\Nayli-Kiosk-Desktop-Setup.exe"
 
       - name: Archive Portable Release Folder
         shell: powershell

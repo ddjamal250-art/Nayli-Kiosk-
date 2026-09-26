@@ -5,6 +5,55 @@ import '../../domain/entities/product_unit.dart';
 
 part 'product_model.g.dart'; // Hive generator
 
+@HiveType(typeId: 3)
+class PurchaseBatchModel extends PurchaseBatch {
+  @override
+  @HiveField(0)
+  final double costPrice;
+  
+  @override
+  @HiveField(1)
+  final double remainingQuantity;
+  
+  @override
+  @HiveField(2)
+  final DateTime dateAdded;
+
+  PurchaseBatchModel({
+    required this.costPrice,
+    required this.remainingQuantity,
+    required this.dateAdded,
+  }) : super(
+          costPrice: costPrice,
+          remainingQuantity: remainingQuantity,
+          dateAdded: dateAdded,
+        );
+
+  factory PurchaseBatchModel.fromEntity(PurchaseBatch batch) {
+    return PurchaseBatchModel(
+      costPrice: batch.costPrice,
+      remainingQuantity: batch.remainingQuantity,
+      dateAdded: batch.dateAdded,
+    );
+  }
+
+  factory PurchaseBatchModel.fromJson(Map<String, dynamic> json) {
+    return PurchaseBatchModel(
+      costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0.0,
+      remainingQuantity: (json['remainingQuantity'] as num?)?.toDouble() ?? 0.0,
+      dateAdded: json['dateAdded'] != null ? DateTime.parse(json['dateAdded']) : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'costPrice': costPrice,
+      'remainingQuantity': remainingQuantity,
+      'dateAdded': dateAdded.toIso8601String(),
+    };
+  }
+}
+
 @HiveType(typeId: 0)
 class ProductModel extends Product {
   @override
@@ -21,7 +70,7 @@ class ProductModel extends Product {
   final double price;
   @override
   @HiveField(4)
-  final int stock;
+  final double stock; // Changed to double
   @override
   @HiveField(5)
   final double costPrice;
@@ -41,7 +90,6 @@ class ProductModel extends Product {
   @HiveField(10)
   final String? imageUrl;
   
-  // New UOM Fields (Reusing some old indexes, this requires wiping the DB as user agreed)
   @override
   @HiveField(11)
   final String baseUnitName;
@@ -49,43 +97,26 @@ class ProductModel extends Product {
   @HiveField(12)
   final List<ProductUnitModel> units;
 
-  @override
+  // --- New Fields ---
   @HiveField(13)
-  final String? packBarcode;
-
+  final int unitSystemTypeIndex;
+  
   @override
   @HiveField(14)
-  final String? packName;
-
-  @override
+  final bool isDeleted;
+  
   @HiveField(15)
-  final int packMultiplier;
-
+  final List<PurchaseBatchModel> stockBatchesModels;
+  
   @override
   @HiveField(16)
-  final double packPrice;
+  final String? coffeeRecipeJson;
 
   @override
   @HiveField(17)
-  final String? cartonBarcode;
-
-  @override
-  @HiveField(18)
-  final double cartonPrice;
-
-  @override
-  @HiveField(19)
-  final int packsPerCarton;
-
-  @override
-  @HiveField(20)
-  final bool isTobacco;
-
-  @override
-  @HiveField(21)
   final String? pluCode;
 
-  const ProductModel({
+  ProductModel({
     required this.id,
     required this.name,
     required this.barcode,
@@ -97,17 +128,13 @@ class ProductModel extends Product {
     this.wholesalePrice = 0.0,
     this.expiryDate,
     this.imageUrl,
-    this.packBarcode,
-    this.packName,
-    this.packMultiplier = 1,
-    this.packPrice = 0.0,
-    this.cartonBarcode,
-    this.cartonPrice = 0.0,
-    this.packsPerCarton = 10,
-    this.isTobacco = false,
     this.baseUnitName = 'قطعة',
     this.units = const [],
     this.pluCode,
+    this.unitSystemTypeIndex = 0,
+    this.isDeleted = false,
+    this.stockBatchesModels = const [],
+    this.coffeeRecipeJson,
   }) : super(
           id: id,
           name: name,
@@ -116,20 +143,17 @@ class ProductModel extends Product {
           stock: stock,
           costPrice: costPrice,
           category: category,
+          isWeighted: isWeighted,
           wholesalePrice: wholesalePrice,
           expiryDate: expiryDate,
           imageUrl: imageUrl,
-          packName: packName,
-          packBarcode: packBarcode,
-          packMultiplier: packMultiplier,
-          packPrice: packPrice,
-          cartonBarcode: cartonBarcode,
-          cartonPrice: cartonPrice,
-          packsPerCarton: packsPerCarton,
-          isTobacco: isTobacco,
           baseUnitName: baseUnitName,
           units: units,
           pluCode: pluCode,
+          unitSystemType: UnitSystemType.values.length > unitSystemTypeIndex ? UnitSystemType.values[unitSystemTypeIndex] : UnitSystemType.discrete,
+          isDeleted: isDeleted,
+          stockBatches: stockBatchesModels,
+          coffeeRecipeJson: coffeeRecipeJson,
         );
 
   @override
@@ -139,7 +163,7 @@ class ProductModel extends Product {
     String? barcode,
     double? price,
     double? costPrice,
-    int? stock,
+    double? stock,
     String? category,
     bool? isWeighted,
     double? wholesalePrice,
@@ -148,6 +172,10 @@ class ProductModel extends Product {
     String? baseUnitName,
     List<ProductUnit>? units,
     String? pluCode,
+    UnitSystemType? unitSystemType,
+    bool? isDeleted,
+    List<PurchaseBatch>? stockBatches,
+    String? coffeeRecipeJson,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -165,6 +193,12 @@ class ProductModel extends Product {
           ? units.map((u) => ProductUnitModel.fromEntity(u)).toList()
           : this.units,
       pluCode: pluCode ?? this.pluCode,
+      unitSystemTypeIndex: unitSystemType?.index ?? this.unitSystemTypeIndex,
+      isDeleted: isDeleted ?? this.isDeleted,
+      stockBatchesModels: stockBatches != null 
+          ? stockBatches.map((b) => PurchaseBatchModel.fromEntity(b)).toList() 
+          : this.stockBatchesModels,
+      coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
     );
   }
 
@@ -181,16 +215,12 @@ class ProductModel extends Product {
       expiryDate: product.expiryDate,
       imageUrl: product.imageUrl,
       baseUnitName: product.baseUnitName,
-      packName: product.packName,
-      packBarcode: product.packBarcode,
-      packMultiplier: product.packMultiplier,
-      packPrice: product.packPrice,
-      cartonBarcode: product.cartonBarcode,
-      cartonPrice: product.cartonPrice,
-      packsPerCarton: product.packsPerCarton,
-      isTobacco: product.isTobacco,
       units: product.units.map((u) => ProductUnitModel.fromEntity(u)).toList(),
       pluCode: product.pluCode,
+      unitSystemTypeIndex: product.unitSystemType.index,
+      isDeleted: product.isDeleted,
+      stockBatchesModels: product.stockBatches.map((b) => PurchaseBatchModel.fromEntity(b)).toList(),
+      coffeeRecipeJson: product.coffeeRecipeJson,
     );
   }
 
@@ -206,17 +236,13 @@ class ProductModel extends Product {
       wholesalePrice: wholesalePrice,
       expiryDate: expiryDate,
       imageUrl: imageUrl,
-      packName: packName,
-      packBarcode: packBarcode,
-      packMultiplier: packMultiplier,
-      packPrice: packPrice,
-      cartonBarcode: cartonBarcode,
-      cartonPrice: cartonPrice,
-      packsPerCarton: packsPerCarton,
-      isTobacco: isTobacco,
       baseUnitName: baseUnitName,
       units: units.map((u) => u.toEntity()).toList(),
       pluCode: pluCode,
+      unitSystemType: UnitSystemType.values.length > unitSystemTypeIndex ? UnitSystemType.values[unitSystemTypeIndex] : UnitSystemType.discrete,
+      isDeleted: isDeleted,
+      stockBatches: stockBatchesModels,
+      coffeeRecipeJson: coffeeRecipeJson,
     );
   }
 
@@ -226,7 +252,7 @@ class ProductModel extends Product {
       name: json['name']?.toString() ?? '',
       barcode: json['barcode']?.toString() ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      stock: (json['stock'] as num?)?.toInt() ?? 0,
+      stock: (json['stock'] as num?)?.toDouble() ?? 0.0,
       costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0.0,
       category: json['category']?.toString() ?? 'عام',
       wholesalePrice: (json['wholesalePrice'] as num?)?.toDouble() ?? 0.0,
@@ -235,9 +261,14 @@ class ProductModel extends Product {
       baseUnitName: json['baseUnitName']?.toString() ?? 'قطعة',
       units: (json['units'] as List<dynamic>?)
               ?.map((u) => ProductUnitModel.fromJson(Map<String, dynamic>.from(u)))
-              .toList() ??
-          [],
+              .toList() ?? [],
       pluCode: json['pluCode']?.toString(),
+      unitSystemTypeIndex: (json['unitSystemTypeIndex'] as num?)?.toInt() ?? 0,
+      isDeleted: json['isDeleted'] as bool? ?? false,
+      stockBatchesModels: (json['stockBatches'] as List<dynamic>?)
+              ?.map((b) => PurchaseBatchModel.fromJson(Map<String, dynamic>.from(b)))
+              .toList() ?? [],
+      coffeeRecipeJson: json['coffeeRecipeJson']?.toString(),
     );
   }
 
@@ -257,6 +288,10 @@ class ProductModel extends Product {
       'baseUnitName': baseUnitName,
       'units': units.map((u) => u.toJson()).toList(),
       'pluCode': pluCode,
+      'unitSystemTypeIndex': unitSystemTypeIndex,
+      'isDeleted': isDeleted,
+      'stockBatches': stockBatchesModels.map((b) => b.toJson()).toList(),
+      'coffeeRecipeJson': coffeeRecipeJson,
     };
   }
 }

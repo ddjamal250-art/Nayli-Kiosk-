@@ -428,7 +428,59 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         final productModel = productBox.get(originalId);
         if (productModel != null) {
           int newStock;
-          // منتج ميزاني: stock بالغرام، deduct = weightKg × 1000
+
+          if (productModel.coffeeRecipeJson != null) {
+            // Deduct raw materials instead of this product's stock.
+            // The cup itself has stock=999, no need to deduct.
+            try {
+              final recipe = jsonDecode(productModel.coffeeRecipeJson!);
+              if (recipe.isNotEmpty) {
+                 final item = recipe.first;
+                 final rawId = item['rawProductId'];
+                 final double gramsPerCup = (item['qty'] as num).toDouble();
+                 final rawProduct = productBox.get(rawId);
+                 if (rawProduct != null) {
+                    final deductGrams = (gramsPerCup * cartItem.quantity).round();
+                    final newRawStock = state.isReturnMode 
+                        ? (rawProduct.stock + deductGrams) 
+                        : (rawProduct.stock - deductGrams).clamp(0, 9999999);
+                    
+          // FIFO Batch Deduction
+          List<PurchaseBatch> updatedBatches = List.from(rawProduct.stockBatches);
+          if (!state.isReturnMode && updatedBatches.isNotEmpty) {
+             double remainingToDeduct = (rawProduct.stock - newRawStock).toDouble();
+             updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
+             
+             for (int i = 0; i < updatedBatches.length; i++) {
+                 if (remainingToDeduct <= 0) break;
+                 
+                 final batch = updatedBatches[i];
+                 if (batch.remainingQuantity <= remainingToDeduct) {
+                     remainingToDeduct -= batch.remainingQuantity;
+                     updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
+                 } else {
+                     updatedBatches[i] = batch.copyWith(remainingQuantity: batch.remainingQuantity - remainingToDeduct);
+                     remainingToDeduct = 0;
+                 }
+             }
+             updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
+          } else if (state.isReturnMode) {
+             // On return, just add it to the newest batch or create one
+             if (updatedBatches.isNotEmpty) {
+                 updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
+                 final newest = updatedBatches.first;
+                 updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + (newRawStock - rawProduct.stock).toDouble());
+             }
+          }
+
+          productBox.put(rawId, rawProduct.copyWith(stock: newRawStock, stockBatches: updatedBatches));
+                 }
+              }
+            } catch (_) {}
+            continue; // Skip the rest of the deduction for the cup itself
+          }
+
+          // fallback to original weighable check
           final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled);
           if (hasWeighable && cartItem.weightKg != null) {
             final deductGrams = (cartItem.weightKg! * 1000).round();
@@ -443,7 +495,36 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                 : (productModel.stock - deductInt).clamp(0, 999999);
           }
 
-          productBox.put(originalId, productModel.copyWith(stock: newStock));
+          
+          // FIFO Batch Deduction
+          List<PurchaseBatch> updatedBatches = List.from(productModel.stockBatches);
+          if (!state.isReturnMode && updatedBatches.isNotEmpty) {
+             double remainingToDeduct = (productModel.stock - newStock).toDouble();
+             updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
+             
+             for (int i = 0; i < updatedBatches.length; i++) {
+                 if (remainingToDeduct <= 0) break;
+                 
+                 final batch = updatedBatches[i];
+                 if (batch.remainingQuantity <= remainingToDeduct) {
+                     remainingToDeduct -= batch.remainingQuantity;
+                     updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
+                 } else {
+                     updatedBatches[i] = batch.copyWith(remainingQuantity: batch.remainingQuantity - remainingToDeduct);
+                     remainingToDeduct = 0;
+                 }
+             }
+             updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
+          } else if (state.isReturnMode) {
+             // On return, just add it to the newest batch or create one
+             if (updatedBatches.isNotEmpty) {
+                 updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
+                 final newest = updatedBatches.first;
+                 updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + (newStock - productModel.stock).toDouble());
+             }
+          }
+
+          productBox.put(originalId, productModel.copyWith(stock: newStock, stockBatches: updatedBatches));
 
           // SMART SHOPPING LIST AUTOMATION
           if (newStock <= 5) {
@@ -469,10 +550,36 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final invoicesBox = HiveDatabase.invoicesBox;
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
       // استخدم totalCostForInvoice لدعم المنتجات الميزانية (وزن × تكلفة/كغ)
-      final totalCost = state.cartItems.fold<double>(
-        0.0,
-        (sum, i) => sum + i.totalCostForInvoice,
-      );
+      // Recalculate true cost for invoice (especially for coffee recipes)
+      double totalCost = 0.0;
+      double coffeeCost = 0.0;
+      double tobaccoCost = 0.0;
+      
+      for (final i in state.cartItems) {
+         double itemCost = i.totalCostForInvoice;
+         
+         // Dynamic Coffee Cost Evaluation based on Raw Material's current FIFO batches
+         if (i.product.coffeeRecipeJson != null) {
+            try {
+              final recipe = jsonDecode(i.product.coffeeRecipeJson!);
+              if (recipe.isNotEmpty) {
+                 final rawId = recipe.first['rawProductId'];
+                 final double gramsPerCup = (recipe.first['qty'] as num).toDouble();
+                 final rawProduct = productBox.get(rawId);
+                 if (rawProduct != null && rawProduct.stockBatches.isNotEmpty) {
+                    final newestBatch = rawProduct.stockBatches.first; // Or oldest batch
+                    final costPerGram = newestBatch.costPrice / 1000.0;
+                    itemCost = costPerGram * gramsPerCup * i.quantity;
+                 }
+              }
+            } catch (_) {}
+            coffeeCost += itemCost;
+         } else if (i.product.category.toLowerCase().contains('تبغ') || i.product.category.toLowerCase().contains('سجائر')) {
+            tobaccoCost += itemCost;
+         }
+         
+         totalCost += itemCost;
+      }
 
       final subtotal = state.subTotalAmount;
       final discountRatio = (subtotal > 0) ? (state.totalAmount / subtotal) : 1.0;
@@ -482,7 +589,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       final rawTobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
       final tobaccoSales = rawTobaccoSales * discountRatio;
-      final tobaccoCost = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.totalCostForInvoice);
+      
       final tobaccoProfit = tobaccoSales - tobaccoCost;
 
       final coffeeItems = state.cartItems.where(
@@ -490,7 +597,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       final rawCoffeeSales = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.total);
       final coffeeSales = rawCoffeeSales * discountRatio;
-      final coffeeCost = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.totalCostForInvoice);
+      
       final coffeeProfit = coffeeSales - coffeeCost;
       final coffeeCupsCount = coffeeItems.fold<int>(0, (sum, i) => sum + i.quantity);
 

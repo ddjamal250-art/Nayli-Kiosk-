@@ -5,7 +5,7 @@ import '../../../product/domain/entities/product_unit.dart';
 
 class CartItem extends Equatable {
   final Product product;
-  final int quantity;
+  final double quantity; // Changed to double for fractional sales (e.g., 1.5 units)
   final String unitLevel; // Name of the selected unit (e.g. 'فاردو', or 'base' for base unit)
   final String? customUnitName;
   final double? customUnitPrice;
@@ -15,7 +15,7 @@ class CartItem extends Equatable {
 
   const CartItem({
     required this.product,
-    this.quantity = 1,
+    this.quantity = 1.0,
     this.unitLevel = 'base',
     this.customUnitName,
     this.customUnitPrice,
@@ -64,27 +64,23 @@ class CartItem extends Equatable {
     return unitPrice * quantity;
   }
 
-  /// الكمية الحقيقية للخصم من المخزون:
-  /// - منتج ميزاني: weightKg (بالكغ — يُضرب ×1000 عند الخزن بالغرام)
-  /// - منتج عادي: quantity × multiplier
+  /// الكمية الحقيقية للخصم من المخزون
   double get totalStockDeduct {
     if (weightKg != null) return weightKg!;
     final unit = selectedUnit;
-    final multiplier = unit?.multiplier ?? 1;
-    return (quantity * multiplier).toDouble();
+    final multiplier = unit?.multiplier ?? 1.0;
+    return quantity * multiplier;
   }
 
-  /// للتوافق مع الكود القديم (المنتجات العادية فقط)
-  int get totalBaseQuantity {
-    if (weightKg != null) return 1; // الخصم الحقيقي عبر totalStockDeduct
+  /// للتوافق مع الكود القديم
+  double get totalBaseQuantity {
+    if (weightKg != null) return 1.0; 
     final unit = selectedUnit;
-    final multiplier = unit?.multiplier ?? 1;
+    final multiplier = unit?.multiplier ?? 1.0;
     return quantity * multiplier;
   }
 
   /// التكلفة الحقيقية للفاتورة:
-  /// - منتج ميزاني: وزن × تكلفة/كغ
-  /// - منتج عادي: تكلفة × عدد
   double get totalCostForInvoice {
     if (weightKg != null) {
       final unit = selectedUnit;
@@ -99,7 +95,7 @@ class CartItem extends Equatable {
 
   CartItem copyWith({
     Product? product,
-    int? quantity,
+    double? quantity,
     String? unitLevel,
     String? customUnitName,
     double? customUnitPrice,

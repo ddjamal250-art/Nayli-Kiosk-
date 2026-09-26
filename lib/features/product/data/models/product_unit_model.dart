@@ -8,26 +8,35 @@ class ProductUnitModel extends ProductUnit {
   @override
   @HiveField(0)
   final String name;
+  
   @override
   @HiveField(1)
-  final int multiplier;
+  final double multiplier;
+  
   @override
   @HiveField(2)
   final String? barcode;
+  
   @override
   @HiveField(3)
   final double price;
+  
   @override
   @HiveField(4)
   final double cost;
+  
   @override
   @HiveField(5)
   final bool isEnabled;
+  
   @override
   @HiveField(6)
   final bool isWeighable;
 
-  const ProductUnitModel({
+  @HiveField(7)
+  final int tierIndex;
+
+  ProductUnitModel({
     required this.name,
     required this.multiplier,
     this.barcode,
@@ -35,6 +44,7 @@ class ProductUnitModel extends ProductUnit {
     this.cost = 0.0,
     this.isEnabled = true,
     this.isWeighable = false,
+    this.tierIndex = 0,
   }) : super(
           name: name,
           multiplier: multiplier,
@@ -43,6 +53,7 @@ class ProductUnitModel extends ProductUnit {
           cost: cost,
           isEnabled: isEnabled,
           isWeighable: isWeighable,
+          tier: UnitTier.values.length > tierIndex ? UnitTier.values[tierIndex] : UnitTier.small,
         );
 
   factory ProductUnitModel.fromEntity(ProductUnit unit) {
@@ -54,6 +65,7 @@ class ProductUnitModel extends ProductUnit {
       cost: unit.cost,
       isEnabled: unit.isEnabled,
       isWeighable: unit.isWeighable,
+      tierIndex: unit.tier.index,
     );
   }
 
@@ -66,18 +78,20 @@ class ProductUnitModel extends ProductUnit {
       cost: cost,
       isEnabled: isEnabled,
       isWeighable: isWeighable,
+      tier: UnitTier.values.length > tierIndex ? UnitTier.values[tierIndex] : UnitTier.small,
     );
   }
 
   factory ProductUnitModel.fromJson(Map<String, dynamic> json) {
     return ProductUnitModel(
       name: json['name']?.toString() ?? '',
-      multiplier: (json['multiplier'] as num?)?.toInt() ?? 1,
+      multiplier: (json['multiplier'] as num?)?.toDouble() ?? 1.0,
       barcode: json['barcode']?.toString(),
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
       isEnabled: json['isEnabled'] as bool? ?? true,
       isWeighable: json['isWeighable'] as bool? ?? false,
+      tierIndex: (json['tierIndex'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -90,6 +104,7 @@ class ProductUnitModel extends ProductUnit {
       'cost': cost,
       'isEnabled': isEnabled,
       'isWeighable': isWeighable,
+      'tierIndex': tierIndex,
     };
   }
 }

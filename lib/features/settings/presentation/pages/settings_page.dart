@@ -87,11 +87,7 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildBusinessHubsGrid(context),
 
             SizedBox(height: 18),
-
-            // 2.1 Master Catalog & Instant Setup Banner
-            _buildMasterCatalogHeroBanner(context),
-
-            SizedBox(height: 20),
+SizedBox(height: 20),
 
             // 3. Hardware & Printing Center
             _buildSectionHeader(context.tr('hardware_printing_header')),

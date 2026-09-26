@@ -1,13 +1,19 @@
 import 'package:equatable/equatable.dart';
 
+/// مستوى الوحدة في الهرم
+enum UnitTier {
+  small,   // الوحدة الصغرى (أدنى تقسيم للبيع)
+  medium,  // الوحدة الوسطى
+  large,   // الوحدة الكبرى
+}
+
 class ProductUnit extends Equatable {
   final String name; // e.g. "علبة", "فاردو", "كرتونة"
-  final int multiplier; // How many base units this contains (e.g. 24)
+  final UnitTier tier;
+  final double multiplier; // Changed to double to support weight/capacity
   final String? barcode;
   final double price; // Selling price for this specific unit
-  final double cost; // Cost price for this specific unit (optional, can be derived)
-  final String? level; // 'piece', 'pack', 'carton', 'weighable'
-  final String? type; // 'piece', 'meter', 'ml'
+  final double cost; // Cost price for this specific unit
   final double? wholesalePrice;
   final double? costPrice;
   /// هل الوحدة مُفعَّلة وتظهر في الكاشير؟
@@ -17,12 +23,11 @@ class ProductUnit extends Equatable {
 
   const ProductUnit({
     required this.name,
+    this.tier = UnitTier.small,
     required this.multiplier,
     this.barcode,
     required this.price,
     this.cost = 0.0,
-    this.level,
-    this.type,
     this.wholesalePrice,
     this.costPrice,
     this.isEnabled = true,
@@ -31,12 +36,11 @@ class ProductUnit extends Equatable {
 
   ProductUnit copyWith({
     String? name,
-    int? multiplier,
+    UnitTier? tier,
+    double? multiplier,
     String? barcode,
     double? price,
     double? cost,
-    String? level,
-    String? type,
     double? wholesalePrice,
     double? costPrice,
     bool? isEnabled,
@@ -44,12 +48,11 @@ class ProductUnit extends Equatable {
   }) {
     return ProductUnit(
       name: name ?? this.name,
+      tier: tier ?? this.tier,
       multiplier: multiplier ?? this.multiplier,
       barcode: barcode ?? this.barcode,
       price: price ?? this.price,
       cost: cost ?? this.cost,
-      level: level ?? this.level,
-      type: type ?? this.type,
       wholesalePrice: wholesalePrice ?? this.wholesalePrice,
       costPrice: costPrice ?? this.costPrice,
       isEnabled: isEnabled ?? this.isEnabled,
@@ -59,8 +62,7 @@ class ProductUnit extends Equatable {
 
   @override
   List<Object?> get props => [
-    name, multiplier, barcode, price, cost,
-    level, type, wholesalePrice, costPrice,
-    isEnabled, isWeighable,
+    name, tier, multiplier, barcode, price, cost,
+    wholesalePrice, costPrice, isEnabled, isWeighable,
   ];
 }
