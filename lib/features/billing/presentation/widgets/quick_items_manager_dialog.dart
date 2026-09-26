@@ -22,7 +22,7 @@ class QuickItemData {
   final String icon;
   final String barcode;
   final String shortCode;
-  final int stock;
+  final double stock;
   final String? linkedProductId;
   final int orderIndex;
 
@@ -34,7 +34,7 @@ class QuickItemData {
     required this.icon,
     required this.barcode,
     this.shortCode = '',
-    this.stock = 0,
+    this.stock = 0.0,
     this.linkedProductId,
     this.orderIndex = 0,
   });
@@ -84,7 +84,7 @@ class QuickItemData {
     icon: map['icon']?.toString() ?? '🏷️',
     barcode: map['barcode']?.toString() ?? '',
     shortCode: map['shortCode']?.toString() ?? '',
-    stock: (map['stock'] as num?)?.toInt() ?? 0,
+    stock: (map['stock'] as num?)?.toDouble() ?? 0.0,
     linkedProductId: map['linkedProductId']?.toString(),
     orderIndex: (map['orderIndex'] as num?)?.toInt() ?? index,
   );
@@ -198,7 +198,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
         icon: '☕',
         barcode: realExpress?.barcode ?? '2000000000087',
         shortCode: 'C1',
-        stock: realExpress?.stock ?? 500,
+        stock: realExpress?.stock ?? 500.0,
         linkedProductId: realExpress?.id,
         orderIndex: _items.length,
       ),
@@ -210,7 +210,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
         icon: '🟤',
         barcode: realCapsule?.barcode ?? '2000000000094',
         shortCode: 'C2',
-        stock: realCapsule?.stock ?? 200,
+        stock: realCapsule?.stock ?? 200.0,
         linkedProductId: realCapsule?.id,
         orderIndex: _items.length + 1,
       ),
@@ -222,7 +222,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
         icon: '🍵',
         barcode: realTea?.barcode ?? '2000000000100',
         shortCode: 'C3',
-        stock: realTea?.stock ?? 500,
+        stock: realTea?.stock ?? 500.0,
         linkedProductId: realTea?.id,
         orderIndex: _items.length + 2,
       ),

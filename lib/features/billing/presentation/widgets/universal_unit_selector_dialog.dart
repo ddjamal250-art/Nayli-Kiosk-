@@ -16,14 +16,14 @@ class UniversalUnitSelectorDialog extends StatefulWidget {
   final Product product;
   final CartItem? cartItem;
   final String initialUnit;
-  final int initialQuantity;
+  final double initialQuantity;
 
   const UniversalUnitSelectorDialog({
     super.key,
     required this.product,
     this.cartItem,
     this.initialUnit = 'pack',
-    this.initialQuantity = 1,
+    this.initialQuantity = 1.0,
   });
 
   static Future<void> showForCartItem(BuildContext context, CartItem item) {

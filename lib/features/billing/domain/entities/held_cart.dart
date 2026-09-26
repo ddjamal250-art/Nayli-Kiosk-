@@ -56,10 +56,10 @@ class HeldCart extends Equatable {
             name: pMap['name']?.toString() ?? '',
             barcode: pMap['barcode']?.toString() ?? '',
             price: (pMap['price'] as num?)?.toDouble() ?? 0.0,
-            stock: (pMap['stock'] as num?)?.toInt() ?? 0,
+            stock: (pMap['stock'] as num?)?.toDouble() ?? 0.0,
             costPrice: (pMap['costPrice'] as num?)?.toDouble() ?? 0.0,
           );
-          final qty = (raw['quantity'] as num?)?.toInt() ?? 1;
+          final qty = (raw['quantity'] as num?)?.toDouble() ?? 1.0;
           itemsList.add(CartItem(product: prod, quantity: qty));
         }
       }

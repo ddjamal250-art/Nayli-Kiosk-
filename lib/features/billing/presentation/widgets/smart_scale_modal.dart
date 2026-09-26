@@ -445,7 +445,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   barcode: rawBarcode,
                   price: price,
                   costPrice: cost,
-                  stock: totalStock.toInt(),
+                  stock: totalStock.toDouble(),
                 );
 
                 context.read<ProductBloc>().add(AddProduct(newProd));
@@ -532,7 +532,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
     final matching = pBox.values.where((p) => p.name.trim() == name.trim() || p.id == _selectedProductId).firstOrNull;
     if (matching != null) {
       final current = matching.stock;
-      final newStock = (current - weightKg).clamp(0.0, double.infinity).toInt();
+      final newStock = (current - weightKg).clamp(0.0, double.infinity).toDouble();
       final updated = Product(
         id: matching.id,
         name: matching.name,

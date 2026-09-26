@@ -141,7 +141,7 @@ class _LossesPageState extends State<LossesPage> {
     await HiveDatabase.lossesBox.put(loss.id, loss.toMap());
 
     if (mounted) {
-      final updatedStock = (product.stock - quantity).clamp(0, 999999);
+      final updatedStock = (product.stock - quantity).toDouble().clamp(0.0, 999999.0);
       final updatedProduct = Product(
         id: product.id,
         name: product.name,

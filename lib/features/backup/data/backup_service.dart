@@ -811,10 +811,10 @@ class UniversalDatabaseImporter {
         wholesale = _parsePrice(row[colMap['wholesale']!]);
       }
 
-      int stock = 0;
+      double stock = 0.0;
       if (colMap.containsKey('stock') && colMap['stock']! < row.length) {
         final parsed = _parsePrice(row[colMap['stock']!]);
-        stock = parsed.toInt();
+        stock = parsed;
       }
 
       String category = 'عام';

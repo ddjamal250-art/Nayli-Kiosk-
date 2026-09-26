@@ -22,7 +22,7 @@ class InventoryAuditPage extends StatefulWidget {
 
 class _InventoryAuditPageState extends State<InventoryAuditPage> {
   final TextEditingController _searchCtrl = TextEditingController();
-  final Map<String, int> _countedStock = {}; // productId -> counted quantity
+  final Map<String, double> _countedStock = {}; // productId -> counted quantity
   String _selectedFilter = 'all'; // 'all', 'discrepancy', 'matched', 'uncounted'
 
   @override
@@ -44,7 +44,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
     if (savedDraft is Map) {
       for (final p in products) {
         if (savedDraft.containsKey(p.id)) {
-          _countedStock[p.id] = (savedDraft[p.id] as num?)?.toInt() ?? p.stock;
+          _countedStock[p.id] = (savedDraft[p.id] as num?)?.toDouble() ?? p.stock;
         } else {
           _countedStock[p.id] = p.stock;
         }
@@ -60,7 +60,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
     HiveDatabase.settingsBox.put('draft_audit_session', _countedStock);
   }
 
-  void _incrementCount(String productId, int amount) {
+  void _incrementCount(String productId, double amount) {
     setState(() {
       _countedStock[productId] = (_countedStock[productId] ?? 0) + amount;
       if (_countedStock[productId]! < 0) _countedStock[productId] = 0;
@@ -69,9 +69,9 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
     SoundService.playScanBeep();
   }
 
-  void _setCount(String productId, int value) {
+  void _setCount(String productId, double value) {
     setState(() {
-      _countedStock[productId] = value.clamp(0, 999999);
+      _countedStock[productId] = value.clamp(0.0, 999999.0);
     });
     _saveDraftSession();
   }
@@ -135,15 +135,15 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
               spacing: 6,
               children: [
                 ActionChip(label: const Text('+6 (فاردو)'), onPressed: () {
-                  final cur = int.tryParse(ctrl.text) ?? 0;
+                  final cur = double.tryParse(ctrl.text) ?? 0;
                   ctrl.text = (cur + 6).toString();
                 }),
                 ActionChip(label: const Text('+12 (دزينة)'), onPressed: () {
-                  final cur = int.tryParse(ctrl.text) ?? 0;
+                  final cur = double.tryParse(ctrl.text) ?? 0;
                   ctrl.text = (cur + 12).toString();
                 }),
                 ActionChip(label: const Text('+24 (كرتونة)'), onPressed: () {
-                  final cur = int.tryParse(ctrl.text) ?? 0;
+                  final cur = double.tryParse(ctrl.text) ?? 0;
                   ctrl.text = (cur + 24).toString();
                 }),
               ],
@@ -155,7 +155,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
             onPressed: () {
-              final val = int.tryParse(ctrl.text.trim()) ?? currentCount;
+              final val = double.tryParse(ctrl.text.trim()) ?? currentCount;
               _setCount(product.id, val);
               Navigator.pop(ctx);
             },

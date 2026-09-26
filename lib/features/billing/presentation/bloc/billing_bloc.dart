@@ -427,7 +427,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
         final productModel = productBox.get(originalId);
         if (productModel != null) {
-          int newStock;
+          double newStock = 0.0;
 
           if (productModel.coffeeRecipeJson != null) {
             // Deduct raw materials instead of this product's stock.
@@ -441,9 +441,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                  final rawProduct = productBox.get(rawId);
                  if (rawProduct != null) {
                     final deductGrams = (gramsPerCup * cartItem.quantity).round();
-                    final newRawStock = state.isReturnMode 
-                        ? (rawProduct.stock + deductGrams) 
-                        : (rawProduct.stock - deductGrams).clamp(0, 9999999);
+                    final double newRawStock = state.isReturnMode 
+                        ? (rawProduct.stock + deductGrams).toDouble() : (rawProduct.stock - deductGrams).toDouble().clamp(0.0, 9999999.0);
                     
           // FIFO Batch Deduction
           List<PurchaseBatch> updatedBatches = List.from(rawProduct.stockBatches);
@@ -485,14 +484,13 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           if (hasWeighable && cartItem.weightKg != null) {
             final deductGrams = (cartItem.weightKg! * 1000).round();
             newStock = state.isReturnMode
-                ? (productModel.stock + deductGrams)
-                : (productModel.stock - deductGrams).clamp(0, 9999999);
+                ? (productModel.stock + deductGrams).toDouble() : (productModel.stock - deductGrams).toDouble().clamp(0.0, 9999999.0);
           } else {
             // منتج عادي: stock بالحبة
             final deductInt = cartItem.totalStockDeduct.round();
             newStock = state.isReturnMode
-                ? (productModel.stock + deductInt)
-                : (productModel.stock - deductInt).clamp(0, 999999);
+                ? (productModel.stock + deductInt).toDouble()
+                : (productModel.stock - deductInt).toDouble().clamp(0.0, 999999.0);
           }
 
           
@@ -599,7 +597,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final coffeeSales = rawCoffeeSales * discountRatio;
       
       final coffeeProfit = coffeeSales - coffeeCost;
-      final coffeeCupsCount = coffeeItems.fold<int>(0, (sum, i) => sum + i.quantity);
+      final coffeeCupsCount = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.quantity);
 
       final generalSales = (state.totalAmount - tobaccoSales - coffeeSales).clamp(0.0, double.infinity);
       final generalCost = (totalCost - tobaccoCost - coffeeCost).clamp(0.0, double.infinity);
@@ -622,7 +620,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'generalSales': generalSales,
         'generalCost': generalCost,
         'generalProfit': generalProfit,
-        'itemCount': state.cartItems.fold<int>(0, (sum, i) => sum + i.quantity),
+        'itemCount': state.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity),
         'items': items,
         'isCredit': event.isCredit,
         'paymentMethod': event.paymentMethod,
