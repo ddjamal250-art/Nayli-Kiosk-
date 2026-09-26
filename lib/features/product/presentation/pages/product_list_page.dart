@@ -737,24 +737,6 @@ class _ProductListPageState extends State<ProductListPage> {
             ),
       body: Column(
         children: [
-          Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Ù…ÙƒØªØ¨Ø© Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ø¬Ø²Ø§Ø¦Ø±ÙŠØ© (15,500+ Ù…Ù†ØªØ¬)',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.primaryColor)),
-                          Text('Ø§Ø³ØªÙˆØ±Ø¯ Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ø¬Ø§Ù‡Ø²Ø© ÙˆØ£Ø³Ø¹Ø§Ø±Ù‡Ø§ Ù„Ù…Ø®Ø²ÙˆÙ†Ùƒ Ø¨Ø¯ÙˆÙ† Ù…Ø³Ø­ ÙØ±Ø¯ÙŠ',
-                              style: TextStyle(fontSize: 10, color: Colors.black87)),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.primaryColor),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
           // Quick Tools Row (Shelf Price Tags, Inventory Audit & Invoices)
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
