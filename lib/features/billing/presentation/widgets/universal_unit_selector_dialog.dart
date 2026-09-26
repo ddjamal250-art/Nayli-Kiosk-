@@ -50,7 +50,7 @@ class UniversalUnitSelectorDialog extends StatefulWidget {
       builder: (ctx) => UniversalUnitSelectorDialog(
         product: product,
         initialUnit: initialUnit,
-        initialQuantity: 1,
+        initialQuantity: 1.0,
       ),
     );
   }
@@ -61,7 +61,7 @@ class UniversalUnitSelectorDialog extends StatefulWidget {
 
 class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialog> {
   late String _selectedUnit;
-  late int _quantity;
+  late double _quantity;
   late final TextEditingController _qtyController;
 
   // Custom Quantity & Deal Controllers
@@ -135,7 +135,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     return _currentUnitPrice * _quantity;
   }
 
-  void _setQuantity(int q) {
+  void _setQuantity(double q) {
     final validQ = q.clamp(1, 9999);
     setState(() {
       _quantity = validQ;
@@ -175,7 +175,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     SoundService.playScanBeep();
 
     if (_selectedUnit == 'custom') {
-      final qty = (int.tryParse(_customQtyController.text.trim()) ?? 1).clamp(1, 9999);
+      final double qty = (double.tryParse(_customQtyController.text.trim()) ?? 1.0).clamp(1.0, 9999.0);
       final total = (double.tryParse(_customPriceController.text.trim()) ?? 0.0).clamp(0.0, 999999.0);
       final unitEffectivePrice = qty > 0 ? (total / qty) : 0.0;
       final baseUnitLabel = p.baseUnitName;
@@ -228,7 +228,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
             SwitchCartItemUnitEvent(
               cartKey: widget.cartItem!.cartKey,
               targetUnit: _selectedUnit,
-              newQuantity: isWeighable ? 1 : _quantity,
+              newQuantity: isWeighable ? 1.0 : _quantity,
               weightKg: resolvedWeightKg,
             ),
           );
@@ -241,7 +241,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
             AddProductToCartEvent(
               p,
               unitLevel: _selectedUnit,
-              quantity: isWeighable ? 1 : _quantity,
+              quantity: isWeighable ? 1.0 : _quantity,
               weightKg: resolvedWeightKg,
             ),
           );

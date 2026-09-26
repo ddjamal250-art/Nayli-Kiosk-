@@ -47,7 +47,7 @@ class QuickItemData {
     String? icon,
     String? barcode,
     String? shortCode,
-    int? stock,
+    double? stock,
     String? linkedProductId,
     int? orderIndex,
   }) => QuickItemData(
@@ -619,7 +619,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                   final name = nameController.text.trim();
                   final price = double.tryParse(priceController.text.trim()) ?? 0.0;
                   final cost = double.tryParse(costController.text.trim()) ?? 0.0;
-                  final stock = int.tryParse(stockController.text.trim()) ?? 0;
+                  final double stock = double.tryParse(stockController.text.trim()) ?? 0.0;
                   final barcode = barcodeController.text.trim();
                   final shortCode = shortCodeController.text.trim();
 
