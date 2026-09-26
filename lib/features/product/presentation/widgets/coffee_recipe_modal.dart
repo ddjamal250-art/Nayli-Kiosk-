@@ -169,7 +169,7 @@ class _CoffeeRecipeModalState extends State<CoffeeRecipeModal> {
             final product = Product(
               id: widget.existingProduct?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
               name: _nameCtrl.text.trim(),
-              barcode: widget.existingProduct?.barcode ?? 'COFFEE_\',
+              barcode: widget.existingProduct?.barcode ?? 'COFFEE_CUP',
               price: double.tryParse(_sellPriceCtrl.text) ?? 0.0,
               costPrice: cupCost,
               wholesalePrice: cupCost,
