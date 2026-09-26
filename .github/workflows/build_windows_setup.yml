@@ -57,9 +57,9 @@ jobs:
       - name: Generate Self-Signed Code Certificate
         shell: powershell
         run: |
-           = New-SelfSignedCertificate -Subject "CN=Nayli Kiosk" -Type CodeSigningCert -CertStoreLocation "Cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(5)
-           = ConvertTo-SecureString -String "Nayli2026!" -Force -AsPlainText
-          Export-PfxCertificate -Cert  -FilePath "nayli_code_sign.pfx" -Password 
+          $cert = New-SelfSignedCertificate -Subject "CN=Nayli Kiosk" -Type CodeSigningCert -CertStoreLocation "Cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(5)
+          $pwd = ConvertTo-SecureString -String "Nayli2026!" -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath "nayli_code_sign.pfx" -Password $pwd
 
       - name: Sign Windows Executable
         shell: cmd
