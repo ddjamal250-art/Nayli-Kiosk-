@@ -88,7 +88,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     _quantity = widget.initialQuantity;
     _qtyController = TextEditingController(text: _quantity.toString());
 
-    final initialCustomQty = 3;
+    final double initialCustomQty = 3.0;
     final initialCustomPrice = p.price * initialCustomQty;
 
     _customBaseUnit = 'base';

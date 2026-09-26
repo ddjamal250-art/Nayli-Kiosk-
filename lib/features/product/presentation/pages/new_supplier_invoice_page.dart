@@ -218,7 +218,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
     for (final item in _invoiceItems) {
       final barcode = item['barcode'] as String;
       final name = item['name'] as String;
-      final qty = item['totalUnits'] as int;
+      final qty = (item['totalUnits'] as num).toDouble();
       final unitCost = item['unitCost'] as double;
       final sellPrice = item['sellPrice'] as double;
 
@@ -244,7 +244,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
           category: existing.category.isNotEmpty && existing.category != 'عام' ? existing.category : category,
           price: sellPrice > 0 ? sellPrice : existing.price,
           costPrice: effectiveCost,
-          stock: existing.stock + qty,
+          stock: (existing.stock + qty).toDouble(),
         );
         productBloc.add(UpdateProduct(p));
         CatalogCrowdsourceHelper.silentHarvest(p, category: p.category);
@@ -256,7 +256,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
           category: category,
           price: sellPrice,
           costPrice: unitCost,
-          stock: qty,
+          stock: qty.toDouble(),
         );
         productBloc.add(AddProduct(p));
         CatalogCrowdsourceHelper.silentHarvest(p, category: category);

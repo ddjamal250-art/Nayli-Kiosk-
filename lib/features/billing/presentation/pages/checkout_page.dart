@@ -147,7 +147,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         if (!item.product.id.startsWith('custom_') && !item.product.id.startsWith('direct_')) {
           final p = productBox.get(item.product.id);
           if (p != null) {
-            final newStock = (p.stock - item.quantity).clamp(0, 999999);
+            final double newStock = (p.stock - item.quantity).toDouble().clamp(0.0, 999999.0);
             await productBox.put(
               item.product.id,
               ProductModel(
@@ -189,7 +189,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         'totalAmount': billingState.totalAmount,
         'totalCost': totalCost,
         'netProfit': (billingState.totalAmount - totalCost).clamp(0.0, double.infinity),
-        'itemCount': billingState.cartItems.fold<int>(0, (sum, i) => sum + i.quantity),
+        'itemCount': billingState.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity).toInt(),
         'items': items,
         'isCredit': _paymentMode != PaymentMode.cash,
         'customerName': _selectedCustomer?.name ?? '',

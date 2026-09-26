@@ -47,7 +47,7 @@ class _StockInPageState extends State<StockInPage> {
   bool _isCameraOn = false;
   bool _isFlashOn = false;
   String _activeBarcode = '';
-  int _currentStock = 0;
+  double _currentStock = 0.0;
   bool _isExistingInShop = false;
   String? _existingProductId;
   DateTime? _lastScanTime;

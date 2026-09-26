@@ -619,7 +619,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 final name = nameController.text.trim();
                 final price = double.tryParse(priceController.text.trim()) ?? 0.0;
                 final costPrice = double.tryParse(costPriceController.text.trim()) ?? (price * 0.8);
-                final stock = int.tryParse(stockController.text.trim()) ?? 10;
+                final stock = double.tryParse(stockController.text.trim()) ?? 10.0;
 
                 if (name.isNotEmpty && price > 0) {
                   final newProduct = Product(

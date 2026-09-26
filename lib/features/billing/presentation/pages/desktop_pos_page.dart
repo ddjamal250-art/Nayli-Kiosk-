@@ -510,7 +510,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       context.read<BillingBloc>().add(AddProductToCartEvent(
                         product,
                         unitLevel: 'pack',
-                        quantity: finalQty,
+                        quantity: finalQty.toDouble(),
                         customPrice: price,
                       ));
                     } else {
@@ -518,7 +518,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       context.read<BillingBloc>().add(AddProductToCartEvent(
                         product,
                         unitLevel: 'piece',
-                        quantity: finalQty,
+                        quantity: finalQty.toDouble(),
                         customPrice: price,
                       ));
 
@@ -526,7 +526,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       for (var accId in selectedAccessoryIds) {
                         final acc = availableAccessories.firstWhere((p) => p.id == accId);
                         context.read<BillingBloc>().add(AddProductToCartEvent(
-                          acc, unitLevel: 'piece', quantity: finalQty, customPrice: 0.0, customUnitName: 'مستلزمات',
+                          acc, unitLevel: 'piece', quantity: finalQty.toDouble(), customPrice: 0.0, customUnitName: 'مستلزمات',
                         ));
                       }
                     }
@@ -544,9 +544,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     );
   }
 
-  void _addProductToCartWithPricing(Product product, {int quantity = 1}) {
+  void _addProductToCartWithPricing(Product product, {double quantity = 1.0}) {
     if (product.isCoffeeMachineProduct && !_isReturnMode) {
-      _showCoffeeSaleDialog(product, quantity);
+      _showCoffeeSaleDialog(product, quantity.toInt());
       return;
     }
     double effectivePrice = product.price;
@@ -572,7 +572,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       wholesalePrice: product.wholesalePrice,
       );
 
-    context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct, quantity: quantity));
+    context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct, quantity: quantity.toDouble()));
     _onItemScanned();
     if (mounted) {
       setState(() {

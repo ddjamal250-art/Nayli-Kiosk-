@@ -136,7 +136,7 @@ class _EditProductPageState extends State<EditProductPage> {
                 if (name.isEmpty) return;
                 final unit = ProductUnit(
                   name: name,
-                  multiplier: int.tryParse(multiCtrl.text.trim()) ?? 1,
+                  multiplier: double.tryParse(multiCtrl.text.trim()) ?? 1.0,
                   price: double.tryParse(priceCtrl.text.trim()) ?? 0.0,
                   cost: double.tryParse(costCtrl.text.trim()) ?? 0.0,
                   barcode: barcodeCtrl.text.trim().isNotEmpty ? barcodeCtrl.text.trim() : null,
@@ -201,7 +201,7 @@ class _EditProductPageState extends State<EditProductPage> {
       barcode: _barcodeCtrl.text.trim(),
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
       costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0,
-      stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
+      stock: double.tryParse(_stockCtrl.text.trim()) ?? 0.0,
       category: _selectedCategory,
       baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
       units: _dynamicUnits,

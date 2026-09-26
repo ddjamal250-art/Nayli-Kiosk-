@@ -106,7 +106,7 @@ class ExcelExportHelper {
   }
 
   /// 3. Official Inventory Audit & Reconciliation Sheet (جدول الجرد الميداني وحساب العجز)
-  static String exportInventoryAuditToCsv(Map<String, int> countedStock) {
+  static String exportInventoryAuditToCsv(Map<String, double> countedStock) {
     final box = HiveDatabase.productBox;
     final products = box.values.toList();
 

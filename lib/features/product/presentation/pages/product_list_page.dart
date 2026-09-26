@@ -621,7 +621,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         price: product.price,
                         costPrice: parsedCost,
                         wholesalePrice: product.wholesalePrice,
-                        stock: (product.stock + netWeight.round()).toInt(),
+                        stock: (product.stock + netWeight).toDouble(),
                         category: product.category,
                         expiryDate: product.expiryDate,
                       );
