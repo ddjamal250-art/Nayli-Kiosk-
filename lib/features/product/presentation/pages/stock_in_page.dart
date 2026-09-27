@@ -74,6 +74,15 @@ class _StockInPageState extends State<StockInPage> {
   final TextEditingController _unitsPerCartonController = TextEditingController(text: '24');
   final TextEditingController _cartonCostController = TextEditingController();
   final TextEditingController _cartonsPriceController = TextEditingController();
+  
+  // --- Sprint 2 Variables ---
+  bool _hasMiddleTier = false;
+  final TextEditingController _packsPerCartonController = TextEditingController(text: '4');
+  final TextEditingController _unitsPerPackController = TextEditingController(text: '6');
+  final TextEditingController _packCostController = TextEditingController();
+  final TextEditingController _packPriceController = TextEditingController();
+  bool _pinToQuickItems = false;
+
 
   // Vrac & Sacs controllers (Coffee, Sugar, Semolina, Spices)
   final TextEditingController _sacCountController = TextEditingController(text: '1');
@@ -127,6 +136,10 @@ class _StockInPageState extends State<StockInPage> {
     _cartonCountController.addListener(_onCartonInputsChanged);
     _unitsPerCartonController.addListener(_onCartonInputsChanged);
     _cartonCostController.addListener(_onCartonCostChanged);
+    _packsPerCartonController.addListener(_onCartonInputsChanged);
+    _unitsPerPackController.addListener(_onCartonInputsChanged);
+    _packCostController.addListener(_onPackCostChanged);
+
 
     _sacCountController.addListener(_onSacInputsChanged);
     _kgPerSacController.addListener(_onSacInputsChanged);
@@ -153,6 +166,11 @@ class _StockInPageState extends State<StockInPage> {
     _cartonCountController.dispose();
     _unitsPerCartonController.dispose();
     _cartonCostController.dispose();
+    _packsPerCartonController.dispose();
+    _unitsPerPackController.dispose();
+    _packCostController.dispose();
+    _packPriceController.dispose();
+
     _sacCountController.dispose();
     _kgPerSacController.dispose();
     _sacCostController.dispose();
@@ -170,13 +188,34 @@ class _StockInPageState extends State<StockInPage> {
   void _onCartonInputsChanged() {
     if (_unitMode != ArrivageUnitMode.cartons || _isUpdatingFromCalculation) return;
     final cartons = int.tryParse(_cartonCountController.text.trim()) ?? 0;
-    final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
-    final totalUnits = cartons * perCarton;
+    
+    int totalUnits = 0;
+    if (_hasMiddleTier) {
+      final packs = int.tryParse(_packsPerCartonController.text.trim()) ?? 0;
+      final unitsPerPack = int.tryParse(_unitsPerPackController.text.trim()) ?? 0;
+      totalUnits = cartons * packs * unitsPerPack;
+    } else {
+      final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+      totalUnits = cartons * perCarton;
+    }
+    
     _qtyController.text = totalUnits.toString();
+    _cascadeCostCalculations();
+    setState(() {});
+  }
 
-    final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
-    if (perCarton > 0 && cartonCost > 0) {
-      final unitCost = cartonCost / perCarton;
+  void _onCartonCostChanged() {
+    if (_unitMode != ArrivageUnitMode.cartons || _isUpdatingFromCalculation) return;
+    _cascadeCostCalculations();
+    setState(() {});
+  }
+
+  void _onPackCostChanged() {
+    if (_unitMode != ArrivageUnitMode.cartons || !_hasMiddleTier || _isUpdatingFromCalculation) return;
+    final packCost = double.tryParse(_packCostController.text.trim()) ?? 0.0;
+    final unitsPerPack = int.tryParse(_unitsPerPackController.text.trim()) ?? 0;
+    if (unitsPerPack > 0 && packCost > 0) {
+      final unitCost = packCost / unitsPerPack;
       _isUpdatingFromCalculation = true;
       _costPriceController.text = unitCost.toStringAsFixed(2);
       _isUpdatingFromCalculation = false;
@@ -184,17 +223,31 @@ class _StockInPageState extends State<StockInPage> {
     setState(() {});
   }
 
-  void _onCartonCostChanged() {
-    if (_unitMode != ArrivageUnitMode.cartons || _isUpdatingFromCalculation) return;
-    final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+  void _cascadeCostCalculations() {
     final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
-    if (perCarton > 0 && cartonCost > 0) {
-      final unitCost = cartonCost / perCarton;
-      _isUpdatingFromCalculation = true;
-      _costPriceController.text = unitCost.toStringAsFixed(2);
-      _isUpdatingFromCalculation = false;
+    if (cartonCost <= 0) return;
+
+    _isUpdatingFromCalculation = true;
+    if (_hasMiddleTier) {
+      final packs = int.tryParse(_packsPerCartonController.text.trim()) ?? 0;
+      if (packs > 0) {
+        final packCost = cartonCost / packs;
+        _packCostController.text = packCost.toStringAsFixed(2);
+        
+        final unitsPerPack = int.tryParse(_unitsPerPackController.text.trim()) ?? 0;
+        if (unitsPerPack > 0) {
+          final unitCost = packCost / unitsPerPack;
+          _costPriceController.text = unitCost.toStringAsFixed(2);
+        }
+      }
+    } else {
+      final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
+      if (perCarton > 0) {
+        final unitCost = cartonCost / perCarton;
+        _costPriceController.text = unitCost.toStringAsFixed(2);
+      }
     }
-    setState(() {});
+    _isUpdatingFromCalculation = false;
   }
 
   void _onSacInputsChanged() {
@@ -448,6 +501,13 @@ class _StockInPageState extends State<StockInPage> {
         final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? 0.0;
         final cCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
         newPrices[UnitTier.large] = (price: cPrice, cost: cCost);
+        
+        if (_hasMiddleTier) {
+          final pPrice = double.tryParse(_packPriceController.text.trim()) ?? 0.0;
+          final pCost = double.tryParse(_packCostController.text.trim()) ?? 0.0;
+          newPrices[UnitTier.medium] = (price: pPrice, cost: pCost);
+        }
+        
         newPrices[UnitTier.small] = (price: effectivePrice, cost: effectiveCost);
       } else {
         newPrices[UnitTier.small] = (price: effectivePrice, cost: effectiveCost);
@@ -455,13 +515,27 @@ class _StockInPageState extends State<StockInPage> {
       resolvedUnits = _mergeUnitsWithNewPrices(existingProduct.units, newPrices);
     } else {
       if (_unitMode == ArrivageUnitMode.cartons) {
-        final perCarton = int.tryParse(_qtyController.text.trim()) ?? 1;
         final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? 0.0;
         final cCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
-        resolvedUnits = [
-          ProductUnit(tier: UnitTier.large, name: 'كرتونة', multiplier: perCarton.toDouble(), price: cPrice, cost: cCost),
-          ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
-        ];
+        
+        if (_hasMiddleTier) {
+          final packs = int.tryParse(_packsPerCartonController.text.trim()) ?? 1;
+          final unitsPerPack = int.tryParse(_unitsPerPackController.text.trim()) ?? 1;
+          final pPrice = double.tryParse(_packPriceController.text.trim()) ?? 0.0;
+          final pCost = double.tryParse(_packCostController.text.trim()) ?? 0.0;
+          
+          resolvedUnits = [
+            ProductUnit(tier: UnitTier.large, name: 'كرتونة', multiplier: (packs * unitsPerPack).toDouble(), price: cPrice, cost: cCost),
+            ProductUnit(tier: UnitTier.medium, name: 'علبة', multiplier: unitsPerPack.toDouble(), price: pPrice, cost: pCost),
+            ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
+          ];
+        } else {
+          final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 1;
+          resolvedUnits = [
+            ProductUnit(tier: UnitTier.large, name: 'كرتونة', multiplier: perCarton.toDouble(), price: cPrice, cost: cCost),
+            ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
+          ];
+        }
       } else if (_unitMode == ArrivageUnitMode.vracSacs) {
         resolvedUnits = [
           ProductUnit(tier: UnitTier.small, name: 'كغ', multiplier: 1.0, price: effectivePrice, cost: effectiveCost, isWeighable: true),
@@ -597,6 +671,8 @@ class _StockInPageState extends State<StockInPage> {
       _existingProductId = null;
       _expiryDate = null;
       _itemImageUrl = null;
+      _pinToQuickItems = false;
+      _hasMiddleTier = false;
     });
 
     SoundService.playSaveSuccess();
@@ -1535,6 +1611,20 @@ class _StockInPageState extends State<StockInPage> {
                     items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                     onChanged: (val) => setState(() => _itemCondition = val!),
                   ),
+                  const SizedBox(height: 18),
+
+                  if (_unitMode != ArrivageUnitMode.coffeeMachine)
+                    SwitchListTile(
+                      title: const Text('????? ?????? ?? ???? ????? ???????', style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text('???? ??? ?????? ????? ?? ????? ?? ??????'),
+                      value: _pinToQuickItems,
+                      activeColor: Colors.teal,
+                      onChanged: (val) {
+                        setState(() {
+                          _pinToQuickItems = val;
+                        });
+                      },
+                    ),
                   const SizedBox(height: 18),
 
                   // Submit Button
