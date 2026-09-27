@@ -67,25 +67,41 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
   }
 
   void _confirmReceive() {
-    final costPrice = double.tryParse(_costPriceCtrl.text.trim()) ?? _product.costPrice;
-    final sellPrice = double.tryParse(_sellPriceCtrl.text.trim()) ?? _product.price;
+    final enteredCost = double.tryParse(_costPriceCtrl.text.trim()) ?? _product.costPrice;
+    final enteredSell = double.tryParse(_sellPriceCtrl.text.trim()) ?? _product.price;
     final multiplier = _selectedUnit?.multiplier ?? 1.0;
     
     final realQtyAdded = _quantity * multiplier;
     
+    // Per-piece unit cost and price
+    final unitCost = multiplier > 1 ? (enteredCost / multiplier) : enteredCost;
+    final unitSell = multiplier > 1 ? (enteredSell / multiplier) : enteredSell;
+    
     // Create new batch for FIFO
     final newBatch = PurchaseBatch(
-      costPrice: costPrice,
+      costPrice: unitCost,
       remainingQuantity: realQtyAdded,
       dateAdded: _dateAdded,
     );
     
     final newBatches = List<PurchaseBatch>.from(_product.stockBatches)..add(newBatch);
     
+    // If a unit was selected, update that unit's price & cost in units list
+    List<ProductUnit> updatedUnits = _product.units;
+    if (_selectedUnit != null) {
+      updatedUnits = _product.units.map((u) {
+        if (u.tier == _selectedUnit!.tier) {
+          return u.copyWith(price: enteredSell, cost: enteredCost);
+        }
+        return u;
+      }).toList();
+    }
+    
     final updated = _product.copyWith(
       stock: _product.stock + realQtyAdded,
-      costPrice: costPrice, // update the display cost price to the newest one
-      price: sellPrice, // update display sell price
+      costPrice: unitCost,
+      price: unitSell,
+      units: updatedUnits,
       stockBatches: newBatches,
       expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
     );
@@ -173,7 +189,18 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
                           DropdownMenuItem(value: null, child: Text(_product.baseUnitName)),
                           ..._product.units.map((u) => DropdownMenuItem(value: u, child: Text('${u.name} (x${u.multiplier})'))),
                         ],
-                        onChanged: (val) => setState(() => _selectedUnit = val),
+                        onChanged: (val) {
+                          setState(() {
+                            _selectedUnit = val;
+                            if (val != null) {
+                              if (val.cost > 0) _costPriceCtrl.text = val.cost.toStringAsFixed(2);
+                              if (val.price > 0) _sellPriceCtrl.text = val.price.toStringAsFixed(2);
+                            } else {
+                              _costPriceCtrl.text = _product.costPrice.toStringAsFixed(2);
+                              _sellPriceCtrl.text = _product.price.toStringAsFixed(2);
+                            }
+                          });
+                        },
                       ),
                     ],
                   ),

@@ -58,10 +58,35 @@ class CartItem extends Equatable {
 
   String get cartKey => '${product.id}_$unitLevel';
 
-  /// المجموع الإجمالي للبيع
+  /// المجموع الإجمالي للبيع مع دعم العروض الخاصة والتخفيضات والإرجاع
   double get total {
     if (weightKg != null) return customUnitPrice ?? (weightKg! * unitPrice);
+
+    final offer = product.specialOffer;
+    final currentTier = selectedUnit?.tier ?? UnitTier.small;
+    final isNegative = unitPrice < 0 || quantity < 0;
+    final absQty = quantity.abs();
+    final absPrice = unitPrice.abs();
+
+    if (offer != null && offer.isValid && offer.targetTier == currentTier && absQty >= offer.quantity) {
+      final calculated = offer.calculateTotal(itemQty: absQty, normalUnitPrice: absPrice);
+      return isNegative ? -calculated : calculated;
+    }
+
     return unitPrice * quantity;
+  }
+
+  bool get hasOfferApplied {
+    final offer = product.specialOffer;
+    final currentTier = selectedUnit?.tier ?? UnitTier.small;
+    return offer != null && offer.isValid && offer.targetTier == currentTier && quantity.abs() >= offer.quantity;
+  }
+
+  double get offerSavedAmount {
+    if (!hasOfferApplied) return 0.0;
+    final normalTotal = unitPrice.abs() * quantity.abs();
+    final offerTotal = total.abs();
+    return (normalTotal - offerTotal).clamp(0.0, double.infinity);
   }
 
   /// الكمية الحقيقية للخصم من المخزون

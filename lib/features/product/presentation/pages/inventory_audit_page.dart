@@ -11,6 +11,7 @@ import '../../../../core/utils/excel_export_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/product_unit.dart';
 import '../bloc/product_bloc.dart';
 
 class InventoryAuditPage extends StatefulWidget {
@@ -130,23 +131,58 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
               ),
             ),
             const SizedBox(height: 10),
-            // Quick Carton pack buttons (+6, +12, +24)
-            Wrap(
-              spacing: 6,
-              children: [
-                ActionChip(label: const Text('+6 (فاردو)'), onPressed: () {
-                  final cur = double.tryParse(ctrl.text) ?? 0;
-                  ctrl.text = (cur + 6).toString();
-                }),
-                ActionChip(label: const Text('+12 (دزينة)'), onPressed: () {
-                  final cur = double.tryParse(ctrl.text) ?? 0;
-                  ctrl.text = (cur + 12).toString();
-                }),
-                ActionChip(label: const Text('+24 (كرتونة)'), onPressed: () {
-                  final cur = double.tryParse(ctrl.text) ?? 0;
-                  ctrl.text = (cur + 24).toString();
-                }),
-              ],
+            // Dynamic unit chips based on product configured tiers (Carton, Pack, Piece)
+            Builder(
+              builder: (context) {
+                final largeUnit = product.units.where((u) => u.tier == UnitTier.large).firstOrNull;
+                final mediumUnit = product.units.where((u) => u.tier == UnitTier.medium).firstOrNull;
+                return Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    if (largeUnit != null)
+                      ActionChip(
+                        avatar: const Icon(Icons.all_inbox_rounded, size: 14),
+                        label: Text('+1 كرتونة (${largeUnit.multiplier.toInt()} حبة)'),
+                        onPressed: () {
+                          final cur = double.tryParse(ctrl.text) ?? 0;
+                          ctrl.text = (cur + largeUnit.multiplier).toString();
+                        },
+                      ),
+                    if (mediumUnit != null)
+                      ActionChip(
+                        avatar: const Icon(Icons.inventory_2_outlined, size: 14),
+                        label: Text('+1 علبة (${mediumUnit.multiplier.toInt()} حبة)'),
+                        onPressed: () {
+                          final cur = double.tryParse(ctrl.text) ?? 0;
+                          ctrl.text = (cur + mediumUnit.multiplier).toString();
+                        },
+                      ),
+                    ActionChip(
+                      avatar: const Icon(Icons.add, size: 14),
+                      label: const Text('+1 حبة'),
+                      onPressed: () {
+                        final cur = double.tryParse(ctrl.text) ?? 0;
+                        ctrl.text = (cur + 1).toString();
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('+6'),
+                      onPressed: () {
+                        final cur = double.tryParse(ctrl.text) ?? 0;
+                        ctrl.text = (cur + 6).toString();
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('+12'),
+                      onPressed: () {
+                        final cur = double.tryParse(ctrl.text) ?? 0;
+                        ctrl.text = (cur + 12).toString();
+                      },
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),

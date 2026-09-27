@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -11,10 +11,9 @@ import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
-import '../../domain/entities/product_unit.dart' show UnitTier;
-import '../../domain/entities/product_unit.dart';
-import '../../domain/entities/product_unit.dart' show UnitTier;
+import '../../domain/entities/special_offer.dart';
 import '../bloc/product_bloc.dart';
+import '../widgets/product_units_editor_widget.dart';
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -33,10 +32,29 @@ class _AddProductPageState extends State<AddProductPage> {
   final _baseUnitNameCtrl = TextEditingController(text: 'حبة');
   final _pluCodeCtrl = TextEditingController();
 
+  // --- إعدادات الكرتونة (Large) ---
+  bool _hasCarton = false;
+  final _cartonBarcodeCtrl = TextEditingController();
+  final _cartonCapacityCtrl = TextEditingController(text: '24');
+  final _cartonCostCtrl = TextEditingController();
+  final _cartonPriceCtrl = TextEditingController();
+
+  // --- إعدادات العلبة (Medium) ---
+  bool _hasPack = false;
+  final _packBarcodeCtrl = TextEditingController();
+  final _packCapacityCtrl = TextEditingController(text: '6');
+  final _packCostCtrl = TextEditingController();
+  final _packPriceCtrl = TextEditingController();
+
+  // --- العروض الخاصة والتخفيض الذكي ---
+  bool _hasSpecialOffer = false;
+  UnitTier _offerTier = UnitTier.small;
+  final _offerQtyCtrl = TextEditingController(text: '3');
+  final _offerPriceCtrl = TextEditingController();
+
   String _selectedCategory = 'عام';
   String? _imageUrl;
   bool _isSaving = false;
-  List<ProductUnit> _dynamicUnits = [];
   List<String> _availableCategories = [];
   UnitSystemType _unitSystemType = UnitSystemType.discrete;
 
@@ -55,6 +73,16 @@ class _AddProductPageState extends State<AddProductPage> {
     _stockCtrl.dispose();
     _baseUnitNameCtrl.dispose();
     _pluCodeCtrl.dispose();
+    _cartonBarcodeCtrl.dispose();
+    _cartonCapacityCtrl.dispose();
+    _cartonCostCtrl.dispose();
+    _cartonPriceCtrl.dispose();
+    _packBarcodeCtrl.dispose();
+    _packCapacityCtrl.dispose();
+    _packCostCtrl.dispose();
+    _packPriceCtrl.dispose();
+    _offerQtyCtrl.dispose();
+    _offerPriceCtrl.dispose();
     super.dispose();
   }
 
@@ -64,93 +92,6 @@ class _AddProductPageState extends State<AddProductPage> {
       setState(() => _barcodeCtrl.text = result);
       SoundService.playScanBeep();
     }
-  }
-
-  void _addOrEditUnitDialog({ProductUnit? existing, int? editIndex}) {
-    final nameCtrl = TextEditingController(text: existing?.name ?? '');
-    final multiCtrl = TextEditingController(text: existing?.multiplier.toString() ?? '');
-    final priceCtrl = TextEditingController(text: existing?.price.toString() ?? '');
-    final costCtrl = TextEditingController(text: existing?.cost.toString() ?? '');
-    final barcodeCtrl = TextEditingController(text: existing?.barcode ?? '');
-    bool isEnabled = existing?.isEnabled ?? true;
-    bool isWeighable = existing?.isWeighable ?? false;
-    UnitTier _tier = existing?.tier ?? UnitTier.small;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx2, setDlg) => AlertDialog(
-          title: Text(existing == null ? 'إضافة وحدة جديدة' : 'تعديل الوحدة'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'اسم الوحدة (كرتونة، كغ...)')),
-                const SizedBox(height: 8),
-                TextField(controller: multiCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'عدد الحبات / المعامل')),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: priceCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: isWeighable ? 'سعر البيع / كغ (دج)' : 'سعر البيع'),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: costCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: isWeighable ? 'سعر الشراء / كغ (دج)' : 'سعر الشراء'),
-                ),
-                const SizedBox(height: 8),
-                TextField(controller: barcodeCtrl, decoration: const InputDecoration(labelText: 'باركود الوحدة (اختياري)')),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  title: const Text('مُفعَّلة في الكاشير'),
-                  subtitle: const Text('أوقفها لإخفائها مؤقتاً'),
-                  value: isEnabled,
-                  onChanged: (v) => setDlg(() => isEnabled = v),
-                  dense: true,
-                ),
-                SwitchListTile(
-                  title: const Text('⚖️ وحدة ميزان'),
-                  subtitle: const Text('السعر بالكغ — يحتاج ميزان تجاري'),
-                  value: isWeighable,
-                  onChanged: (v) => setDlg(() => isWeighable = v),
-                  dense: true,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx2), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameCtrl.text.trim();
-                if (name.isEmpty) return;
-                final unit = ProductUnit(
-                  name: name,
-                  multiplier: double.tryParse(multiCtrl.text.trim()) ?? 1.0,
-                  price: double.tryParse(priceCtrl.text.trim()) ?? 0.0,
-                  cost: double.tryParse(costCtrl.text.trim()) ?? 0.0,
-                  barcode: barcodeCtrl.text.trim().isNotEmpty ? barcodeCtrl.text.trim() : null,
-                  isEnabled: isEnabled,
-                  isWeighable: isWeighable,
-                  tier: _tier,
-                );
-                setState(() {
-                  if (editIndex != null) {
-                    _dynamicUnits[editIndex] = unit;
-                  } else {
-                    _dynamicUnits.add(unit);
-                  }
-                });
-                Navigator.pop(ctx2);
-              },
-              child: const Text('حفظ'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _addCustomCategoryDialog() {
@@ -187,6 +128,54 @@ class _AddProductPageState extends State<AddProductPage> {
 
     final barcode = _barcodeCtrl.text.trim();
     final plu = _pluCodeCtrl.text.trim();
+
+    // بناء وحدات البيع (كرتونة، علبة، حبة)
+    final List<ProductUnit> units = [];
+    if (_hasCarton) {
+      final cap = double.tryParse(_cartonCapacityCtrl.text.trim()) ?? 24.0;
+      final pr = double.tryParse(_cartonPriceCtrl.text.trim()) ?? 0.0;
+      final cst = double.tryParse(_cartonCostCtrl.text.trim()) ?? 0.0;
+      final bc = _cartonBarcodeCtrl.text.trim();
+      units.add(ProductUnit(
+        name: 'كرتونة',
+        tier: UnitTier.large,
+        multiplier: cap,
+        price: pr,
+        cost: cst,
+        barcode: bc.isNotEmpty ? bc : null,
+      ));
+    }
+
+    if (_hasPack) {
+      final cap = double.tryParse(_packCapacityCtrl.text.trim()) ?? 6.0;
+      final pr = double.tryParse(_packPriceCtrl.text.trim()) ?? 0.0;
+      final cst = double.tryParse(_packCostCtrl.text.trim()) ?? 0.0;
+      final bc = _packBarcodeCtrl.text.trim();
+      units.add(ProductUnit(
+        name: 'علبة',
+        tier: UnitTier.medium,
+        multiplier: cap,
+        price: pr,
+        cost: cst,
+        barcode: bc.isNotEmpty ? bc : null,
+      ));
+    }
+
+    // بناء العرض الخاص والتخفيض
+    SpecialOffer? offer;
+    if (_hasSpecialOffer) {
+      final q = double.tryParse(_offerQtyCtrl.text.trim()) ?? 0.0;
+      final p = double.tryParse(_offerPriceCtrl.text.trim()) ?? 0.0;
+      if (q > 1 && p > 0) {
+        offer = SpecialOffer(
+          targetTier: _offerTier,
+          quantity: q,
+          offerPrice: p,
+          isEnabled: true,
+        );
+      }
+    }
+
     final product = Product(
       id: const Uuid().v4(),
       name: _nameCtrl.text.trim(),
@@ -198,7 +187,8 @@ class _AddProductPageState extends State<AddProductPage> {
       category: _selectedCategory,
       imageUrl: _imageUrl,
       baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
-      units: _dynamicUnits,
+      units: units,
+      specialOffer: offer,
       pluCode: plu.isNotEmpty ? plu : null,
       unitSystemType: _unitSystemType,
     );
@@ -277,88 +267,46 @@ class _AddProductPageState extends State<AddProductPage> {
               ],
             ),
             const SizedBox(height: 16),
-            // --- التسعير والمخزون ---
+            // --- المخزون الأولي ---
             _SectionCard(
-              title: 'التسعير والمخزون',
-              icon: Icons.attach_money,
+              title: 'المخزون الحالي',
+              icon: Icons.inventory_2_outlined,
               children: [
-                const InputLabel(text: 'اسم الوحدة الأساسية (حبة، كغ...)'),
-                TextFormField(controller: _baseUnitNameCtrl),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const InputLabel(text: 'سعر البيع'),
-                      TextFormField(controller: _priceCtrl, keyboardType: TextInputType.number),
-                    ])),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const InputLabel(text: 'سعر الشراء'),
-                      TextFormField(controller: _costPriceCtrl, keyboardType: TextInputType.number),
-                    ])),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const InputLabel(text: 'المخزون الحالي'),
+                const InputLabel(text: 'الكمية المتوفرة بالمخزون حالياً (بالحبة)'),
                 TextFormField(controller: _stockCtrl, keyboardType: TextInputType.number),
               ],
             ),
             const SizedBox(height: 16),
-            // --- الوحدات الفرعية ---
-            _SectionCard(
-              title: 'الوحدات الفرعية',
-              icon: Icons.layers,
-              borderColor: Colors.teal.shade200,
-              trailing: TextButton.icon(
-                onPressed: () => _addOrEditUnitDialog(),
-                icon: const Icon(Icons.add),
-                label: const Text('إضافة وحدة'),
-              ),
-              children: [
-                if (_dynamicUnits.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('لا توجد وحدات فرعية — سيُباع المنتج بالوحدة الأساسية فقط.', style: TextStyle(color: Colors.grey)),
-                  )
-                else
-                  ..._dynamicUnits.asMap().entries.map((e) {
-                    final idx = e.key;
-                    final unit = e.value;
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: unit.isEnabled ? Colors.white : Colors.grey.shade100,
-                      child: ListTile(
-                        leading: Icon(
-                          unit.isWeighable ? Icons.scale : Icons.inventory_2_outlined,
-                          color: unit.isEnabled ? Colors.teal : Colors.grey,
-                        ),
-                        title: Text(
-                          '${unit.name}  ×${unit.multiplier}  — ${unit.price} دج${unit.isWeighable ? '/كغ' : ''}',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: unit.isEnabled ? null : Colors.grey),
-                        ),
-                        subtitle: Wrap(
-                          spacing: 4,
-                          children: [
-                            if (!unit.isEnabled) const Chip(label: Text('مُعطَّلة', style: TextStyle(fontSize: 11)), backgroundColor: Colors.orange, padding: EdgeInsets.zero),
-                            if (unit.isWeighable) const Chip(label: Text('⚖️ ميزان', style: TextStyle(fontSize: 11)), backgroundColor: Color(0xFFE0F2F1), padding: EdgeInsets.zero),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(unit.isEnabled ? Icons.toggle_on : Icons.toggle_off, color: unit.isEnabled ? Colors.green : Colors.grey, size: 28),
-                              tooltip: unit.isEnabled ? 'تعطيل' : 'تفعيل',
-                              onPressed: () => setState(() { _dynamicUnits[idx] = unit.copyWith(isEnabled: !unit.isEnabled); }),
-                            ),
-                            IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () => _addOrEditUnitDialog(existing: unit, editIndex: idx)),
-                            IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 18), onPressed: () => setState(() => _dynamicUnits.removeAt(idx))),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-              ],
+
+            // --- تفاصيل الوحدات العمودية الثلاث والعروض الخاصة ---
+            ProductUnitsEditorWidget(
+              hasCarton: _hasCarton,
+              onHasCartonChange: (v) => setState(() => _hasCarton = v),
+              cartonBarcodeCtrl: _cartonBarcodeCtrl,
+              cartonCapacityCtrl: _cartonCapacityCtrl,
+              cartonCostCtrl: _cartonCostCtrl,
+              cartonPriceCtrl: _cartonPriceCtrl,
+
+              hasPack: _hasPack,
+              onHasPackChange: (v) => setState(() => _hasPack = v),
+              packBarcodeCtrl: _packBarcodeCtrl,
+              packCapacityCtrl: _packCapacityCtrl,
+              packCostCtrl: _packCostCtrl,
+              packPriceCtrl: _packPriceCtrl,
+
+              pieceBarcodeCtrl: _barcodeCtrl,
+              pieceCostCtrl: _costPriceCtrl,
+              piecePriceCtrl: _priceCtrl,
+              baseUnitNameCtrl: _baseUnitNameCtrl,
+
+              hasSpecialOffer: _hasSpecialOffer,
+              onHasSpecialOfferChange: (v) => setState(() => _hasSpecialOffer = v),
+              offerTier: _offerTier,
+              onOfferTierChange: (tier) {
+                if (tier != null) setState(() => _offerTier = tier);
+              },
+              offerQtyCtrl: _offerQtyCtrl,
+              offerPriceCtrl: _offerPriceCtrl,
             ),
             const SizedBox(height: 32),
             ElevatedButton(

@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:hive/hive.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/special_offer.dart';
 import 'product_unit_model.dart';
 import '../../domain/entities/product_unit.dart';
 
@@ -132,6 +134,19 @@ class ProductModel extends Product {
   @HiveField(17)
   final String? pluCode;
 
+  @HiveField(18)
+  final String? specialOfferJson;
+
+  @override
+  SpecialOffer? get specialOffer {
+    if (specialOfferJson == null || specialOfferJson!.trim().isEmpty) return null;
+    try {
+      return SpecialOffer.fromJson(jsonDecode(specialOfferJson!));
+    } catch (_) {
+      return null;
+    }
+  }
+
   ProductModel({
     required this.id,
     required this.name,
@@ -151,6 +166,7 @@ class ProductModel extends Product {
     this.isDeleted = false,
     this.stockBatchesModels = const [],
     this.coffeeRecipeJson,
+    this.specialOfferJson,
   }) : super(
           id: id,
           name: name,
@@ -170,6 +186,9 @@ class ProductModel extends Product {
           isDeleted: isDeleted,
           stockBatches: stockBatchesModels,
           coffeeRecipeJson: coffeeRecipeJson,
+          specialOffer: specialOfferJson != null && specialOfferJson.trim().isNotEmpty
+              ? SpecialOffer.fromJson(jsonDecode(specialOfferJson))
+              : null,
         );
 
   @override
@@ -215,6 +234,9 @@ class ProductModel extends Product {
           ? stockBatches.map((b) => PurchaseBatchModel.fromEntity(b)).toList() 
           : this.stockBatchesModels,
       coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
+      specialOfferJson: specialOffer != null
+          ? jsonEncode(specialOffer.toJson())
+          : (specialOfferJson ?? this.specialOfferJson),
     );
   }
 
@@ -237,6 +259,7 @@ class ProductModel extends Product {
       isDeleted: product.isDeleted,
       stockBatchesModels: product.stockBatches.map((b) => PurchaseBatchModel.fromEntity(b)).toList(),
       coffeeRecipeJson: product.coffeeRecipeJson,
+      specialOfferJson: product.specialOffer != null ? jsonEncode(product.specialOffer!.toJson()) : null,
     );
   }
 
@@ -259,6 +282,7 @@ class ProductModel extends Product {
       isDeleted: isDeleted,
       stockBatches: stockBatchesModels,
       coffeeRecipeJson: coffeeRecipeJson,
+      specialOffer: specialOffer,
     );
   }
 
@@ -285,6 +309,7 @@ class ProductModel extends Product {
               ?.map((b) => PurchaseBatchModel.fromJson(Map<String, dynamic>.from(b)))
               .toList() ?? [],
       coffeeRecipeJson: json['coffeeRecipeJson']?.toString(),
+      specialOfferJson: json['specialOfferJson']?.toString(),
     );
   }
 
@@ -308,6 +333,7 @@ class ProductModel extends Product {
       'isDeleted': isDeleted,
       'stockBatches': stockBatchesModels.map((b) => b.toJson()).toList(),
       'coffeeRecipeJson': coffeeRecipeJson,
+      'specialOfferJson': specialOfferJson,
     };
   }
 }
@@ -341,13 +367,14 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       stockBatchesModels: (fields[15] as List?)?.cast<PurchaseBatchModel>() ?? [],
       coffeeRecipeJson: fields[16] as String?,
       pluCode: fields[17] as String?,
+      specialOfferJson: fields[18] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductModel obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -383,7 +410,9 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       ..writeByte(16)
       ..write(obj.coffeeRecipeJson)
       ..writeByte(17)
-      ..write(obj.pluCode);
+      ..write(obj.pluCode)
+      ..writeByte(18)
+      ..write(obj.specialOfferJson);
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'product_unit.dart';
+import 'special_offer.dart';
 
 /// نوع الوحدة الأساسية للمنتج
 enum UnitSystemType {
@@ -63,6 +64,7 @@ class Product extends Equatable {
   final bool isDeleted; // Soft Deletes
   final List<PurchaseBatch> stockBatches; // Embedded FIFO Queue
   final String? coffeeRecipeJson; // Coffee System Payload
+  final SpecialOffer? specialOffer; // العرض الخاص والتخفيض الذكي
   
   // --- Legacy fields for backward compatibility (ignored by new UI) ---
   final String? packName;
@@ -119,6 +121,7 @@ class Product extends Equatable {
     this.isDeleted = false,
     this.stockBatches = const [],
     this.coffeeRecipeJson,
+    this.specialOffer,
 
     this.packName,
     this.packBarcode,
@@ -157,6 +160,7 @@ class Product extends Equatable {
     String? baseUnitName,
     List<ProductUnit>? units,
     String? pluCode,
+    SpecialOffer? specialOffer,
   }) {
     return Product(
       id: id ?? this.id,
@@ -173,6 +177,7 @@ class Product extends Equatable {
       isDeleted: isDeleted ?? this.isDeleted,
       stockBatches: stockBatches ?? this.stockBatches,
       coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
+      specialOffer: specialOffer ?? this.specialOffer,
       baseUnitName: baseUnitName ?? this.baseUnitName,
       units: units ?? this.units,
       pluCode: pluCode ?? this.pluCode,
@@ -198,7 +203,7 @@ class Product extends Equatable {
         id, name, barcode, price, costPrice, stock, category,
         isWeighted, wholesalePrice, expiryDate, imageUrl,
         unitSystemType, isDeleted, stockBatches, coffeeRecipeJson,
-        baseUnitName, units, pluCode,
+        specialOffer, baseUnitName, units, pluCode,
       ];
 }
 

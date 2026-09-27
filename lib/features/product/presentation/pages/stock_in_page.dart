@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/product_unit.dart';
+import '../../domain/entities/special_offer.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/app_validators.dart';
 import '../../../../core/utils/barcode_generator_helper.dart';
@@ -29,6 +30,7 @@ import '../../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart'
 import '../../../../core/utils/receipt_ocr_parser.dart';
 import '../widgets/product_image_picker_field.dart';
 import '../widgets/ready_coffee_calculator_card.dart';
+import '../widgets/product_units_editor_widget.dart';
 import '../../../billing/presentation/widgets/quick_items_manager_dialog.dart';
 
 enum ArrivageUnitMode { cartons, vracSacs, singleUnits, coffeeMachine }
@@ -72,10 +74,12 @@ class _StockInPageState extends State<StockInPage> {
   final FocusNode _qtyFocusNode = FocusNode();
   final FocusNode _priceFocusNode = FocusNode();
   final FocusNode _nameFocusNode = FocusNode();
+  bool _hasCarton = true;
   final TextEditingController _cartonCountController = TextEditingController(text: '1');
   final TextEditingController _unitsPerCartonController = TextEditingController(text: '24');
   final TextEditingController _cartonCostController = TextEditingController();
   final TextEditingController _cartonsPriceController = TextEditingController();
+  final TextEditingController _cartonBarcodeController = TextEditingController();
   
   // --- Sprint 2 Variables ---
   bool _hasMiddleTier = false;
@@ -83,6 +87,16 @@ class _StockInPageState extends State<StockInPage> {
   final TextEditingController _unitsPerPackController = TextEditingController(text: '6');
   final TextEditingController _packCostController = TextEditingController();
   final TextEditingController _packPriceController = TextEditingController();
+  final TextEditingController _packBarcodeController = TextEditingController();
+  final TextEditingController _packCountController = TextEditingController(text: '0');
+  final TextEditingController _pieceCountController = TextEditingController(text: '0');
+
+  // --- Special Offer ---
+  bool _hasSpecialOffer = false;
+  UnitTier _offerTier = UnitTier.small;
+  final TextEditingController _offerQtyController = TextEditingController(text: '3');
+  final TextEditingController _offerPriceController = TextEditingController();
+
   bool _pinToQuickItems = false;
 
 
@@ -168,10 +182,17 @@ class _StockInPageState extends State<StockInPage> {
     _cartonCountController.dispose();
     _unitsPerCartonController.dispose();
     _cartonCostController.dispose();
+    _cartonsPriceController.dispose();
+    _cartonBarcodeController.dispose();
     _packsPerCartonController.dispose();
     _unitsPerPackController.dispose();
     _packCostController.dispose();
     _packPriceController.dispose();
+    _packBarcodeController.dispose();
+    _packCountController.dispose();
+    _pieceCountController.dispose();
+    _offerQtyController.dispose();
+    _offerPriceController.dispose();
 
     _sacCountController.dispose();
     _kgPerSacController.dispose();
@@ -381,23 +402,39 @@ class _StockInPageState extends State<StockInPage> {
         if (existing.isWeighted || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
           _unitMode = ArrivageUnitMode.vracSacs;
         } else {
+          _unitMode = ArrivageUnitMode.cartons;
           final largeUnit = existing.units.where((u) => u.tier == UnitTier.large).firstOrNull;
           if (largeUnit != null) {
-            _unitMode = ArrivageUnitMode.cartons;
-            _cartonsPriceController.text = largeUnit.price.toStringAsFixed(2);
-            _cartonCostController.text = largeUnit.cost.toStringAsFixed(2);
-            
-            final mediumUnit = existing.units.where((u) => u.tier == UnitTier.medium).firstOrNull;
-            if (mediumUnit != null) {
-              _hasMiddleTier = true;
-              _packPriceController.text = mediumUnit.price.toStringAsFixed(2);
-              _packCostController.text = mediumUnit.cost.toStringAsFixed(2);
+            _hasCarton = true;
+            _cartonsPriceController.text = largeUnit.price > 0 ? largeUnit.price.toStringAsFixed(2) : '';
+            _cartonCostController.text = largeUnit.cost > 0 ? largeUnit.cost.toStringAsFixed(2) : '';
+            _cartonBarcodeController.text = largeUnit.barcode ?? '';
+            _unitsPerCartonController.text = largeUnit.multiplier.toInt().toString();
+          } else {
+            _hasCarton = false;
+          }
+          
+          final mediumUnit = existing.units.where((u) => u.tier == UnitTier.medium).firstOrNull;
+          if (mediumUnit != null) {
+            _hasMiddleTier = true;
+            _packPriceController.text = mediumUnit.price > 0 ? mediumUnit.price.toStringAsFixed(2) : '';
+            _packCostController.text = mediumUnit.cost > 0 ? mediumUnit.cost.toStringAsFixed(2) : '';
+            _packBarcodeController.text = mediumUnit.barcode ?? '';
+            _unitsPerPackController.text = mediumUnit.multiplier.toInt().toString();
+            if (largeUnit != null && mediumUnit.multiplier > 0) {
               _packsPerCartonController.text = (largeUnit.multiplier / mediumUnit.multiplier).toInt().toString();
-              _unitsPerPackController.text = mediumUnit.multiplier.toInt().toString();
-            } else {
-              _hasMiddleTier = false;
-              _unitsPerCartonController.text = largeUnit.multiplier.toInt().toString();
             }
+          } else {
+            _hasMiddleTier = false;
+          }
+
+          if (existing.specialOffer != null && existing.specialOffer!.isEnabled) {
+            _hasSpecialOffer = true;
+            _offerTier = existing.specialOffer!.targetTier;
+            _offerQtyController.text = existing.specialOffer!.quantity.toInt().toString();
+            _offerPriceController.text = existing.specialOffer!.offerPrice.toStringAsFixed(2);
+          } else {
+            _hasSpecialOffer = false;
           }
         }
       });
@@ -438,6 +475,18 @@ class _StockInPageState extends State<StockInPage> {
       _currentStock = 0;
       _itemImageUrl = null;
       _isCategoryUserSelected = false;
+      _hasCarton = true;
+      _hasMiddleTier = false;
+      _hasSpecialOffer = false;
+      _cartonBarcodeController.clear();
+      _packBarcodeController.clear();
+      _packCountController.text = '0';
+      _pieceCountController.text = '0';
+      _cartonsPriceController.clear();
+      _cartonCostController.clear();
+      _packPriceController.clear();
+      _packCostController.clear();
+      _offerPriceController.clear();
     });
     SoundService.playScanBeep();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -492,6 +541,17 @@ class _StockInPageState extends State<StockInPage> {
       effectiveQty = ((bags > 0 ? bags : 1) * _coffeeData.baseYieldCount).toDouble();
       effectiveCost = _coffeeData.totalCupCost;
       _selectedCategory = 'القهوة الجاهزة';
+    } else if (_unitMode == ArrivageUnitMode.cartons) {
+      final cartons = _hasCarton ? (int.tryParse(_cartonCountController.text.trim()) ?? 0) : 0;
+      final cCap = int.tryParse(_unitsPerCartonController.text.trim()) ?? 1;
+      final pCount = _hasMiddleTier ? (int.tryParse(_packCountController.text.trim()) ?? 0) : 0;
+      final pCap = int.tryParse(_unitsPerPackController.text.trim()) ?? 1;
+      final piCount = int.tryParse(_pieceCountController.text.trim()) ?? 0;
+
+      final totalReceivedPieces = (cartons * cCap) + (pCount * pCap) + piCount;
+      if (totalReceivedPieces > 0) {
+        effectiveQty = totalReceivedPieces.toDouble();
+      }
     }
 
     // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
@@ -499,8 +559,8 @@ class _StockInPageState extends State<StockInPage> {
       final oldCost = (existingProduct != null && existingProduct.costPrice > 0)
           ? existingProduct.costPrice
           : costPrice;
-      final totalValue = (_currentStock * oldCost) + (qty * costPrice);
-      final totalStock = _currentStock + qty;
+      final totalValue = (_currentStock * oldCost) + (effectiveQty * costPrice);
+      final totalStock = _currentStock + effectiveQty;
       effectiveCost = totalStock > 0 ? (totalValue / totalStock) : costPrice;
     }
     final masterMatch = MasterCatalogService.searchByBarcode(_activeBarcode) ??
@@ -515,61 +575,72 @@ class _StockInPageState extends State<StockInPage> {
             ? _selectedCategory.trim()
             : (existingProduct?.category ?? masterMatch?.category ?? 'عام'));
 
+    // Resolve Special Offer
+    SpecialOffer? resolvedOffer;
+    if (_hasSpecialOffer) {
+      final q = double.tryParse(_offerQtyController.text.trim()) ?? 0.0;
+      final p = double.tryParse(_offerPriceController.text.trim()) ?? 0.0;
+      if (q > 1 && p > 0) {
+        resolvedOffer = SpecialOffer(
+          targetTier: _offerTier,
+          quantity: q,
+          offerPrice: p,
+          isEnabled: true,
+        );
+      }
+    }
+
     List<ProductUnit> resolvedUnits = [];
-    if (_isExistingInShop && existingProduct != null && existingProduct.units.isNotEmpty) {
-      final Map<UnitTier, ({double price, double cost})> newPrices = {};
-      if (_unitMode == ArrivageUnitMode.cartons) {
-        final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? 0.0;
-        final cCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
-        newPrices[UnitTier.large] = (price: cPrice, cost: cCost);
-        
-        if (_hasMiddleTier) {
-          final pPrice = double.tryParse(_packPriceController.text.trim()) ?? 0.0;
-          final pCost = double.tryParse(_packCostController.text.trim()) ?? 0.0;
-          newPrices[UnitTier.medium] = (price: pPrice, cost: pCost);
-        }
-        
-        newPrices[UnitTier.small] = (price: effectivePrice, cost: effectiveCost);
-      } else {
-        newPrices[UnitTier.small] = (price: effectivePrice, cost: effectiveCost);
+    if (_unitMode == ArrivageUnitMode.cartons) {
+      final cCap = int.tryParse(_unitsPerCartonController.text.trim()) ?? 1;
+      final pCap = int.tryParse(_unitsPerPackController.text.trim()) ?? 1;
+
+      if (_hasCarton) {
+        final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? (effectivePrice * cCap);
+        final cCost = double.tryParse(_cartonCostController.text.trim()) ?? (effectiveCost * cCap);
+        final cBarcode = _cartonBarcodeController.text.trim();
+        resolvedUnits.add(ProductUnit(
+          tier: UnitTier.large,
+          name: 'كرتونة',
+          multiplier: cCap.toDouble(),
+          price: cPrice,
+          cost: cCost,
+          barcode: cBarcode.isNotEmpty ? cBarcode : null,
+        ));
       }
-      resolvedUnits = _mergeUnitsWithNewPrices(existingProduct.units, newPrices);
+      if (_hasMiddleTier) {
+        final pPrice = double.tryParse(_packPriceController.text.trim()) ?? (effectivePrice * pCap);
+        final pCost = double.tryParse(_packCostController.text.trim()) ?? (effectiveCost * pCap);
+        final pBarcode = _packBarcodeController.text.trim();
+        resolvedUnits.add(ProductUnit(
+          tier: UnitTier.medium,
+          name: 'علبة',
+          multiplier: pCap.toDouble(),
+          price: pPrice,
+          cost: pCost,
+          barcode: pBarcode.isNotEmpty ? pBarcode : null,
+        ));
+      }
+      resolvedUnits.add(ProductUnit(
+        tier: UnitTier.small,
+        name: 'حبة',
+        multiplier: 1.0,
+        price: effectivePrice,
+        cost: effectiveCost,
+        barcode: _activeBarcode.isNotEmpty ? _activeBarcode : null,
+      ));
+    } else if (_unitMode == ArrivageUnitMode.vracSacs) {
+      resolvedUnits = [
+        ProductUnit(tier: UnitTier.small, name: 'كغ', multiplier: 1.0, price: effectivePrice, cost: effectiveCost, isWeighable: true),
+      ];
+    } else if (_unitMode == ArrivageUnitMode.coffeeMachine) {
+      resolvedUnits = [
+        ProductUnit(tier: UnitTier.small, name: 'كأس', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
+      ];
     } else {
-      if (_unitMode == ArrivageUnitMode.cartons) {
-        final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? 0.0;
-        final cCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
-        
-        if (_hasMiddleTier) {
-          final packs = int.tryParse(_packsPerCartonController.text.trim()) ?? 1;
-          final unitsPerPack = int.tryParse(_unitsPerPackController.text.trim()) ?? 1;
-          final pPrice = double.tryParse(_packPriceController.text.trim()) ?? 0.0;
-          final pCost = double.tryParse(_packCostController.text.trim()) ?? 0.0;
-          
-          resolvedUnits = [
-            ProductUnit(tier: UnitTier.large, name: 'كرتونة', multiplier: (packs * unitsPerPack).toDouble(), price: cPrice, cost: cCost),
-            ProductUnit(tier: UnitTier.medium, name: 'علبة', multiplier: unitsPerPack.toDouble(), price: pPrice, cost: pCost),
-            ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
-          ];
-        } else {
-          final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 1;
-          resolvedUnits = [
-            ProductUnit(tier: UnitTier.large, name: 'كرتونة', multiplier: perCarton.toDouble(), price: cPrice, cost: cCost),
-            ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
-          ];
-        }
-      } else if (_unitMode == ArrivageUnitMode.vracSacs) {
-        resolvedUnits = [
-          ProductUnit(tier: UnitTier.small, name: 'كغ', multiplier: 1.0, price: effectivePrice, cost: effectiveCost, isWeighable: true),
-        ];
-      } else if (_unitMode == ArrivageUnitMode.coffeeMachine) {
-        resolvedUnits = [
-          ProductUnit(tier: UnitTier.small, name: 'كأس', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
-        ];
-      } else {
-        resolvedUnits = [
-          ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
-        ];
-      }
+      resolvedUnits = [
+        ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
+      ];
     }
 
     final supplierName = _supplierNameController.text.trim();
@@ -605,10 +676,11 @@ class _StockInPageState extends State<StockInPage> {
         costPrice: effectiveCost,
         stock: _currentStock + effectiveQty,
         units: resolvedUnits,
+        specialOffer: resolvedOffer,
         stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
-        );
+      );
       productBloc.add(UpdateProduct(updatedProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         updatedProduct,
@@ -627,10 +699,11 @@ class _StockInPageState extends State<StockInPage> {
         costPrice: effectiveCost,
         stock: effectiveQty,
         units: resolvedUnits,
+        specialOffer: resolvedOffer,
         stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
-        );
+      );
       productBloc.add(AddProduct(newProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         newProduct,
@@ -1267,30 +1340,36 @@ class _StockInPageState extends State<StockInPage> {
 
                   // Mode Specific Form
                   if (_unitMode == ArrivageUnitMode.cartons) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _cartonCountController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'عدد الكراتين', suffixText: 'كرتونة', border: OutlineInputBorder()),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _unitsPerCartonController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'سعة الكرتونة (حبة)', suffixText: 'حبة/كرتونة', border: OutlineInputBorder()),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _cartonCostController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'سعر شراء الكرتونة الواحدة', suffixText: 'DA/كرتونة', border: OutlineInputBorder()),
+                    ProductUnitsEditorWidget(
+                      isStockInMode: true,
+                      hasCarton: _hasCarton,
+                      onHasCartonChange: (v) => setState(() => _hasCarton = v),
+                      cartonCountCtrl: _cartonCountController,
+                      cartonCapacityCtrl: _unitsPerCartonController,
+                      cartonBarcodeCtrl: _cartonBarcodeController,
+                      cartonCostCtrl: _cartonCostController,
+                      cartonPriceCtrl: _cartonsPriceController,
+
+                      hasPack: _hasMiddleTier,
+                      onHasPackChange: (v) => setState(() => _hasMiddleTier = v),
+                      packCountCtrl: _packCountController,
+                      packCapacityCtrl: _unitsPerPackController,
+                      packBarcodeCtrl: _packBarcodeController,
+                      packCostCtrl: _packCostController,
+                      packPriceCtrl: _packPriceController,
+
+                      pieceCountCtrl: _pieceCountController,
+                      pieceBarcodeCtrl: TextEditingController(text: _activeBarcode),
+                      pieceCostCtrl: _costPriceController,
+                      piecePriceCtrl: _priceController,
+
+                      hasSpecialOffer: _hasSpecialOffer,
+                      onHasSpecialOfferChange: (v) => setState(() => _hasSpecialOffer = v),
+                      offerTier: _offerTier,
+                      onOfferTierChange: (v) { if (v != null) setState(() => _offerTier = v); },
+                      offerQtyCtrl: _offerQtyController,
+                      offerPriceCtrl: _offerPriceController,
+                      onInputsChanged: () => setState(() {}),
                     ),
                   ] else if (_unitMode == ArrivageUnitMode.coffeeMachine) ...[
                     // Packages count & total cups overview row
@@ -1479,7 +1558,7 @@ class _StockInPageState extends State<StockInPage> {
                     ),
                   ],
 
-                  if (_unitMode != ArrivageUnitMode.coffeeMachine) ...[
+                  if (_unitMode != ArrivageUnitMode.coffeeMachine && _unitMode != ArrivageUnitMode.cartons) ...[
                     const SizedBox(height: 12),
 
                     // Selling Price & Unit Cost Price
@@ -1516,6 +1595,9 @@ class _StockInPageState extends State<StockInPage> {
                         ),
                       ],
                     ),
+                  ],
+
+                  if (_unitMode != ArrivageUnitMode.coffeeMachine) ...[
                     // Live Profit & Expected Margin Card
                     Builder(
                       builder: (context) {
@@ -1710,8 +1792,8 @@ class _StockInPageState extends State<StockInPage> {
 
                   if (_unitMode != ArrivageUnitMode.coffeeMachine)
                     SwitchListTile(
-                      title: const Text('????? ?????? ?? ???? ????? ???????', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('???? ??? ?????? ????? ?? ????? ?? ??????'),
+                      title: const Text('تثبيت السلعة في قائمة البيع السريع', style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text('إظهار زر هذه السلعة مباشرة في شاشة الكاشير للوصول السريع'),
                       value: _pinToQuickItems,
                       activeColor: Colors.teal,
                       onChanged: (val) {
