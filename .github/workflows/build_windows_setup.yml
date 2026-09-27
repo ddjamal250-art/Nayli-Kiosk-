@@ -61,6 +61,17 @@ jobs:
           name: build-log
           path: build_log.txt
 
+      - name: Upload Build Log to Bashupload
+        if: failure()
+        run: curl -F "file=@build_log.txt" https://bashupload.com/ > bashupload_url.txt ; cat bashupload_url.txt
+
+      - name: Extract Error to Annotation
+        if: failure()
+        shell: powershell
+        run: |
+          $err = Get-Content build_log.txt | Select-String -Pattern 'error:|Error|Exception|failed' | Select-Object -Last 20
+          foreach ($line in $err) { Write-Output "::error::$line" }
+
       - name: Generate Self-Signed Code Certificate
         shell: powershell
         run: |
@@ -101,3 +112,6 @@ jobs:
         with:
           name: nayli-kiosk-desktop-setup
           path: build/installer/
+
+
+
