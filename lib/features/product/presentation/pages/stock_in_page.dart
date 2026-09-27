@@ -1542,9 +1542,51 @@ class _StockInPageState extends State<StockInPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _supplierNameController,
-                          decoration: const InputDecoration(labelText: 'اسم الموزع / المورد (Fournisseur)', prefixIcon: Icon(Icons.local_shipping_outlined), border: OutlineInputBorder()),
+                        child: Autocomplete<String>(
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) {
+                              return const Iterable<String>.empty();
+                            }
+                            final productBloc = context.read<ProductBloc>();
+                            final products = productBloc.state.products;
+                            final Set<String> suppliers = {};
+                            for (var p in products) {
+                              for (var b in p.stockBatches) {
+                                if (b.supplierName != null && b.supplierName!.isNotEmpty) {
+                                  suppliers.add(b.supplierName!);
+                                }
+                              }
+                            }
+                            return suppliers.where((s) => s.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                          },
+                          onSelected: (String selection) {
+                            _supplierNameController.text = selection;
+                            final productBloc = context.read<ProductBloc>();
+                            for (var p in productBloc.state.products) {
+                              for (var b in p.stockBatches) {
+                                if (b.supplierName == selection && b.supplierPhone != null && b.supplierPhone!.isNotEmpty) {
+                                  _supplierPhoneController.text = b.supplierPhone!;
+                                  return;
+                                }
+                              }
+                            }
+                          },
+                          fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+                            controller.addListener(() {
+                              if (_supplierNameController.text != controller.text) {
+                                _supplierNameController.text = controller.text;
+                              }
+                            });
+                            return TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: const InputDecoration(
+                                labelText: 'اسم الموزع / المورد (Fournisseur)',
+                                prefixIcon: Icon(Icons.local_shipping_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 10),
