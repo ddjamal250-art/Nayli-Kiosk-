@@ -56,21 +56,21 @@ jobs:
 
       - name: Upload Build Log
         if: failure()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: build-log
           path: build_log.txt
 
-      - name: Upload Build Log to Bashupload
-        if: failure()
-        run: curl -F "file=@build_log.txt" https://bashupload.com/ > bashupload_url.txt ; cat bashupload_url.txt
-
       - name: Extract Error to Annotation
         if: failure()
+        continue-on-error: true
         shell: powershell
         run: |
-          $err = Get-Content build_log.txt | Select-String -Pattern 'error:|Error|Exception|failed' | Select-Object -Last 20
-          foreach ($line in $err) { Write-Output "::error::$line" }
+          if (Test-Path build_log.txt) {
+            $err = Get-Content build_log.txt | Select-String -Pattern 'error:|Error|Exception|failed' | Select-Object -Last 20
+            foreach ($line in $err) { Write-Output "::error::$line" }
+          }
 
       - name: Generate Self-Signed Code Certificate
         shell: powershell

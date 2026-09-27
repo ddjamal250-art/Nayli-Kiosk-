@@ -90,8 +90,17 @@ class Product extends Equatable {
   double get piecesPerPack => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.small, orElse: () => units.first).multiplier) : 20.0;
   double get packsPerCartonCount => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.medium, orElse: () => units.first).multiplier) : 10.0;
   String get unitType => unitSystemType.name;
-  double get resolvedPiecePrice => singlePiecePrice > 0 ? singlePiecePrice : (piecesPerPack > 0 ? price / piecesPerPack : price);
-  double get resolvedPieceCost => piecesPerPack > 0 ? costPrice / piecesPerPack : costPrice;
+  double get resolvedPiecePrice {
+    final small = units.where((u) => u.tier == UnitTier.small).firstOrNull;
+    if (small != null && small.price > 0) return small.price;
+    if (singlePiecePrice > 0) return singlePiecePrice;
+    return (piecesPerPack > 0 ? price / piecesPerPack : price);
+  }
+  double get resolvedPieceCost {
+    final small = units.where((u) => u.tier == UnitTier.small).firstOrNull;
+    if (small != null && small.cost > 0) return small.cost;
+    return (piecesPerPack > 0 ? costPrice / piecesPerPack : costPrice);
+  }
   String get resolvedPackName => packName ?? 'علبة';
   String get resolvedSubUnitName => baseUnitName;
   double get cupsYield => 0.0;

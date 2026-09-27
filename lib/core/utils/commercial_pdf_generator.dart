@@ -15,15 +15,33 @@ class CommercialPdfGenerator {
   static Future<Uint8List> generatePdfData(CommercialDocument doc) async {
     final pdf = pw.Document();
 
-    // Load Arabic font via PdfGoogleFonts
+    // Load Arabic font
     pw.Font ttf;
-    try {
-      ttf = await PdfGoogleFonts.cairoRegular();
-    } catch (_) {
+    if (Platform.isWindows) {
+      final fontFile = File(r'C:\Windows\Fonts\tahoma.ttf');
+      if (fontFile.existsSync()) {
+        ttf = pw.Font.ttf(fontFile.readAsBytesSync().buffer.asByteData());
+      } else {
+        final fontFile2 = File(r'C:\Windows\Fonts\arial.ttf');
+        if (fontFile2.existsSync()) {
+          ttf = pw.Font.ttf(fontFile2.readAsBytesSync().buffer.asByteData());
+        } else {
+          try {
+            ttf = await PdfGoogleFonts.cairoRegular();
+          } catch (_) {
+            ttf = pw.Font.helvetica();
+          }
+        }
+      }
+    } else {
       try {
-        ttf = await PdfGoogleFonts.amiriRegular();
+        ttf = await PdfGoogleFonts.cairoRegular();
       } catch (_) {
-        ttf = pw.Font.helvetica();
+        try {
+          ttf = await PdfGoogleFonts.amiriRegular();
+        } catch (_) {
+          ttf = pw.Font.helvetica();
+        }
       }
     }
 

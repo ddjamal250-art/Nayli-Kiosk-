@@ -96,14 +96,55 @@ class PrinterHelper {
     } catch (_) {}
   }
 
+  static Future<pw.ThemeData> getArabicTheme() async {
+    pw.Font fontRegular;
+    pw.Font fontBold;
+
+    if (Platform.isWindows) {
+      final fontFile = File(r'C:\Windows\Fonts\tahoma.ttf');
+      if (fontFile.existsSync()) {
+        final winFont = pw.Font.ttf(fontFile.readAsBytesSync().buffer.asByteData());
+        fontRegular = winFont;
+        fontBold = winFont;
+      } else {
+        final fontFile2 = File(r'C:\Windows\Fonts\arial.ttf');
+        if (fontFile2.existsSync()) {
+          final winFont2 = pw.Font.ttf(fontFile2.readAsBytesSync().buffer.asByteData());
+          fontRegular = winFont2;
+          fontBold = winFont2;
+        } else {
+          try {
+            fontRegular = await PdfGoogleFonts.cairoRegular();
+            fontBold = await PdfGoogleFonts.cairoBold();
+          } catch (_) {
+            fontRegular = pw.Font.helvetica();
+            fontBold = pw.Font.helveticaBold();
+          }
+        }
+      }
+    } else {
+      try {
+        fontRegular = await PdfGoogleFonts.cairoRegular();
+        fontBold = await PdfGoogleFonts.cairoBold();
+      } catch (_) {
+        fontRegular = pw.Font.helvetica();
+        fontBold = pw.Font.helveticaBold();
+      }
+    }
+
+    return pw.ThemeData.withFont(base: fontRegular, bold: fontBold);
+  }
+
   /// Print test page to verify connection and paper width
   static Future<bool> printTestPage(Printer printer, {PrinterRole role = PrinterRole.thermalReceipt}) async {
     try {
+      final theme = await getArabicTheme();
       final doc = pw.Document();
       if (role == PrinterRole.thermalReceipt) {
         doc.addPage(
           pw.Page(
             pageFormat: const PdfPageFormat(72 * PdfPageFormat.mm, 100 * PdfPageFormat.mm, marginAll: 4 * PdfPageFormat.mm),
+            theme: theme,
             build: (pw.Context ctx) {
               return pw.Column(
                 mainAxisAlignment: pw.MainAxisAlignment.center,
@@ -125,6 +166,7 @@ class PrinterHelper {
         doc.addPage(
           pw.Page(
             pageFormat: PdfPageFormat.a4,
+            theme: theme,
             build: (pw.Context ctx) {
               return pw.Center(
                 child: pw.Column(
@@ -168,10 +210,12 @@ class PrinterHelper {
     String? specificPrinterName,
   }) async {
     try {
+      final theme = await getArabicTheme();
       final doc = pw.Document();
       doc.addPage(
         pw.Page(
           pageFormat: const PdfPageFormat(72 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm),
+          theme: theme,
           build: (pw.Context ctx) {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.center,
