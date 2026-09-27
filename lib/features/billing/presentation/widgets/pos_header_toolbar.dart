@@ -17,6 +17,7 @@ import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import 'header_color_dialog.dart';
 import 'session_lock_overlay.dart';
 import 'cash_drawer_action_dialog.dart';
+import 'package:window_manager/window_manager.dart';
 import '../../../../core/services/github_update_service.dart';
 
 class PosHeaderToolbar extends StatelessWidget {
@@ -141,33 +142,6 @@ class PosHeaderToolbar extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: 18),
-
-              // Welcome Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: headerState.accentColor.withOpacity(isDarkHeader ? 0.2 : 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: headerState.accentColor.withOpacity(0.4)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.verified_rounded, size: 16, color: headerState.accentColor),
-                    const SizedBox(width: 6),
-                    Text(
-                      context.tr('pos_welcome'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkHeader ? Colors.white : headerState.accentColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-
-              const Spacer(),
 
               // Quick Actions Toolbar Buttons
 
@@ -519,3 +493,4 @@ class PosHeaderToolbar extends StatelessWidget {
     );
   }
 }
+

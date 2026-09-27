@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -188,14 +189,34 @@ class ShelfLabelGenerator {
     pw.Font fontRegular;
     pw.Font fontBold;
 
-    try {
-      fontRegular = await PdfGoogleFonts.cairoRegular();
-      fontBold = await PdfGoogleFonts.cairoBold();
-    } catch (_) {
+    
+    if (Platform.isWindows) {
+      final fontFile = File('C:\Windows\Fonts\tahoma.ttf');
+      if (fontFile.existsSync()) {
+        final winFont = pw.Font.ttf(fontFile.readAsBytesSync().buffer.asByteData());
+        fontRegular = winFont;
+        fontBold = winFont;
+      } else {
+        final fontFile2 = File('C:\Windows\Fonts\arial.ttf');
+        if (fontFile2.existsSync()) {
+          final winFont2 = pw.Font.ttf(fontFile2.readAsBytesSync().buffer.asByteData());
+          fontRegular = winFont2;
+          fontBold = winFont2;
+        } else {
+          fontRegular = pw.Font.helvetica();
+          fontBold = pw.Font.helveticaBold();
+        }
+      }
+    } else {
       try {
-        fontRegular = await PdfGoogleFonts.amiriRegular();
-        fontBold = await PdfGoogleFonts.amiriBold();
+        fontRegular = await PdfGoogleFonts.cairoRegular();
+        fontBold = await PdfGoogleFonts.cairoBold();
       } catch (_) {
+        fontRegular = pw.Font.helvetica();
+        fontBold = pw.Font.helveticaBold();
+      }
+    }
+ catch (_) {
         fontRegular = pw.Font.helvetica();
         fontBold = pw.Font.helveticaBold();
       }
