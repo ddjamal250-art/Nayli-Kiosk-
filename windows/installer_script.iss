@@ -162,3 +162,14 @@ begin
     end;
   end;
 end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if IsUpdateMode then
+  begin
+    { Skip License, Select Directory, Program Group, and Additional Tasks pages during update }
+    if (PageID = wpLicense) or (PageID = wpSelectDir) or (PageID = wpSelectProgramGroup) or (PageID = wpSelectTasks) then
+      Result := True;
+  end;
+end;

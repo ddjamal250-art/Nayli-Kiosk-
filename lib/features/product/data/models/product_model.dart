@@ -3,8 +3,6 @@ import '../../domain/entities/product.dart';
 import 'product_unit_model.dart';
 import '../../domain/entities/product_unit.dart';
 
-part 'product_model.g.dart'; // Hive generator
-
 @HiveType(typeId: 3)
 class PurchaseBatchModel extends PurchaseBatch {
   @override
@@ -294,4 +292,129 @@ class ProductModel extends Product {
       'coffeeRecipeJson': coffeeRecipeJson,
     };
   }
+}
+
+class ProductModelAdapter extends TypeAdapter<ProductModel> {
+  @override
+  final int typeId = 0;
+
+  @override
+  ProductModel read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return ProductModel(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      barcode: fields[2] as String,
+      price: (fields[3] as num?)?.toDouble() ?? 0.0,
+      stock: (fields[4] as num?)?.toDouble() ?? 0.0,
+      costPrice: (fields[5] as num?)?.toDouble() ?? 0.0,
+      category: fields[6] as String? ?? 'عام',
+      isWeighted: fields[7] as bool? ?? false,
+      wholesalePrice: (fields[8] as num?)?.toDouble() ?? 0.0,
+      expiryDate: fields[9] as String?,
+      imageUrl: fields[10] as String?,
+      baseUnitName: fields[11] as String? ?? 'قطعة',
+      units: (fields[12] as List?)?.cast<ProductUnitModel>() ?? [],
+      unitSystemTypeIndex: fields[13] as int? ?? 0,
+      isDeleted: fields[14] as bool? ?? false,
+      stockBatchesModels: (fields[15] as List?)?.cast<PurchaseBatchModel>() ?? [],
+      coffeeRecipeJson: fields[16] as String?,
+      pluCode: fields[17] as String?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, ProductModel obj) {
+    writer
+      ..writeByte(18)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.barcode)
+      ..writeByte(3)
+      ..write(obj.price)
+      ..writeByte(4)
+      ..write(obj.stock)
+      ..writeByte(5)
+      ..write(obj.costPrice)
+      ..writeByte(6)
+      ..write(obj.category)
+      ..writeByte(7)
+      ..write(obj.isWeighted)
+      ..writeByte(8)
+      ..write(obj.wholesalePrice)
+      ..writeByte(9)
+      ..write(obj.expiryDate)
+      ..writeByte(10)
+      ..write(obj.imageUrl)
+      ..writeByte(11)
+      ..write(obj.baseUnitName)
+      ..writeByte(12)
+      ..write(obj.units)
+      ..writeByte(13)
+      ..write(obj.unitSystemTypeIndex)
+      ..writeByte(14)
+      ..write(obj.isDeleted)
+      ..writeByte(15)
+      ..write(obj.stockBatchesModels)
+      ..writeByte(16)
+      ..write(obj.coffeeRecipeJson)
+      ..writeByte(17)
+      ..write(obj.pluCode);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ProductModelAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class PurchaseBatchModelAdapter extends TypeAdapter<PurchaseBatchModel> {
+  @override
+  final int typeId = 3;
+
+  @override
+  PurchaseBatchModel read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return PurchaseBatchModel(
+      costPrice: (fields[0] as num?)?.toDouble() ?? 0.0,
+      remainingQuantity: (fields[1] as num?)?.toDouble() ?? 0.0,
+      dateAdded: fields[2] as DateTime,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, PurchaseBatchModel obj) {
+    writer
+      ..writeByte(3)
+      ..writeByte(0)
+      ..write(obj.costPrice)
+      ..writeByte(1)
+      ..write(obj.remainingQuantity)
+      ..writeByte(2)
+      ..write(obj.dateAdded);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PurchaseBatchModelAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
 }

@@ -173,3 +173,13 @@ begin
     Exec('taskkill.exe', '/F /IM nayli_kiosk.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if IsUpdateMode then
+  begin
+    if (PageID = wpLicense) or (PageID = wpSelectDir) or (PageID = wpSelectProgramGroup) or (PageID = wpSelectTasks) then
+      Result := True;
+  end;
+end;

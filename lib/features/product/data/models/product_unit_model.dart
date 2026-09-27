@@ -1,8 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../domain/entities/product_unit.dart';
 
-part 'product_unit_model.g.dart';
-
 @HiveType(typeId: 2)
 class ProductUnitModel extends ProductUnit {
   @override
@@ -107,4 +105,59 @@ class ProductUnitModel extends ProductUnit {
       'tierIndex': tierIndex,
     };
   }
+}
+
+class ProductUnitModelAdapter extends TypeAdapter<ProductUnitModel> {
+  @override
+  final int typeId = 2;
+
+  @override
+  ProductUnitModel read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return ProductUnitModel(
+      name: fields[0] as String,
+      multiplier: (fields[1] as num?)?.toDouble() ?? 1.0,
+      barcode: fields[2] as String?,
+      price: (fields[3] as num?)?.toDouble() ?? 0.0,
+      cost: (fields[4] as num?)?.toDouble() ?? 0.0,
+      isEnabled: fields[5] as bool? ?? true,
+      isWeighable: fields[6] as bool? ?? false,
+      tierIndex: fields[7] as int? ?? 0,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, ProductUnitModel obj) {
+    writer
+      ..writeByte(8)
+      ..writeByte(0)
+      ..write(obj.name)
+      ..writeByte(1)
+      ..write(obj.multiplier)
+      ..writeByte(2)
+      ..write(obj.barcode)
+      ..writeByte(3)
+      ..write(obj.price)
+      ..writeByte(4)
+      ..write(obj.cost)
+      ..writeByte(5)
+      ..write(obj.isEnabled)
+      ..writeByte(6)
+      ..write(obj.isWeighable)
+      ..writeByte(7)
+      ..write(obj.tierIndex);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ProductUnitModelAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
 }
