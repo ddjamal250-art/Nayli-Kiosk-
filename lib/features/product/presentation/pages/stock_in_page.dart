@@ -378,6 +378,25 @@ class _StockInPageState extends State<StockInPage> {
         _isCategoryUserSelected = true;
         if (existing.isWeighted || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
           _unitMode = ArrivageUnitMode.vracSacs;
+        } else {
+          final largeUnit = existing.units.where((u) => u.tier == UnitTier.large).firstOrNull;
+          if (largeUnit != null) {
+            _unitMode = ArrivageUnitMode.cartons;
+            _cartonsPriceController.text = largeUnit.price.toStringAsFixed(2);
+            _cartonCostController.text = largeUnit.cost.toStringAsFixed(2);
+            
+            final mediumUnit = existing.units.where((u) => u.tier == UnitTier.medium).firstOrNull;
+            if (mediumUnit != null) {
+              _hasMiddleTier = true;
+              _packPriceController.text = mediumUnit.price.toStringAsFixed(2);
+              _packCostController.text = mediumUnit.cost.toStringAsFixed(2);
+              _packsPerCartonController.text = (largeUnit.multiplier / mediumUnit.multiplier).toInt().toString();
+              _unitsPerPackController.text = mediumUnit.multiplier.toInt().toString();
+            } else {
+              _hasMiddleTier = false;
+              _unitsPerCartonController.text = largeUnit.multiplier.toInt().toString();
+            }
+          }
         }
       });
       SoundService.playScanBeep();
@@ -763,6 +782,29 @@ class _StockInPageState extends State<StockInPage> {
         _itemImageUrl = existing.imageUrl;
         _selectedCategory = existing.category.isNotEmpty ? existing.category : 'عام';
         _isCategoryUserSelected = true;
+        
+        if (existing.isWeighted || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
+          _unitMode = ArrivageUnitMode.vracSacs;
+        } else {
+          final largeUnit = existing.units.where((u) => u.tier == UnitTier.large).firstOrNull;
+          if (largeUnit != null) {
+            _unitMode = ArrivageUnitMode.cartons;
+            _cartonsPriceController.text = largeUnit.price.toStringAsFixed(2);
+            _cartonCostController.text = largeUnit.cost.toStringAsFixed(2);
+            
+            final mediumUnit = existing.units.where((u) => u.tier == UnitTier.medium).firstOrNull;
+            if (mediumUnit != null) {
+              _hasMiddleTier = true;
+              _packPriceController.text = mediumUnit.price.toStringAsFixed(2);
+              _packCostController.text = mediumUnit.cost.toStringAsFixed(2);
+              _packsPerCartonController.text = (largeUnit.multiplier / mediumUnit.multiplier).toInt().toString();
+              _unitsPerPackController.text = mediumUnit.multiplier.toInt().toString();
+            } else {
+              _hasMiddleTier = false;
+              _unitsPerCartonController.text = largeUnit.multiplier.toInt().toString();
+            }
+          }
+        }
       } else {
         final masterMatch = MasterCatalogService.instance.search(item.designation).firstOrNull ??
             (item.reference.isNotEmpty ? MasterCatalogService.searchByBarcode(item.reference) : null);
