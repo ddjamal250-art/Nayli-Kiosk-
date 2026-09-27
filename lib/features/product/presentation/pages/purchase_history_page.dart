@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nayli_kiosk/features/product/presentation/bloc/product_bloc.dart';
-import 'package:nayli_kiosk/features/product/domain/entities/product.dart';
+import '../bloc/product_bloc.dart';
+import '../../domain/entities/product.dart';
 
 /// Full Purchase History page — shows all PurchaseBatch entries across
 /// all products, sorted chronologically.
@@ -56,9 +56,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
 
           // Sort newest first
           entries.sort((a, b) {
-            final aDate = a.batch.dateAdded ?? DateTime(2000);
-            final bDate = b.batch.dateAdded ?? DateTime(2000);
-            return bDate.compareTo(aDate);
+            return b.batch.dateAdded.compareTo(a.batch.dateAdded);
           });
 
           // Apply search filter
@@ -95,9 +93,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
               final batch = entry.batch;
               final product = entry.product;
 
-              final dateStr = batch.dateAdded != null
-                  ? '${batch.dateAdded!.year}-${batch.dateAdded!.month.toString().padLeft(2, '0')}-${batch.dateAdded!.day.toString().padLeft(2, '0')}'
-                  : 'تاريخ غير معروف';
+              final dateStr = '${batch.dateAdded.year}-${batch.dateAdded.month.toString().padLeft(2, '0')}-${batch.dateAdded.day.toString().padLeft(2, '0')}';
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 4),
