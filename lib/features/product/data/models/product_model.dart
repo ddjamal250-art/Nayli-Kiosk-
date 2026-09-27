@@ -17,14 +17,26 @@ class PurchaseBatchModel extends PurchaseBatch {
   @HiveField(2)
   final DateTime dateAdded;
 
+  @override
+  @HiveField(3)
+  final String? supplierName;
+
+  @override
+  @HiveField(4)
+  final String? supplierPhone;
+
   PurchaseBatchModel({
     required this.costPrice,
     required this.remainingQuantity,
     required this.dateAdded,
+    this.supplierName,
+    this.supplierPhone,
   }) : super(
           costPrice: costPrice,
           remainingQuantity: remainingQuantity,
           dateAdded: dateAdded,
+          supplierName: supplierName,
+          supplierPhone: supplierPhone,
         );
 
   factory PurchaseBatchModel.fromEntity(PurchaseBatch batch) {
@@ -32,6 +44,8 @@ class PurchaseBatchModel extends PurchaseBatch {
       costPrice: batch.costPrice,
       remainingQuantity: batch.remainingQuantity,
       dateAdded: batch.dateAdded,
+      supplierName: batch.supplierName,
+      supplierPhone: batch.supplierPhone,
     );
   }
 
@@ -40,6 +54,8 @@ class PurchaseBatchModel extends PurchaseBatch {
       costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0.0,
       remainingQuantity: (json['remainingQuantity'] as num?)?.toDouble() ?? 0.0,
       dateAdded: json['dateAdded'] != null ? DateTime.parse(json['dateAdded']) : DateTime.now(),
+      supplierName: json['supplierName']?.toString(),
+      supplierPhone: json['supplierPhone']?.toString(),
     );
   }
 
@@ -48,6 +64,8 @@ class PurchaseBatchModel extends PurchaseBatch {
       'costPrice': costPrice,
       'remainingQuantity': remainingQuantity,
       'dateAdded': dateAdded.toIso8601String(),
+      'supplierName': supplierName,
+      'supplierPhone': supplierPhone,
     };
   }
 }
@@ -393,19 +411,25 @@ class PurchaseBatchModelAdapter extends TypeAdapter<PurchaseBatchModel> {
       costPrice: (fields[0] as num?)?.toDouble() ?? 0.0,
       remainingQuantity: (fields[1] as num?)?.toDouble() ?? 0.0,
       dateAdded: fields[2] as DateTime,
+      supplierName: fields[3] as String?,
+      supplierPhone: fields[4] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, PurchaseBatchModel obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.costPrice)
       ..writeByte(1)
       ..write(obj.remainingQuantity)
       ..writeByte(2)
-      ..write(obj.dateAdded);
+      ..write(obj.dateAdded)
+      ..writeByte(3)
+      ..write(obj.supplierName)
+      ..writeByte(4)
+      ..write(obj.supplierPhone);
   }
 
   @override

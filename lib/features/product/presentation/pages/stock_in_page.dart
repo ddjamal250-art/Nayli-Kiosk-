@@ -73,6 +73,7 @@ class _StockInPageState extends State<StockInPage> {
   final TextEditingController _cartonCountController = TextEditingController(text: '1');
   final TextEditingController _unitsPerCartonController = TextEditingController(text: '24');
   final TextEditingController _cartonCostController = TextEditingController();
+  final TextEditingController _cartonsPriceController = TextEditingController();
 
   // Vrac & Sacs controllers (Coffee, Sugar, Semolina, Spices)
   final TextEditingController _sacCountController = TextEditingController(text: '1');
@@ -370,6 +371,15 @@ class _StockInPageState extends State<StockInPage> {
     });
   }
 
+  List<ProductUnit> _mergeUnitsWithNewPrices(List<ProductUnit> existingUnits, Map<UnitTier, ({double price, double cost})> newPrices) {
+    return existingUnits.map((unit) {
+      final update = newPrices[unit.tier];
+      if (update == null) return unit;
+      return unit.copyWith(price: update.price, cost: update.cost);
+    }).toList();
+  }
+
+
   void _saveStockIn() {
     final name = _nameController.text.trim();
     final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
@@ -423,15 +433,6 @@ class _StockInPageState extends State<StockInPage> {
         MasterCatalogService.instance.search(name).firstOrNull;
 
     final productImageUrl = _itemImageUrl ?? existingProduct?.imageUrl ?? masterMatch?.imageUrl;
-    final isTobacco = existingProduct?.isTobacco ?? masterMatch?.isTobacco ?? false;
-    final piecesPerPack = isCoffee ? _coffeeData.baseYieldCount : (existingProduct?.piecesPerPack ?? masterMatch?.piecesPerPack ?? 20);
-    final packsPerCarton = existingProduct?.packsPerCarton ?? masterMatch?.packsPerCarton ?? 10;
-    final singlePiecePrice = isCoffee ? _coffeeData.salePrice : (existingProduct?.singlePiecePrice ?? masterMatch?.singlePiecePrice ?? 0.0);
-    final cartonPrice = existingProduct?.cartonPrice ?? masterMatch?.cartonPrice ?? 0.0;
-    final wholesaleCartonPrice = existingProduct?.wholesaleCartonPrice ?? masterMatch?.wholesaleCartonPrice ?? 0.0;
-    final wholesalePackPrice = existingProduct?.wholesalePackPrice ?? masterMatch?.wholesalePackPrice ?? 0.0;
-    final cartonCostPrice = existingProduct?.cartonCostPrice ?? masterMatch?.cartonCostPrice ?? 0.0;
-    final unitType = isCoffee ? 'كأس' : (existingProduct?.unitType ?? masterMatch?.unitType ?? 'unit');
     final effectivePrice = isCoffee ? _coffeeData.salePrice : price;
 
     final effectiveCategory = isCoffee
@@ -439,6 +440,58 @@ class _StockInPageState extends State<StockInPage> {
         : (_selectedCategory.trim().isNotEmpty
             ? _selectedCategory.trim()
             : (existingProduct?.category ?? masterMatch?.category ?? 'عام'));
+
+    List<ProductUnit> resolvedUnits = [];
+    if (_isExistingInShop && existingProduct != null && existingProduct.units.isNotEmpty) {
+      final Map<UnitTier, ({double price, double cost})> newPrices = {};
+      if (_unitMode == ArrivageUnitMode.cartons) {
+        final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? 0.0;
+        final cCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
+        newPrices[UnitTier.large] = (price: cPrice, cost: cCost);
+        newPrices[UnitTier.small] = (price: effectivePrice, cost: effectiveCost);
+      } else {
+        newPrices[UnitTier.small] = (price: effectivePrice, cost: effectiveCost);
+      }
+      resolvedUnits = _mergeUnitsWithNewPrices(existingProduct.units, newPrices);
+    } else {
+      if (_unitMode == ArrivageUnitMode.cartons) {
+        final perCarton = int.tryParse(_qtyController.text.trim()) ?? 1;
+        final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? 0.0;
+        final cCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
+        resolvedUnits = [
+          ProductUnit(tier: UnitTier.large, name: 'كرتونة', multiplier: perCarton.toDouble(), price: cPrice, cost: cCost),
+          ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
+        ];
+      } else if (_unitMode == ArrivageUnitMode.vracSacs) {
+        resolvedUnits = [
+          ProductUnit(tier: UnitTier.small, name: 'كغ', multiplier: 1.0, price: effectivePrice, cost: effectiveCost, isWeighable: true),
+        ];
+      } else if (_unitMode == ArrivageUnitMode.coffeeMachine) {
+        resolvedUnits = [
+          ProductUnit(tier: UnitTier.small, name: 'كأس', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
+        ];
+      } else {
+        resolvedUnits = [
+          ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
+        ];
+      }
+    }
+
+    final supplierName = _supplierNameController.text.trim();
+    final supplierPhone = _supplierPhoneController.text.trim();
+    final newBatch = PurchaseBatch(
+      costPrice: effectiveCost,
+      remainingQuantity: effectiveQty, // Used as received quantity for archive
+      dateAdded: _receiptDate,
+      supplierName: supplierName.isEmpty ? null : supplierName,
+      supplierPhone: supplierPhone.isEmpty ? null : supplierPhone,
+    );
+    
+    final existingBatches = existingProduct?.stockBatches ?? [];
+    final updatedBatches = [...existingBatches, newBatch];
+    final cappedBatches = updatedBatches.length > 50 
+        ? updatedBatches.sublist(updatedBatches.length - 50) 
+        : updatedBatches;
 
     String savedProductId = '';
 
@@ -456,6 +509,8 @@ class _StockInPageState extends State<StockInPage> {
         price: effectivePrice,
         costPrice: effectiveCost,
         stock: _currentStock + effectiveQty,
+        units: resolvedUnits,
+        stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
         );
@@ -476,6 +531,8 @@ class _StockInPageState extends State<StockInPage> {
         price: effectivePrice,
         costPrice: effectiveCost,
         stock: effectiveQty,
+        units: resolvedUnits,
+        stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
         );

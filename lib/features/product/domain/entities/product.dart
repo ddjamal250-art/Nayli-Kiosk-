@@ -14,27 +14,35 @@ class PurchaseBatch extends Equatable {
   final double costPrice;
   final double remainingQuantity;
   final DateTime dateAdded;
+  final String? supplierName;
+  final String? supplierPhone;
 
   const PurchaseBatch({
     required this.costPrice,
     required this.remainingQuantity,
     required this.dateAdded,
+    this.supplierName,
+    this.supplierPhone,
   });
 
   PurchaseBatch copyWith({
     double? costPrice,
     double? remainingQuantity,
     DateTime? dateAdded,
+    String? supplierName,
+    String? supplierPhone,
   }) {
     return PurchaseBatch(
       costPrice: costPrice ?? this.costPrice,
       remainingQuantity: remainingQuantity ?? this.remainingQuantity,
       dateAdded: dateAdded ?? this.dateAdded,
+      supplierName: supplierName ?? this.supplierName,
+      supplierPhone: supplierPhone ?? this.supplierPhone,
     );
   }
 
   @override
-  List<Object?> get props => [costPrice, remainingQuantity, dateAdded];
+  List<Object?> get props => [costPrice, remainingQuantity, dateAdded, supplierName, supplierPhone];
 }
 
 class Product extends Equatable {
