@@ -204,13 +204,15 @@ class ProductModel extends Product {
     double? wholesalePrice,
     String? expiryDate,
     String? imageUrl,
-    String? baseUnitName,
-    List<ProductUnit>? units,
-    String? pluCode,
     UnitSystemType? unitSystemType,
     bool? isDeleted,
     List<PurchaseBatch>? stockBatches,
     String? coffeeRecipeJson,
+    String? baseUnitName,
+    List<ProductUnit>? units,
+    String? pluCode,
+    SpecialOffer? specialOffer,
+    String? specialOfferJson,
   }) {
     return ProductModel(
       id: id ?? this.id,
