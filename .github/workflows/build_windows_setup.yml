@@ -52,7 +52,14 @@ jobs:
 
       - name: Build Windows Executable Release
         shell: cmd
-        run: flutter build windows
+        run: flutter build windows -v > build_log.txt 2>&1 || exit 1
+
+      - name: Upload Build Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build_log.txt
 
       - name: Generate Self-Signed Code Certificate
         shell: powershell
@@ -90,7 +97,7 @@ jobs:
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\installer\Nayli-Kiosk-Desktop-Portable.zip -Force
 
       - name: Upload Windows Installer Setup Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: nayli-kiosk-desktop-setup
           path: build/installer/
