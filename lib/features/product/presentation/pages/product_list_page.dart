@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -805,6 +805,29 @@ class _ProductListPageState extends State<ProductListPage> {
                           Icon(Icons.receipt_long_outlined, size: 15, color: Colors.blue),
                           SizedBox(width: 4),
                           Text('فواتير الموردين 🚚', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 6),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => context.push('/products/purchase-history'),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.history, size: 15, color: Colors.teal),
+                          SizedBox(width: 4),
+                          Text('أرشيف المشتريات 📋', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.black87)),
                         ],
                       ),
                     ),

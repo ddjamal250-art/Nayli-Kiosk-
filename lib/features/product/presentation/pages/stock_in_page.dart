@@ -743,7 +743,16 @@ class _StockInPageState extends State<StockInPage> {
   void _applyOcrResult(ParsedReceiptResult result) {
     if (result.items.isEmpty) return;
     setState(() {
-      _pendingOcrItems = List.from(result.items);
+      // Deduplicate: remove items with duplicate names (case-insensitive) before adding
+      final seen = <String>{};
+      final deduped = result.items.where((item) {
+        final key = item.designation.trim().toLowerCase();
+        if (seen.contains(key)) return false;
+        seen.add(key);
+        return true;
+      }).toList();
+      
+      _pendingOcrItems = deduped;
       _ocrSupplierName = result.entityName;
       if (result.entityName.isNotEmpty) {
         _supplierNameController.text = result.entityName;

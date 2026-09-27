@@ -17,6 +17,7 @@ import '../../features/billing/presentation/pages/devis_page.dart';
 import '../../features/billing/presentation/pages/cashier_shifts_page.dart';
 import '../../features/product/presentation/pages/supplier_invoices_page.dart';
 import '../../features/product/presentation/pages/new_supplier_invoice_page.dart';
+import '../../features/product/presentation/pages/purchase_history_page.dart';
 import '../../features/customer/presentation/pages/customers_page.dart';
 import '../../features/product/domain/entities/product.dart';
 import '../../core/utils/license_service.dart';
@@ -194,6 +195,10 @@ final router = GoRouter(
         GoRoute(
           path: 'supplier-invoice/new',
           builder: (context, state) => NewSupplierInvoicePage(),
+        ),
+        GoRoute(
+          path: 'purchase-history',
+          builder: (context, state) => const PurchaseHistoryPage(),
         ),
         
         GoRoute(

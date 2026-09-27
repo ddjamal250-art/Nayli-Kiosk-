@@ -1,18 +1,13 @@
-import re
-import os
+file_path = r"d:\repos\Nayli Market -custom-\.github\workflows\build_windows_setup.yml"
+with open(file_path, "r", encoding="utf-8") as f:
+    lines = f.readlines()
 
-file_apk = r'd:\repos\Nayli Market -custom-\.github\workflows\build_apk.yml'
-with open(file_apk, 'r', encoding='utf-8') as f:
-    content_apk = f.read()
+new_lines = []
+for line in lines:
+    if line.startswith("        run: flutter build windows --verbose > windows_build_error.log 2>&1 || exit 0"):
+        new_lines.append("        run: |\n          flutter build windows --verbose > windows_build_error.log 2>&1 || exit 0\n")
+    else:
+        new_lines.append(line)
 
-content_apk = content_apk.replace('run: curl -X POST', 'run: |\n          curl -X POST')
-with open(file_apk, 'w', encoding='utf-8') as f:
-    f.write(content_apk)
-
-file_win = r'd:\repos\Nayli Market -custom-\.github\workflows\build_windows_setup.yml'
-with open(file_win, 'r', encoding='utf-8') as f:
-    content_win = f.read()
-
-content_win = content_win.replace('run: curl.exe -X POST', 'run: |\n          curl.exe -X POST')
-with open(file_win, 'w', encoding='utf-8') as f:
-    f.write(content_win)
+with open(file_path, "w", encoding="utf-8") as f:
+    f.writelines(new_lines)
