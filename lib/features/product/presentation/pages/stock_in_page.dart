@@ -10,6 +10,7 @@ import 'package:collection/collection.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../domain/entities/product_unit.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/app_validators.dart';
 import '../../../../core/utils/barcode_generator_helper.dart';
@@ -1933,3 +1934,4 @@ class _StockInPageState extends State<StockInPage> {
     );
   }
 }
+
