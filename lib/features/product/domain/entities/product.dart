@@ -84,9 +84,10 @@ class Product extends Equatable {
   bool get isTobaccoProduct => category.contains('تبغ') || isTobacco;
 
   // Legacy getters - computed from units list or defaults
-  double get wholesalePackPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.medium, orElse: () => units.first).wholesalePrice ?? 0.0) : 0.0;
-  double get wholesaleCartonPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.large, orElse: () => units.first).wholesalePrice ?? 0.0) : 0.0;
-  double get cartonCostPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.large, orElse: () => units.first).costPrice ?? 0.0) : 0.0;
+  bool get isUnlimitedStock => isWeighted || isCoffeeMachineProduct;
+  double get wholesalePackPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.medium, orElse: () => units.first).price) : 0.0;
+  double get wholesaleCartonPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.large, orElse: () => units.first).price) : 0.0;
+  double get cartonCostPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.large, orElse: () => units.first).cost) : 0.0;
   double get piecesPerPack => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.small, orElse: () => units.first).multiplier) : 20.0;
   double get packsPerCartonCount => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.medium, orElse: () => units.first).multiplier) : 10.0;
   String get unitType => unitSystemType.name;

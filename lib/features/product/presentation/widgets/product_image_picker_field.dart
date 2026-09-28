@@ -7,6 +7,7 @@ import '../../../../core/utils/product_image_search_service.dart';
 
 class ProductImagePickerField extends StatefulWidget {
   final String? initialImageUrl;
+  final String? initialImagePath;
   final String barcode;
   final String productName;
   final ValueChanged<String?> onImageChanged;
@@ -14,8 +15,9 @@ class ProductImagePickerField extends StatefulWidget {
   const ProductImagePickerField({
     super.key,
     this.initialImageUrl,
-    required this.barcode,
-    required this.productName,
+    this.initialImagePath,
+    this.barcode = '',
+    this.productName = '',
     required this.onImageChanged,
   });
 
@@ -30,14 +32,16 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
   @override
   void initState() {
     super.initState();
-    _currentImageUrl = widget.initialImageUrl;
+    _currentImageUrl = widget.initialImageUrl ?? widget.initialImagePath;
   }
 
   @override
   void didUpdateWidget(covariant ProductImagePickerField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialImageUrl != oldWidget.initialImageUrl && widget.initialImageUrl != _currentImageUrl) {
-      _currentImageUrl = widget.initialImageUrl;
+    final effectiveUrl = widget.initialImageUrl ?? widget.initialImagePath;
+    final oldEffectiveUrl = oldWidget.initialImageUrl ?? oldWidget.initialImagePath;
+    if (effectiveUrl != oldEffectiveUrl && effectiveUrl != _currentImageUrl) {
+      _currentImageUrl = effectiveUrl;
     }
   }
 

@@ -19,6 +19,9 @@ class ProductUnit extends Equatable {
   /// هل هي وحدة ميزان؟ (السعر دج/كغ بدل سعر ثابت)
   final bool isWeighable;
 
+  double get wholesalePrice => price;
+  double get costPrice => cost;
+
   const ProductUnit({
     required this.name,
     this.tier = UnitTier.small,

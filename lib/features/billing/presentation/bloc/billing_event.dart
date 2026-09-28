@@ -207,5 +207,5 @@ class ToggleReturnModeEvent extends BillingEvent {}
 
 class ClearStockWarningEvent extends BillingEvent {
   @override
-  List<Object?> get props => [];
+  List<Object> get props => [];
 }
