@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../product/domain/entities/product.dart';
@@ -54,25 +53,14 @@ class SharedCategoryBarState extends State<SharedCategoryBar> {
       }
     }
 
-    String? resolvePresetKey(String customName) {
-      return CategoryTaxonomy.smartDetect(customName);
+    for (final cat in _dynamicCategories) {
+      final icon = CategoryTaxonomy.getIconForCategory(cat);
+      addCat(cat, cat, icon, true);
     }
 
-    for (var cat in _dynamicCategories) {
-      final preset = resolvePresetKey(cat);
-      if (preset != null) {
-        final info = CategoryTaxonomy.getCategoryInfo(preset);
-        addCat(preset, cat, info['icon']!, true);
-      } else {
-        addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
-      }
-    }
-
-    for (var cat in CategoryTaxonomy.getDropdownCategories()) {
-      final preset = resolvePresetKey(cat);
-      if (preset == null) {
-        addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
-      }
+    for (final cat in CategoryTaxonomy.getDropdownCategories()) {
+      final icon = CategoryTaxonomy.getIconForCategory(cat);
+      addCat(cat, cat, icon, false);
     }
     return all;
   }
