@@ -381,10 +381,10 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                     controller: cartonCapacityCtrl,
                     keyboardType: TextInputType.number,
                     onChanged: (_) => onInputsChanged?.call(),
-                    decoration: const InputDecoration(
-                      labelText: widget.hasPack ? 'سعة الكرتونة (كم علبة؟) *' : 'سعة الكرتونة (كم حبة؟) *',
-                      suffixText: widget.hasPack ? 'علبة/كرتونة' : 'حبة/كرتونة',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: hasPack ? 'سعة الكرتونة (كم علبة؟) *' : 'سعة الكرتونة (كم حبة؟) *',
+                      suffixText: hasPack ? 'علبة/كرتونة' : 'حبة/كرتونة',
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
                   ),

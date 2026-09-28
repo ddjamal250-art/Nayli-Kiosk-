@@ -30,6 +30,7 @@ import '../../../../core/utils/tpe_payment_service.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
+import '../../../product/presentation/widgets/shared_category_bar.dart';
 import '../../../../core/widgets/product_image_display.dart';
 import '../../../shifts/data/shift_service.dart';
 import '../../domain/entities/cart_item.dart';

@@ -2,16 +2,34 @@ import urllib.request
 import json
 import time
 import sys
+import subprocess
 
 REPO = "ddjamal250-art/Nayli-Kiosk-"
-HEADERS = {
-    "User-Agent": "Nayli-Kiosk-Monitor",
-    "Accept": "application/vnd.github+json"
-}
+
+def get_auth_token():
+    try:
+        out = subprocess.check_output(["git", "config", "--get", "remote.origin.url"], text=True)
+        if "@github.com" in out and "://" in out:
+            user_part = out.split("://")[1].split("@github.com")[0]
+            if ":" in user_part:
+                return user_part.split(":")[1].strip()
+    except Exception:
+        pass
+    return None
+
+def get_headers():
+    h = {
+        "User-Agent": "Nayli-Kiosk-Monitor",
+        "Accept": "application/vnd.github+json"
+    }
+    tok = get_auth_token()
+    if tok:
+        h["Authorization"] = f"Bearer {tok}"
+    return h
 
 def get_latest_run_id():
     url = f"https://api.github.com/repos/{REPO}/actions/runs?per_page=1"
-    req = urllib.request.Request(url, headers=HEADERS)
+    req = urllib.request.Request(url, headers=get_headers())
     try:
         with urllib.request.urlopen(req) as resp:
             data = json.loads(resp.read().decode())
@@ -24,7 +42,7 @@ def get_latest_run_id():
 
 def get_run_details(run_id):
     url = f"https://api.github.com/repos/{REPO}/actions/runs/{run_id}"
-    req = urllib.request.Request(url, headers=HEADERS)
+    req = urllib.request.Request(url, headers=get_headers())
     try:
         with urllib.request.urlopen(req) as resp:
             return json.loads(resp.read().decode())
@@ -34,7 +52,7 @@ def get_run_details(run_id):
 
 def get_job_steps(run_id):
     url = f"https://api.github.com/repos/{REPO}/actions/runs/{run_id}/jobs"
-    req = urllib.request.Request(url, headers=HEADERS)
+    req = urllib.request.Request(url, headers=get_headers())
     try:
         with urllib.request.urlopen(req) as resp:
             data = json.loads(resp.read().decode())
@@ -66,7 +84,6 @@ def print_status(run_id):
     return run
 
 def watch(run_id=None, max_wait_sec=900, interval=25):
-    # Wait for run_id if not provided
     if not run_id:
         print("Waiting for GitHub Actions run to register...")
         for _ in range(10):
