@@ -92,6 +92,42 @@ class ProductUnitsEditorWidget extends StatefulWidget {
 class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
   bool _isSyncing = false;
 
+  // --- Convenience Getters to Delegate to Widget Properties ---
+  bool get isStockInMode => widget.isStockInMode;
+  TextEditingController? get cartonCountCtrl => widget.cartonCountCtrl;
+  TextEditingController? get packCountCtrl => widget.packCountCtrl;
+  TextEditingController? get pieceCountCtrl => widget.pieceCountCtrl;
+  VoidCallback? get onInputsChanged => widget.onInputsChanged;
+
+  bool get hasCarton => widget.hasCarton;
+  ValueChanged<bool> get onHasCartonChange => widget.onHasCartonChange;
+  TextEditingController get cartonBarcodeCtrl => widget.cartonBarcodeCtrl;
+  TextEditingController get cartonCapacityCtrl => widget.cartonCapacityCtrl;
+  TextEditingController get cartonCostCtrl => widget.cartonCostCtrl;
+  TextEditingController get cartonPriceCtrl => widget.cartonPriceCtrl;
+  VoidCallback? get onScanCartonBarcode => widget.onScanCartonBarcode;
+
+  bool get hasPack => widget.hasPack;
+  ValueChanged<bool> get onHasPackChange => widget.onHasPackChange;
+  TextEditingController get packBarcodeCtrl => widget.packBarcodeCtrl;
+  TextEditingController get packCapacityCtrl => widget.packCapacityCtrl;
+  TextEditingController get packCostCtrl => widget.packCostCtrl;
+  TextEditingController get packPriceCtrl => widget.packPriceCtrl;
+  VoidCallback? get onScanPackBarcode => widget.onScanPackBarcode;
+
+  TextEditingController get pieceBarcodeCtrl => widget.pieceBarcodeCtrl;
+  TextEditingController get pieceCostCtrl => widget.pieceCostCtrl;
+  TextEditingController get piecePriceCtrl => widget.piecePriceCtrl;
+  TextEditingController? get baseUnitNameCtrl => widget.baseUnitNameCtrl;
+  VoidCallback? get onScanPieceBarcode => widget.onScanPieceBarcode;
+
+  bool get hasSpecialOffer => widget.hasSpecialOffer;
+  ValueChanged<bool> get onHasSpecialOfferChange => widget.onHasSpecialOfferChange;
+  UnitTier get offerTier => widget.offerTier;
+  ValueChanged<UnitTier?> get onOfferTierChange => widget.onOfferTierChange;
+  TextEditingController get offerQtyCtrl => widget.offerQtyCtrl;
+  TextEditingController get offerPriceCtrl => widget.offerPriceCtrl;
+
   @override
   void initState() {
     super.initState();
