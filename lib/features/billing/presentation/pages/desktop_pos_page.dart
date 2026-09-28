@@ -2445,14 +2445,14 @@ $itemsSummary
       selectedCustomerId: _selectedCustomerId,
       selectedCustomerName: _selectedCustomerName,
       customerCreditBalance: _customerCreditBalance,
-      onFinalizeSale: (method, total, tpeRef, {bool printReceipt = true}) =>
-          _finalizeSale(method, total, tpeRef, printReceipt: printReceipt),
+      onFinalizeSale: (method, total, tpeRef, {bool printReceipt = true, double? receivedAmount}) =>
+          _finalizeSale(method, total, tpeRef, printReceipt: printReceipt, receivedAmount: receivedAmount),
       onSendWhatsAppReceipt: (total, billingState) =>
           _sendWhatsAppReceipt(total, billingState),
     );
   }
 
-  Future<void> _finalizeSale(PosPaymentMethod method, double total, String tpeRef, {bool printReceipt = true}) async {
+  Future<void> _finalizeSale(PosPaymentMethod method, double total, String tpeRef, {bool printReceipt = true, double? receivedAmount}) async {
     final billingBloc = context.read<BillingBloc>();
     final isCredit = method == PosPaymentMethod.customerCredit;
 
@@ -2482,7 +2482,7 @@ $itemsSummary
       customerName: _selectedCustomerName,
       isCredit: isCredit,
       paymentMethod: method == PosPaymentMethod.tpeCard ? 'TPE / Carte' : (isCredit ? 'Crédit' : 'Espèces'),
-      paidAmount: isCredit ? 0.0 : total,
+      paidAmount: isCredit ? 0.0 : (receivedAmount ?? total),
       previousDebt: _customerCreditBalance,
       newDebtTotal: isCredit ? (_customerCreditBalance + total) : _customerCreditBalance,
       skipPhysicalPrint: !printReceipt,

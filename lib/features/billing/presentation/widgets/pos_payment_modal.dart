@@ -27,6 +27,7 @@ class PosPaymentModal {
       double total,
       String tpeRef, {
       bool printReceipt,
+      double? receivedAmount,
     }) onFinalizeSale,
     required void Function(double total, BillingState state) onSendWhatsAppReceipt,
   }) {
@@ -408,7 +409,13 @@ class PosPaymentModal {
                   }
 
                   Navigator.pop(ctx);
-                  await onFinalizeSale(paymentMethod, total, manualTpeRefController.text, printReceipt: shouldPrintReceipt);
+                  await onFinalizeSale(
+                    paymentMethod,
+                    total,
+                    manualTpeRefController.text,
+                    printReceipt: shouldPrintReceipt,
+                    receivedAmount: paymentMethod == PosPaymentMethod.cash ? receivedAmount : total,
+                  );
                 },
               ),
             ],

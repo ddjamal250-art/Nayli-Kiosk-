@@ -231,6 +231,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
         footer: _showFooterNote ? _footerNoteCtrl.text.trim() : '--- Nayli Kiosk ---',
         customerName: 'زبون تجريبي',
         paidAmount: 1500.0,
+        invoiceId: 'FAC-0089',
       );
       if (mounted) {
         if (ok) {

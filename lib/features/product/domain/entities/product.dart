@@ -85,11 +85,11 @@ class Product extends Equatable {
 
   // Legacy getters - computed from units list or defaults
   bool get isUnlimitedStock => isWeighted || isCoffeeMachineProduct;
-  double get wholesalePackPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.medium, orElse: () => units.first).price) : 0.0;
-  double get wholesaleCartonPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.large, orElse: () => units.first).price) : 0.0;
-  double get cartonCostPrice => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.large, orElse: () => units.first).cost) : 0.0;
-  double get piecesPerPack => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.small, orElse: () => units.first).multiplier) : 20.0;
-  double get packsPerCartonCount => units.isNotEmpty ? (units.firstWhere((u) => u.tier == UnitTier.medium, orElse: () => units.first).multiplier) : 10.0;
+  double get wholesalePackPrice => units.where((u) => u.tier == UnitTier.medium).firstOrNull?.price ?? (units.isNotEmpty ? units.first.price : 0.0);
+  double get wholesaleCartonPrice => units.where((u) => u.tier == UnitTier.large).firstOrNull?.price ?? (units.isNotEmpty ? units.first.price : 0.0);
+  double get cartonCostPrice => units.where((u) => u.tier == UnitTier.large).firstOrNull?.cost ?? (units.isNotEmpty ? units.first.cost : 0.0);
+  double get piecesPerPack => units.where((u) => u.tier == UnitTier.small).firstOrNull?.multiplier ?? (units.isNotEmpty ? units.first.multiplier : 20.0);
+  double get packsPerCartonCount => units.where((u) => u.tier == UnitTier.medium).firstOrNull?.multiplier ?? (units.isNotEmpty ? units.first.multiplier : 10.0);
   String get unitType => unitSystemType.name;
   double get resolvedPiecePrice {
     final small = units.where((u) => u.tier == UnitTier.small).firstOrNull;

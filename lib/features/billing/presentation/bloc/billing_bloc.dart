@@ -651,6 +651,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           phone: event.phone,
           items: items,
           total: state.totalAmount,
+          discount: state.calculatedDiscount,
           footer: event.footer,
           customerName: event.customerName,
           isCredit: event.isCredit,
@@ -658,6 +659,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           previousDebt: event.previousDebt,
           newDebtTotal: event.newDebtTotal,
           specificPrinterName: event.specificPrinterName,
+          invoiceId: invoiceId,
         );
       }
 

@@ -120,7 +120,7 @@ static Future<pw.ThemeData> getArabicTheme() async {
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Text('Nayli Kiosk POS 🇩🇿', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+                  pw.Text('Nayli Kiosk POS', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
                   pw.Text('طابعة التوصيل الحرارية (80mm)', style: const pw.TextStyle(fontSize: 9)),
                   pw.Divider(thickness: 0.5),
                   pw.Text('الطابعة: ${printer.name}', style: const pw.TextStyle(fontSize: 8)),
@@ -161,8 +161,30 @@ static Future<pw.ThemeData> getArabicTheme() async {
     }
   }
 
+  /// Sanitize text by stripping Unicode emojis that lack glyphs in standard TrueType fonts
+  static String cleanEmojisForPdf(String text) {
+    if (text.isEmpty) return text;
+    return text
+        .replaceAll('✨', '')
+        .replaceAll('📍', '')
+        .replaceAll('📞', '')
+        .replaceAll('📱', '')
+        .replaceAll('🛒', '')
+        .replaceAll('🇩🇿', '')
+        .replaceAll('🧾', '')
+        .replaceAll('💾', '')
+        .replaceAll('➕', '')
+        .replaceAll('🎛️', '')
+        .replaceAll('✍️', '')
+        .replaceAll('✅', '')
+        .replaceAll('⚠️', '')
+        .replaceAll('❌', '')
+        .replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]', unicode: true), '')
+        .trim();
+  }
+
   /// Print Cashier Sale Receipt for Windows POS
-static Future<bool> printReceiptWindows({
+  static Future<bool> printReceiptWindows({
     required String shopName,
     String? address1,
     String? address2,
@@ -178,6 +200,7 @@ static Future<bool> printReceiptWindows({
     double newDebtTotal = 0.0,
     String? footer,
     String? specificPrinterName,
+    String? invoiceId,
   }) async {
     try {
       final theme = await getArabicTheme();
@@ -189,36 +212,89 @@ static Future<bool> printReceiptWindows({
         tmpl = Map<String, dynamic>.from(savedTemplate);
       }
       
-      final String finalShopName = tmpl['shopName']?.toString() ?? shopName;
+      final shopBox = HiveDatabase.shopBox;
+      final defaultShopName = shopBox.isNotEmpty ? shopBox.values.first.name : 'متجر الأناقة والمواد الغذائية';
+      final defaultPhone = shopBox.isNotEmpty ? shopBox.values.first.phoneNumber : '0550 12 34 56';
+      final defaultAddress = shopBox.isNotEmpty ? shopBox.values.first.addressLine1 : 'حي 500 مسكن، الجلفة';
+
+      final String finalShopName = cleanEmojisForPdf(tmpl['shopName']?.toString() ?? (shopName.isNotEmpty ? shopName : defaultShopName));
       final bool showSlogan = tmpl['showSlogan'] == true;
-      final String slogan = tmpl['slogan']?.toString() ?? '';
+      final String slogan = cleanEmojisForPdf(tmpl['slogan']?.toString() ?? (address2 ?? 'مرحباً بكم في متجرنا'));
       final bool showAddress = tmpl['showAddress'] != false;
-      final String address = tmpl['address']?.toString() ?? (address1 ?? '');
+      final String address = cleanEmojisForPdf(tmpl['address']?.toString() ?? (address1 ?? defaultAddress));
       final bool showPhone = tmpl['showPhone'] != false;
-      final String phoneStr = tmpl['phone']?.toString() ?? (phone ?? '');
+      final String phoneStr = cleanEmojisForPdf(tmpl['phone']?.toString() ?? (phone ?? defaultPhone));
       final bool showFiscalInfo = tmpl['showFiscalInfo'] == true;
-      final String fiscalInfo = tmpl['fiscalInfo']?.toString() ?? '';
+      final String fiscalInfo = cleanEmojisForPdf(tmpl['fiscalInfo']?.toString() ?? '');
       final bool showCashierName = tmpl['showCashierName'] != false;
-      final String cashierName = tmpl['cashierName']?.toString() ?? 'الكاشير: سليم';
+      final String cashierName = cleanEmojisForPdf(tmpl['cashierName']?.toString() ?? 'الكاشير: سليم');
       final bool showSocialMedia = tmpl['showSocialMedia'] == true;
-      final String socialMedia = tmpl['socialMedia']?.toString() ?? '';
+      final String socialMedia = cleanEmojisForPdf(tmpl['socialMedia']?.toString() ?? '');
+      final bool showFooterNote = tmpl['showFooterNote'] != false;
+      final String footerNote = cleanEmojisForPdf(tmpl['footerNote']?.toString() ?? (footer ?? 'السلعة المباعة لا ترد ولا تستبدل بعد 48 ساعة'));
       final bool showThankYou = tmpl['showThankYou'] != false;
-      final String thankYou = tmpl['thankYou']?.toString() ?? (footer ?? 'شكراً لزيارتكم ونتشرف بخدمتكم دائماً');
-      final bool showBarcodeAtBottom = tmpl['showBarcodeAtBottom'] == true;
+      final String thankYou = cleanEmojisForPdf(tmpl['thankYou']?.toString() ?? 'شكراً لزيارتكم ونتشرف بخدمتكم دائماً');
+      final bool showBarcodeAtBottom = tmpl['showBarcodeAtBottom'] != false;
       final String separatorStyle = tmpl['separatorStyle']?.toString() ?? 'dashed';
-      
-      String getSeparator() {
+      final String headerAlignment = tmpl['headerAlignment']?.toString() ?? 'center';
+      final List<String> customExtraLines = (tmpl['customExtraLines'] is Iterable)
+          ? List<String>.from((tmpl['customExtraLines'] as Iterable).map((e) => cleanEmojisForPdf(e.toString())).where((s) => s.isNotEmpty))
+          : [];
+
+      final String displayInvoiceNumber = (invoiceId != null && invoiceId.isNotEmpty)
+          ? (invoiceId.startsWith('FAC-') ? invoiceId : 'FAC-${invoiceId.length > 5 ? invoiceId.substring(invoiceId.length - 5) : invoiceId}')
+          : 'FAC-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+      String getSeparatorText() {
         if (separatorStyle == 'stars') return '********************************';
         if (separatorStyle == 'double') return '================================';
         if (separatorStyle == 'dots') return '................................';
         return '--------------------------------';
       }
       
-      final sep = pw.Text(getSeparator(), style: const pw.TextStyle(fontSize: 8));
+      final sep = pw.Padding(
+        padding: const pw.EdgeInsets.symmetric(vertical: 2.5),
+        child: pw.Center(
+          child: pw.Text(getSeparatorText(), style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700), maxLines: 1),
+        ),
+      );
 
-      // Calculate approximate height to prevent double.infinity crash on Windows POS
-      double heightEstimate = 120 + (items.length * 15) + 120;
-      final pageFormat = PdfPageFormat(72 * PdfPageFormat.mm, heightEstimate * PdfPageFormat.mm, marginAll: 4 * PdfPageFormat.mm);
+      final pw.CrossAxisAlignment crossAlign = headerAlignment == 'left'
+          ? pw.CrossAxisAlignment.start
+          : (headerAlignment == 'right' ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.center);
+      final pw.TextAlign headerTextAlign = headerAlignment == 'left'
+          ? pw.TextAlign.left
+          : (headerAlignment == 'right' ? pw.TextAlign.right : pw.TextAlign.center);
+
+      final paperSize = box.get('printer_paper_size', defaultValue: '80mm') as String;
+      final double rollWidthMm = paperSize == '58mm' ? 48.0 : 72.0;
+
+      // Calculate approximate height dynamically to prevent clipping or excessive blank feed
+      double baseHeight = 150.0;
+      if (showSlogan && slogan.isNotEmpty) baseHeight += 6.0;
+      if (showAddress && address.isNotEmpty) baseHeight += 6.0;
+      if (showPhone && phoneStr.isNotEmpty) baseHeight += 6.0;
+      if (showFiscalInfo && fiscalInfo.isNotEmpty) baseHeight += 6.0;
+      if (showSocialMedia && socialMedia.isNotEmpty) baseHeight += 6.0;
+      if (showCashierName && cashierName.isNotEmpty) baseHeight += 6.0;
+      if (discount > 0) baseHeight += 6.0;
+      if (paidAmount > 0) baseHeight += 12.0;
+      if (isCredit) baseHeight += 32.0;
+      if (customExtraLines.isNotEmpty) baseHeight += (customExtraLines.length * 6.0);
+      if (showFooterNote && footerNote.isNotEmpty) baseHeight += 10.0;
+      if (showThankYou && thankYou.isNotEmpty) baseHeight += 10.0;
+      if (showBarcodeAtBottom) baseHeight += 25.0;
+
+      final double heightEstimate = (baseHeight + (items.length * 7.5)).clamp(160.0, 9999.0);
+
+      final pageFormat = PdfPageFormat(
+        rollWidthMm * PdfPageFormat.mm,
+        heightEstimate * PdfPageFormat.mm,
+        marginLeft: 2.5 * PdfPageFormat.mm,
+        marginRight: 2.5 * PdfPageFormat.mm,
+        marginTop: 6 * PdfPageFormat.mm,
+        marginBottom: 10 * PdfPageFormat.mm,
+      );
       
       final doc = pw.Document();
       doc.addPage(
@@ -229,38 +305,114 @@ static Future<bool> printReceiptWindows({
             return pw.Directionality(
               textDirection: pw.TextDirection.rtl,
               child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                crossAxisAlignment: crossAlign,
                 children: [
-                  pw.Text(finalShopName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
-                  if (showSlogan && slogan.isNotEmpty) pw.Text(slogan, style: const pw.TextStyle(fontSize: 9)),
-                  if (showAddress && address.isNotEmpty) pw.Text(address, style: const pw.TextStyle(fontSize: 8.5)),
-                  if (showPhone && phoneStr.isNotEmpty) pw.Text(phoneStr, style: const pw.TextStyle(fontSize: 8.5)),
-                  if (showFiscalInfo && fiscalInfo.isNotEmpty) pw.Text(fiscalInfo, style: const pw.TextStyle(fontSize: 7.5)),
-                  if (showSocialMedia && socialMedia.isNotEmpty) pw.Text(socialMedia, style: const pw.TextStyle(fontSize: 8.5)),
+                  // Store Header
+                  pw.Text(
+                    finalShopName.isEmpty ? 'اسم المحل' : finalShopName,
+                    textAlign: headerTextAlign,
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13.5),
+                  ),
+                  if (showSlogan && slogan.isNotEmpty) ...[
+                    pw.SizedBox(height: 2),
+                    pw.Text(slogan, textAlign: headerTextAlign, style: pw.TextStyle(fontSize: 8.5, fontStyle: pw.FontStyle.italic)),
+                  ],
+                  if (showAddress && address.isNotEmpty) ...[
+                    pw.SizedBox(height: 1.5),
+                    pw.Text(address, textAlign: headerTextAlign, style: const pw.TextStyle(fontSize: 8)),
+                  ],
+                  if (showPhone && phoneStr.isNotEmpty) ...[
+                    pw.SizedBox(height: 1.5),
+                    pw.Text(phoneStr, textAlign: headerTextAlign, style: const pw.TextStyle(fontSize: 8)),
+                  ],
+                  if (showFiscalInfo && fiscalInfo.isNotEmpty) ...[
+                    pw.SizedBox(height: 1.5),
+                    pw.Text(fiscalInfo, textAlign: headerTextAlign, style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
+                  ],
+                  if (showSocialMedia && socialMedia.isNotEmpty) ...[
+                    pw.SizedBox(height: 1.5),
+                    pw.Text(socialMedia, textAlign: headerTextAlign, style: const pw.TextStyle(fontSize: 8)),
+                  ],
                   
-                  pw.SizedBox(height: 4),
+                  sep,
+                  
+                  // Invoice ID and Date
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
+                      pw.Text('وصل رقم: #$displayInvoiceNumber', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
                       pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
-                      pw.Text('وصل رقم: #', style: const pw.TextStyle(fontSize: 8)),
-                    ]
+                    ],
                   ),
-                  if (showCashierName) pw.Text(cashierName, style: const pw.TextStyle(fontSize: 8)),
+                  if (showCashierName && cashierName.isNotEmpty) ...[
+                    pw.SizedBox(height: 1.5),
+                    pw.Align(
+                      alignment: pw.Alignment.centerRight,
+                      child: pw.Text(cashierName, style: const pw.TextStyle(fontSize: 8)),
+                    ),
+                  ],
                   
-                  pw.SizedBox(height: 2),
                   sep,
                   
+                  // Table Header
+                  pw.Row(
+                    children: [
+                      pw.Expanded(
+                        flex: 5,
+                        child: pw.Text('السلعة', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Text('الكمية', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                      ),
+                      pw.Expanded(
+                        flex: 3,
+                        child: pw.Text('السعر', textAlign: pw.TextAlign.left, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 2),
+
+                  // Table Items Loop
                   ...items.map((item) {
+                    final rawName = item['name']?.toString() ?? 'منتج';
+                    final cleanName = cleanEmojisForPdf(rawName);
+
+                    final dynamic rawQty = item['qty'];
+                    final dynamic rawWeight = item['weightKg'];
+                    String qtyStr = '1';
+                    if (rawWeight != null && rawWeight is num && rawWeight > 0) {
+                      qtyStr = '${rawWeight.toStringAsFixed(3)}كغ';
+                    } else if (rawQty is num) {
+                      if (rawQty == rawQty.roundToDouble()) {
+                        qtyStr = rawQty.toInt().toString();
+                      } else {
+                        qtyStr = rawQty.toStringAsFixed(2);
+                      }
+                    } else if (rawQty != null) {
+                      qtyStr = rawQty.toString();
+                    }
+
+                    final double itemTotal = (item['total'] as num?)?.toDouble() ?? 0.0;
+                    final String totalStr = '${itemTotal.toStringAsFixed(2)} دج';
+
                     return pw.Padding(
                       padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
                       child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Expanded(
-                            child: pw.Text('x ', style: const pw.TextStyle(fontSize: 8.5)),
+                            flex: 5,
+                            child: pw.Text(cleanName, style: const pw.TextStyle(fontSize: 8)),
                           ),
-                          pw.Text(' دج', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                          pw.Expanded(
+                            flex: 2,
+                            child: pw.Text(qtyStr, textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 8)),
+                          ),
+                          pw.Expanded(
+                            flex: 3,
+                            child: pw.Text(totalStr, textAlign: pw.TextAlign.left, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                          ),
                         ],
                       ),
                     );
@@ -268,41 +420,136 @@ static Future<bool> printReceiptWindows({
                   
                   sep,
                   
-                  if (discount > 0)
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text('تخفيض:', style: const pw.TextStyle(fontSize: 8.5)),
-                        pw.Text('- دج', style: const pw.TextStyle(fontSize: 8.5)),
-                      ],
-                    ),
+                  // Total & Discounts
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Text('المجموع الإجمالي:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                      pw.Text(' دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                      pw.Text('المجموع الإجمالي (Total):', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                      pw.Text('${total.toStringAsFixed(2)} دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                     ],
                   ),
-                  
-                  if (isCredit && customerName != null) ...[
-                    sep,
-                    pw.Text('كريدي للزبون: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
-                    if (previousDebt > 0) pw.Text('الديون السابقة:  دج', style: const pw.TextStyle(fontSize: 8)),
-                    pw.Text('إجمالي الديون:  دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+
+                  if (discount > 0) ...[
+                    pw.SizedBox(height: 1.5),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('التخفيض:', style: const pw.TextStyle(fontSize: 8)),
+                        pw.Text('-${discount.toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
+                      ],
+                    ),
+                  ],
+
+                  if (paidAmount > 0) ...[
+                    pw.SizedBox(height: 1.5),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('المبلغ المدفوع (Espèce):', style: const pw.TextStyle(fontSize: 8)),
+                        pw.Text('${paidAmount.toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
+                      ],
+                    ),
+                  ],
+
+                  if (paidAmount > total) ...[
+                    pw.SizedBox(height: 1.5),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('المبلغ المتبقي (Rendu):', style: const pw.TextStyle(fontSize: 8)),
+                        pw.Text('${(paidAmount - total).toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
+                      ],
+                    ),
                   ],
                   
-                  pw.SizedBox(height: 8),
-                  if (showThankYou) pw.Text(thankYou, style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center),
-                  
-                  if (showBarcodeAtBottom) ...[
-                    pw.SizedBox(height: 8),
-                    pw.BarcodeWidget(
-                      barcode: pw.Barcode.qrCode(),
-                      data: 'NayliMarket_',
-                      width: 50,
-                      height: 50,
+                  // Credit Block
+                  if (isCredit && customerName != null && customerName.isNotEmpty) ...[
+                    sep,
+                    pw.Align(
+                      alignment: pw.Alignment.centerRight,
+                      child: pw.Text('حساب كريدي الزبون: $customerName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
                     ),
-                  ]
+                    if (previousDebt > 0) ...[
+                      pw.SizedBox(height: 1),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('الديون السابقة:', style: const pw.TextStyle(fontSize: 8)),
+                          pw.Text('${previousDebt.toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
+                        ],
+                      ),
+                    ],
+                    pw.SizedBox(height: 1),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('مشتريات اليوم:', style: const pw.TextStyle(fontSize: 8)),
+                        pw.Text('${total.toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
+                      ],
+                    ),
+                    if (paidAmount > 0) ...[
+                      pw.SizedBox(height: 1),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('الدفعة المسددة:', style: const pw.TextStyle(fontSize: 8)),
+                          pw.Text('${paidAmount.toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
+                        ],
+                      ),
+                    ],
+                    pw.SizedBox(height: 1),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('إجمالي الديون المتبقية:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                        pw.Text('${newDebtTotal.toStringAsFixed(2)} دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                      ],
+                    ),
+                  ],
+
+                  // Custom Extra Lines
+                  if (customExtraLines.isNotEmpty) ...[
+                    sep,
+                    ...customExtraLines.map((line) => pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 1),
+                      child: pw.Center(
+                        child: pw.Text(line, textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                      ),
+                    )),
+                  ],
+                  
+                  // Footer Note & Thank You
+                  if (showFooterNote && footerNote.isNotEmpty) ...[
+                    pw.SizedBox(height: 3),
+                    pw.Center(
+                      child: pw.Text(footerNote, textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 8)),
+                    ),
+                  ],
+
+                  if (showThankYou && thankYou.isNotEmpty) ...[
+                    pw.SizedBox(height: 3),
+                    pw.Center(
+                      child: pw.Text(thankYou, textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                    ),
+                  ],
+
+                  // Barcode / QR Code
+                  if (showBarcodeAtBottom) ...[
+                    pw.SizedBox(height: 5),
+                    pw.Center(
+                      child: pw.BarcodeWidget(
+                        barcode: pw.Barcode.qrCode(),
+                        data: displayInvoiceNumber,
+                        width: 44,
+                        height: 44,
+                      ),
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Center(
+                      child: pw.Text('* $displayInvoiceNumber *', style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
+                    ),
+                  ],
+                  pw.SizedBox(height: 6),
                 ],
               ),
             );
@@ -322,10 +569,10 @@ static Future<bool> printReceiptWindows({
       if (target != null) {
         return await Printing.directPrintPdf(printer: target, onLayout: (_) => bytes, usePrinterSettings: true);
       } else {
-        return await Printing.layoutPdf(onLayout: (_) => bytes, name: 'Nayli_Receipt_');
+        return await Printing.layoutPdf(onLayout: (_) => bytes, name: 'Nayli_Receipt_$displayInvoiceNumber');
       }
     } catch (e) {
-      print('Print Error: ');
+      debugPrint('Print Error: $e');
       return false;
     }
   }
@@ -416,6 +663,7 @@ static Future<bool> printReceiptWindows({
     String? footer,
     List<String> extraLines = const [],
     String? specificPrinterName,
+    String? invoiceId,
   }) async {
     // If running on Windows desktop, use native Windows spooler
     if (Platform.isWindows) {
@@ -434,6 +682,7 @@ static Future<bool> printReceiptWindows({
         newDebtTotal: newDebtTotal,
         footer: footer,
         specificPrinterName: specificPrinterName,
+        invoiceId: invoiceId,
       );
       return;
     }
