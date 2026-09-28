@@ -99,7 +99,8 @@ class QuickItemsManagerDialog extends StatefulWidget {
 
 class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
   List<QuickItemData> _items = [];
-  bool _isLoading = true;\n  Set<String> _selectedIds = {};
+  bool _isLoading = true;
+  Set<String> _selectedIds = {};
 
   static const List<String> _popularEmojis = [
     '☕', '🟤', '🍵', '🥖', '🥐', '🥚', '🍲', '🫓', '🥛', '💧', '🛍️',

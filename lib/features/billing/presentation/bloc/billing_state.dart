@@ -9,7 +9,8 @@ class BillingState extends Equatable {
   final double paidAmount;
   final double discountValue;
   final bool isDiscountPercentage;
-  final bool isReturnMode;\n  final String? stockWarning;
+  final bool isReturnMode;
+  final String? stockWarning;
 
   const BillingState({
     this.cartItems = const [],
@@ -20,7 +21,8 @@ class BillingState extends Equatable {
     this.paidAmount = 0.0,
     this.discountValue = 0.0,
     this.isDiscountPercentage = false,
-    this.isReturnMode = false,\n    this.stockWarning,
+    this.isReturnMode = false,
+    this.stockWarning,
   });
 
   double get subTotalAmount => cartItems.fold(0, (sum, item) => sum + item.total);
@@ -40,7 +42,9 @@ class BillingState extends Equatable {
     double? paidAmount,
     double? discountValue,
     bool? isDiscountPercentage,
-    bool? isReturnMode,\n    String? stockWarning,\n    bool clearStockWarning = false,
+    bool? isReturnMode,
+    String? stockWarning,
+    bool clearStockWarning = false,
   }) {
     return BillingState(
       cartItems: cartItems ?? this.cartItems,
@@ -51,7 +55,8 @@ class BillingState extends Equatable {
       paidAmount: paidAmount ?? this.paidAmount,
       discountValue: discountValue ?? this.discountValue,
       isDiscountPercentage: isDiscountPercentage ?? this.isDiscountPercentage,
-      isReturnMode: isReturnMode ?? this.isReturnMode,\n      stockWarning: clearStockWarning ? null : (stockWarning ?? this.stockWarning),
+      isReturnMode: isReturnMode ?? this.isReturnMode,
+      stockWarning: clearStockWarning ? null : (stockWarning ?? this.stockWarning),
     );
   }
 
@@ -66,5 +71,6 @@ class BillingState extends Equatable {
         discountValue,
         isDiscountPercentage,
         isReturnMode,
+        stockWarning,
       ];
 }

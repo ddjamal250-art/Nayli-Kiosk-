@@ -22,7 +22,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
   BillingBloc({required this.getProductByBarcodeUseCase})
       : super(const BillingState()) {
     on<ScanBarcodeEvent>(_onScanBarcode);
-    on<AddProductToCartEvent>(_onAddProductToCart);\n    on<ClearStockWarningEvent>((event, emit) => emit(state.copyWith(clearStockWarning: true)));
+    on<AddProductToCartEvent>(_onAddProductToCart);
+    on<ClearStockWarningEvent>((event, emit) => emit(state.copyWith(clearStockWarning: true)));
     on<SwitchCartItemUnitEvent>(_onSwitchCartItemUnit);
     on<AddCustomItemEvent>(_onAddCustomItem);
     on<RemoveProductFromCartEvent>(_onRemoveProductFromCart);
