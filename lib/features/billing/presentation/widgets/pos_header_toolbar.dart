@@ -141,7 +141,7 @@ class PosHeaderToolbar extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(width: 18),
+              const Spacer(),
 
               // Quick Actions Toolbar Buttons
 
@@ -464,7 +464,7 @@ class PosHeaderToolbar extends StatelessWidget {
               IconButton(
                 tooltip: context.tr('settings'),
                 icon: Icon(
-                  Icons.settings_suggest_rounded,
+                  Icons.settings_rounded,
                   color: isDarkHeader ? Colors.white70 : Colors.blueGrey.shade700,
                   size: 24,
                 ),

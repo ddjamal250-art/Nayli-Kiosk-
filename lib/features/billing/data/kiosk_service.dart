@@ -245,7 +245,7 @@ class KioskService {
 
     int existingIndex = list.indexWhere((item) => item['barcode'] == barcode);
     if (existingIndex >= 0) {
-      list[existingIndex]['scanCount'] = (list[existingIndex]['scanCount'] as int? ?? 1) + 1;
+      list[existingIndex]['scanCount'] = ((list[existingIndex]['scanCount'] as num?)?.toInt() ?? 1) + 1;
       list[existingIndex]['lastScanned'] = now.toIso8601String();
     } else {
       list.insert(0, {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/product_image_picker_field.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -53,10 +54,20 @@ class _EditProductPageState extends State<EditProductPage> {
   late String _selectedCategory;
   List<String> _availableCategories = [];
   bool _isSaving = false;
+  String? _imageUrl;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_hasCarton && _hasPack) {
+        final cCap = double.tryParse(_cartonCapacityCtrl.text) ?? 24.0;
+        final pCap = double.tryParse(_packCapacityCtrl.text) ?? 6.0;
+        if (pCap > 0) {
+          _cartonCapacityCtrl.text = (cCap / pCap).toStringAsFixed(0);
+        }
+      }
+    });
     _availableCategories = CategoryTaxonomy.getDropdownCategories();
     final p = widget.product;
     _barcodeCtrl = TextEditingController(text: p.barcode);
@@ -65,6 +76,7 @@ class _EditProductPageState extends State<EditProductPage> {
     _costPriceCtrl = TextEditingController(text: p.costPrice > 0 ? p.costPrice.toStringAsFixed(0) : '');
     _stockCtrl = TextEditingController(text: p.stock.toStringAsFixed(0));
     _baseUnitNameCtrl = TextEditingController(text: p.baseUnitName);
+    _imageUrl = p.imageUrl;
     _pluCodeCtrl = TextEditingController(text: p.pluCode ?? '');
     _selectedCategory = _availableCategories.contains(p.category) ? p.category : 'عام';
 
@@ -176,14 +188,17 @@ class _EditProductPageState extends State<EditProductPage> {
     // بناء وحدات البيع (كرتونة، علبة، حبة)
     final List<ProductUnit> units = [];
     if (_hasCarton) {
-      final cap = double.tryParse(_cartonCapacityCtrl.text.trim()) ?? 24.0;
+      final cartonCapUI = double.tryParse(_cartonCapacityCtrl.text.trim()) ?? 24.0;
+      final packCapUI = double.tryParse(_packCapacityCtrl.text.trim()) ?? 6.0;
+      final cartonMultiplier = _hasPack ? (cartonCapUI * packCapUI) : cartonCapUI;
+
       final pr = double.tryParse(_cartonPriceCtrl.text.trim()) ?? 0.0;
       final cst = double.tryParse(_cartonCostCtrl.text.trim()) ?? 0.0;
       final bc = _cartonBarcodeCtrl.text.trim();
       units.add(ProductUnit(
         name: 'كرتونة',
         tier: UnitTier.large,
-        multiplier: cap,
+        multiplier: cartonMultiplier,
         price: pr,
         cost: cst,
         barcode: bc.isNotEmpty ? bc : null,
@@ -227,6 +242,7 @@ class _EditProductPageState extends State<EditProductPage> {
       costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0,
       stock: double.tryParse(_stockCtrl.text.trim()) ?? 0.0,
       category: _selectedCategory,
+      imageUrl: _imageUrl,
       baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
       units: units,
       specialOffer: offer,
@@ -263,6 +279,11 @@ class _EditProductPageState extends State<EditProductPage> {
               title: 'المعلومات الأساسية',
               icon: Icons.info_outline,
               children: [
+                ProductImagePickerField(
+                  initialImagePath: _imageUrl,
+                  onImageChanged: (path) => setState(() => _imageUrl = path),
+                ),
+                const SizedBox(height: 16),
                 const InputLabel(text: 'اسم المنتج'),
                 TextFormField(
                   controller: _nameCtrl,

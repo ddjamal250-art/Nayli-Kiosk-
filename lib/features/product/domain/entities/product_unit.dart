@@ -10,12 +10,10 @@ enum UnitTier {
 class ProductUnit extends Equatable {
   final String name; // e.g. "علبة", "فاردو", "كرتونة"
   final UnitTier tier;
-  final double multiplier; // Changed to double to support weight/capacity
+  final double multiplier; // Capacity in base pieces
   final String? barcode;
   final double price; // Selling price for this specific unit
   final double cost; // Cost price for this specific unit
-  final double? wholesalePrice;
-  final double? costPrice;
   /// هل الوحدة مُفعَّلة وتظهر في الكاشير؟
   final bool isEnabled;
   /// هل هي وحدة ميزان؟ (السعر دج/كغ بدل سعر ثابت)
@@ -28,8 +26,6 @@ class ProductUnit extends Equatable {
     this.barcode,
     required this.price,
     this.cost = 0.0,
-    this.wholesalePrice,
-    this.costPrice,
     this.isEnabled = true,
     this.isWeighable = false,
   });
@@ -41,8 +37,6 @@ class ProductUnit extends Equatable {
     String? barcode,
     double? price,
     double? cost,
-    double? wholesalePrice,
-    double? costPrice,
     bool? isEnabled,
     bool? isWeighable,
   }) {
@@ -53,8 +47,6 @@ class ProductUnit extends Equatable {
       barcode: barcode ?? this.barcode,
       price: price ?? this.price,
       cost: cost ?? this.cost,
-      wholesalePrice: wholesalePrice ?? this.wholesalePrice,
-      costPrice: costPrice ?? this.costPrice,
       isEnabled: isEnabled ?? this.isEnabled,
       isWeighable: isWeighable ?? this.isWeighable,
     );
@@ -63,6 +55,6 @@ class ProductUnit extends Equatable {
   @override
   List<Object?> get props => [
     name, tier, multiplier, barcode, price, cost,
-    wholesalePrice, costPrice, isEnabled, isWeighable,
+    isEnabled, isWeighable,
   ];
 }

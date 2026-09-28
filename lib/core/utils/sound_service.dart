@@ -54,7 +54,7 @@ class SoundService {
 
   static int getSelectedThemeId() {
     try {
-      return HiveDatabase.settingsBox.get(_soundThemeKey, defaultValue: 11) as int;
+      return (HiveDatabase.settingsBox.get(_soundThemeKey, defaultValue: 11) as num?)?.toInt() ?? 11;
     } catch (_) {
       return 11;
     }

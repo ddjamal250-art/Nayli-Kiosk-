@@ -32,7 +32,7 @@ class NotificationService {
   }
 
   static int getLowStockThreshold() {
-    return HiveDatabase.settingsBox.get(_lowStockThresholdKey, defaultValue: 5) as int;
+    return (HiveDatabase.settingsBox.get(_lowStockThresholdKey, defaultValue: 5) as num?)?.toInt() ?? 5;
   }
 
   static Future<void> setLowStockThreshold(int threshold) async {

@@ -325,7 +325,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                       id: k['id']?.toString() ?? '',
                       name: k['name']?.toString() ?? 'كشك فاحص الأسعار',
                       status: k['status']?.toString() ?? 'online',
-                      totalScans: (k['totalScans'] as int?) ?? 0,
+                      totalScans: (k['totalScans'] as num?)?.toInt() ?? 0,
                       ip: k['ip']?.toString() ?? '',
                     )).toList(),
                     onRefresh: () {

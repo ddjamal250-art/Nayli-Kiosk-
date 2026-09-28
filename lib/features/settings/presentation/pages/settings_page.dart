@@ -853,12 +853,7 @@ SizedBox(height: 20),
                 child: Text('تفعيل ⚡', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold, fontSize: 11)),
               ),
         onTap: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (_) => ActivationModal(),
-          );
+          ActivationModal.show(context);
         },
       ),
       _buildDivider(),
@@ -1749,37 +1744,68 @@ SizedBox(height: 20),
   }
 
   void _showAboutModal(BuildContext context) {
-    showModalBottomSheet(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), shape: BoxShape.circle),
-              child: Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 36),
-            ),
-            SizedBox(height: 12),
-            Text('نايل كشك لإدارة نقاط البيع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            SizedBox(height: 4),
-            Text('نظام الكاشير وإدارة السوبرماركت والمخزون الذكي', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            SizedBox(height: 14),
-            Text('الإصدار: 1.4.0', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-            SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                minimumSize: Size(double.infinity, 44),
+      desktopMaxWidth: 460,
+      backgroundColor: bgColor,
+      builder: (ctx) => Material(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          color: bgColor,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 40),
               ),
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(context.tr('إغلاق'), style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
+              const SizedBox(height: 14),
+              const Text(
+                'نايل كشك لإدارة نقاط البيع',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'نظام الكاشير وإدارة السوبرماركت والمخزون الذكي',
+                style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600, fontSize: 12.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                ),
+                child: Text(
+                  'الإصدار: 1.4.0',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                ),
+              ),
+              const SizedBox(height: 22),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  minimumSize: const Size(double.infinity, 44),
+                ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(context.tr('إغلاق'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              ),
+            ],
+          ),
         ),
       ),
     );

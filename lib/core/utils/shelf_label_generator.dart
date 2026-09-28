@@ -186,41 +186,10 @@ class ShelfLabelGenerator {
   }) async {
     final doc = pw.Document();
 
-    pw.Font fontRegular;
-    pw.Font fontBold;
-
-    if (Platform.isWindows) {
-      final fontFile = File(r'C:\Windows\Fonts\tahoma.ttf');
-      if (fontFile.existsSync()) {
-        final winFont = pw.Font.ttf(fontFile.readAsBytesSync().buffer.asByteData());
-        fontRegular = winFont;
-        fontBold = winFont;
-      } else {
-        final fontFile2 = File(r'C:\Windows\Fonts\arial.ttf');
-        if (fontFile2.existsSync()) {
-          final winFont2 = pw.Font.ttf(fontFile2.readAsBytesSync().buffer.asByteData());
-          fontRegular = winFont2;
-          fontBold = winFont2;
-        } else {
-          try {
-            fontRegular = await PdfGoogleFonts.cairoRegular();
-            fontBold = await PdfGoogleFonts.cairoBold();
-          } catch (_) {
-            fontRegular = pw.Font.helvetica();
-            fontBold = pw.Font.helveticaBold();
-          }
-        }
-      }
-    } else {
-      try {
-        fontRegular = await PdfGoogleFonts.cairoRegular();
-        fontBold = await PdfGoogleFonts.cairoBold();
-      } catch (_) {
-        fontRegular = pw.Font.helvetica();
-        fontBold = pw.Font.helveticaBold();
-      }
-    }
-
+    final fontRegData = await rootBundle.load('assets/fonts/Tajawal-Regular.ttf');
+    final fontBldData = await rootBundle.load('assets/fonts/Tajawal-Bold.ttf');
+    final fontRegular = pw.Font.ttf(fontRegData);
+    final fontBold = pw.Font.ttf(fontBldData);
     final theme = pw.ThemeData.withFont(base: fontRegular, bold: fontBold);
 
     // Expand items by copy count
@@ -312,11 +281,11 @@ class ShelfLabelGenerator {
 
     switch (config.template) {
       case ShelfLabelTemplate.shelfTag:
-        return _buildShelfTagTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr);
+        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildShelfTagTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr));
       case ShelfLabelTemplate.productSticker:
-        return _buildProductStickerTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr);
+        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildProductStickerTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr));
       case ShelfLabelTemplate.scaleWeight:
-        return _buildScaleWeightTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr);
+        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildScaleWeightTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr));
     }
   }
 

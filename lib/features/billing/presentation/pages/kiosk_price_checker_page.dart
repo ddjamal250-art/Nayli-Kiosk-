@@ -77,7 +77,7 @@ class _KioskPriceCheckerPageState extends State<KioskPriceCheckerPage>
   void _loadSettings() {
     final cfg = KioskService.getSettings();
     setState(() {
-      _displayDuration = cfg['productDisplayDuration'] as int? ?? 10;
+      _displayDuration = (cfg['productDisplayDuration'] as num?)?.toInt() ?? 10;
       _secondsLeft = _displayDuration;
       _arrowDirection = cfg['arrowDirection'] as String? ?? 'down';
       _greetingTitle = cfg['greetingTitle'] as String? ?? 'مرحباً بكم في متجرنا';

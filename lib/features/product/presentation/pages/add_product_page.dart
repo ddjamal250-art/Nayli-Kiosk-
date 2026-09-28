@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/product_image_picker_field.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -132,14 +133,17 @@ class _AddProductPageState extends State<AddProductPage> {
     // بناء وحدات البيع (كرتونة، علبة، حبة)
     final List<ProductUnit> units = [];
     if (_hasCarton) {
-      final cap = double.tryParse(_cartonCapacityCtrl.text.trim()) ?? 24.0;
+      final cartonCapUI = double.tryParse(_cartonCapacityCtrl.text.trim()) ?? 24.0;
+      final packCapUI = double.tryParse(_packCapacityCtrl.text.trim()) ?? 6.0;
+      final cartonMultiplier = _hasPack ? (cartonCapUI * packCapUI) : cartonCapUI;
+      
       final pr = double.tryParse(_cartonPriceCtrl.text.trim()) ?? 0.0;
       final cst = double.tryParse(_cartonCostCtrl.text.trim()) ?? 0.0;
       final bc = _cartonBarcodeCtrl.text.trim();
       units.add(ProductUnit(
         name: 'كرتونة',
         tier: UnitTier.large,
-        multiplier: cap,
+        multiplier: cartonMultiplier,
         price: pr,
         cost: cst,
         barcode: bc.isNotEmpty ? bc : null,
@@ -223,6 +227,11 @@ class _AddProductPageState extends State<AddProductPage> {
               title: 'المعلومات الأساسية',
               icon: Icons.info_outline,
               children: [
+                ProductImagePickerField(
+                  initialImagePath: _imageUrl,
+                  onImageChanged: (path) => setState(() => _imageUrl = path),
+                ),
+                const SizedBox(height: 16),
                 const InputLabel(text: 'اسم المنتج'),
                 TextFormField(
                   controller: _nameCtrl,

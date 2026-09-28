@@ -131,8 +131,8 @@ class HeaderBrandingCubit extends Cubit<HeaderBrandingState> {
   static HeaderBrandingState _getInitialState() {
     try {
       final savedPresetId = HiveDatabase.settingsBox.get(presetKey) as String?;
-      final savedHeaderHex = HiveDatabase.settingsBox.get(headerColorKey) as int?;
-      final savedAccentHex = HiveDatabase.settingsBox.get(accentColorKey) as int?;
+      final savedHeaderHex = (HiveDatabase.settingsBox.get(headerColorKey) as num?)?.toInt();
+      final savedAccentHex = (HiveDatabase.settingsBox.get(accentColorKey) as num?)?.toInt();
 
       if (savedPresetId != null) {
         final found = presets.where((p) => p.id == savedPresetId);

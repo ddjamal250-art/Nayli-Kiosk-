@@ -504,7 +504,7 @@ class LocalSyncServer {
     final body = await utf8.decoder.bind(request).join();
     final data = jsonDecode(body) as Map<String, dynamic>;
     await KioskService.saveSettings(
-      productDisplayDuration: data['productDisplayDuration'] as int?,
+      productDisplayDuration: (data['productDisplayDuration'] as num?)?.toInt(),
       arrowDirection: data['arrowDirection'] as String?,
       greetingTitle: data['greetingTitle'] as String?,
       greetingSubtitle: data['greetingSubtitle'] as String?,
@@ -527,7 +527,7 @@ class LocalSyncServer {
 
     // Register active kiosk without consuming cashier quotas
     final existing = activeKiosks[kioskId];
-    final totalScans = (existing?['totalScans'] as int? ?? 0) + (barcode.isNotEmpty ? 1 : 0);
+    final totalScans = ((existing?['totalScans'] as num?)?.toInt() ?? 0) + (barcode.isNotEmpty ? 1 : 0);
     activeKiosks[kioskId] = {
       'id': kioskId,
       'name': kioskName,

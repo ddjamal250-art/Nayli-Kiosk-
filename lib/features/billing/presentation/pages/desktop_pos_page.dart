@@ -1178,6 +1178,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   }
 
   bool _handleGlobalHardwareKey(KeyEvent event) {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return false;
     if (event is! KeyDownEvent) return false;
 
     // Hardware Scanner Wedge rapid typing listener
@@ -2493,8 +2494,10 @@ $itemsSummary
         final cData = cBox.get(_selectedCustomerId);
         if (cData is Map) {
           final updatedData = Map<String, dynamic>.from(cData);
-          final currentDebt = (updatedData['debt'] as num?)?.toDouble() ?? 0.0;
-          updatedData['debt'] = currentDebt + total;
+          final currentDebt = (updatedData['debt'] as num?)?.toDouble() ?? (updatedData['currentDebt'] as num?)?.toDouble() ?? 0.0;
+          final newDebt = _isReturnMode ? (currentDebt - total).clamp(0.0, double.infinity) : currentDebt + total;
+          updatedData['debt'] = newDebt;
+          updatedData['currentDebt'] = newDebt;
           await cBox.put(_selectedCustomerId, updatedData);
         }
       } catch (e) {
@@ -2517,8 +2520,53 @@ $itemsSummary
   }
 
   @override
+  void _showStockWarning(String productId, String productName) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            const SizedBox(width: 8),
+            Text('تنبيه نفاد المخزون', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Text('الكمية المطلوبة من المنتج ($productName) تتجاوز المخزون المتوفر حالياً.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+            },
+            child: Text('تجاهل', style: const TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () {
+              Navigator.pop(ctx);
+              // Navigate to manage stock or edit product
+              // Usually we might open EditProductPage or stock quick adjust
+            },
+            child: Text('إدارة المخزون', style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<BillingBloc, BillingState>(
+      listenWhen: (previous, current) => current.stockWarning != previous.stockWarning && current.stockWarning != null,
+      listener: (context, state) {
+        if (state.stockWarning != null) {
+          final parts = state.stockWarning!.split('|');
+          if (parts.length >= 2) {
+            _showStockWarning(parts[0], parts[1]);
+          }
+          context.read<BillingBloc>().add(ClearStockWarningEvent());
+        }
+      },
+      child: Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
           child: Column(
@@ -2556,7 +2604,8 @@ $itemsSummary
             ],
           ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildActiveModeNotice() {
@@ -2751,7 +2800,7 @@ $itemsSummary
                         separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
                         itemBuilder: (context, index) {
                           final item = state.cartItems[index];
-                          final hasMulti = item.product.hasMultiUnit;
+                          final hasMulti = item.product.units.isNotEmpty;
                           return ListTile(
                             dense: true,
                             onTap: hasMulti ? () => UniversalUnitSelectorDialog.showForCartItem(context, item) : null,
@@ -3421,86 +3470,30 @@ $itemsSummary
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Top Categories Bar (Horizontally scrollable with left-to-right swipe)
-          Container(
-            height: 52,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Theme.of(context).dividerColor),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-              ],
-            ),
-            child: ListView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              scrollDirection: Axis.horizontal,
-              children: [
-                // Quick Items Title & Manage Button
-                InkWell(
-                  onTap: _openQuickItemsManager,
+          // 1. Shared Categories Bar
+          SharedCategoryBar(
+            selectedCategory: _selectedCategoryKey,
+            onCategoryChanged: (catKey, catName) {
+              _showCategoryProductsModal(catKey, catName);
+            },
+            leadingAction: InkWell(
+              onTap: _openQuickItemsManager,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade50,
                   borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.teal.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.teal.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
-                        const SizedBox(width: 4),
-                        Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
-                      ],
-                    ),
-                  ),
+                  border: Border.all(color: Colors.teal.shade200),
                 ),
-                const SizedBox(width: 8),
-                InkWell(
-                  onTap: _showCategorySettingsModal,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.category_rounded, size: 16, color: Colors.blue),
-                        const SizedBox(width: 4),
-                        Text(context.tr('تنظيم الأصناف'), style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
-                      ],
-                    ),
-                  ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
+                    const SizedBox(width: 4),
+                    Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                const SizedBox(height: 24, child: VerticalDivider(width: 1)),
-                const SizedBox(width: 8),
-                ..._getOrderedVisibleCategories().map((cat) {
-                  final catName = cat['ar'] as String;
-                  final iconStr = cat['icon'] as String;
-                  final isCustom = cat['isCustom'] == true;
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: ActionChip(
-                      avatar: Text(iconStr, style: const TextStyle(fontSize: 14)),
-                      label: Text(context.tr(catName), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: isCustom ? Colors.teal : null)),
-                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: isCustom ? Colors.teal.shade300 : Colors.grey.shade300),
-                      ),
-                      onPressed: () {
-                        _showCategoryProductsModal(cat['key']!, catName);
-                      },
-                    ),
-                  );
-                }),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -3749,128 +3742,6 @@ $itemsSummary
     ).then((_) => setState(() {}));
   }
 
-  List<Map<String, dynamic>> _getAllCombinedCategories() {
-    final List<Map<String, dynamic>> all = [];
-    final Set<String> seenKeys = {};
-
-    void addCat(String key, String title, String icon, bool isCustom) {
-      final cleanKey = key.trim();
-      final cleanTitle = title.trim();
-      if (cleanKey.isEmpty || cleanTitle.isEmpty) return;
-      if (seenKeys.contains(cleanKey) || seenKeys.contains(cleanTitle)) return;
-      seenKeys.add(cleanKey);
-      seenKeys.add(cleanTitle);
-      all.add({
-        'key': cleanKey,
-        'ar': cleanTitle,
-        'icon': icon,
-        'isCustom': isCustom,
-      });
-    }
-
-    // 1. Preset Categories
-    for (var def in _categoriesDef) {
-      final trVal = context.tr(def['tr'] ?? '');
-      final catName = trVal != (def['tr'] ?? '') && trVal.isNotEmpty ? trVal : (def['ar'] ?? '');
-      addCat(def['key'] ?? '', catName, def['icon'] ?? '🏷️', false);
-    }
-
-    // Helper: Map arbitrary category string to preset key if matching
-    String? resolvePresetKey(String catName) {
-      final c = catName.trim().toLowerCase();
-      if (c.contains('تبغ') || c.contains('سجائر') || c.contains('شمة')) return 'tobacco';
-      if (c.contains('مشروب') || c.contains('عصير') || c.contains('ماء')) return 'cold_drinks';
-      if (c.contains('حليب') || c.contains('ألبان') || c.contains('أجبان') || c.contains('جبن')) return 'dairy';
-      if (c.contains('قهوة') || c.contains('شاي') || c.contains('ماكينة') || c.contains('كافيتيريا') || c.contains('كابوتشينو') || c.contains('كبسول')) return 'coffee_tea';
-      if (c.contains('حلو') || c.contains('شوكولا') || c.contains('بسكويت') || c.contains('سكاكر')) return 'sweets';
-      if (c.contains('ميزان')) return 'scale';
-      if (c.contains('بقول') || c.contains('عدس') || c.contains('حمص') || c.contains('فريك') || c.contains('لوبيا') || c.contains('أرز')) return 'pulses';
-      if (c.contains('معلب') || c.contains('طماطم') || c.contains('تونة') || c.contains('زيت')) return 'canned';
-      if (c.contains('مخبوز') || c.contains('عجائن') || c.contains('كسكسي') || c.contains('سميد') || c.contains('فرينة')) return 'bakery';
-      if (c.contains('منظف') || c.contains('تطهير') || c.contains('جافيل') || c.contains('صابون')) return 'cleaning';
-      if (c.contains('عناية') || c.contains('شامبو') || c.contains('معجون')) return 'hygiene';
-      if (c.contains('مدرس') || c.contains('مكتب')) return 'stationery';
-      if (c.contains('هاتف') || c.contains('شاحن') || c.contains('كابل') || c.contains('سماع')) return 'phone_accessories';
-      if (c.contains('بطار') || c.contains('حجر') || c.contains('بيل')) return 'batteries';
-      if (c.contains('كوسميتيك') || c.contains('عطر') || c.contains('تجميل')) return 'cosmetics';
-      if (c.contains('لعب') || c.contains('هدية')) return 'toys';
-      if (c.contains('خضر') || c.contains('فواكه') || c.contains('لحوم')) return 'produce';
-      if (c.contains('عام') || c.contains('جرائد')) return 'general_news';
-      if (c.contains('توابل') || c.contains('بهارات')) return 'spices';
-      return null;
-    }
-
-    // 2. Discover Real Categories from Loaded Products in Store
-    final productsState = context.read<ProductBloc>().state;
-    if (productsState.status == ProductStatus.loaded) {
-      for (final p in productsState.products) {
-        final cat = p.category.trim();
-        if (cat.isNotEmpty) {
-          final preset = resolvePresetKey(cat);
-          if (preset == null) {
-            addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
-          }
-        }
-      }
-    }
-
-    // 3. Taxonomy Dropdown Categories (only truly new custom ones)
-    for (var cat in CategoryTaxonomy.getDropdownCategories()) {
-      final preset = resolvePresetKey(cat);
-      if (preset == null) {
-        addCat(cat, cat, CategoryTaxonomy.getIconForCategory(cat), true);
-      }
-    }
-
-    return all;
-  }
-
-  List<Map<String, dynamic>> _getOrderedVisibleCategories() {
-    final all = _getAllCombinedCategories();
-    final hidden = CategoryTaxonomy.getHiddenCategories();
-    final order = CategoryTaxonomy.getCategoryOrder();
-
-    // 1. Filter out hidden
-    final visible = all.where((c) {
-      final key = c['key'] as String;
-      final name = c['ar'] as String;
-      return !hidden.contains(key) && !hidden.contains(name);
-    }).toList();
-
-    // 2. Sort by custom order
-    visible.sort((a, b) {
-      final keyA = a['key'] as String;
-      final keyB = b['key'] as String;
-      final nameA = a['ar'] as String;
-      final nameB = b['ar'] as String;
-
-      int idxA = order.indexOf(keyA);
-      if (idxA == -1) idxA = order.indexOf(nameA);
-
-      int idxB = order.indexOf(keyB);
-      if (idxB == -1) idxB = order.indexOf(nameB);
-
-      if (idxA != -1 && idxB != -1) return idxA.compareTo(idxB);
-      if (idxA != -1) return -1;
-      if (idxB != -1) return 1;
-      return 0;
-    });
-
-    return visible;
-  }
-
-  void _showCategorySettingsModal() {
-    final allCats = _getAllCombinedCategories();
-    showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return _CategorySettingsDialog(allCategories: allCats);
-      },
-    ).then((_) {
-      if (mounted) setState(() {});
-    });
-  }
-
   Widget _buildBottomHotkeysBar() {
     return Container(
       height: 36,
@@ -3887,162 +3758,3 @@ $itemsSummary
     );
   }
 }
-
-class _CategorySettingsDialog extends StatefulWidget {
-  final List<Map<String, dynamic>> allCategories;
-  const _CategorySettingsDialog({Key? key, required this.allCategories}) : super(key: key);
-
-  @override
-  State<_CategorySettingsDialog> createState() => _CategorySettingsDialogState();
-}
-
-class _CategorySettingsDialogState extends State<_CategorySettingsDialog> {
-  late List<Map<String, dynamic>> _orderedCategories;
-  late Set<String> _hiddenKeys;
-
-  @override
-  void initState() {
-    super.initState();
-    final savedHidden = CategoryTaxonomy.getHiddenCategories().toSet();
-    final savedOrder = CategoryTaxonomy.getCategoryOrder();
-
-    final all = List<Map<String, dynamic>>.from(widget.allCategories);
-
-    all.sort((a, b) {
-      final keyA = a['key'] as String;
-      final keyB = b['key'] as String;
-      final nameA = a['ar'] as String;
-      final nameB = b['ar'] as String;
-
-      int idxA = savedOrder.indexOf(keyA);
-      if (idxA == -1) idxA = savedOrder.indexOf(nameA);
-
-      int idxB = savedOrder.indexOf(keyB);
-      if (idxB == -1) idxB = savedOrder.indexOf(nameB);
-
-      if (idxA != -1 && idxB != -1) return idxA.compareTo(idxB);
-      if (idxA != -1) return -1;
-      if (idxB != -1) return 1;
-      return 0;
-    });
-
-    _orderedCategories = all;
-    _hiddenKeys = {};
-    for (final cat in all) {
-      final k = cat['key'] as String;
-      final n = cat['ar'] as String;
-      if (savedHidden.contains(k) || savedHidden.contains(n)) {
-        _hiddenKeys.add(k);
-        _hiddenKeys.add(n);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          const Icon(Icons.category, color: Colors.blue),
-          const SizedBox(width: 8),
-          Text(context.tr('تنظيم وترتيب شريط الأصناف')),
-        ],
-      ),
-      content: SizedBox(
-        width: 440,
-        height: 520,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.tr('اسحب لإعادة الترتيب، واستخدم المربعات لتحديد ما يظهر في الشريط الرئيسي.'),
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ReorderableListView.builder(
-                itemCount: _orderedCategories.length,
-                onReorder: (oldIndex, newIndex) {
-                  if (oldIndex < newIndex) newIndex -= 1;
-                  setState(() {
-                    final item = _orderedCategories.removeAt(oldIndex);
-                    _orderedCategories.insert(newIndex, item);
-                  });
-                },
-                itemBuilder: (context, index) {
-                  final cat = _orderedCategories[index];
-                  final key = cat['key'] as String;
-                  final name = cat['ar'] as String;
-                  final isHidden = _hiddenKeys.contains(key) || _hiddenKeys.contains(name);
-
-                  return Card(
-                    key: ValueKey('cat_$key'),
-                    elevation: 1,
-                    margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
-                    child: CheckboxListTile(
-                      secondary: Text(cat['icon'] as String, style: const TextStyle(fontSize: 20)),
-                      title: Text(
-                        context.tr(name),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          decoration: isHidden ? TextDecoration.lineThrough : null,
-                          color: isHidden ? Colors.grey : null,
-                        ),
-                      ),
-                      value: !isHidden,
-                      onChanged: (val) {
-                        setState(() {
-                          if (val == true) {
-                            _hiddenKeys.remove(key);
-                            _hiddenKeys.remove(name);
-                          } else {
-                            _hiddenKeys.add(key);
-                            _hiddenKeys.add(name);
-                          }
-                        });
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.tr('إلغاء')),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
-          onPressed: () async {
-            final orderList = _orderedCategories.map((c) => c['key'] as String).toList();
-            await CategoryTaxonomy.saveCategoryOrder(orderList);
-            
-            // Rebuild hidden set strictly for current categories
-            final Set<String> toSaveHidden = {};
-            for (final cat in _orderedCategories) {
-              final k = cat['key'] as String;
-              final n = cat['ar'] as String;
-              if (_hiddenKeys.contains(k) || _hiddenKeys.contains(n)) {
-                toSaveHidden.add(k);
-                toSaveHidden.add(n);
-              }
-            }
-            await CategoryTaxonomy.saveHiddenCategories(toSaveHidden.toList());
-            if (mounted) Navigator.pop(context, true);
-          },
-          child: Text(context.tr('حفظ التعديلات'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
-      ],
-    );
-  }
-}
-
-
-
-
-

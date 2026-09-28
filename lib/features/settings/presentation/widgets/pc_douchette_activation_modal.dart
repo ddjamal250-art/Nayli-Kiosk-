@@ -38,7 +38,7 @@ class _PcDouchetteActivationModalState extends State<PcDouchetteActivationModal>
   void _refreshToken() {
     setState(() {
       _tokenData = LicenseService.generateDouchetteActivationData();
-      final exp = _tokenData['expiry'] as int;
+      final exp = (_tokenData['expiry'] as num?)?.toInt() ?? 0;
       final now = DateTime.now().millisecondsSinceEpoch;
       _secondsRemaining = ((exp - now) / 1000).clamp(0, 15 * 60).toInt();
     });

@@ -99,7 +99,7 @@ class QuickItemsManagerDialog extends StatefulWidget {
 
 class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
   List<QuickItemData> _items = [];
-  bool _isLoading = true;
+  bool _isLoading = true;\n  Set<String> _selectedIds = {};
 
   static const List<String> _popularEmojis = [
     '☕', '🟤', '🍵', '🥖', '🥐', '🥚', '🍲', '🫓', '🥛', '💧', '🛍️',
@@ -131,7 +131,11 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
       QuickItemData(id: 'tea_cup', name: 'كأس شاي (Thé)', price: 30.0, costPrice: 10.0, icon: '🍵', barcode: '2000000000100', shortCode: 'C3', stock: 500, orderIndex: 2),
     ];
 
-    if (list.isEmpty) {
+    final settingsBox = HiveDatabase.settingsBox;
+    final hasInitialized = settingsBox.get('has_initialized_quick_items', defaultValue: false) as bool;
+
+    if (list.isEmpty && !hasInitialized) {
+      settingsBox.put('has_initialized_quick_items', true);
       // Default standard Algerian quick staples
       final defaults = [
         ...coffeePresets,
@@ -657,6 +661,70 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
     );
   }
 
+
+  void _deleteSelectedItems() {
+    if (_selectedIds.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.delete_sweep, color: Colors.red, size: 28),
+            const SizedBox(width: 8),
+            Text('حذف  عنصر؟'),
+          ],
+        ),
+        content: const Text('هل أنت متأكد من مسح جميع العناصر المحددة من شريط السلع السريعة؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(ctx);
+              for (var id in _selectedIds) {
+                HiveDatabase.quickItemsBox.delete(id);
+              }
+              _selectedIds.clear();
+              _loadQuickItems();
+              SnackbarHelper.showSuccess(context, 'تم حذف العناصر المحددة');
+            },
+            child: const Text('تأكيد الحذف', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _clearAllItems() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.delete_forever, color: Colors.red, size: 28),
+            const SizedBox(width: 8),
+            const Text('مسح كل العناصر؟'),
+          ],
+        ),
+        content: const Text('هل أنت متأكد من مسح جميع السلع السريعة بشكل نهائي؟ لا يمكن التراجع عن هذا.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(ctx);
+              HiveDatabase.quickItemsBox.clear();
+              _selectedIds.clear();
+              _loadQuickItems();
+              SnackbarHelper.showSuccess(context, 'تم مسح جميع العناصر');
+            },
+            child: const Text('مسح الكل', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+  
   void _deleteItem(QuickItemData item) {
     showDialog(
       context: context,
@@ -731,6 +799,22 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                   icon: const Icon(Icons.add, color: Colors.white),
                   label: const Text('سلعة حرة (+)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   onPressed: () => _showAddEditModal(),
+                ),
+                const SizedBox(width: 8),
+                if (_selectedIds.isNotEmpty) ...[
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    icon: const Icon(Icons.delete_sweep, color: Colors.white, size: 18),
+                    label: Text('حذف المحددة ()', style: const TextStyle(color: Colors.white)),
+                    onPressed: _deleteSelectedItems,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade900),
+                  icon: const Icon(Icons.delete_forever, color: Colors.white, size: 18),
+                  label: const Text('مسح الكل', style: TextStyle(color: Colors.white)),
+                  onPressed: _clearAllItems,
                 ),
                 const SizedBox(width: 8),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),

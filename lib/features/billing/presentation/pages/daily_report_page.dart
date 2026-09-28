@@ -78,8 +78,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
       final box = HiveDatabase.customersBox;
       for (var key in box.keys) {
         final c = box.get(key);
-        if (c != null) {
-          total += (c.totalDebt as num?)?.toDouble() ?? 0.0;
+        if (c is Map) {
+          total += (c['currentDebt'] as num?)?.toDouble() ?? (c['debt'] as num?)?.toDouble() ?? (c['totalDebt'] as num?)?.toDouble() ?? 0.0;
+        } else if (c != null) {
+          try {
+            total += (c.currentDebt as num).toDouble();
+          } catch (_) {}
         }
       }
     } catch (_) {}
@@ -480,7 +484,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
 
     final deptProfit = (deptRevenue - deptCost).clamp(0.0, double.infinity);
 
-    final totalItemsCount = invoices.fold<int>(0, (sum, inv) => sum + ((inv['itemCount'] as int?) ?? 1));
+    final totalItemsCount = invoices.fold<int>(0, (sum, inv) => sum + ((inv['itemCount'] as num?)?.toInt() ?? 1));
     final averageBasket = invoices.isNotEmpty ? (totalRevenue / invoices.length) : 0.0;
 
     final cashSales = invoices.where((i) => i['isCredit'] != true).fold<double>(0.0, (sum, i) => sum + ((i['paidAmount'] as num?)?.toDouble() ?? (i['totalAmount'] as num?)?.toDouble() ?? 0.0));
@@ -1438,21 +1442,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
           if (it is Map) {
             final rawCat = (it['category']?.toString() ?? '').trim();
             final name = (it['name']?.toString() ?? '').toLowerCase();
-            String cat = rawCat.isNotEmpty ? rawCat : 'عام';
-
-            if (it['isCoffeeMachine'] == true || name.contains('قهوة') || name.contains('شاي')) {
-              cat = 'ماكينة القهوة والشاي';
-            } else if (it['isTobacco'] == true || name.contains('سجائر') || name.contains('تبغ') || name.contains('شمة')) {
-              cat = 'تبغ وسجائر';
-            } else if (name.contains('قلم') || name.contains('كراس') || name.contains('مدرسي') || name.contains('stylo')) {
-              cat = 'أدوات مدرسية ومكتبية';
-            } else if (name.contains('جبن') || name.contains('fromage')) {
-              cat = 'أجبان ومشتقات الحليب';
-            } else if (name.contains('ماء') || name.contains('عصير') || name.contains('مشروب')) {
-              cat = 'مشروبات ومياه';
-            } else if (it['isWeighted'] == true || name.contains('ميزان') || name.contains('كغ')) {
-              cat = 'خضر وفواكه وميزان';
-            }
+            String cat = rawCat.isNotEmpty ? rawCat : 'أخرى';
 
             if (!catMap.containsKey(cat)) {
               catMap[cat] = {
@@ -1468,9 +1458,9 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 (((it['price'] as num?)?.toDouble() ?? 0.0) * itQty);
             final itCost = (((it['costPrice'] as num?)?.toDouble() ?? 0.0) * itQty);
 
-            catMap[cat]!['sales'] = (catMap[cat]!['sales'] as double) + itTotal;
-            catMap[cat]!['cost'] = (catMap[cat]!['cost'] as double) + itCost;
-            catMap[cat]!['qty'] = (catMap[cat]!['qty'] as int) + itQty;
+            catMap[cat]!['sales'] = ((catMap[cat]!['sales'] as num?)?.toDouble() ?? 0.0) + itTotal;
+            catMap[cat]!['cost'] = ((catMap[cat]!['cost'] as num?)?.toDouble() ?? 0.0) + itCost;
+            catMap[cat]!['qty'] = ((catMap[cat]!['qty'] as num?)?.toInt() ?? 0) + itQty;
           }
         }
       }
@@ -1511,7 +1501,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
     }
 
     final sortedEntries = catMap.entries.toList()
-      ..sort((a, b) => (b.value['sales'] as double).compareTo(a.value['sales'] as double));
+      ..sort((a, b) => ((b.value['sales'] as num?)?.toDouble() ?? 0.0).compareTo((a.value['sales'] as num?)?.toDouble() ?? 0.0));
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -1533,12 +1523,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
         ],
         rows: sortedEntries.map((e) {
           final name = e.key;
-          final sales = e.value['sales'] as double;
-          final cost = e.value['cost'] as double;
+          final sales = (e.value['sales'] as num?)?.toDouble() ?? 0.0;
+          final cost = (e.value['cost'] as num?)?.toDouble() ?? 0.0;
           final profit = sales - cost;
           final margin = sales > 0 ? ((profit / sales) * 100).toStringAsFixed(1) : '0';
-          final qty = e.value['qty'] as int;
-          final losses = e.value['losses'] as double;
+          final qty = (e.value['qty'] as num?)?.toInt() ?? 0;
+          final losses = (e.value['losses'] as num?)?.toDouble() ?? 0.0;
 
           return DataRow(
             cells: [

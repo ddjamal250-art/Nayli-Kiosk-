@@ -184,7 +184,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
   }
 
   int get _totalUnitsCount {
-    return _invoiceItems.fold(0, (sum, item) => sum + (item['totalUnits'] as int));
+    return _invoiceItems.fold(0, (sum, item) => sum + ((item['totalUnits'] as num?)?.toInt() ?? 0));
   }
 
   Future<void> _submitInvoice() async {

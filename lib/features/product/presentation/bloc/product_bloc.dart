@@ -111,7 +111,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       BatchDeductStock event, Emitter<ProductState> emit) async {
     for (final item in event.items) {
       final id = item['id'] as String;
-      final qty = item['quantity'] as int;
+      final qty = (item['quantity'] as num?)?.toInt() ?? 0;
       await adjustStockUseCase(AdjustStockParams(
         productId: id,
         quantityDelta: -qty,

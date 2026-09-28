@@ -20,7 +20,7 @@ class DevicePairingModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deviceId = LicenseService.getDeviceId();
-    final maxQuota = HiveDatabase.settingsBox.get('store_max_devices_quota', defaultValue: 1) as int;
+    final maxQuota = (HiveDatabase.settingsBox.get('store_max_devices_quota', defaultValue: 1) as num?)?.toInt() ?? 1;
     String shopName = 'سوبرماركت البركة';
     final shopBox = HiveDatabase.shopBox;
     if (shopBox.isNotEmpty) {

@@ -5,7 +5,8 @@ import '../../domain/entities/special_offer.dart';
 
 /// ويدجت موحد يجمع طبقات الوحدات الثلاث (كرتونة -> علبة -> حبة) والعروض الخاصة
 /// معروضة عمودياً تحت بعضها البعض بشكل مرن يغطي جميع حالات البيع والاستلام في الواقع
-class ProductUnitsEditorWidget extends StatelessWidget {
+class ProductUnitsEditorWidget extends StatefulWidget {
+
   // --- وضع الاستلام (Stock In / Arrivage) ---
   final bool isStockInMode;
   final TextEditingController? cartonCountCtrl; // عدد الكراتين المستلمة
@@ -85,6 +86,226 @@ class ProductUnitsEditorWidget extends StatelessWidget {
   });
 
   @override
+  State<ProductUnitsEditorWidget> createState() => _ProductUnitsEditorWidgetState();
+}
+
+class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
+  bool _isSyncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _attachListeners();
+  }
+
+  void _attachListeners() {
+    widget.cartonCapacityCtrl.addListener(_onCapacityOrTopDownChanged);
+    widget.packCapacityCtrl.addListener(_onCapacityOrTopDownChanged);
+    widget.cartonPriceCtrl.addListener(_onCartonPriceChanged);
+    widget.packPriceCtrl.addListener(_onPackPriceChanged);
+    widget.piecePriceCtrl.addListener(_onPiecePriceChanged);
+    widget.cartonCostCtrl.addListener(_onCartonCostChanged);
+    widget.packCostCtrl.addListener(_onPackCostChanged);
+    widget.pieceCostCtrl.addListener(_onPieceCostChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductUnitsEditorWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hasPack != widget.hasPack || oldWidget.hasCarton != widget.hasCarton) {
+      _onCapacityOrTopDownChanged();
+    }
+  }
+
+  double _safeDivide(double num, double den) {
+    if (den <= 0) return 0.0;
+    return num / den;
+  }
+
+  double _parse(TextEditingController? ctrl) {
+    if (ctrl == null) return 0.0;
+    return double.tryParse(ctrl.text.trim()) ?? 0.0;
+  }
+
+  void _setText(TextEditingController ctrl, double val) {
+    final str = val.toStringAsFixed(2);
+    final cleanStr = str.endsWith('.00') ? str.substring(0, str.length - 3) : str;
+    if (ctrl.text != cleanStr) {
+      ctrl.text = cleanStr;
+    }
+  }
+
+  void _onCapacityOrTopDownChanged() {
+    if (_isSyncing) return;
+    _isSyncing = true;
+    try {
+      final cCap = _parse(widget.cartonCapacityCtrl);
+      final pCap = _parse(widget.packCapacityCtrl);
+      
+      final cPrice = _parse(widget.cartonPriceCtrl);
+      if (cPrice > 0) {
+        if (widget.hasPack) {
+          final pPrice = _safeDivide(cPrice, cCap).roundToDouble();
+          _setText(widget.packPriceCtrl, pPrice);
+          final pieceP = _safeDivide(pPrice, pCap).roundToDouble();
+          _setText(widget.piecePriceCtrl, pieceP);
+        } else {
+          final pieceP = _safeDivide(cPrice, cCap).roundToDouble();
+          _setText(widget.piecePriceCtrl, pieceP);
+        }
+      }
+      
+      final cCost = _parse(widget.cartonCostCtrl);
+      if (cCost > 0) {
+        if (widget.hasPack) {
+          final pCost = _safeDivide(cCost, cCap);
+          _setText(widget.packCostCtrl, pCost);
+          final pieceC = _safeDivide(pCost, pCap);
+          _setText(widget.pieceCostCtrl, pieceC);
+        } else {
+          final pieceC = _safeDivide(cCost, cCap);
+          _setText(widget.pieceCostCtrl, pieceC);
+        }
+      }
+      widget.onInputsChanged?.call();
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  void _onCartonPriceChanged() {
+    if (_isSyncing) return;
+    _isSyncing = true;
+    try {
+      final cCap = _parse(widget.cartonCapacityCtrl);
+      final pCap = _parse(widget.packCapacityCtrl);
+      final cPrice = _parse(widget.cartonPriceCtrl);
+      
+      if (widget.hasPack) {
+        final pPrice = _safeDivide(cPrice, cCap).roundToDouble();
+        _setText(widget.packPriceCtrl, pPrice);
+        final pieceP = _safeDivide(pPrice, pCap).roundToDouble();
+        _setText(widget.piecePriceCtrl, pieceP);
+      } else {
+        final pieceP = _safeDivide(cPrice, cCap).roundToDouble();
+        _setText(widget.piecePriceCtrl, pieceP);
+      }
+      widget.onInputsChanged?.call();
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  void _onPackPriceChanged() {
+    if (_isSyncing) return;
+    if (!widget.hasPack) return;
+    _isSyncing = true;
+    try {
+      final cCap = _parse(widget.cartonCapacityCtrl);
+      final pCap = _parse(widget.packCapacityCtrl);
+      final pPrice = _parse(widget.packPriceCtrl);
+      
+      final cPrice = (pPrice * cCap).roundToDouble();
+      _setText(widget.cartonPriceCtrl, cPrice);
+      
+      final pieceP = _safeDivide(pPrice, pCap).roundToDouble();
+      _setText(widget.piecePriceCtrl, pieceP);
+      widget.onInputsChanged?.call();
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  void _onPiecePriceChanged() {
+    if (_isSyncing) return;
+    _isSyncing = true;
+    try {
+      final cCap = _parse(widget.cartonCapacityCtrl);
+      final pCap = _parse(widget.packCapacityCtrl);
+      final pieceP = _parse(widget.piecePriceCtrl);
+      
+      if (widget.hasPack) {
+        final pPrice = (pieceP * pCap).roundToDouble();
+        _setText(widget.packPriceCtrl, pPrice);
+        final cPrice = (pPrice * cCap).roundToDouble();
+        _setText(widget.cartonPriceCtrl, cPrice);
+      } else if (widget.hasCarton) {
+        final cPrice = (pieceP * cCap).roundToDouble();
+        _setText(widget.cartonPriceCtrl, cPrice);
+      }
+      widget.onInputsChanged?.call();
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  void _onCartonCostChanged() {
+    if (_isSyncing) return;
+    _isSyncing = true;
+    try {
+      final cCap = _parse(widget.cartonCapacityCtrl);
+      final pCap = _parse(widget.packCapacityCtrl);
+      final cCost = _parse(widget.cartonCostCtrl);
+      
+      if (widget.hasPack) {
+        final pCost = _safeDivide(cCost, cCap);
+        _setText(widget.packCostCtrl, pCost);
+        final pieceC = _safeDivide(pCost, pCap);
+        _setText(widget.pieceCostCtrl, pieceC);
+      } else {
+        final pieceC = _safeDivide(cCost, cCap);
+        _setText(widget.pieceCostCtrl, pieceC);
+      }
+      widget.onInputsChanged?.call();
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  void _onPackCostChanged() {
+    if (_isSyncing) return;
+    if (!widget.hasPack) return;
+    _isSyncing = true;
+    try {
+      final cCap = _parse(widget.cartonCapacityCtrl);
+      final pCap = _parse(widget.packCapacityCtrl);
+      final pCost = _parse(widget.packCostCtrl);
+      
+      final cCost = pCost * cCap;
+      _setText(widget.cartonCostCtrl, cCost);
+      
+      final pieceC = _safeDivide(pCost, pCap);
+      _setText(widget.pieceCostCtrl, pieceC);
+      widget.onInputsChanged?.call();
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  void _onPieceCostChanged() {
+    if (_isSyncing) return;
+    _isSyncing = true;
+    try {
+      final cCap = _parse(widget.cartonCapacityCtrl);
+      final pCap = _parse(widget.packCapacityCtrl);
+      final pieceC = _parse(widget.pieceCostCtrl);
+      
+      if (widget.hasPack) {
+        final pCost = pieceC * pCap;
+        _setText(widget.packCostCtrl, pCost);
+        final cCost = pCost * cCap;
+        _setText(widget.cartonCostCtrl, cCost);
+      } else if (widget.hasCarton) {
+        final cCost = pieceC * cCap;
+        _setText(widget.cartonCostCtrl, cCost);
+      }
+      widget.onInputsChanged?.call();
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -125,8 +346,8 @@ class ProductUnitsEditorWidget extends StatelessWidget {
                     keyboardType: TextInputType.number,
                     onChanged: (_) => onInputsChanged?.call(),
                     decoration: const InputDecoration(
-                      labelText: 'سعة الكرتونة (كم حبة؟) *',
-                      suffixText: 'حبة/كرتونة',
+                      labelText: widget.hasPack ? 'سعة الكرتونة (كم علبة؟) *' : 'سعة الكرتونة (كم حبة؟) *',
+                      suffixText: widget.hasPack ? 'علبة/كرتونة' : 'حبة/كرتونة',
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -623,15 +844,24 @@ class ProductUnitsEditorWidget extends StatelessWidget {
   }
 
   Widget _buildStockInSummaryCard() {
-    final cCount = int.tryParse(cartonCountCtrl?.text.trim() ?? '0') ?? 0;
-    final cCap = int.tryParse(cartonCapacityCtrl.text.trim()) ?? 1;
-    final pCount = int.tryParse(packCountCtrl?.text.trim() ?? '0') ?? 0;
-    final pCap = int.tryParse(packCapacityCtrl.text.trim()) ?? 1;
-    final piCount = int.tryParse(pieceCountCtrl?.text.trim() ?? '0') ?? 0;
+    final cCount = _parse(widget.cartonCountCtrl).toInt();
+    final cCap = _parse(widget.cartonCapacityCtrl).toInt();
+    final pCount = _parse(widget.packCountCtrl).toInt();
+    final pCap = _parse(widget.packCapacityCtrl).toInt();
+    final piCount = _parse(widget.pieceCountCtrl).toInt();
 
-    final totalPieces = (hasCarton ? (cCount * cCap) : 0)
-                      + (hasPack ? (pCount * pCap) : 0)
+    final cCost = _parse(widget.cartonCostCtrl);
+    final pCost = _parse(widget.packCostCtrl);
+    final piCost = _parse(widget.pieceCostCtrl);
+
+    final cartonMultiplier = widget.hasPack ? (cCap * pCap) : cCap;
+    final totalPieces = (widget.hasCarton ? (cCount * cartonMultiplier) : 0)
+                      + (widget.hasPack ? (pCount * pCap) : 0)
                       + piCount;
+
+    final totalCost = (widget.hasCarton ? (cCount * cCost) : 0)
+                    + (widget.hasPack ? (pCount * pCost) : 0)
+                    + (piCount * piCost);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -649,22 +879,21 @@ class ProductUnitsEditorWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'إجمالي الكمية المستلمة التي ستدخل المخزون:',
+                  'إجمالي الحبات المضافة:',
                   style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '$totalPieces حبة / قطعة',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.teal.shade900,
-                  ),
+                  '$totalPieces حبة',
+                  style: TextStyle(fontSize: 20, color: Colors.teal.shade900, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'إجمالي تكلفة هذه الدفعة:',
+                  style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  'التفصيل: ${hasCarton ? '$cCount كرتونة (×$cCap) ' : ''}'
-                  '${hasPack ? '+ $pCount علبة (×$pCap) ' : ''}'
-                  '${piCount > 0 ? '+ $piCount حبة' : ''}',
-                  style: TextStyle(fontSize: 11, color: Colors.teal.shade800),
+                  '${totalCost.toStringAsFixed(2)} د.ج',
+                  style: TextStyle(fontSize: 16, color: Colors.red.shade800, fontWeight: FontWeight.bold),
                 ),
               ],
             ),

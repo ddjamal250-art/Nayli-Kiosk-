@@ -13,9 +13,12 @@ class ActivationModal extends StatefulWidget {
   const ActivationModal({super.key});
 
   static Future<void> show(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
     return AdaptiveModalHelper.showAdaptiveModal(
       context: context,
       desktopMaxWidth: 560,
+      backgroundColor: bgColor,
       builder: (ctx) => const ActivationModal(),
     );
   }
@@ -280,15 +283,22 @@ class _ActivationModalState extends State<ActivationModal> {
     final deviceId = LicenseService.getDeviceId();
     final isActivated = LicenseService.isActivated();
     final remainingDays = LicenseService.getRemainingDays();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        20,
-        24,
-        MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: SingleChildScrollView(
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        color: bgColor,
+        padding: EdgeInsets.fromLTRB(
+          24,
+          20,
+          24,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -514,6 +524,7 @@ class _ActivationModalState extends State<ActivationModal> {
             const SizedBox(height: 12),
           ],
         ),
+      ),
       ),
     );
   }

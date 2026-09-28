@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -96,43 +97,12 @@ class PrinterHelper {
     } catch (_) {}
   }
 
-  static Future<pw.ThemeData> getArabicTheme() async {
-    pw.Font fontRegular;
-    pw.Font fontBold;
-
-    if (Platform.isWindows) {
-      final fontFile = File(r'C:\Windows\Fonts\tahoma.ttf');
-      if (fontFile.existsSync()) {
-        final winFont = pw.Font.ttf(fontFile.readAsBytesSync().buffer.asByteData());
-        fontRegular = winFont;
-        fontBold = winFont;
-      } else {
-        final fontFile2 = File(r'C:\Windows\Fonts\arial.ttf');
-        if (fontFile2.existsSync()) {
-          final winFont2 = pw.Font.ttf(fontFile2.readAsBytesSync().buffer.asByteData());
-          fontRegular = winFont2;
-          fontBold = winFont2;
-        } else {
-          try {
-            fontRegular = await PdfGoogleFonts.cairoRegular();
-            fontBold = await PdfGoogleFonts.cairoBold();
-          } catch (_) {
-            fontRegular = pw.Font.helvetica();
-            fontBold = pw.Font.helveticaBold();
-          }
-        }
-      }
-    } else {
-      try {
-        fontRegular = await PdfGoogleFonts.cairoRegular();
-        fontBold = await PdfGoogleFonts.cairoBold();
-      } catch (_) {
-        fontRegular = pw.Font.helvetica();
-        fontBold = pw.Font.helveticaBold();
-      }
-    }
-
-    return pw.ThemeData.withFont(base: fontRegular, bold: fontBold);
+static Future<pw.ThemeData> getArabicTheme() async {
+    final fontReg = await rootBundle.load('assets/fonts/Tajawal-Regular.ttf');
+    final fontBld = await rootBundle.load('assets/fonts/Tajawal-Bold.ttf');
+    final ttfReg = pw.Font.ttf(fontReg);
+    final ttfBld = pw.Font.ttf(fontBld);
+    return pw.ThemeData.withFont(base: ttfReg, bold: ttfBld);
   }
 
   /// Print test page to verify connection and paper width
@@ -192,7 +162,7 @@ class PrinterHelper {
   }
 
   /// Print Cashier Sale Receipt for Windows POS
-  static Future<bool> printReceiptWindows({
+static Future<bool> printReceiptWindows({
     required String shopName,
     String? address1,
     String? address2,
@@ -211,70 +181,130 @@ class PrinterHelper {
   }) async {
     try {
       final theme = await getArabicTheme();
+      
+      final box = HiveDatabase.settingsBox;
+      final savedTemplate = box.get('receipt_template');
+      Map<String, dynamic> tmpl = {};
+      if (savedTemplate is Map) {
+        tmpl = Map<String, dynamic>.from(savedTemplate);
+      }
+      
+      final String finalShopName = tmpl['shopName']?.toString() ?? shopName;
+      final bool showSlogan = tmpl['showSlogan'] == true;
+      final String slogan = tmpl['slogan']?.toString() ?? '';
+      final bool showAddress = tmpl['showAddress'] != false;
+      final String address = tmpl['address']?.toString() ?? (address1 ?? '');
+      final bool showPhone = tmpl['showPhone'] != false;
+      final String phoneStr = tmpl['phone']?.toString() ?? (phone ?? '');
+      final bool showFiscalInfo = tmpl['showFiscalInfo'] == true;
+      final String fiscalInfo = tmpl['fiscalInfo']?.toString() ?? '';
+      final bool showCashierName = tmpl['showCashierName'] != false;
+      final String cashierName = tmpl['cashierName']?.toString() ?? 'الكاشير: سليم';
+      final bool showSocialMedia = tmpl['showSocialMedia'] == true;
+      final String socialMedia = tmpl['socialMedia']?.toString() ?? '';
+      final bool showThankYou = tmpl['showThankYou'] != false;
+      final String thankYou = tmpl['thankYou']?.toString() ?? (footer ?? 'شكراً لزيارتكم ونتشرف بخدمتكم دائماً');
+      final bool showBarcodeAtBottom = tmpl['showBarcodeAtBottom'] == true;
+      final String separatorStyle = tmpl['separatorStyle']?.toString() ?? 'dashed';
+      
+      String getSeparator() {
+        if (separatorStyle == 'stars') return '********************************';
+        if (separatorStyle == 'double') return '================================';
+        if (separatorStyle == 'dots') return '................................';
+        return '--------------------------------';
+      }
+      
+      final sep = pw.Text(getSeparator(), style: const pw.TextStyle(fontSize: 8));
+
+      // Calculate approximate height to prevent double.infinity crash on Windows POS
+      double heightEstimate = 120 + (items.length * 15) + 120;
+      final pageFormat = PdfPageFormat(72 * PdfPageFormat.mm, heightEstimate * PdfPageFormat.mm, marginAll: 4 * PdfPageFormat.mm);
+      
       final doc = pw.Document();
       doc.addPage(
         pw.Page(
-          pageFormat: const PdfPageFormat(72 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm),
+          pageFormat: pageFormat,
           theme: theme,
           build: (pw.Context ctx) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                pw.Text(shopName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
-                if (address1 != null && address1.isNotEmpty) pw.Text(address1, style: const pw.TextStyle(fontSize: 8.5)),
-                if (address2 != null && address2.isNotEmpty) pw.Text(address2, style: const pw.TextStyle(fontSize: 8.5)),
-                if (phone != null && phone.isNotEmpty) pw.Text('Tel: $phone', style: const pw.TextStyle(fontSize: 8.5)),
-                pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
-                pw.Divider(thickness: 0.5),
-                ...items.map((item) {
-                  return pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
-                    child: pw.Row(
+            return pw.Directionality(
+              textDirection: pw.TextDirection.rtl,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text(finalShopName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+                  if (showSlogan && slogan.isNotEmpty) pw.Text(slogan, style: const pw.TextStyle(fontSize: 9)),
+                  if (showAddress && address.isNotEmpty) pw.Text(address, style: const pw.TextStyle(fontSize: 8.5)),
+                  if (showPhone && phoneStr.isNotEmpty) pw.Text(phoneStr, style: const pw.TextStyle(fontSize: 8.5)),
+                  if (showFiscalInfo && fiscalInfo.isNotEmpty) pw.Text(fiscalInfo, style: const pw.TextStyle(fontSize: 7.5)),
+                  if (showSocialMedia && socialMedia.isNotEmpty) pw.Text(socialMedia, style: const pw.TextStyle(fontSize: 8.5)),
+                  
+                  pw.SizedBox(height: 4),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
+                      pw.Text('وصل رقم: #', style: const pw.TextStyle(fontSize: 8)),
+                    ]
+                  ),
+                  if (showCashierName) pw.Text(cashierName, style: const pw.TextStyle(fontSize: 8)),
+                  
+                  pw.SizedBox(height: 2),
+                  sep,
+                  
+                  ...items.map((item) {
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Expanded(
+                            child: pw.Text('x ', style: const pw.TextStyle(fontSize: 8.5)),
+                          ),
+                          pw.Text(' دج', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                        ],
+                      ),
+                    );
+                  }),
+                  
+                  sep,
+                  
+                  if (discount > 0)
+                    pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Expanded(
-                          child: pw.Text('${item['qty']}x ${item['name']}', style: const pw.TextStyle(fontSize: 8.5)),
-                        ),
-                        pw.Text('${item['total']} DA', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                        pw.Text('تخفيض:', style: const pw.TextStyle(fontSize: 8.5)),
+                        pw.Text('- دج', style: const pw.TextStyle(fontSize: 8.5)),
                       ],
                     ),
-                  );
-                }),
-                if (coffeeAndTeaTotal > 0) ...[
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Text('S/Total (Café/Thé):', style: const pw.TextStyle(fontSize: 8.5)),
-                      pw.Text('${coffeeAndTeaTotal.toStringAsFixed(2)} DA', style: const pw.TextStyle(fontSize: 8.5)),
+                      pw.Text('المجموع الإجمالي:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                      pw.Text(' دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                     ],
                   ),
-                  pw.SizedBox(height: 2),
-                ],
-                pw.Divider(thickness: 0.5),
-                if (discount > 0)
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text('Remise:', style: const pw.TextStyle(fontSize: 8.5)),
-                      pw.Text('-${discount.toStringAsFixed(2)} DA', style: const pw.TextStyle(fontSize: 8.5)),
-                    ],
-                  ),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('TOTAL:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                    pw.Text('${total.toStringAsFixed(2)} DA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                  
+                  if (isCredit && customerName != null) ...[
+                    sep,
+                    pw.Text('كريدي للزبون: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+                    if (previousDebt > 0) pw.Text('الديون السابقة:  دج', style: const pw.TextStyle(fontSize: 8)),
+                    pw.Text('إجمالي الديون:  دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
                   ],
-                ),
-                if (isCredit && customerName != null) ...[
-                  pw.Divider(thickness: 0.5),
-                  pw.Text('CREDIT CLIENT: $customerName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
-                  if (previousDebt > 0) pw.Text('Dette prec: ${previousDebt.toStringAsFixed(2)} DA', style: const pw.TextStyle(fontSize: 8)),
-                  pw.Text('Total du: ${newDebtTotal.toStringAsFixed(2)} DA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                  
+                  pw.SizedBox(height: 8),
+                  if (showThankYou) pw.Text(thankYou, style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center),
+                  
+                  if (showBarcodeAtBottom) ...[
+                    pw.SizedBox(height: 8),
+                    pw.BarcodeWidget(
+                      barcode: pw.Barcode.qrCode(),
+                      data: 'NayliMarket_',
+                      width: 50,
+                      height: 50,
+                    ),
+                  ]
                 ],
-                pw.SizedBox(height: 8),
-                pw.Text((footer != null && footer.isNotEmpty) ? footer : 'Merci pour votre visite!', style: const pw.TextStyle(fontSize: 8)),
-              ],
+              ),
             );
           },
         ),
@@ -287,18 +317,15 @@ class PrinterHelper {
       if (specificPrinterName != null && specificPrinterName.isNotEmpty) {
         target = printers.where((p) => p.name == specificPrinterName).firstOrNull;
       }
-
-      // Look up target thermal printer or saved preference
       target ??= findBestThermalPrinter(printers);
 
       if (target != null) {
-        return await Printing.directPrintPdf(printer: target, onLayout: (_) => bytes);
+        return await Printing.directPrintPdf(printer: target, onLayout: (_) => bytes, usePrinterSettings: true);
       } else {
-        // DO NOT silently send 80mm receipts to big office A4 laser printers!
-        // Instead, open the print dialog so the user can select their thermal printer explicitly
-        return await Printing.layoutPdf(onLayout: (_) => bytes, name: 'Nayli_Receipt_${DateTime.now().millisecondsSinceEpoch}');
+        return await Printing.layoutPdf(onLayout: (_) => bytes, name: 'Nayli_Receipt_');
       }
-    } catch (_) {
+    } catch (e) {
+      print('Print Error: ');
       return false;
     }
   }

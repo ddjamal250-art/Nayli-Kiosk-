@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/services/single_instance_service.dart';
+import 'core/services/crash_reporting_service.dart';
+import 'core/widgets/global_error_recovery_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -54,28 +56,16 @@ void main() async {
 
     FlutterError.onError = (FlutterErrorDetails details) {
       _log('❌ [FLUTTER_ERROR] ${details.exceptionAsString()}\n${details.stack}');
+      CrashReportingService.recordCrash(
+        details.exceptionAsString(),
+        details.stack,
+        contextName: details.context?.toString() ?? 'Flutter Framework Error',
+      );
     };
 
     ErrorWidget.builder = (FlutterErrorDetails details) {
       _log('⚠️ [ERROR_WIDGET] ${details.exceptionAsString()}');
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.orange),
-                const SizedBox(height: 16),
-                const Text('تنبيه أثناء تشغيل الواجهة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text(details.exceptionAsString(), style: const TextStyle(color: Colors.red)),
-              ],
-            ),
-          ),
-        ),
-      );
+      return GlobalErrorRecoveryWidget(errorDetails: details);
     };
 
     // Window Manager & Single Instance Init (desktop only)
@@ -139,6 +129,12 @@ void main() async {
     });
   }, (error, stack) {
     _log('💥 [GLOBAL_ZONE_ERROR] $error\n$stack');
+    CrashReportingService.recordCrash(
+      error,
+      stack,
+      contextName: 'Global Zone Error',
+      isFatal: true,
+    );
   });
 }
 

@@ -22,7 +22,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
   BillingBloc({required this.getProductByBarcodeUseCase})
       : super(const BillingState()) {
     on<ScanBarcodeEvent>(_onScanBarcode);
-    on<AddProductToCartEvent>(_onAddProductToCart);
+    on<AddProductToCartEvent>(_onAddProductToCart);\n    on<ClearStockWarningEvent>((event, emit) => emit(state.copyWith(clearStockWarning: true)));
     on<SwitchCartItemUnitEvent>(_onSwitchCartItemUnit);
     on<AddCustomItemEvent>(_onAddCustomItem);
     on<RemoveProductFromCartEvent>(_onRemoveProductFromCart);
@@ -175,13 +175,20 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       // منتج عادي موجود → نزيد الكمية
       final existingItem = cleanState.cartItems[existingIndex];
       final backendItems = List<CartItem>.from(cleanState.cartItems);
+      final newQty = existingItem.quantity + event.quantity;
+      final proposedDeduct = newQty * (existingItem.selectedUnit?.multiplier ?? 1.0);
+      String? warning;
+      if (proposedDeduct > event.product.stock && !event.product.isUnlimitedStock) {
+        warning = '|';
+      }
+      
       backendItems[existingIndex] = existingItem.copyWith(
-        quantity: existingItem.quantity + event.quantity,
+        quantity: newQty,
         customUnitPrice: event.customPrice ?? existingItem.customUnitPrice,
         customUnitName: event.customUnitName ?? existingItem.customUnitName,
         customUnitCost: event.customUnitCost ?? existingItem.customUnitCost,
       );
-      emit(cleanState.copyWith(cartItems: backendItems, error: null));
+      emit(cleanState.copyWith(cartItems: backendItems, error: null, stockWarning: warning));
     } else {
       // منتج جديد أو منتج ميزاني (يُضاف دائماً كعنصر جديد)
       final newItem = CartItem(
@@ -605,28 +612,33 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final generalProfit = generalSales - generalCost;
       final netProfit = state.totalAmount - totalCost;
 
+      final double finalTotalAmount = state.isReturnMode ? -state.totalAmount : state.totalAmount;
+      final double finalTotalCost = state.isReturnMode ? -totalCost : totalCost;
+      final double finalNetProfit = state.isReturnMode ? -netProfit : netProfit;
+
       await invoicesBox.put(invoiceId, {
         'id': invoiceId,
         'timestamp': DateTime.now().toIso8601String(),
-        'totalAmount': state.totalAmount,
-        'totalCost': totalCost,
-        'netProfit': netProfit,
-        'tobaccoSales': tobaccoSales,
-        'tobaccoCost': tobaccoCost,
-        'tobaccoProfit': tobaccoProfit,
-        'coffeeSales': coffeeSales,
-        'coffeeCost': coffeeCost,
-        'coffeeProfit': coffeeProfit,
-        'coffeeCupsCount': coffeeCupsCount,
-        'generalSales': generalSales,
-        'generalCost': generalCost,
-        'generalProfit': generalProfit,
-        'itemCount': state.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity),
+        'totalAmount': finalTotalAmount,
+        'totalCost': finalTotalCost,
+        'netProfit': finalNetProfit,
+        'isReturn': state.isReturnMode,
+        'tobaccoSales': state.isReturnMode ? -tobaccoSales : tobaccoSales,
+        'tobaccoCost': state.isReturnMode ? -tobaccoCost : tobaccoCost,
+        'tobaccoProfit': state.isReturnMode ? -tobaccoProfit : tobaccoProfit,
+        'coffeeSales': state.isReturnMode ? -coffeeSales : coffeeSales,
+        'coffeeCost': state.isReturnMode ? -coffeeCost : coffeeCost,
+        'coffeeProfit': state.isReturnMode ? -coffeeProfit : coffeeProfit,
+        'coffeeCupsCount': state.isReturnMode ? -coffeeCupsCount : coffeeCupsCount,
+        'generalSales': state.isReturnMode ? -generalSales : generalSales,
+        'generalCost': state.isReturnMode ? -generalCost : generalCost,
+        'generalProfit': state.isReturnMode ? -generalProfit : generalProfit,
+        'itemCount': state.isReturnMode ? -state.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity) : state.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity),
         'items': items,
         'isCredit': event.isCredit,
         'paymentMethod': event.paymentMethod,
         'customerName': event.customerName,
-        'paidAmount': event.paidAmount,
+        'paidAmount': state.isReturnMode ? -event.paidAmount : event.paidAmount,
       });
 
       // 3. Print physical receipt (unless skipped)
