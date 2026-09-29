@@ -173,6 +173,8 @@ begin
     // Force kill any hanging background instances to avoid "File in use" error
     Exec('taskkill.exe', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec('taskkill.exe', '/F /IM nayli_kiosk.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec('taskkill.exe', '/F /IM Nayli-Fashion.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    DeleteFile(ExpandConstant('{app}\Nayli-Fashion.exe'));
   end;
 end;
 

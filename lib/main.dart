@@ -79,13 +79,17 @@ void main() async {
         exit(0);
       }
 
-      await windowManager.setSize(const Size(1200, 720));
-      await windowManager.setMinimumSize(const Size(800, 550));
-      await windowManager.center();
-      await windowManager.setTitle('Nayli Market POS');
-      await windowManager.show();
-      await windowManager.focus();
-      _log('🖥️ [STARTUP] Window displayed and focused at 1200x720');
+      const windowOptions = WindowOptions(
+        size: Size(1200, 720),
+        minimumSize: Size(800, 550),
+        center: true,
+        title: 'Nayli Market POS',
+      );
+      windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.focus();
+        _log('🖥️ [STARTUP] Window displayed and focused at 1200x720');
+      });
     }
 
     // إقلاع تسامحي لقواعد البيانات والسيرفر

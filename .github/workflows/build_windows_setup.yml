@@ -8,6 +8,8 @@ on:
 jobs:
   build-windows:
     runs-on: windows-2022
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -113,5 +115,29 @@ jobs:
           name: nayli-kiosk-desktop-setup
           path: build/installer/
 
-
-
+      - name: Publish Direct Download GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        with:
+          tag_name: v2.1.0-release
+          name: "Nayli Kiosk Desktop POS v2.1.0 (Official Release)"
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          body: |
+            ## 🚀 Nayli Kiosk Desktop POS v2.1.0
+            
+            ### 📥 روابط التحميل المباشرة بنقرة واحدة (Direct 1-Click Downloads):
+            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/v2.1.0-release/Nayli-Kiosk-Desktop-Setup.exe)**
+            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/v2.1.0-release/Nayli-Kiosk-Desktop-Portable.zip)**
+            
+            ---
+            ✅ **المميزات والإصلاحات المطبقة:**
+            1. إصلاح طباعة الوصلات الحرارية والملصقات بدقة تامة وبدون أي رموز مشوهة للغتين العربية والفرنسية.
+            2. مطابقة الوصل المطبوع مع المعاينة في شاشة الإعدادات بنسبة 100%.
+            3. نظام الحماية الشاملة ضد الانهيار (Crash Recovery) مع تسجيل الأعطال.
+            4. منع التضارب والتراكم في الخلفية وتثبيت نظيف 100%.
+            5. الحفاظ التام والمضمون على جميع قواعد بيانات المبيعات والمنتجات السابقة.
+          files: |
+            build/installer/Nayli-Kiosk-Desktop-Setup.exe
+            build/installer/Nayli-Kiosk-Desktop-Portable.zip
