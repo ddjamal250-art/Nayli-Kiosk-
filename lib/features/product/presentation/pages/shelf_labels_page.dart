@@ -40,6 +40,31 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   double _barcodeHeight = 12.0;
   bool _isPrinting = false;
 
+  // Custom Size dimensions (mm)
+  double _customWidthMm = 50.0;
+  double _customHeightMm = 30.0;
+  double _customMarginMm = 1.5;
+  late TextEditingController _customWidthCtrl;
+  late TextEditingController _customHeightCtrl;
+  late TextEditingController _customMarginCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final box = HiveDatabase.settingsBox;
+    _customWidthMm = (box.get('shelf_label_custom_width', defaultValue: 50.0) as num).toDouble();
+    _customHeightMm = (box.get('shelf_label_custom_height', defaultValue: 30.0) as num).toDouble();
+    _customMarginMm = (box.get('shelf_label_custom_margin', defaultValue: 1.5) as num).toDouble();
+    final savedSizeName = box.get('shelf_label_saved_size');
+    if (savedSizeName != null) {
+      final found = ShelfLabelSize.values.where((s) => s.name == savedSizeName).firstOrNull;
+      if (found != null) _selectedSize = found;
+    }
+    _customWidthCtrl = TextEditingController(text: _customWidthMm.toStringAsFixed(0));
+    _customHeightCtrl = TextEditingController(text: _customHeightMm.toStringAsFixed(0));
+    _customMarginCtrl = TextEditingController(text: _customMarginMm.toStringAsFixed(1));
+  }
+
   static const List<String> _categoryTabs = [
     'الكل',
     '⚖️ مواد الميزان',
@@ -58,6 +83,9 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _customWidthCtrl.dispose();
+    _customHeightCtrl.dispose();
+    _customMarginCtrl.dispose();
     super.dispose();
   }
 
@@ -72,6 +100,9 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       barcodeHeight: _barcodeHeight,
       currencySymbol: 'دج',
       shopName: ShelfLabelGenerator.getEffectiveShopName(),
+      customWidthMm: _customWidthMm,
+      customHeightMm: _customHeightMm,
+      customMarginMm: _customMarginMm,
     );
   }
 
@@ -190,7 +221,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     SoundService.playTabSwitch();
     await Printing.layoutPdf(
       name: docName,
-      format: config.size.pageFormat,
+      format: config.effectivePageFormat,
       onLayout: (PdfPageFormat format) async {
         return await ShelfLabelGenerator.generateLabelsPdf(
           itemsWithCopies: entries,
@@ -331,7 +362,10 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                               selectedColor: AppTheme.primaryColor.withOpacity(0.18),
                               checkmarkColor: AppTheme.primaryColor,
                               onSelected: (v) {
-                                if (v) setState(() => _selectedSize = size);
+                                if (v) {
+                                  setState(() => _selectedSize = size);
+                                  HiveDatabase.settingsBox.put('shelf_label_saved_size', size.name);
+                                }
                               },
                             ),
                             const SizedBox(width: 6),
@@ -339,6 +373,147 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                         ],
                       ),
                     ),
+                    if (_selectedSize == ShelfLabelSize.custom) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.indigo.shade200, width: 1.2),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.straighten_rounded, size: 16, color: Colors.indigo),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'تخصيص أبعاد الملصق (بالمليمتر mm):',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.indigo.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '${_customWidthMm.toStringAsFixed(0)} × ${_customHeightMm.toStringAsFixed(0)} مم',
+                                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.indigo),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _customWidthCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: 'العرض (مم)',
+                                      isDense: true,
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    ),
+                                    onChanged: (val) {
+                                      final parsed = double.tryParse(val);
+                                      if (parsed != null && parsed >= 15 && parsed <= 300) {
+                                        setState(() => _customWidthMm = parsed);
+                                        HiveDatabase.settingsBox.put('shelf_label_custom_width', parsed);
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _customHeightCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: 'الارتفاع (مم)',
+                                      isDense: true,
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    ),
+                                    onChanged: (val) {
+                                      final parsed = double.tryParse(val);
+                                      if (parsed != null && parsed >= 10 && parsed <= 300) {
+                                        setState(() => _customHeightMm = parsed);
+                                        HiveDatabase.settingsBox.put('shelf_label_custom_height', parsed);
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _customMarginCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: 'الهامش (مم)',
+                                      isDense: true,
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    ),
+                                    onChanged: (val) {
+                                      final parsed = double.tryParse(val);
+                                      if (parsed != null && parsed >= 0.0 && parsed <= 20) {
+                                        setState(() => _customMarginMm = parsed);
+                                        HiveDatabase.settingsBox.put('shelf_label_custom_margin', parsed);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                const Text('مقاسات سريعة:', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                ...[
+                                  [40, 20],
+                                  [40, 30],
+                                  [50, 25],
+                                  [50, 30],
+                                  [60, 40],
+                                  [70, 35],
+                                  [80, 50],
+                                  [100, 50],
+                                ].map((dims) {
+                                  final w = dims[0].toDouble();
+                                  final h = dims[1].toDouble();
+                                  final isMatch = _customWidthMm == w && _customHeightMm == h;
+                                  return ActionChip(
+                                    visualDensity: VisualDensity.compact,
+                                    label: Text('${dims[0]}×${dims[1]}', style: TextStyle(fontSize: 9.5, fontWeight: isMatch ? FontWeight.bold : FontWeight.normal)),
+                                    backgroundColor: isMatch ? Colors.indigo.withOpacity(0.18) : Colors.grey.shade100,
+                                    side: BorderSide(color: isMatch ? Colors.indigo.shade300 : Colors.grey.shade300),
+                                    onPressed: () {
+                                      setState(() {
+                                        _customWidthMm = w;
+                                        _customHeightMm = h;
+                                        _customWidthCtrl.text = w.toStringAsFixed(0);
+                                        _customHeightCtrl.text = h.toStringAsFixed(0);
+                                      });
+                                      HiveDatabase.settingsBox.put('shelf_label_custom_width', w);
+                                      HiveDatabase.settingsBox.put('shelf_label_custom_height', h);
+                                    },
+                                  );
+                                }),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 8),
 
                     // Label Template Selector Ribbon

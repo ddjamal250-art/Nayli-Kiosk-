@@ -51,6 +51,13 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
   String _separatorStyle = 'dashed'; // dashed, stars, double, dots
   String _headerAlignment = 'center'; // center, left, right
 
+  // Receipt Paper Dimensions
+  String _paperSize = '80mm'; // '80mm', '58mm', 'custom'
+  double _paperWidthMm = 80.0;
+  double _receiptMarginMm = 6.0;
+  late TextEditingController _paperWidthCtrl;
+  late TextEditingController _marginCtrl;
+
   List<String> _customExtraLines = [];
 
   @override
@@ -89,6 +96,13 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       _showBarcodeAtBottom = map['showBarcodeAtBottom'] != false;
       _separatorStyle = map['separatorStyle']?.toString() ?? 'dashed';
       _headerAlignment = map['headerAlignment']?.toString() ?? 'center';
+      _paperSize = map['paperSize']?.toString() ?? box.get('printer_paper_size', defaultValue: '80mm') as String;
+      _paperWidthMm = (map['paperWidthMm'] as num?)?.toDouble() ??
+          (box.get('receipt_paper_width_mm') as num?)?.toDouble() ??
+          (_paperSize == '58mm' ? 58.0 : 80.0);
+      _receiptMarginMm = (map['marginMm'] as num?)?.toDouble() ??
+          (box.get('receipt_margin_mm') as num?)?.toDouble() ??
+          (_paperSize == '58mm' ? 4.0 : 6.0);
       _customExtraLines = (map['customExtraLines'] is Iterable)
           ? List<String>.from((map['customExtraLines'] as Iterable).map((e) => e.toString()))
           : [];
@@ -102,7 +116,13 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       _socialCtrl = TextEditingController(text: 'FB / Insta: nayli.market');
       _footerNoteCtrl = TextEditingController(text: 'السلعة المباعة لا ترد ولا تستبدل بعد 48 ساعة');
       _thankYouCtrl = TextEditingController(text: '✨ شكراً لزيارتكم ونتشرف بخدمتكم دائماً ✨');
+      _paperSize = box.get('printer_paper_size', defaultValue: '80mm') as String;
+      _paperWidthMm = (box.get('receipt_paper_width_mm') as num?)?.toDouble() ?? (_paperSize == '58mm' ? 58.0 : 80.0);
+      _receiptMarginMm = (box.get('receipt_margin_mm') as num?)?.toDouble() ?? (_paperSize == '58mm' ? 4.0 : 6.0);
     }
+
+    _paperWidthCtrl = TextEditingController(text: _paperWidthMm.toStringAsFixed(0));
+    _marginCtrl = TextEditingController(text: _receiptMarginMm.toStringAsFixed(1));
 
     _shopNameCtrl.addListener(() => setState(() {}));
     _sloganCtrl.addListener(() => setState(() {}));
@@ -126,6 +146,8 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     _socialCtrl.dispose();
     _footerNoteCtrl.dispose();
     _thankYouCtrl.dispose();
+    _paperWidthCtrl.dispose();
+    _marginCtrl.dispose();
     super.dispose();
   }
 
@@ -151,10 +173,17 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       'showBarcodeAtBottom': _showBarcodeAtBottom,
       'separatorStyle': _separatorStyle,
       'headerAlignment': _headerAlignment,
+      'paperSize': _paperSize,
+      'paperWidthMm': _paperWidthMm,
+      'marginMm': _receiptMarginMm,
       'customExtraLines': _customExtraLines,
     };
 
-    await HiveDatabase.settingsBox.put('receipt_template', template);
+    final box = HiveDatabase.settingsBox;
+    await box.put('receipt_template', template);
+    await box.put('printer_paper_size', _paperSize);
+    await box.put('receipt_paper_width_mm', _paperWidthMm);
+    await box.put('receipt_margin_mm', _receiptMarginMm);
     SoundService.playSaveSuccess();
 
     if (!mounted) return;
@@ -410,7 +439,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                               Icon(Icons.receipt_long_rounded, color: Colors.indigo, size: 18),
                               SizedBox(width: 8),
                               Text(
-                                'معاينة حية للوصل مقاس 80mm',
+                                'معاينة حية للوصل مقاس ${_paperWidthMm.toStringAsFixed(0)} مم',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
                               ),
                             ],
@@ -470,8 +499,9 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
 
   /// REALISTIC THERMAL RECEIPT TICKET PREVIEW
   Widget _buildReceiptPreview(String separator) {
+    final double previewWidth = (_paperWidthMm * 4.2).clamp(260.0, 420.0);
     return Container(
-      width: 360,
+      width: previewWidth,
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -650,6 +680,173 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // SECTION 0: RECEIPT PAPER SIZE & CUSTOM DIMENSIONS
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 1,
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.straighten_rounded, color: Colors.teal.shade700, size: 22),
+                    SizedBox(width: 8),
+                    Text('أبعاد ومقاس ورق الوصل 📏', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    Spacer(),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${_paperWidthMm.toStringAsFixed(0)} مم (هامش ${_receiptMarginMm.toStringAsFixed(1)} مم)',
+                        style: TextStyle(color: Colors.teal.shade900, fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                Text('اختر نوع رول الطابعة الحرارية:', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                SizedBox(height: 8),
+                Wrap(
+                  spacing: 10,
+                  children: [
+                    ChoiceChip(
+                      label: Text('80 مم (قياسي - Standard)'),
+                      selected: _paperSize == '80mm',
+                      onSelected: (v) {
+                        if (v) {
+                          setState(() {
+                            _paperSize = '80mm';
+                            _paperWidthMm = 80.0;
+                            _receiptMarginMm = 6.0;
+                            _paperWidthCtrl.text = '80';
+                            _marginCtrl.text = '6.0';
+                          });
+                        }
+                      },
+                    ),
+                    ChoiceChip(
+                      label: Text('58 مم (مدمج - Compact)'),
+                      selected: _paperSize == '58mm',
+                      onSelected: (v) {
+                        if (v) {
+                          setState(() {
+                            _paperSize = '58mm';
+                            _paperWidthMm = 58.0;
+                            _receiptMarginMm = 4.0;
+                            _paperWidthCtrl.text = '58';
+                            _marginCtrl.text = '4.0';
+                          });
+                        }
+                      },
+                    ),
+                    ChoiceChip(
+                      label: Text('مخصص بأبعاد يدوية (Custom)'),
+                      selected: _paperSize == 'custom',
+                      onSelected: (v) {
+                        if (v) {
+                          setState(() {
+                            _paperSize = 'custom';
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                if (_paperSize == 'custom' || (_paperSize != '80mm' && _paperSize != '58mm')) ...[
+                  SizedBox(height: 14),
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withOpacity(0.04),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.teal.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _paperWidthCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: 'عرض الورق (مم)',
+                                  hintText: 'مثال: 76 أو 72 أو 80',
+                                  prefixIcon: Icon(Icons.width_normal_rounded),
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                onChanged: (val) {
+                                  final p = double.tryParse(val);
+                                  if (p != null && p >= 40 && p <= 120) {
+                                    setState(() => _paperWidthMm = p);
+                                  }
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _marginCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: 'الهامش الجانبي (مم)',
+                                  hintText: 'مثال: 6.0 أو 4.0',
+                                  prefixIcon: Icon(Icons.margin_rounded),
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                onChanged: (val) {
+                                  final p = double.tryParse(val);
+                                  if (p != null && p >= 1.0 && p <= 20) {
+                                    setState(() => _receiptMarginMm = p);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text('مقاسات شائعة:', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                            ...[58, 72, 76, 80, 82].map((w) {
+                              final widthVal = w.toDouble();
+                              final isCurrent = _paperWidthMm == widthVal;
+                              return ActionChip(
+                                visualDensity: VisualDensity.compact,
+                                label: Text('$w مم', style: TextStyle(fontSize: 10, fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
+                                backgroundColor: isCurrent ? Colors.teal.withOpacity(0.2) : Colors.grey.shade100,
+                                onPressed: () {
+                                  setState(() {
+                                    _paperWidthMm = widthVal;
+                                    _receiptMarginMm = widthVal <= 60 ? 4.0 : 6.0;
+                                    _paperWidthCtrl.text = widthVal.toStringAsFixed(0);
+                                    _marginCtrl.text = _receiptMarginMm.toStringAsFixed(1);
+                                  });
+                                },
+                              );
+                            }),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 16),
+
         // SECTION 1: MANDATORY STORE BRANDING
         Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

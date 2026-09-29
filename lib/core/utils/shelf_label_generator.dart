@@ -18,6 +18,7 @@ enum ShelfLabelSize {
   roll80mm,
   sheetA4_24,
   sheetA4_40,
+  custom,
 }
 
 extension ShelfLabelSizeExtension on ShelfLabelSize {
@@ -35,6 +36,8 @@ extension ShelfLabelSizeExtension on ShelfLabelSize {
         return 'ورقة A4 مقسمة (24 ملصق - 3×8)';
       case ShelfLabelSize.sheetA4_40:
         return 'ورقة A4 مقسمة (40 ملصق - 4×10)';
+      case ShelfLabelSize.custom:
+        return 'مخصص بأبعاد يدوية (Custom)';
     }
   }
 
@@ -78,6 +81,12 @@ extension ShelfLabelSizeExtension on ShelfLabelSize {
       case ShelfLabelSize.sheetA4_24:
       case ShelfLabelSize.sheetA4_40:
         return PdfPageFormat.a4;
+      case ShelfLabelSize.custom:
+        return const PdfPageFormat(
+          50 * PdfPageFormat.mm,
+          30 * PdfPageFormat.mm,
+          marginAll: 1.5 * PdfPageFormat.mm,
+        );
     }
   }
 }
@@ -111,6 +120,9 @@ class ShelfLabelConfig {
   final double barcodeHeight;
   final String currencySymbol;
   final String shopName;
+  final double customWidthMm;
+  final double customHeightMm;
+  final double customMarginMm;
 
   const ShelfLabelConfig({
     this.size = ShelfLabelSize.standard50x30,
@@ -122,7 +134,24 @@ class ShelfLabelConfig {
     this.barcodeHeight = 12.0,
     this.currencySymbol = 'دج',
     this.shopName = 'سوبرماركت النايلي',
+    this.customWidthMm = 50.0,
+    this.customHeightMm = 30.0,
+    this.customMarginMm = 1.5,
   });
+
+  PdfPageFormat get effectivePageFormat {
+    if (size == ShelfLabelSize.custom) {
+      return PdfPageFormat(
+        customWidthMm * PdfPageFormat.mm,
+        customHeightMm * PdfPageFormat.mm,
+        marginLeft: customMarginMm * PdfPageFormat.mm,
+        marginRight: customMarginMm * PdfPageFormat.mm,
+        marginTop: (customMarginMm * 0.8) * PdfPageFormat.mm,
+        marginBottom: (customMarginMm * 0.8) * PdfPageFormat.mm,
+      );
+    }
+    return size.pageFormat;
+  }
 
   ShelfLabelConfig copyWith({
     ShelfLabelSize? size,
@@ -134,6 +163,9 @@ class ShelfLabelConfig {
     double? barcodeHeight,
     String? currencySymbol,
     String? shopName,
+    double? customWidthMm,
+    double? customHeightMm,
+    double? customMarginMm,
   }) {
     return ShelfLabelConfig(
       size: size ?? this.size,
@@ -145,6 +177,9 @@ class ShelfLabelConfig {
       barcodeHeight: barcodeHeight ?? this.barcodeHeight,
       currencySymbol: currencySymbol ?? this.currencySymbol,
       shopName: shopName ?? this.shopName,
+      customWidthMm: customWidthMm ?? this.customWidthMm,
+      customHeightMm: customHeightMm ?? this.customHeightMm,
+      customMarginMm: customMarginMm ?? this.customMarginMm,
     );
   }
 }
@@ -159,19 +194,63 @@ class ShelfLabelGenerator {
         name = shop.name;
       }
     }
-    return name;
+    return cleanEmojisForPdf(name);
+  }
+
+  /// Sanitize text by stripping emojis that lack glyphs in standard TrueType fonts
+  static String cleanEmojisForPdf(String text) {
+    if (text.isEmpty) return text;
+    return text
+        .replaceAll('⚖️', '')
+        .replaceAll('✨', '')
+        .replaceAll('🏷️', '')
+        .replaceAll('📦', '')
+        .replaceAll('🛒', '')
+        .replaceAll('🇩🇿', '')
+        .replaceAll('✅', '')
+        .replaceAll('⚠️', '')
+        .replaceAll('❌', '')
+        .replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]', unicode: true), '')
+        .trim();
+  }
+
+  /// Strip invalid characters so barcode encoders never throw
+  static String sanitizeBarcodeData(String code) {
+    return code.replaceAll(RegExp(r'[^\x20-\x7E]'), '').trim();
+  }
+
+  static bool isValidEan13(String code) {
+    if (code.length != 13 || !RegExp(r'^\d{13}$').hasMatch(code)) return false;
+    int sum = 0;
+    for (int i = 0; i < 12; i++) {
+      final d = int.parse(code[i]);
+      sum += (i % 2 == 0) ? d : d * 3;
+    }
+    final check = (10 - (sum % 10)) % 10;
+    return check == int.parse(code[12]);
+  }
+
+  static bool isValidEan8(String code) {
+    if (code.length != 8 || !RegExp(r'^\d{8}$').hasMatch(code)) return false;
+    int sum = 0;
+    for (int i = 0; i < 7; i++) {
+      final d = int.parse(code[i]);
+      sum += (i % 2 == 0) ? d * 3 : d;
+    }
+    final check = (10 - (sum % 10)) % 10;
+    return check == int.parse(code[7]);
   }
 
   static pw.Barcode getBarcodeAlgorithm(String code) {
-    final clean = code.trim();
-    if (clean.length == 13 && RegExp(r'^\d{13}$').hasMatch(clean)) {
+    final clean = sanitizeBarcodeData(code);
+    if (isValidEan13(clean)) {
       try {
         return pw.Barcode.ean13();
       } catch (_) {
         return pw.Barcode.code128();
       }
     }
-    if (clean.length == 8 && RegExp(r'^\d{8}$').hasMatch(clean)) {
+    if (isValidEan8(clean)) {
       try {
         return pw.Barcode.ean8();
       } catch (_) {
@@ -191,7 +270,12 @@ class ShelfLabelGenerator {
     final fontBldData = await rootBundle.load('assets/fonts/Tajawal-Bold.ttf');
     final fontRegular = pw.Font.ttf(fontRegData);
     final fontBold = pw.Font.ttf(fontBldData);
-    final theme = pw.ThemeData.withFont(base: fontRegular, bold: fontBold);
+    final theme = pw.ThemeData.withFont(
+      base: fontRegular,
+      bold: fontBold,
+      italic: fontRegular,
+      boldItalic: fontBold,
+    );
 
     // Expand items by copy count
     final List<Product> flatProducts = [];
@@ -209,11 +293,12 @@ class ShelfLabelGenerator {
       // Generate A4 Sheet (24 or 40 grid)
       _generateA4Sheet(doc, flatProducts, config, theme, fontRegular, fontBold);
     } else {
-      // Individual Roll Labels (Page per label)
+      // Individual Roll Labels (Page per label) using dynamic effective page format
+      final format = config.effectivePageFormat;
       for (final p in flatProducts) {
         doc.addPage(
           pw.Page(
-            pageFormat: config.size.pageFormat,
+            pageFormat: format,
             theme: theme,
             build: (ctx) => _buildSingleLabelContent(p, config, fontRegular, fontBold),
           ),
@@ -276,17 +361,20 @@ class ShelfLabelGenerator {
     bool compact = false,
   }) {
     final dateStr = DateFormat('dd/MM/yyyy').format(DateTime.now());
-    final isMini = config.size == ShelfLabelSize.mini38x25 || compact;
-    final hasBarcode = config.includeBarcode && p.barcode.trim().isNotEmpty;
+    final isMini = config.size == ShelfLabelSize.mini38x25 ||
+        (config.size == ShelfLabelSize.custom && config.customHeightMm <= 26.0) ||
+        compact;
+    final cleanBarcode = sanitizeBarcodeData(p.barcode);
+    final hasBarcode = config.includeBarcode && cleanBarcode.isNotEmpty;
     final priceStr = p.price.toStringAsFixed(0);
 
     switch (config.template) {
       case ShelfLabelTemplate.shelfTag:
-        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildShelfTagTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr));
+        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildShelfTagTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, cleanBarcode, priceStr));
       case ShelfLabelTemplate.productSticker:
-        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildProductStickerTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr));
+        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildProductStickerTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, cleanBarcode, priceStr));
       case ShelfLabelTemplate.scaleWeight:
-        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildScaleWeightTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, priceStr));
+        return pw.Directionality(textDirection: pw.TextDirection.rtl, child: _buildScaleWeightTemplate(p, config, fontBold, fontRegular, dateStr, isMini, hasBarcode, cleanBarcode, priceStr));
     }
   }
 
@@ -298,8 +386,15 @@ class ShelfLabelGenerator {
     String dateStr,
     bool isMini,
     bool hasBarcode,
+    String cleanBarcode,
     String priceStr,
   ) {
+    final cleanName = cleanEmojisForPdf(p.name);
+    final cleanShop = cleanEmojisForPdf(config.shopName);
+    final double barcodeH = config.size == ShelfLabelSize.custom
+        ? (config.customHeightMm * 0.28).clamp(7.0, 24.0)
+        : (isMini ? 9.0 : config.barcodeHeight);
+
     return pw.Directionality(
       textDirection: pw.TextDirection.rtl,
       child: pw.Column(
@@ -312,7 +407,7 @@ class ShelfLabelGenerator {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  config.shopName,
+                  cleanShop,
                   style: pw.TextStyle(fontSize: isMini ? 6 : 7.5, font: fontBold, color: PdfColors.grey700),
                 ),
                 pw.Text(
@@ -324,7 +419,7 @@ class ShelfLabelGenerator {
 
           // Product Name
           pw.Text(
-            p.name,
+            cleanName,
             style: pw.TextStyle(fontSize: isMini ? 8 : 9.5, font: fontBold),
             maxLines: 1,
             overflow: pw.TextOverflow.clip,
@@ -338,12 +433,12 @@ class ShelfLabelGenerator {
             children: [
               pw.Text(
                 priceStr,
-                style: pw.TextStyle(fontSize: isMini ? 16 : 22, font: fontBold, color: PdfColors.black),
+                style: pw.TextStyle(fontSize: isMini ? 15 : 20, font: fontBold, color: PdfColors.black),
               ),
               pw.SizedBox(width: 3),
               pw.Text(
                 config.currencySymbol,
-                style: pw.TextStyle(fontSize: isMini ? 8 : 10, font: fontBold, color: PdfColors.black),
+                style: pw.TextStyle(fontSize: isMini ? 7.5 : 9.5, font: fontBold, color: PdfColors.black),
               ),
             ],
           ),
@@ -351,10 +446,10 @@ class ShelfLabelGenerator {
           // Barcode (Real 1D Vector Barcode)
           if (hasBarcode)
             pw.Container(
-              height: isMini ? 10 : config.barcodeHeight,
+              height: barcodeH,
               child: pw.BarcodeWidget(
-                barcode: getBarcodeAlgorithm(p.barcode),
-                data: p.barcode.trim(),
+                barcode: getBarcodeAlgorithm(cleanBarcode),
+                data: cleanBarcode,
                 drawText: config.showHriDigits && !isMini,
                 color: PdfColors.black,
                 textStyle: pw.TextStyle(fontSize: 6, font: fontRegular),
@@ -383,8 +478,11 @@ class ShelfLabelGenerator {
     String dateStr,
     bool isMini,
     bool hasBarcode,
+    String cleanBarcode,
     String priceStr,
   ) {
+    final cleanName = cleanEmojisForPdf(p.name);
+
     return pw.Directionality(
       textDirection: pw.TextDirection.rtl,
       child: pw.Column(
@@ -393,7 +491,7 @@ class ShelfLabelGenerator {
         children: [
           // Top: Product Name
           pw.Text(
-            p.name,
+            cleanName,
             style: pw.TextStyle(fontSize: isMini ? 7.5 : 9, font: fontBold),
             maxLines: 1,
             overflow: pw.TextOverflow.clip,
@@ -404,10 +502,10 @@ class ShelfLabelGenerator {
           if (hasBarcode)
             pw.Expanded(
               child: pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
                 child: pw.BarcodeWidget(
-                  barcode: getBarcodeAlgorithm(p.barcode),
-                  data: p.barcode.trim(),
+                  barcode: getBarcodeAlgorithm(cleanBarcode),
+                  data: cleanBarcode,
                   drawText: config.showHriDigits,
                   color: PdfColors.black,
                   textStyle: pw.TextStyle(fontSize: 6.5, font: fontRegular),
@@ -448,8 +546,15 @@ class ShelfLabelGenerator {
     String dateStr,
     bool isMini,
     bool hasBarcode,
+    String cleanBarcode,
     String priceStr,
   ) {
+    final cleanName = cleanEmojisForPdf(p.name);
+    final cleanShop = cleanEmojisForPdf(config.shopName);
+    final double barcodeH = config.size == ShelfLabelSize.custom
+        ? (config.customHeightMm * 0.28).clamp(7.0, 24.0)
+        : (isMini ? 9.0 : config.barcodeHeight);
+
     return pw.Directionality(
       textDirection: pw.TextDirection.rtl,
       child: pw.Column(
@@ -458,12 +563,12 @@ class ShelfLabelGenerator {
         children: [
           if (config.includeShopName)
             pw.Text(
-              '⚖️ ${config.shopName} - قسم الميزان',
+              '[ميزان] $cleanShop',
               style: pw.TextStyle(fontSize: isMini ? 6 : 7.5, font: fontBold, color: PdfColors.teal800),
             ),
 
           pw.Text(
-            p.name,
+            cleanName,
             style: pw.TextStyle(fontSize: isMini ? 8 : 10, font: fontBold),
             maxLines: 1,
             overflow: pw.TextOverflow.clip,
@@ -479,17 +584,17 @@ class ShelfLabelGenerator {
             ),
             child: pw.Text(
               'السعر: $priceStr ${config.currencySymbol} / كغ',
-              style: pw.TextStyle(fontSize: isMini ? 10 : 13, font: fontBold, color: PdfColors.black),
+              style: pw.TextStyle(fontSize: isMini ? 10 : 12.5, font: fontBold, color: PdfColors.black),
             ),
           ),
 
           // Barcode
           if (hasBarcode)
             pw.Container(
-              height: isMini ? 10 : config.barcodeHeight,
+              height: barcodeH,
               child: pw.BarcodeWidget(
-                barcode: getBarcodeAlgorithm(p.barcode),
-                data: p.barcode.trim(),
+                barcode: getBarcodeAlgorithm(cleanBarcode),
+                data: cleanBarcode,
                 drawText: config.showHriDigits,
                 color: PdfColors.black,
                 textStyle: pw.TextStyle(fontSize: 6, font: fontRegular),
@@ -500,7 +605,7 @@ class ShelfLabelGenerator {
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('طازج يومياً', style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.teal700)),
+              pw.Text('طازج يوميا', style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.teal700)),
               if (config.includeDate)
                 pw.Text(dateStr, style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.grey600)),
             ],

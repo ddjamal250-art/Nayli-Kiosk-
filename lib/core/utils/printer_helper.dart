@@ -116,9 +116,20 @@ class PrinterHelper {
       final theme = await getArabicTheme();
       final doc = pw.Document();
       if (role == PrinterRole.thermalReceipt) {
+        final box = HiveDatabase.settingsBox;
+        final savedTmpl = box.get('receipt_template');
+        final Map tmpl = savedTmpl is Map ? savedTmpl : {};
+        final paperSize = tmpl['paperSize']?.toString() ?? box.get('printer_paper_size', defaultValue: '80mm') as String;
+        final double rollWidthMm = (tmpl['paperWidthMm'] as num?)?.toDouble() ??
+            (box.get('receipt_paper_width_mm') as num?)?.toDouble() ??
+            (paperSize == '58mm' ? 58.0 : 80.0);
+        final double horizontalMarginMm = (tmpl['marginMm'] as num?)?.toDouble() ??
+            (box.get('receipt_margin_mm') as num?)?.toDouble() ??
+            (paperSize == '58mm' ? 4.0 : 6.0);
+
         doc.addPage(
           pw.Page(
-            pageFormat: const PdfPageFormat(80 * PdfPageFormat.mm, 100 * PdfPageFormat.mm, marginAll: 6 * PdfPageFormat.mm),
+            pageFormat: PdfPageFormat(rollWidthMm * PdfPageFormat.mm, 100 * PdfPageFormat.mm, marginAll: horizontalMarginMm * PdfPageFormat.mm),
             theme: theme,
             build: (pw.Context ctx) {
               return pw.Column(
@@ -126,7 +137,7 @@ class PrinterHelper {
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Text('Nayli Kiosk POS', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
-                  pw.Text('طابعة التوصيل الحرارية (80mm)', style: const pw.TextStyle(fontSize: 9)),
+                  pw.Text('طابعة التوصيل الحرارية (${rollWidthMm.toStringAsFixed(0)}mm)', style: const pw.TextStyle(fontSize: 9)),
                   pw.Divider(thickness: 0.5),
                   pw.Text('الطابعة: ${printer.name}', style: const pw.TextStyle(fontSize: 8)),
                   pw.Text(DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
@@ -271,9 +282,13 @@ class PrinterHelper {
           ? pw.TextAlign.left
           : (headerAlignment == 'right' ? pw.TextAlign.right : pw.TextAlign.center);
 
-      final paperSize = box.get('printer_paper_size', defaultValue: '80mm') as String;
-      final double rollWidthMm = paperSize == '58mm' ? 58.0 : 80.0;
-      final double horizontalMarginMm = paperSize == '58mm' ? 4.0 : 6.0;
+      final paperSize = tmpl['paperSize']?.toString() ?? box.get('printer_paper_size', defaultValue: '80mm') as String;
+      final double rollWidthMm = (tmpl['paperWidthMm'] as num?)?.toDouble() ??
+          (box.get('receipt_paper_width_mm') as num?)?.toDouble() ??
+          (paperSize == '58mm' ? 58.0 : 80.0);
+      final double horizontalMarginMm = (tmpl['marginMm'] as num?)?.toDouble() ??
+          (box.get('receipt_margin_mm') as num?)?.toDouble() ??
+          (paperSize == '58mm' ? 4.0 : 6.0);
 
       // Defensive calculation: if total is 0 and items exist, re-sum from items so receipt never shows 0.00
       double effectiveTotal = total;
