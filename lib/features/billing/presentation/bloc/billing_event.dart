@@ -156,6 +156,8 @@ class PrintReceiptEvent extends BillingEvent {
   final double newDebtTotal;
   final bool skipPhysicalPrint;
   final String? specificPrinterName;
+  final double? explicitTotal;
+  final double? explicitDiscount;
 
   const PrintReceiptEvent({
     required this.shopName,
@@ -171,6 +173,8 @@ class PrintReceiptEvent extends BillingEvent {
     this.newDebtTotal = 0.0,
     this.skipPhysicalPrint = false,
     this.specificPrinterName,
+    this.explicitTotal,
+    this.explicitDiscount,
   });
 
   @override
@@ -188,6 +192,8 @@ class PrintReceiptEvent extends BillingEvent {
         newDebtTotal,
         skipPhysicalPrint,
         specificPrinterName ?? '',
+        explicitTotal ?? 0.0,
+        explicitDiscount ?? 0.0,
       ];
 }
 

@@ -97,12 +97,17 @@ class PrinterHelper {
     } catch (_) {}
   }
 
-static Future<pw.ThemeData> getArabicTheme() async {
+  static Future<pw.ThemeData> getArabicTheme() async {
     final fontReg = await rootBundle.load('assets/fonts/Tajawal-Regular.ttf');
     final fontBld = await rootBundle.load('assets/fonts/Tajawal-Bold.ttf');
     final ttfReg = pw.Font.ttf(fontReg);
     final ttfBld = pw.Font.ttf(fontBld);
-    return pw.ThemeData.withFont(base: ttfReg, bold: ttfBld);
+    return pw.ThemeData.withFont(
+      base: ttfReg,
+      bold: ttfBld,
+      italic: ttfReg,
+      boldItalic: ttfBld,
+    );
   }
 
   /// Print test page to verify connection and paper width
@@ -113,7 +118,7 @@ static Future<pw.ThemeData> getArabicTheme() async {
       if (role == PrinterRole.thermalReceipt) {
         doc.addPage(
           pw.Page(
-            pageFormat: const PdfPageFormat(72 * PdfPageFormat.mm, 100 * PdfPageFormat.mm, marginAll: 4 * PdfPageFormat.mm),
+            pageFormat: const PdfPageFormat(80 * PdfPageFormat.mm, 100 * PdfPageFormat.mm, marginAll: 6 * PdfPageFormat.mm),
             theme: theme,
             build: (pw.Context ctx) {
               return pw.Column(
@@ -267,31 +272,39 @@ static Future<pw.ThemeData> getArabicTheme() async {
           : (headerAlignment == 'right' ? pw.TextAlign.right : pw.TextAlign.center);
 
       final paperSize = box.get('printer_paper_size', defaultValue: '80mm') as String;
-      final double rollWidthMm = paperSize == '58mm' ? 48.0 : 72.0;
+      final double rollWidthMm = paperSize == '58mm' ? 58.0 : 80.0;
+      final double horizontalMarginMm = paperSize == '58mm' ? 4.0 : 6.0;
+
+      // Defensive calculation: if total is 0 and items exist, re-sum from items so receipt never shows 0.00
+      double effectiveTotal = total;
+      if (effectiveTotal <= 0 && items.isNotEmpty) {
+        effectiveTotal = items.fold<double>(0.0, (sum, i) => sum + ((i['total'] as num?)?.toDouble() ?? 0.0)) - discount;
+        if (effectiveTotal < 0) effectiveTotal = 0.0;
+      }
 
       // Calculate approximate height dynamically to prevent clipping or excessive blank feed
-      double baseHeight = 150.0;
-      if (showSlogan && slogan.isNotEmpty) baseHeight += 6.0;
-      if (showAddress && address.isNotEmpty) baseHeight += 6.0;
-      if (showPhone && phoneStr.isNotEmpty) baseHeight += 6.0;
-      if (showFiscalInfo && fiscalInfo.isNotEmpty) baseHeight += 6.0;
-      if (showSocialMedia && socialMedia.isNotEmpty) baseHeight += 6.0;
-      if (showCashierName && cashierName.isNotEmpty) baseHeight += 6.0;
-      if (discount > 0) baseHeight += 6.0;
-      if (paidAmount > 0) baseHeight += 12.0;
-      if (isCredit) baseHeight += 32.0;
-      if (customExtraLines.isNotEmpty) baseHeight += (customExtraLines.length * 6.0);
-      if (showFooterNote && footerNote.isNotEmpty) baseHeight += 10.0;
-      if (showThankYou && thankYou.isNotEmpty) baseHeight += 10.0;
-      if (showBarcodeAtBottom) baseHeight += 25.0;
+      double baseHeight = 155.0;
+      if (showSlogan && slogan.isNotEmpty) baseHeight += 8.0;
+      if (showAddress && address.isNotEmpty) baseHeight += 7.0;
+      if (showPhone && phoneStr.isNotEmpty) baseHeight += 7.0;
+      if (showFiscalInfo && fiscalInfo.isNotEmpty) baseHeight += 7.0;
+      if (showSocialMedia && socialMedia.isNotEmpty) baseHeight += 7.0;
+      if (showCashierName && cashierName.isNotEmpty) baseHeight += 7.0;
+      if (discount > 0) baseHeight += 7.0;
+      if (paidAmount > 0) baseHeight += 14.0;
+      if (isCredit) baseHeight += 35.0;
+      if (customExtraLines.isNotEmpty) baseHeight += (customExtraLines.length * 7.0);
+      if (showFooterNote && footerNote.isNotEmpty) baseHeight += 12.0;
+      if (showThankYou && thankYou.isNotEmpty) baseHeight += 12.0;
+      if (showBarcodeAtBottom) baseHeight += 30.0;
 
-      final double heightEstimate = (baseHeight + (items.length * 7.5)).clamp(160.0, 9999.0);
+      final double heightEstimate = (baseHeight + (items.length * 8.0)).clamp(160.0, 9999.0);
 
       final pageFormat = PdfPageFormat(
         rollWidthMm * PdfPageFormat.mm,
         heightEstimate * PdfPageFormat.mm,
-        marginLeft: 2.5 * PdfPageFormat.mm,
-        marginRight: 2.5 * PdfPageFormat.mm,
+        marginLeft: horizontalMarginMm * PdfPageFormat.mm,
+        marginRight: horizontalMarginMm * PdfPageFormat.mm,
         marginTop: 6 * PdfPageFormat.mm,
         marginBottom: 10 * PdfPageFormat.mm,
       );
@@ -315,7 +328,7 @@ static Future<pw.ThemeData> getArabicTheme() async {
                   ),
                   if (showSlogan && slogan.isNotEmpty) ...[
                     pw.SizedBox(height: 2),
-                    pw.Text(slogan, textAlign: headerTextAlign, style: pw.TextStyle(fontSize: 8.5, fontStyle: pw.FontStyle.italic)),
+                    pw.Text(slogan, textAlign: headerTextAlign, style: const pw.TextStyle(fontSize: 9.0)),
                   ],
                   if (showAddress && address.isNotEmpty) ...[
                     pw.SizedBox(height: 1.5),
@@ -425,7 +438,7 @@ static Future<pw.ThemeData> getArabicTheme() async {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text('المجموع الإجمالي (Total):', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                      pw.Text('${total.toStringAsFixed(2)} دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                      pw.Text('${effectiveTotal.toStringAsFixed(2)} دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                     ],
                   ),
 
@@ -451,13 +464,13 @@ static Future<pw.ThemeData> getArabicTheme() async {
                     ),
                   ],
 
-                  if (paidAmount > total) ...[
+                  if (paidAmount > effectiveTotal) ...[
                     pw.SizedBox(height: 1.5),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text('المبلغ المتبقي (Rendu):', style: const pw.TextStyle(fontSize: 8)),
-                        pw.Text('${(paidAmount - total).toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
+                        pw.Text('${(paidAmount - effectiveTotal).toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
                       ],
                     ),
                   ],
@@ -484,7 +497,7 @@ static Future<pw.ThemeData> getArabicTheme() async {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text('مشتريات اليوم:', style: const pw.TextStyle(fontSize: 8)),
-                        pw.Text('${total.toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
+                        pw.Text('${effectiveTotal.toStringAsFixed(2)} دج', style: const pw.TextStyle(fontSize: 8)),
                       ],
                     ),
                     if (paidAmount > 0) ...[

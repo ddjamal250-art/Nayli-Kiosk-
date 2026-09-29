@@ -2486,6 +2486,8 @@ $itemsSummary
       previousDebt: _customerCreditBalance,
       newDebtTotal: isCredit ? (_customerCreditBalance + total) : _customerCreditBalance,
       skipPhysicalPrint: !printReceipt,
+      explicitTotal: total,
+      explicitDiscount: _cartDiscountValue,
     ));
 
     // 2. If credit, update customer debt in Hive
@@ -2506,9 +2508,8 @@ $itemsSummary
       }
     }
 
-    // 3. Clear cart and prepare for next customer
+    // 3. Reset local POS UI state for next customer
     if (mounted) {
-      billingBloc.add(ClearCartEvent());
       setState(() {
         _cartDiscountValue = 0.0;
         _selectedCustomerId = null;

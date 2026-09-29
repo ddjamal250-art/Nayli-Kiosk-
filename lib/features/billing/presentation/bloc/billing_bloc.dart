@@ -401,7 +401,20 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         isPrinting: true, printSuccess: false, clearError: true));
 
     try {
-      final items = state.cartItems
+      final currentCartItems = List<CartItem>.from(state.cartItems);
+      if (currentCartItems.isEmpty) {
+        emit(state.copyWith(isPrinting: false, printSuccess: false));
+        return;
+      }
+
+      final bool isReturn = state.isReturnMode;
+      final double snapSubtotal = state.subTotalAmount;
+      final double snapDiscount = event.explicitDiscount ?? state.calculatedDiscount;
+      final double positiveTotal = (event.explicitTotal != null && event.explicitTotal! > 0)
+          ? event.explicitTotal!
+          : state.totalAmount;
+
+      final items = currentCartItems
           .map((item) => {
                 'id': item.product.id,
                 'cartKey': item.cartKey,
@@ -420,7 +433,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
       // 1. Auto-deduct stock from Hive for all sold products
       final productBox = HiveDatabase.productBox;
-      for (final cartItem in state.cartItems) {
+      for (final cartItem in currentCartItems) {
         String originalId = cartItem.product.id;
         if (originalId.contains('_carton_')) {
           originalId = originalId.split('_carton_').first;
@@ -588,10 +601,10 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
          totalCost += itemCost;
       }
 
-      final subtotal = state.subTotalAmount;
-      final discountRatio = (subtotal > 0) ? (state.totalAmount / subtotal) : 1.0;
+      final subtotal = snapSubtotal;
+      final discountRatio = (subtotal > 0) ? (positiveTotal / subtotal) : 1.0;
 
-      final tobaccoItems = state.cartItems.where(
+      final tobaccoItems = currentCartItems.where(
         (i) => i.product.category.toLowerCase().contains('تبغ') || i.product.category.toLowerCase().contains('سجائر'),
       );
       final rawTobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
@@ -599,7 +612,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       
       final tobaccoProfit = tobaccoSales - tobaccoCost;
 
-      final coffeeItems = state.cartItems.where(
+      final coffeeItems = currentCartItems.where(
         (i) => i.product.category.toLowerCase().contains('قهوة') || i.product.category.toLowerCase().contains('شاي'),
       );
       final rawCoffeeSales = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.total);
@@ -608,14 +621,14 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final coffeeProfit = coffeeSales - coffeeCost;
       final coffeeCupsCount = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.quantity);
 
-      final generalSales = (state.totalAmount - tobaccoSales - coffeeSales).clamp(0.0, double.infinity);
+      final generalSales = (positiveTotal - tobaccoSales - coffeeSales).clamp(0.0, double.infinity);
       final generalCost = (totalCost - tobaccoCost - coffeeCost).clamp(0.0, double.infinity);
       final generalProfit = generalSales - generalCost;
-      final netProfit = state.totalAmount - totalCost;
+      final netProfit = positiveTotal - totalCost;
 
-      final double finalTotalAmount = state.isReturnMode ? -state.totalAmount : state.totalAmount;
-      final double finalTotalCost = state.isReturnMode ? -totalCost : totalCost;
-      final double finalNetProfit = state.isReturnMode ? -netProfit : netProfit;
+      final double finalTotalAmount = isReturn ? -positiveTotal : positiveTotal;
+      final double finalTotalCost = isReturn ? -totalCost : totalCost;
+      final double finalNetProfit = isReturn ? -netProfit : netProfit;
 
       await invoicesBox.put(invoiceId, {
         'id': invoiceId,
@@ -623,23 +636,23 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'totalAmount': finalTotalAmount,
         'totalCost': finalTotalCost,
         'netProfit': finalNetProfit,
-        'isReturn': state.isReturnMode,
-        'tobaccoSales': state.isReturnMode ? -tobaccoSales : tobaccoSales,
-        'tobaccoCost': state.isReturnMode ? -tobaccoCost : tobaccoCost,
-        'tobaccoProfit': state.isReturnMode ? -tobaccoProfit : tobaccoProfit,
-        'coffeeSales': state.isReturnMode ? -coffeeSales : coffeeSales,
-        'coffeeCost': state.isReturnMode ? -coffeeCost : coffeeCost,
-        'coffeeProfit': state.isReturnMode ? -coffeeProfit : coffeeProfit,
-        'coffeeCupsCount': state.isReturnMode ? -coffeeCupsCount : coffeeCupsCount,
-        'generalSales': state.isReturnMode ? -generalSales : generalSales,
-        'generalCost': state.isReturnMode ? -generalCost : generalCost,
-        'generalProfit': state.isReturnMode ? -generalProfit : generalProfit,
-        'itemCount': state.isReturnMode ? -state.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity) : state.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity),
+        'isReturn': isReturn,
+        'tobaccoSales': isReturn ? -tobaccoSales : tobaccoSales,
+        'tobaccoCost': isReturn ? -tobaccoCost : tobaccoCost,
+        'tobaccoProfit': isReturn ? -tobaccoProfit : tobaccoProfit,
+        'coffeeSales': isReturn ? -coffeeSales : coffeeSales,
+        'coffeeCost': isReturn ? -coffeeCost : coffeeCost,
+        'coffeeProfit': isReturn ? -coffeeProfit : coffeeProfit,
+        'coffeeCupsCount': isReturn ? -coffeeCupsCount : coffeeCupsCount,
+        'generalSales': isReturn ? -generalSales : generalSales,
+        'generalCost': isReturn ? -generalCost : generalCost,
+        'generalProfit': isReturn ? -generalProfit : generalProfit,
+        'itemCount': isReturn ? -currentCartItems.fold<double>(0.0, (sum, i) => sum + i.quantity) : currentCartItems.fold<double>(0.0, (sum, i) => sum + i.quantity),
         'items': items,
         'isCredit': event.isCredit,
         'paymentMethod': event.paymentMethod,
         'customerName': event.customerName,
-        'paidAmount': state.isReturnMode ? -event.paidAmount : event.paidAmount,
+        'paidAmount': isReturn ? -event.paidAmount : event.paidAmount,
       });
 
       // 3. Print physical receipt (unless skipped)
@@ -650,8 +663,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           address2: event.address2,
           phone: event.phone,
           items: items,
-          total: state.totalAmount,
-          discount: state.calculatedDiscount,
+          total: positiveTotal,
+          discount: snapDiscount,
           footer: event.footer,
           customerName: event.customerName,
           isCredit: event.isCredit,
@@ -663,7 +676,13 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         );
       }
 
-      emit(state.copyWith(isPrinting: false, printSuccess: true));
+      emit(state.copyWith(
+        cartItems: const [],
+        isPrinting: false,
+        printSuccess: true,
+        discountValue: 0.0,
+        isDiscountPercentage: false,
+      ));
     } catch (e) {
       emit(state.copyWith(
           isPrinting: false, error: 'Print failed: $e', clearError: false));
