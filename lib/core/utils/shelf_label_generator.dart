@@ -123,6 +123,24 @@ class ShelfLabelConfig {
   final double customWidthMm;
   final double customHeightMm;
   final double customMarginMm;
+  final List<String> elementOrder;
+  final Map<String, String> elementAlignments;
+
+  static const List<String> defaultElementOrder = [
+    'shop_name',
+    'product_name',
+    'price',
+    'barcode',
+    'date_unit',
+  ];
+
+  static const Map<String, String> defaultElementAlignments = {
+    'shop_name': 'center',
+    'product_name': 'center',
+    'price': 'center',
+    'barcode': 'center',
+    'date_unit': 'center',
+  };
 
   const ShelfLabelConfig({
     this.size = ShelfLabelSize.standard50x30,
@@ -137,6 +155,8 @@ class ShelfLabelConfig {
     this.customWidthMm = 50.0,
     this.customHeightMm = 30.0,
     this.customMarginMm = 1.5,
+    this.elementOrder = defaultElementOrder,
+    this.elementAlignments = defaultElementAlignments,
   });
 
   PdfPageFormat get effectivePageFormat {
@@ -166,6 +186,8 @@ class ShelfLabelConfig {
     double? customWidthMm,
     double? customHeightMm,
     double? customMarginMm,
+    List<String>? elementOrder,
+    Map<String, String>? elementAlignments,
   }) {
     return ShelfLabelConfig(
       size: size ?? this.size,
@@ -180,6 +202,8 @@ class ShelfLabelConfig {
       customWidthMm: customWidthMm ?? this.customWidthMm,
       customHeightMm: customHeightMm ?? this.customHeightMm,
       customMarginMm: customMarginMm ?? this.customMarginMm,
+      elementOrder: elementOrder ?? this.elementOrder,
+      elementAlignments: elementAlignments ?? this.elementAlignments,
     );
   }
 }
@@ -378,6 +402,24 @@ class ShelfLabelGenerator {
     }
   }
 
+  static pw.Alignment _getPdfAlignment(String? align) {
+    if (align == 'left') return pw.Alignment.centerLeft;
+    if (align == 'right') return pw.Alignment.centerRight;
+    return pw.Alignment.center;
+  }
+
+  static pw.TextAlign _getPdfTextAlign(String? align) {
+    if (align == 'left') return pw.TextAlign.left;
+    if (align == 'right') return pw.TextAlign.right;
+    return pw.TextAlign.center;
+  }
+
+  static pw.MainAxisAlignment _getPdfMainAlign(String? align) {
+    if (align == 'left') return pw.MainAxisAlignment.start;
+    if (align == 'right') return pw.MainAxisAlignment.end;
+    return pw.MainAxisAlignment.center;
+  }
+
   static pw.Widget _buildShelfTagTemplate(
     Product p,
     ShelfLabelConfig config,
@@ -395,77 +437,90 @@ class ShelfLabelGenerator {
         ? (config.customHeightMm * 0.28).clamp(7.0, 24.0)
         : (isMini ? 9.0 : config.barcodeHeight);
 
+    final Map<String, pw.Widget> elementMap = {
+      'shop_name': config.includeShopName
+          ? pw.Align(
+              alignment: _getPdfAlignment(config.elementAlignments['shop_name']),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    cleanShop,
+                    style: pw.TextStyle(fontSize: isMini ? 6 : 7.5, font: fontBold, color: PdfColors.grey700),
+                  ),
+                  pw.Text(
+                    p.isWeighted ? 'بالكيلوغرام' : 'بالقطعة',
+                    style: pw.TextStyle(fontSize: isMini ? 5.5 : 6.5, font: fontRegular, color: PdfColors.grey600),
+                  ),
+                ],
+              ),
+            )
+          : pw.SizedBox.shrink(),
+      'product_name': pw.Align(
+        alignment: _getPdfAlignment(config.elementAlignments['product_name']),
+        child: pw.Text(
+          cleanName,
+          style: pw.TextStyle(fontSize: isMini ? 8 : 9.5, font: fontBold),
+          maxLines: 1,
+          overflow: pw.TextOverflow.clip,
+          textAlign: _getPdfTextAlign(config.elementAlignments['product_name']),
+        ),
+      ),
+      'price': pw.Row(
+        mainAxisAlignment: _getPdfMainAlign(config.elementAlignments['price']),
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        children: [
+          pw.Text(
+            priceStr,
+            style: pw.TextStyle(fontSize: isMini ? 15 : 20, font: fontBold, color: PdfColors.black),
+          ),
+          pw.SizedBox(width: 3),
+          pw.Text(
+            config.currencySymbol,
+            style: pw.TextStyle(fontSize: isMini ? 7.5 : 9.5, font: fontBold, color: PdfColors.black),
+          ),
+        ],
+      ),
+      'barcode': hasBarcode
+          ? pw.Align(
+              alignment: _getPdfAlignment(config.elementAlignments['barcode']),
+              child: pw.Container(
+                height: barcodeH,
+                child: pw.BarcodeWidget(
+                  barcode: getBarcodeAlgorithm(cleanBarcode),
+                  data: cleanBarcode,
+                  drawText: config.showHriDigits && !isMini,
+                  color: PdfColors.black,
+                  textStyle: pw.TextStyle(fontSize: 6, font: fontRegular),
+                ),
+              ),
+            )
+          : pw.SizedBox.shrink(),
+      'date_unit': config.includeDate
+          ? pw.Align(
+              alignment: _getPdfAlignment(config.elementAlignments['date_unit'] ?? 'left'),
+              child: pw.Text(
+                dateStr,
+                style: pw.TextStyle(fontSize: 5, font: fontRegular, color: PdfColors.grey600),
+              ),
+            )
+          : pw.SizedBox.shrink(),
+    };
+
+    final List<pw.Widget> children = [];
+    for (final key in config.elementOrder) {
+      final widget = elementMap[key];
+      if (widget != null && widget is! pw.SizedBox) {
+        children.add(widget);
+      }
+    }
+
     return pw.Directionality(
       textDirection: pw.TextDirection.rtl,
       child: pw.Column(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         crossAxisAlignment: pw.CrossAxisAlignment.center,
-        children: [
-          // Header: Shop Name & Unit
-          if (config.includeShopName)
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  cleanShop,
-                  style: pw.TextStyle(fontSize: isMini ? 6 : 7.5, font: fontBold, color: PdfColors.grey700),
-                ),
-                pw.Text(
-                  p.isWeighted ? 'بالكيلوغرام' : 'بالقطعة',
-                  style: pw.TextStyle(fontSize: isMini ? 5.5 : 6.5, font: fontRegular, color: PdfColors.grey600),
-                ),
-              ],
-            ),
-
-          // Product Name
-          pw.Text(
-            cleanName,
-            style: pw.TextStyle(fontSize: isMini ? 8 : 9.5, font: fontBold),
-            maxLines: 1,
-            overflow: pw.TextOverflow.clip,
-            textAlign: pw.TextAlign.center,
-          ),
-
-          // Huge Price
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.center,
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
-            children: [
-              pw.Text(
-                priceStr,
-                style: pw.TextStyle(fontSize: isMini ? 15 : 20, font: fontBold, color: PdfColors.black),
-              ),
-              pw.SizedBox(width: 3),
-              pw.Text(
-                config.currencySymbol,
-                style: pw.TextStyle(fontSize: isMini ? 7.5 : 9.5, font: fontBold, color: PdfColors.black),
-              ),
-            ],
-          ),
-
-          // Barcode (Real 1D Vector Barcode)
-          if (hasBarcode)
-            pw.Container(
-              height: barcodeH,
-              child: pw.BarcodeWidget(
-                barcode: getBarcodeAlgorithm(cleanBarcode),
-                data: cleanBarcode,
-                drawText: config.showHriDigits && !isMini,
-                color: PdfColors.black,
-                textStyle: pw.TextStyle(fontSize: 6, font: fontRegular),
-              ),
-            ),
-
-          // Footer: Date
-          if (config.includeDate)
-            pw.Align(
-              alignment: pw.Alignment.centerLeft,
-              child: pw.Text(
-                dateStr,
-                style: pw.TextStyle(fontSize: 5, font: fontRegular, color: PdfColors.grey600),
-              ),
-            ),
-        ],
+        children: children,
       ),
     );
   }
@@ -482,25 +537,31 @@ class ShelfLabelGenerator {
     String priceStr,
   ) {
     final cleanName = cleanEmojisForPdf(p.name);
+    final cleanShop = cleanEmojisForPdf(config.shopName);
 
-    return pw.Directionality(
-      textDirection: pw.TextDirection.rtl,
-      child: pw.Column(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: pw.CrossAxisAlignment.center,
-        children: [
-          // Top: Product Name
-          pw.Text(
-            cleanName,
-            style: pw.TextStyle(fontSize: isMini ? 7.5 : 9, font: fontBold),
-            maxLines: 1,
-            overflow: pw.TextOverflow.clip,
-            textAlign: pw.TextAlign.center,
-          ),
-
-          // Center: Large Prominent Barcode
-          if (hasBarcode)
-            pw.Expanded(
+    final Map<String, pw.Widget> elementMap = {
+      'shop_name': config.includeShopName
+          ? pw.Align(
+              alignment: _getPdfAlignment(config.elementAlignments['shop_name']),
+              child: pw.Text(
+                cleanShop,
+                style: pw.TextStyle(fontSize: isMini ? 6 : 7, font: fontBold, color: PdfColors.grey700),
+                textAlign: _getPdfTextAlign(config.elementAlignments['shop_name']),
+              ),
+            )
+          : pw.SizedBox.shrink(),
+      'product_name': pw.Align(
+        alignment: _getPdfAlignment(config.elementAlignments['product_name']),
+        child: pw.Text(
+          cleanName,
+          style: pw.TextStyle(fontSize: isMini ? 7.5 : 9, font: fontBold),
+          maxLines: 1,
+          overflow: pw.TextOverflow.clip,
+          textAlign: _getPdfTextAlign(config.elementAlignments['product_name']),
+        ),
+      ),
+      'barcode': hasBarcode
+          ? pw.Expanded(
               child: pw.Padding(
                 padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
                 child: pw.BarcodeWidget(
@@ -511,29 +572,41 @@ class ShelfLabelGenerator {
                   textStyle: pw.TextStyle(fontSize: 6.5, font: fontRegular),
                 ),
               ),
-            ),
-
-          // Bottom Bar: Price & Date
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              if (config.includeDate)
-                pw.Text(dateStr, style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.grey600))
-              else
-                pw.SizedBox(),
-              pw.Row(
-                children: [
-                  pw.Text(
-                    priceStr,
-                    style: pw.TextStyle(fontSize: isMini ? 10 : 12, font: fontBold),
-                  ),
-                  pw.SizedBox(width: 2),
-                  pw.Text(config.currencySymbol, style: pw.TextStyle(fontSize: 7, font: fontBold)),
-                ],
-              ),
-            ],
+            )
+          : pw.SizedBox.shrink(),
+      'price': pw.Row(
+        mainAxisAlignment: _getPdfMainAlign(config.elementAlignments['price']),
+        children: [
+          pw.Text(
+            priceStr,
+            style: pw.TextStyle(fontSize: isMini ? 10 : 12, font: fontBold),
           ),
+          pw.SizedBox(width: 2),
+          pw.Text(config.currencySymbol, style: pw.TextStyle(fontSize: 7, font: fontBold)),
         ],
+      ),
+      'date_unit': config.includeDate
+          ? pw.Align(
+              alignment: _getPdfAlignment(config.elementAlignments['date_unit'] ?? 'left'),
+              child: pw.Text(dateStr, style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.grey600)),
+            )
+          : pw.SizedBox.shrink(),
+    };
+
+    final List<pw.Widget> children = [];
+    for (final key in config.elementOrder) {
+      final widget = elementMap[key];
+      if (widget != null && widget is! pw.SizedBox) {
+        children.add(widget);
+      }
+    }
+
+    return pw.Directionality(
+      textDirection: pw.TextDirection.rtl,
+      child: pw.Column(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: children,
       ),
     );
   }
@@ -555,62 +628,80 @@ class ShelfLabelGenerator {
         ? (config.customHeightMm * 0.28).clamp(7.0, 24.0)
         : (isMini ? 9.0 : config.barcodeHeight);
 
+    final Map<String, pw.Widget> elementMap = {
+      'shop_name': config.includeShopName
+          ? pw.Align(
+              alignment: _getPdfAlignment(config.elementAlignments['shop_name']),
+              child: pw.Text(
+                '[ميزان] $cleanShop',
+                style: pw.TextStyle(fontSize: isMini ? 6 : 7.5, font: fontBold, color: PdfColors.teal800),
+                textAlign: _getPdfTextAlign(config.elementAlignments['shop_name']),
+              ),
+            )
+          : pw.SizedBox.shrink(),
+      'product_name': pw.Align(
+        alignment: _getPdfAlignment(config.elementAlignments['product_name']),
+        child: pw.Text(
+          cleanName,
+          style: pw.TextStyle(fontSize: isMini ? 8 : 10, font: fontBold),
+          maxLines: 1,
+          overflow: pw.TextOverflow.clip,
+          textAlign: _getPdfTextAlign(config.elementAlignments['product_name']),
+        ),
+      ),
+      'price': pw.Align(
+        alignment: _getPdfAlignment(config.elementAlignments['price']),
+        child: pw.Container(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey100,
+            borderRadius: pw.BorderRadius.circular(4),
+          ),
+          child: pw.Text(
+            'السعر: $priceStr ${config.currencySymbol} / كغ',
+            style: pw.TextStyle(fontSize: isMini ? 10 : 12.5, font: fontBold, color: PdfColors.black),
+          ),
+        ),
+      ),
+      'barcode': hasBarcode
+          ? pw.Align(
+              alignment: _getPdfAlignment(config.elementAlignments['barcode']),
+              child: pw.Container(
+                height: barcodeH,
+                child: pw.BarcodeWidget(
+                  barcode: getBarcodeAlgorithm(cleanBarcode),
+                  data: cleanBarcode,
+                  drawText: config.showHriDigits,
+                  color: PdfColors.black,
+                  textStyle: pw.TextStyle(fontSize: 6, font: fontRegular),
+                ),
+              ),
+            )
+          : pw.SizedBox.shrink(),
+      'date_unit': pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text('طازج يومياً', style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.teal700)),
+          if (config.includeDate)
+            pw.Text(dateStr, style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.grey600)),
+        ],
+      ),
+    };
+
+    final List<pw.Widget> children = [];
+    for (final key in config.elementOrder) {
+      final widget = elementMap[key];
+      if (widget != null && widget is! pw.SizedBox) {
+        children.add(widget);
+      }
+    }
+
     return pw.Directionality(
       textDirection: pw.TextDirection.rtl,
       child: pw.Column(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         crossAxisAlignment: pw.CrossAxisAlignment.center,
-        children: [
-          if (config.includeShopName)
-            pw.Text(
-              '[ميزان] $cleanShop',
-              style: pw.TextStyle(fontSize: isMini ? 6 : 7.5, font: fontBold, color: PdfColors.teal800),
-            ),
-
-          pw.Text(
-            cleanName,
-            style: pw.TextStyle(fontSize: isMini ? 8 : 10, font: fontBold),
-            maxLines: 1,
-            overflow: pw.TextOverflow.clip,
-            textAlign: pw.TextAlign.center,
-          ),
-
-          // Price per Kg
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.grey100,
-              borderRadius: pw.BorderRadius.circular(4),
-            ),
-            child: pw.Text(
-              'السعر: $priceStr ${config.currencySymbol} / كغ',
-              style: pw.TextStyle(fontSize: isMini ? 10 : 12.5, font: fontBold, color: PdfColors.black),
-            ),
-          ),
-
-          // Barcode
-          if (hasBarcode)
-            pw.Container(
-              height: barcodeH,
-              child: pw.BarcodeWidget(
-                barcode: getBarcodeAlgorithm(cleanBarcode),
-                data: cleanBarcode,
-                drawText: config.showHriDigits,
-                color: PdfColors.black,
-                textStyle: pw.TextStyle(fontSize: 6, font: fontRegular),
-              ),
-            ),
-
-          // Date & Scale notice
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text('طازج يوميا', style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.teal700)),
-              if (config.includeDate)
-                pw.Text(dateStr, style: pw.TextStyle(fontSize: 5.5, font: fontRegular, color: PdfColors.grey600)),
-            ],
-          ),
-        ],
+        children: children,
       ),
     );
   }

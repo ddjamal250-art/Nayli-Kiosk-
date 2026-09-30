@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -9,6 +11,156 @@ import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../billing/presentation/widgets/printer_selection_dialog.dart';
+
+class _ReceiptSectionInfo {
+  final String id;
+  final String title;
+  final IconData icon;
+  final bool hasAlignment;
+  final bool canDisable;
+  final bool isSeparator;
+
+  const _ReceiptSectionInfo({
+    required this.id,
+    required this.title,
+    required this.icon,
+    this.hasAlignment = true,
+    this.canDisable = true,
+    this.isSeparator = false,
+  });
+}
+
+const Map<String, _ReceiptSectionInfo> kReceiptSectionsInfo = {
+  'header': _ReceiptSectionInfo(
+    id: 'header',
+    title: 'اسم المحل / المتجر',
+    icon: Icons.storefront_rounded,
+    hasAlignment: true,
+    canDisable: false,
+  ),
+  'slogan': _ReceiptSectionInfo(
+    id: 'slogan',
+    title: 'الشعار أو عبارة الترحيب',
+    icon: Icons.chat_bubble_outline_rounded,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'address': _ReceiptSectionInfo(
+    id: 'address',
+    title: 'عنوان المتجر والموقع',
+    icon: Icons.location_on_outlined,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'phone': _ReceiptSectionInfo(
+    id: 'phone',
+    title: 'رقم هاتف المتجر',
+    icon: Icons.phone_outlined,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'fiscal': _ReceiptSectionInfo(
+    id: 'fiscal',
+    title: 'السجل التجاري والضرائب (NIF/RC)',
+    icon: Icons.receipt_long_outlined,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'social': _ReceiptSectionInfo(
+    id: 'social',
+    title: 'حسابات التواصل الاجتماعي',
+    icon: Icons.share_rounded,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'sep_1': _ReceiptSectionInfo(
+    id: 'sep_1',
+    title: 'خط فاصل علوي',
+    icon: Icons.horizontal_rule_rounded,
+    hasAlignment: false,
+    canDisable: true,
+    isSeparator: true,
+  ),
+  'invoice_info': _ReceiptSectionInfo(
+    id: 'invoice_info',
+    title: 'رقم الفاتورة والتاريخ والوقت',
+    icon: Icons.confirmation_number_outlined,
+    hasAlignment: false,
+    canDisable: false,
+  ),
+  'cashier': _ReceiptSectionInfo(
+    id: 'cashier',
+    title: 'اسم الكاشير أو المنفذ',
+    icon: Icons.person_outline_rounded,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'sep_2': _ReceiptSectionInfo(
+    id: 'sep_2',
+    title: 'خط فاصل جدول السلع',
+    icon: Icons.horizontal_rule_rounded,
+    hasAlignment: false,
+    canDisable: true,
+    isSeparator: true,
+  ),
+  'items': _ReceiptSectionInfo(
+    id: 'items',
+    title: 'جدول المبيعات (السلعة، الكمية، السعر)',
+    icon: Icons.shopping_cart_outlined,
+    hasAlignment: false,
+    canDisable: false,
+  ),
+  'sep_3': _ReceiptSectionInfo(
+    id: 'sep_3',
+    title: 'خط فاصل المجاميع',
+    icon: Icons.horizontal_rule_rounded,
+    hasAlignment: false,
+    canDisable: true,
+    isSeparator: true,
+  ),
+  'totals': _ReceiptSectionInfo(
+    id: 'totals',
+    title: 'المجاميع والتخفيض والمدفوع والباقي',
+    icon: Icons.calculate_outlined,
+    hasAlignment: false,
+    canDisable: false,
+  ),
+  'credit_info': _ReceiptSectionInfo(
+    id: 'credit_info',
+    title: 'بيانات ديون كريدي الزبون',
+    icon: Icons.account_balance_wallet_outlined,
+    hasAlignment: false,
+    canDisable: true,
+  ),
+  'extra_lines': _ReceiptSectionInfo(
+    id: 'extra_lines',
+    title: 'أسطر حرة إعلانية مخصصة',
+    icon: Icons.playlist_add_rounded,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'footer': _ReceiptSectionInfo(
+    id: 'footer',
+    title: 'سياسة الاسترجاع والشروط',
+    icon: Icons.info_outline_rounded,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'thank_you': _ReceiptSectionInfo(
+    id: 'thank_you',
+    title: 'عبارة الشكر والختام',
+    icon: Icons.favorite_border_rounded,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+  'barcode': _ReceiptSectionInfo(
+    id: 'barcode',
+    title: 'رمز الاستجابة السريعة / الباركود',
+    icon: Icons.qr_code_2_rounded,
+    hasAlignment: true,
+    canDisable: true,
+  ),
+};
 
 class ReceiptCustomizerPage extends StatefulWidget {
   ReceiptCustomizerPage({super.key});
@@ -60,6 +212,11 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
 
   List<String> _customExtraLines = [];
 
+  // Modular Layout & Ordering Engine
+  List<String> _sectionOrder = [];
+  Map<String, String> _sectionAlignments = {};
+  int _previewRevision = 0;
+
   @override
   void initState() {
     super.initState();
@@ -106,6 +263,26 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       _customExtraLines = (map['customExtraLines'] is Iterable)
           ? List<String>.from((map['customExtraLines'] as Iterable).map((e) => e.toString()))
           : [];
+
+      // Load section order
+      if (map['sectionOrder'] is Iterable) {
+        _sectionOrder = List<String>.from(map['sectionOrder'] as Iterable);
+      }
+      for (final def in PrinterHelper.defaultReceiptSectionOrder) {
+        if (!_sectionOrder.contains(def)) {
+          _sectionOrder.add(def);
+        }
+      }
+
+      // Load section alignments
+      _sectionAlignments = Map<String, String>.from(PrinterHelper.defaultReceiptSectionAlignments);
+      if (map['sectionAlignments'] is Map) {
+        (map['sectionAlignments'] as Map).forEach((k, v) {
+          if (v is String) _sectionAlignments[k.toString()] = v;
+        });
+      } else if (map['headerAlignment'] is String) {
+        _sectionAlignments['header'] = map['headerAlignment'];
+      }
     } else {
       _shopNameCtrl = TextEditingController(text: defaultShopName);
       _sloganCtrl = TextEditingController(text: 'مرحباً بكم في متجرنا');
@@ -119,20 +296,30 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       _paperSize = box.get('printer_paper_size', defaultValue: '80mm') as String;
       _paperWidthMm = (box.get('receipt_paper_width_mm') as num?)?.toDouble() ?? (_paperSize == '58mm' ? 58.0 : 80.0);
       _receiptMarginMm = (box.get('receipt_margin_mm') as num?)?.toDouble() ?? (_paperSize == '58mm' ? 4.0 : 6.0);
+      _sectionOrder = List<String>.from(PrinterHelper.defaultReceiptSectionOrder);
+      _sectionAlignments = Map<String, String>.from(PrinterHelper.defaultReceiptSectionAlignments);
     }
 
     _paperWidthCtrl = TextEditingController(text: _paperWidthMm.toStringAsFixed(0));
     _marginCtrl = TextEditingController(text: _receiptMarginMm.toStringAsFixed(1));
 
-    _shopNameCtrl.addListener(() => setState(() {}));
-    _sloganCtrl.addListener(() => setState(() {}));
-    _addressCtrl.addListener(() => setState(() {}));
-    _phoneCtrl.addListener(() => setState(() {}));
-    _fiscalCtrl.addListener(() => setState(() {}));
-    _cashierCtrl.addListener(() => setState(() {}));
-    _socialCtrl.addListener(() => setState(() {}));
-    _footerNoteCtrl.addListener(() => setState(() {}));
-    _thankYouCtrl.addListener(() => setState(() {}));
+    void triggerUpdate() {
+      if (mounted) {
+        setState(() {
+          _previewRevision++;
+        });
+      }
+    }
+
+    _shopNameCtrl.addListener(triggerUpdate);
+    _sloganCtrl.addListener(triggerUpdate);
+    _addressCtrl.addListener(triggerUpdate);
+    _phoneCtrl.addListener(triggerUpdate);
+    _fiscalCtrl.addListener(triggerUpdate);
+    _cashierCtrl.addListener(triggerUpdate);
+    _socialCtrl.addListener(triggerUpdate);
+    _footerNoteCtrl.addListener(triggerUpdate);
+    _thankYouCtrl.addListener(triggerUpdate);
   }
 
   @override
@@ -151,8 +338,8 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     super.dispose();
   }
 
-  Future<void> _saveTemplate() async {
-    final template = {
+  Map<String, dynamic> _buildCurrentTemplateMap() {
+    return {
       'shopName': _shopNameCtrl.text.trim(),
       'showSlogan': _showSlogan,
       'slogan': _sloganCtrl.text.trim(),
@@ -172,12 +359,125 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       'thankYou': _thankYouCtrl.text.trim(),
       'showBarcodeAtBottom': _showBarcodeAtBottom,
       'separatorStyle': _separatorStyle,
-      'headerAlignment': _headerAlignment,
+      'headerAlignment': _sectionAlignments['header'] ?? _headerAlignment,
       'paperSize': _paperSize,
       'paperWidthMm': _paperWidthMm,
       'marginMm': _receiptMarginMm,
       'customExtraLines': _customExtraLines,
+      'sectionOrder': _sectionOrder,
+      'sectionAlignments': _sectionAlignments,
     };
+  }
+
+  bool _isSectionEnabled(String id) {
+    switch (id) {
+      case 'header':
+      case 'invoice_info':
+      case 'items':
+      case 'totals':
+      case 'credit_info':
+        return true;
+      case 'slogan':
+        return _showSlogan;
+      case 'address':
+        return _showAddress;
+      case 'phone':
+        return _showPhone;
+      case 'fiscal':
+        return _showFiscalInfo;
+      case 'social':
+        return _showSocialMedia;
+      case 'cashier':
+        return _showCashierName;
+      case 'footer':
+        return _showFooterNote;
+      case 'thank_you':
+        return _showThankYou;
+      case 'barcode':
+        return _showBarcodeAtBottom;
+      case 'extra_lines':
+        return _customExtraLines.isNotEmpty;
+      default:
+        return true;
+    }
+  }
+
+  void _toggleSectionEnabled(String id, bool val) {
+    setState(() {
+      _previewRevision++;
+      switch (id) {
+        case 'slogan':
+          _showSlogan = val;
+          break;
+        case 'address':
+          _showAddress = val;
+          break;
+        case 'phone':
+          _showPhone = val;
+          break;
+        case 'fiscal':
+          _showFiscalInfo = val;
+          break;
+        case 'social':
+          _showSocialMedia = val;
+          break;
+        case 'cashier':
+          _showCashierName = val;
+          break;
+        case 'footer':
+          _showFooterNote = val;
+          break;
+        case 'thank_you':
+          _showThankYou = val;
+          break;
+        case 'barcode':
+          _showBarcodeAtBottom = val;
+          break;
+      }
+    });
+  }
+
+  void _setSectionAlignment(String id, String align) {
+    setState(() {
+      _sectionAlignments[id] = align;
+      if (id == 'header') _headerAlignment = align;
+      _previewRevision++;
+    });
+  }
+
+  void _moveSectionUp(int index) {
+    if (index <= 0) return;
+    setState(() {
+      final item = _sectionOrder.removeAt(index);
+      _sectionOrder.insert(index - 1, item);
+      _previewRevision++;
+    });
+    SoundService.playTabSwitch();
+  }
+
+  void _moveSectionDown(int index) {
+    if (index >= _sectionOrder.length - 1) return;
+    setState(() {
+      final item = _sectionOrder.removeAt(index);
+      _sectionOrder.insert(index + 1, item);
+      _previewRevision++;
+    });
+    SoundService.playTabSwitch();
+  }
+
+  void _resetSectionOrder() {
+    setState(() {
+      _sectionOrder = List<String>.from(PrinterHelper.defaultReceiptSectionOrder);
+      _sectionAlignments = Map<String, String>.from(PrinterHelper.defaultReceiptSectionAlignments);
+      _headerAlignment = 'center';
+      _previewRevision++;
+    });
+    SoundService.playTabSwitch();
+    SnackbarHelper.showSuccess(context, 'تمت استعادة الترتيب والمحاذاة الافتراضية بنجاح!');
+  }
+
+  Future<void> _saveTemplate() async {
+    final template = _buildCurrentTemplateMap();
 
     final box = HiveDatabase.settingsBox;
     await box.put('receipt_template', template);
@@ -446,10 +746,10 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                           ),
                         ),
                         SizedBox(height: 16),
-                        _buildReceiptPreview(separator),
+                        _buildLivePdfPreview(),
                         SizedBox(height: 16),
                         Text(
-                          'تتحدث المعاينة مباشرة مع كل حرف تدخله في لوحة التخصيص',
+                          'معاينة طبق الأصل لمحرك الطباعة الحراري مع كل تعديل',
                           style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                         ),
                       ],
@@ -485,7 +785,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                         SingleChildScrollView(
                           padding: EdgeInsets.all(16),
                           child: Center(
-                            child: _buildReceiptPreview(separator),
+                            child: _buildLivePdfPreview(),
                           ),
                         ),
                       ],
@@ -497,180 +797,73 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
     );
   }
 
-  /// REALISTIC THERMAL RECEIPT TICKET PREVIEW
-  Widget _buildReceiptPreview(String separator) {
+  /// TRUE WYSIWYG NATIVE PDF RECEIPT PREVIEW
+  Widget _buildLivePdfPreview() {
+    final testItems = [
+      {'name': 'حليب كانديا 1 لتر', 'qty': 2, 'price': 130.0, 'total': 260.0},
+      {'name': 'زيت عافية 5 لتر', 'qty': 1, 'price': 650.0, 'total': 650.0},
+      {'name': 'شوكولاطة ماكسون', 'qty': 3, 'price': 120.0, 'total': 360.0},
+    ];
+
     final double previewWidth = (_paperWidthMm * 4.2).clamp(260.0, 420.0);
+
     return Container(
       width: previewWidth,
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      constraints: const BoxConstraints(maxHeight: 700),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade300, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.09),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 18,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: _headerAlignment == 'center'
-            ? CrossAxisAlignment.center
-            : (_headerAlignment == 'left' ? CrossAxisAlignment.start : CrossAxisAlignment.end),
-        children: [
-          // Mandatory Header: Shop Name
-          Text(
-            _shopNameCtrl.text.isEmpty ? 'اسم المحل' : _shopNameCtrl.text,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'monospace'),
+      clipBehavior: Clip.antiAlias,
+      child: PdfPreview(
+        key: ValueKey(_previewRevision),
+        build: (format) async => await PrinterHelper.generateReceiptPdfBytes(
+          items: testItems,
+          total: 1270.0,
+          paidAmount: 1500.0,
+          invoiceId: 'FAC-0089',
+          customTemplate: _buildCurrentTemplateMap(),
+        ),
+        canChangeOrientation: false,
+        canChangePageFormat: false,
+        canDebug: false,
+        allowPrinting: true,
+        allowSharing: false,
+        maxPageWidth: previewWidth,
+        loadingWidget: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: CircularProgressIndicator(),
           ),
-
-          // Optional Slogan
-          if (_showSlogan && _sloganCtrl.text.isNotEmpty) ...[
-            SizedBox(height: 3),
-            Text(
-              _sloganCtrl.text,
-              style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, fontFamily: 'monospace', color: Colors.black87),
-              textAlign: TextAlign.center,
-            ),
-          ],
-
-          // Optional Address & Phone
-          if (_showAddress && _addressCtrl.text.isNotEmpty) ...[
-            SizedBox(height: 3),
-            Text('📍 ${_addressCtrl.text}', style: TextStyle(fontSize: 11, fontFamily: 'monospace'), textAlign: TextAlign.center),
-          ],
-          if (_showPhone && _phoneCtrl.text.isNotEmpty) ...[
-            SizedBox(height: 3),
-            Text('📞 ${_phoneCtrl.text}', style: TextStyle(fontSize: 11, fontFamily: 'monospace'), textAlign: TextAlign.center),
-          ],
-          if (_showFiscalInfo && _fiscalCtrl.text.isNotEmpty) ...[
-            SizedBox(height: 3),
-            Text(_fiscalCtrl.text, style: TextStyle(fontSize: 9.5, color: Colors.grey, fontFamily: 'monospace'), textAlign: TextAlign.center),
-          ],
-          if (_showSocialMedia && _socialCtrl.text.isNotEmpty) ...[
-            SizedBox(height: 3),
-            Text('📱 ${_socialCtrl.text}', style: TextStyle(fontSize: 10, color: Colors.blueGrey, fontFamily: 'monospace'), textAlign: TextAlign.center),
-          ],
-
-          SizedBox(height: 8),
-          Text(separator, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
-          SizedBox(height: 6),
-
-          // Mandatory Invoice Info
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('وصل رقم: #FAC-0089', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold)),
-              Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: TextStyle(fontFamily: 'monospace', fontSize: 10)),
-            ],
-          ),
-          if (_showCashierName && _cashierCtrl.text.isNotEmpty) ...[
-            SizedBox(height: 3),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(_cashierCtrl.text, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.brown)),
-            ),
-          ],
-
-          SizedBox(height: 6),
-          Text(separator, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
-          SizedBox(height: 6),
-
-          // Mandatory Items Table
-          Row(
-            children: [
-              Expanded(flex: 5, child: Text('السلعة', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold))),
-              Expanded(flex: 2, child: Text('الكمية', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold))),
-              Expanded(flex: 3, child: Text('السعر', textAlign: TextAlign.end, style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold))),
-            ],
-          ),
-          SizedBox(height: 4),
-
-          // Sample items preview
-          _buildItemRow('حليب كانديا 1L', '2', '260.00'),
-          _buildItemRow('زيت عافية 5L', '1', '650.00'),
-          _buildItemRow('شوكولاطة ماكسون', '3', '360.00'),
-
-          SizedBox(height: 6),
-          Text(separator, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
-          SizedBox(height: 6),
-
-          // Total & Payment info
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('المجموع الإجمالي (Total):', style: TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold)),
-              Text('1,270.00 دج', style: TextStyle(fontFamily: 'monospace', fontSize: 15, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          SizedBox(height: 2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('المبلغ المدفوع (Espèce):', style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey)),
-              Text('1,500.00 دج', style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey)),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('المبلغ المتبقي (Rendu):', style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey)),
-              Text('230.00 دج', style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey)),
-            ],
-          ),
-
-          SizedBox(height: 6),
-          Text(separator, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.grey), maxLines: 1),
-          SizedBox(height: 6),
-
-          // Custom Extra Lines in receipt
-          if (_customExtraLines.isNotEmpty) ...[
-            for (var line in _customExtraLines)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 2),
-                child: Text(line, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 10, fontWeight: FontWeight.w600)),
-              ),
-            SizedBox(height: 4),
-          ],
-
-          // Optional Footer Note & Thank You
-          if (_showFooterNote && _footerNoteCtrl.text.isNotEmpty) ...[
-            Text(_footerNoteCtrl.text, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Colors.black87)),
-            SizedBox(height: 4),
-          ],
-          if (_showThankYou && _thankYouCtrl.text.isNotEmpty) ...[
-            Text(_thankYouCtrl.text, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 10, fontWeight: FontWeight.bold)),
-            SizedBox(height: 6),
-          ],
-
-          if (_showBarcodeAtBottom) ...[
-            SizedBox(height: 6),
-            Center(child: Icon(Icons.qr_code_2, size: 40, color: Colors.black87)),
-            SizedBox(height: 2),
-            Center(
-              child: Text(
-                '* FAC-0089 *',
-                style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Colors.grey),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildItemRow(String name, String qty, String total) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Expanded(flex: 5, child: Text(name, style: TextStyle(fontFamily: 'monospace', fontSize: 10.5))),
-          Expanded(flex: 2, child: Text(qty, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 10.5))),
-          Expanded(flex: 3, child: Text('$total دج', textAlign: TextAlign.end, style: TextStyle(fontFamily: 'monospace', fontSize: 10.5, fontWeight: FontWeight.bold))),
-        ],
+  Widget _buildAlignBtn(String sectionId, String align, IconData icon, String currentAlign) {
+    final isSelected = currentAlign == align;
+    return InkWell(
+      onTap: () => _setSectionAlignment(sectionId, align),
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          icon,
+          size: 16,
+          color: isSelected ? Colors.white : Colors.grey.shade700,
+        ),
       ),
     );
   }
@@ -847,7 +1040,172 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
         ),
         SizedBox(height: 16),
 
-        // SECTION 1: MANDATORY STORE BRANDING
+        // SECTION 1: REORDERABLE SECTIONS & ALIGNMENTS
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 1,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.swap_vert_circle_outlined, color: const Color(0xFF4F46E5), size: 24),
+                        const SizedBox(width: 8),
+                        const Text('1. ترتيب ومواقع ومحاذاة الأقسام 🔀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      ],
+                    ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: const Text('الترتيب الافتراضي', style: TextStyle(fontSize: 12)),
+                      onPressed: _resetSectionOrder,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'يمكنك تحريك أي قسم للأعلى أو للأسفل (⬆️ / ⬇️)، وتحديد محاذاة النص (يمين / وسط / يسار)، وإظهار أو إخفاء القسم:',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 14),
+                ..._sectionOrder.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final secId = entry.value;
+                  final info = kReceiptSectionsInfo[secId] ?? _ReceiptSectionInfo(
+                    id: secId,
+                    title: secId,
+                    icon: Icons.article_outlined,
+                  );
+                  final isEnabled = _isSectionEnabled(secId);
+                  final currentAlign = _sectionAlignments[secId] ?? 'center';
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isEnabled ? Colors.white : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isEnabled ? Colors.grey.shade300 : Colors.grey.shade200,
+                        width: 1,
+                      ),
+                      boxShadow: isEnabled
+                          ? [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 1))]
+                          : [],
+                    ),
+                    child: Row(
+                      children: [
+                        // Move Up / Down Buttons
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InkWell(
+                              onTap: index > 0 ? () => _moveSectionUp(index) : null,
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: const EdgeInsets.all(2),
+                                child: Icon(
+                                  Icons.arrow_upward_rounded,
+                                  size: 18,
+                                  color: index > 0 ? AppTheme.primaryColor : Colors.grey.shade300,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            InkWell(
+                              onTap: index < _sectionOrder.length - 1 ? () => _moveSectionDown(index) : null,
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: const EdgeInsets.all(2),
+                                child: Icon(
+                                  Icons.arrow_downward_rounded,
+                                  size: 18,
+                                  color: index < _sectionOrder.length - 1 ? AppTheme.primaryColor : Colors.grey.shade300,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Order Index Badge
+                        Container(
+                          width: 26,
+                          height: 26,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isEnabled ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isEnabled ? AppTheme.primaryColor : Colors.grey,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+
+                        // Icon and Title
+                        Icon(info.icon, size: 20, color: isEnabled ? Colors.grey.shade800 : Colors.grey.shade400),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            info.title,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: isEnabled ? Colors.black87 : Colors.grey,
+                            ),
+                          ),
+                        ),
+
+                        // Alignment Selector (if supported)
+                        if (info.hasAlignment && isEnabled) ...[
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildAlignBtn(secId, 'right', Icons.format_align_right_rounded, currentAlign),
+                                _buildAlignBtn(secId, 'center', Icons.format_align_center_rounded, currentAlign),
+                                _buildAlignBtn(secId, 'left', Icons.format_align_left_rounded, currentAlign),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+
+                        // Enable / Disable switch (if canDisable)
+                        if (info.canDisable) ...[
+                          Switch(
+                            value: isEnabled,
+                            activeColor: AppTheme.primaryColor,
+                            onChanged: (val) => _toggleSectionEnabled(secId, val),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // SECTION 2: MANDATORY STORE BRANDING
         Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 1,
@@ -860,7 +1218,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                   children: [
                     Icon(Icons.storefront_rounded, color: AppTheme.primaryColor, size: 22),
                     SizedBox(width: 8),
-                    Text('1. هوية المتجر ورأس الوصل 🏪', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text('2. هوية المتجر ورأس الوصل 🏪', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
                 SizedBox(height: 14),

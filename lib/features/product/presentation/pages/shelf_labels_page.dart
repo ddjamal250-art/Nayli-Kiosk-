@@ -48,6 +48,19 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   late TextEditingController _customHeightCtrl;
   late TextEditingController _customMarginCtrl;
 
+  // Label Element Ordering & Alignments
+  List<String> _elementOrder = List<String>.from(ShelfLabelConfig.defaultElementOrder);
+  Map<String, String> _elementAlignments = Map<String, String>.from(ShelfLabelConfig.defaultElementAlignments);
+  int _previewRevision = 0;
+
+  static const Map<String, ({String title, IconData icon, String subtitle})> _kLabelElementInfo = {
+    'shop_name': (title: 'اسم المحل / المتجر', icon: Icons.storefront_rounded, subtitle: 'يظهر في أعلى أو منتصف الملصق'),
+    'product_name': (title: 'اسم السلعة والوصف', icon: Icons.shopping_bag_rounded, subtitle: 'اسم المنتوج بخط واضح وبارز'),
+    'price': (title: 'السعر والعملة', icon: Icons.monetization_on_rounded, subtitle: 'السعر بالخط العريض مع العملة دج'),
+    'barcode': (title: 'خطوط الباركود والأرقام', icon: Icons.qr_code_scanner_rounded, subtitle: 'خطوط الكود وأرقام القراءة الضوئية'),
+    'date_unit': (title: 'التاريخ / الوحدة', icon: Icons.calendar_today_rounded, subtitle: 'تاريخ اليوم أو وحدة الكغ أو طازج يومياً'),
+  };
+
   @override
   void initState() {
     super.initState();
@@ -60,9 +73,64 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       final found = ShelfLabelSize.values.where((s) => s.name == savedSizeName).firstOrNull;
       if (found != null) _selectedSize = found;
     }
+    final savedOrder = box.get('shelf_label_element_order');
+    if (savedOrder is List) {
+      _elementOrder = savedOrder.map((e) => e.toString()).toList();
+      for (final def in ShelfLabelConfig.defaultElementOrder) {
+        if (!_elementOrder.contains(def)) {
+          _elementOrder.add(def);
+        }
+      }
+    }
+    final savedAligns = box.get('shelf_label_element_alignments');
+    if (savedAligns is Map) {
+      _elementAlignments = savedAligns.map((k, v) => MapEntry(k.toString(), v.toString()));
+    }
     _customWidthCtrl = TextEditingController(text: _customWidthMm.toStringAsFixed(0));
     _customHeightCtrl = TextEditingController(text: _customHeightMm.toStringAsFixed(0));
     _customMarginCtrl = TextEditingController(text: _customMarginMm.toStringAsFixed(1));
+  }
+
+  void _moveElementUp(int index) {
+    if (index <= 0) return;
+    setState(() {
+      final item = _elementOrder.removeAt(index);
+      _elementOrder.insert(index - 1, item);
+      _previewRevision++;
+    });
+    HiveDatabase.settingsBox.put('shelf_label_element_order', _elementOrder);
+    SoundService.playTabSwitch();
+  }
+
+  void _moveElementDown(int index) {
+    if (index >= _elementOrder.length - 1) return;
+    setState(() {
+      final item = _elementOrder.removeAt(index);
+      _elementOrder.insert(index + 1, item);
+      _previewRevision++;
+    });
+    HiveDatabase.settingsBox.put('shelf_label_element_order', _elementOrder);
+    SoundService.playTabSwitch();
+  }
+
+  void _setElementAlignment(String key, String align) {
+    setState(() {
+      _elementAlignments[key] = align;
+      _previewRevision++;
+    });
+    HiveDatabase.settingsBox.put('shelf_label_element_alignments', _elementAlignments);
+  }
+
+  void _resetElementOrderAndAlign() {
+    setState(() {
+      _elementOrder = List<String>.from(ShelfLabelConfig.defaultElementOrder);
+      _elementAlignments = Map<String, String>.from(ShelfLabelConfig.defaultElementAlignments);
+      _previewRevision++;
+    });
+    HiveDatabase.settingsBox.put('shelf_label_element_order', _elementOrder);
+    HiveDatabase.settingsBox.put('shelf_label_element_alignments', _elementAlignments);
+    SoundService.playTabSwitch();
+    context.showAppSnackBar('تمت استعادة ترتيب ومحاذاة عناصر الملصق الافتراضية!');
   }
 
   static const List<String> _categoryTabs = [
@@ -103,6 +171,8 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       customWidthMm: _customWidthMm,
       customHeightMm: _customHeightMm,
       customMarginMm: _customMarginMm,
+      elementOrder: _elementOrder,
+      elementAlignments: _elementAlignments,
     );
   }
 
@@ -581,6 +651,51 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                       ],
                     ),
 
+                    // Label Element Ordering & Alignments Expansion Card
+                    const SizedBox(height: 8),
+                    Theme(
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.amber.withOpacity(0.25)),
+                        ),
+                        child: ExpansionTile(
+                          dense: true,
+                          tilePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          childrenPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          leading: const Icon(Icons.reorder_rounded, size: 20, color: Colors.orange),
+                          title: const Text(
+                            'ترتيب ومحاذاة عناصر الملصق (التقديم والتأخير والمحاذاة) 🔀',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          ),
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'رتّب موضع كل عنصر وحدد محاذاته (يمين، وسط، يسار):',
+                                  style: TextStyle(fontSize: 10.5, color: Colors.black54),
+                                ),
+                                TextButton.icon(
+                                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                                  icon: const Icon(Icons.refresh_rounded, size: 14, color: Colors.orange),
+                                  label: const Text('الافتراضي', style: TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.bold)),
+                                  onPressed: _resetElementOrderAndAlign,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            for (int i = 0; i < _elementOrder.length; i++) ...[
+                              _buildElementOrderTile(_elementOrder[i], i),
+                              if (i < _elementOrder.length - 1) const SizedBox(height: 4),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+
                     if (_selectedProductIds.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Wrap(
@@ -800,20 +915,152 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     );
   }
 
+  Widget _buildElementOrderTile(String key, int index) {
+    final info = _kLabelElementInfo[key] ?? (
+      title: key,
+      icon: Icons.label_outline,
+      subtitle: '',
+    );
+    final currentAlign = _elementAlignments[key] ?? 'center';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          // Index Badge
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '${index + 1}',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(info.icon, size: 16, color: Colors.black87),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(info.title, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                if (info.subtitle.isNotEmpty)
+                  Text(info.subtitle, style: const TextStyle(fontSize: 9.5, color: Colors.grey)),
+              ],
+            ),
+          ),
+          // Alignment Selector
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildAlignButton(key, 'right', Icons.format_align_right, currentAlign),
+                _buildAlignButton(key, 'center', Icons.format_align_center, currentAlign),
+                _buildAlignButton(key, 'left', Icons.format_align_left, currentAlign),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Up / Down reorder buttons
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InkWell(
+                onTap: index > 0 ? () => _moveElementUp(index) : null,
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 16,
+                    color: index > 0 ? Colors.indigo : Colors.grey.shade300,
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: index < _elementOrder.length - 1 ? () => _moveElementDown(index) : null,
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.arrow_downward_rounded,
+                    size: 16,
+                    color: index < _elementOrder.length - 1 ? Colors.indigo : Colors.grey.shade300,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlignButton(String key, String align, IconData icon, String currentAlign) {
+    final isSelected = currentAlign == align;
+    return InkWell(
+      onTap: () => _setElementAlignment(key, align),
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Icon(
+          icon,
+          size: 13,
+          color: isSelected ? Colors.white : Colors.black54,
+        ),
+      ),
+    );
+  }
+
   void _showLivePreviewSheet(BuildContext context, List<Product> allProducts) {
-    final selectedProducts = allProducts.where((p) => _selectedProductIds.contains(p.id)).toList();
-    if (selectedProducts.isEmpty) return;
-    final first = selectedProducts.first;
+    final selectedEntries = _getSelectedEntries(allProducts);
+    final previewEntries = selectedEntries.isNotEmpty
+        ? selectedEntries
+        : [MapEntry(allProducts.isNotEmpty ? allProducts.first : const Product(
+            id: 'preview',
+            name: 'سلعة تجريبية للمعاينة',
+            barcode: '6131234567890',
+            price: 250.0,
+            costPrice: 180.0,
+            stock: 50.0,
+            category: 'عام',
+            isWeighted: false,
+          ), 1)];
     final config = _buildConfig();
-    final copies = _labelQuantities[first.id] ?? 1;
+    final first = previewEntries.first.key;
+    final copies = previewEntries.first.value;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
+      builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -825,7 +1072,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                     Icon(Icons.label_important_rounded, color: AppTheme.primaryColor, size: 24),
                     const SizedBox(width: 8),
                     Text(
-                      'معاينة الملصق (${config.size.displayName})',
+                      'معاينة حية للملصق (${config.size.displayName})',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ],
@@ -833,17 +1080,38 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
-            const SizedBox(height: 16),
-
-            // Realistic Label Card Mockup
-            _buildInteractiveLabelPreviewCard(first, config),
-
-            const SizedBox(height: 14),
-            Text('سيتم طباعة $copies نسخ لهذه السلعة (${first.name})',
-                style: const TextStyle(fontSize: 11.5, color: Colors.grey, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-
-            // Print Action Inside Preview
+            const SizedBox(height: 12),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: PdfPreview(
+                  key: ValueKey('lbl_preview_${_previewRevision}_${config.size.name}_${config.customWidthMm}_${config.customHeightMm}'),
+                  build: (format) async => await ShelfLabelGenerator.generateLabelsPdf(
+                    itemsWithCopies: [MapEntry(first, 1)],
+                    config: config,
+                  ),
+                  canChangeOrientation: false,
+                  canChangePageFormat: false,
+                  canDebug: false,
+                  allowPrinting: false,
+                  allowSharing: false,
+                  loadingWidget: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'معاينة مطابقة بنسبة 100% لمحرك الطباعة الحرارية ومقاس الورق المحدد',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -855,10 +1123,15 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     icon: const Icon(Icons.print_rounded, size: 18),
-                    label: const Text('طباعة الكل الآن 🖨️', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: Text(
+                      selectedEntries.isNotEmpty
+                          ? 'طباعة السلع المحددة (${selectedEntries.length}) 🖨️'
+                          : 'طباعة تجريبية للملصق 🖨️',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      _printPdfOrWindows(allProducts);
+                      _printPdfOrWindows(selectedEntries.isNotEmpty ? allProducts : [first]);
                     },
                   ),
                 ),
@@ -869,223 +1142,5 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       ),
     );
   }
-
-  Widget _buildInteractiveLabelPreviewCard(Product p, ShelfLabelConfig config) {
-    final dateStr = DateFormat('dd/MM/yyyy').format(DateTime.now());
-
-    switch (config.template) {
-      case ShelfLabelTemplate.productSticker:
-        return Container(
-          width: 250,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.black87, width: 2),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (config.includeShopName)
-                Text(config.shopName, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 2),
-              Text(
-                p.name,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              if (config.includeBarcode && p.barcode.isNotEmpty)
-                _BarcodeStripeWidget(
-                  barcode: p.barcode,
-                  showDigits: config.showHriDigits,
-                  height: 38,
-                ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(4)),
-                    child: Text(
-                      '${p.price.toStringAsFixed(0)} ${config.currencySymbol}',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
-                  if (config.includeDate)
-                    Text(dateStr, style: const TextStyle(fontSize: 8.5, color: Colors.grey)),
-                ],
-              ),
-            ],
-          ),
-        );
-
-      case ShelfLabelTemplate.scaleWeight:
-        return Container(
-          width: 250,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.teal[800]!, width: 2),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(config.shopName, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    decoration: BoxDecoration(color: Colors.teal.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
-                    child: const Text('⚖️ ميزان', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.teal)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(p.name, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('سعر الكيلوغرام:', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
-                  Text('${p.price.toStringAsFixed(0)} ${config.currencySymbol}/كغ',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              if (config.includeBarcode && p.barcode.isNotEmpty)
-                _BarcodeStripeWidget(
-                  barcode: p.barcode,
-                  showDigits: config.showHriDigits,
-                  height: 32,
-                ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('طازج يومياً', style: TextStyle(fontSize: 8.5, color: Colors.teal, fontWeight: FontWeight.bold)),
-                  if (config.includeDate)
-                    Text(dateStr, style: const TextStyle(fontSize: 8.5, color: Colors.grey)),
-                ],
-              ),
-            ],
-          ),
-        );
-
-      case ShelfLabelTemplate.shelfTag:
-      default:
-        return Container(
-          width: 250,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.black87, width: 2),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (config.includeShopName)
-                Text(config.shopName, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 2),
-              Text(
-                p.name,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${p.price.toStringAsFixed(0)} ${config.currencySymbol}',
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.black),
-              ),
-              if (config.includeBarcode && p.barcode.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                _BarcodeStripeWidget(
-                  barcode: p.barcode,
-                  showDigits: config.showHriDigits,
-                  height: 28,
-                ),
-              ],
-              if (config.includeDate) ...[
-                const SizedBox(height: 4),
-                Text('تاريخ: $dateStr', style: const TextStyle(fontSize: 8.5, color: Colors.grey)),
-              ],
-            ],
-          ),
-        );
-    }
-  }
 }
 
-/// A lightweight, clean vector simulation of 1D barcode lines for UI preview
-class _BarcodeStripeWidget extends StatelessWidget {
-  final String barcode;
-  final bool showDigits;
-  final double height;
-
-  const _BarcodeStripeWidget({
-    required this.barcode,
-    this.showDigits = true,
-    this.height = 32,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final clean = barcode.trim();
-    if (clean.isEmpty) return const SizedBox.shrink();
-
-    // Deterministic bar widths pattern based on string
-    final chars = clean.codeUnits;
-    final List<int> barWidths = [2, 1, 3, 1]; // Start guard
-    for (int i = 0; i < chars.length; i++) {
-      final v = chars[i];
-      barWidths.add((v % 3) + 1);
-      barWidths.add(((v ~/ 3) % 2) + 1);
-    }
-    barWidths.addAll([1, 2, 1, 3]); // Stop guard
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: height,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (int i = 0; i < barWidths.length && i < 40; i++)
-                Container(
-                  width: barWidths[i].toDouble(),
-                  color: (i % 2 == 0) ? Colors.black : Colors.transparent,
-                ),
-            ],
-          ),
-        ),
-        if (showDigits) ...[
-          const SizedBox(height: 2),
-          Text(
-            clean,
-            style: const TextStyle(
-              fontSize: 8.5,
-              fontFamily: 'monospace',
-              letterSpacing: 1.5,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
