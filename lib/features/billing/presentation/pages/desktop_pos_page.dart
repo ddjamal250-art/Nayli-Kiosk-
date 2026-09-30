@@ -1238,7 +1238,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         (invoiceData['total'] as num?)?.toDouble() ?? (totalVal ?? 0.0);
                     await PrinterHelper.printReceiptWindows(
                       shopName: shop?.name ?? 'Nayli Market',
-                      address1: shop?.address ?? '',
+                      address1: shop?.addressLine1 ?? '',
+                      address2: shop?.addressLine2 ?? '',
                       phone: shop?.phoneNumber ?? '',
                       items: rawItems,
                       total: invTotal,
