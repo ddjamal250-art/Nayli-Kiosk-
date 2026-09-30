@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_helper.dart';
+import '../../../../core/utils/sound_service.dart';
+import '../../../../core/utils/barcode_generator_helper.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../domain/entities/product.dart';
@@ -235,9 +237,14 @@ class _EditProductPageState extends State<EditProductPage> {
       }
     }
 
+    final rawBc = _barcodeCtrl.text.trim();
+    final validBc = (rawBc.isEmpty || rawBc.startsWith('NO_BARCODE_'))
+        ? BarcodeGeneratorHelper.generateUniqueInStoreEan13()
+        : rawBc;
+
     final updatedProduct = widget.product.copyWith(
       name: _nameCtrl.text.trim(),
-      barcode: _barcodeCtrl.text.trim(),
+      barcode: validBc,
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
       costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0,
       stock: double.tryParse(_stockCtrl.text.trim()) ?? 0.0,
@@ -289,9 +296,30 @@ class _EditProductPageState extends State<EditProductPage> {
                   controller: _nameCtrl,
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
                 ),
-                const SizedBox(height: 12),
                 const InputLabel(text: 'الباركود'),
-                TextFormField(controller: _barcodeCtrl),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _barcodeCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'امسح الباركود أو اضغط للتوليد التلقائي',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.auto_fix_high_rounded, color: Colors.teal),
+                      tooltip: 'توليد باركود محلي EAN-13 حقيقي للمنتج',
+                      onPressed: () {
+                        setState(() {
+                          _barcodeCtrl.text = BarcodeGeneratorHelper.generateUniqueInStoreEan13();
+                        });
+                        SoundService.playScanBeep();
+                      },
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 const InputLabel(text: 'كود PLU للميزان التجاري (اختياري)'),
                 TextFormField(

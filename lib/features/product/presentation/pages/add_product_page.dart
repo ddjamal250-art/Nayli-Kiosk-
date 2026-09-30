@@ -9,6 +9,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/category_taxonomy.dart';
+import '../../../../core/utils/barcode_generator_helper.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
@@ -180,10 +181,15 @@ class _AddProductPageState extends State<AddProductPage> {
       }
     }
 
+    final cleanBarcode = barcode.trim();
+    final validBarcode = (cleanBarcode.isEmpty || cleanBarcode.startsWith('NO_BARCODE_'))
+        ? BarcodeGeneratorHelper.generateUniqueInStoreEan13()
+        : cleanBarcode;
+
     final product = Product(
       id: const Uuid().v4(),
       name: _nameCtrl.text.trim(),
-      barcode: barcode.isNotEmpty ? barcode : 'NO_BARCODE_${DateTime.now().millisecondsSinceEpoch}',
+      barcode: validBarcode,
       price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
       costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0,
       wholesalePrice: 0.0,
@@ -241,8 +247,30 @@ class _AddProductPageState extends State<AddProductPage> {
                 const InputLabel(text: 'الباركود'),
                 Row(
                   children: [
-                    Expanded(child: TextFormField(controller: _barcodeCtrl)),
-                    IconButton(icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor), onPressed: _scanBarcode),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _barcodeCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'امسح الباركود أو اضغط للتوليد التلقائي',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.auto_fix_high_rounded, color: Colors.teal),
+                      tooltip: 'توليد باركود محلي EAN-13 حقيقي للمنتج',
+                      onPressed: () {
+                        setState(() {
+                          _barcodeCtrl.text = BarcodeGeneratorHelper.generateUniqueInStoreEan13();
+                        });
+                        SoundService.playScanBeep();
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
+                      tooltip: 'مسح بالماسح الضوئي أو الكاميرا',
+                      onPressed: _scanBarcode,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),

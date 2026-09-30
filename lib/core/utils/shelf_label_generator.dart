@@ -110,6 +110,25 @@ extension ShelfLabelTemplateExtension on ShelfLabelTemplate {
   }
 }
 
+enum LabelCodeType {
+  barcode1D,
+  qrCode,
+  both,
+}
+
+extension LabelCodeTypeExtension on LabelCodeType {
+  String get displayName {
+    switch (this) {
+      case LabelCodeType.barcode1D:
+        return 'باركود تقليدي (خطوط 1D)';
+      case LabelCodeType.qrCode:
+        return 'كيو آر كود ذكي (QR Code 2D)';
+      case LabelCodeType.both:
+        return 'كلاهما (باركود + QR)';
+    }
+  }
+}
+
 class ShelfLabelConfig {
   final ShelfLabelSize size;
   final ShelfLabelTemplate template;
@@ -125,6 +144,8 @@ class ShelfLabelConfig {
   final double customMarginMm;
   final List<String> elementOrder;
   final Map<String, String> elementAlignments;
+  final LabelCodeType codeType;
+  final bool autoFillA4Sheet;
 
   static const List<String> defaultElementOrder = [
     'shop_name',
@@ -157,6 +178,8 @@ class ShelfLabelConfig {
     this.customMarginMm = 1.5,
     this.elementOrder = defaultElementOrder,
     this.elementAlignments = defaultElementAlignments,
+    this.codeType = LabelCodeType.barcode1D,
+    this.autoFillA4Sheet = true,
   });
 
   PdfPageFormat get effectivePageFormat {
@@ -188,6 +211,8 @@ class ShelfLabelConfig {
     double? customMarginMm,
     List<String>? elementOrder,
     Map<String, String>? elementAlignments,
+    LabelCodeType? codeType,
+    bool? autoFillA4Sheet,
   }) {
     return ShelfLabelConfig(
       size: size ?? this.size,
@@ -204,6 +229,8 @@ class ShelfLabelConfig {
       customMarginMm: customMarginMm ?? this.customMarginMm,
       elementOrder: elementOrder ?? this.elementOrder,
       elementAlignments: elementAlignments ?? this.elementAlignments,
+      codeType: codeType ?? this.codeType,
+      autoFillA4Sheet: autoFillA4Sheet ?? this.autoFillA4Sheet,
     );
   }
 }
@@ -342,34 +369,91 @@ class ShelfLabelGenerator {
     pw.Font fontBold,
   ) {
     final is24 = config.size == ShelfLabelSize.sheetA4_24;
-    final cols = is24 ? 3 : 4;
-    final rows = is24 ? 8 : 10;
-    final perPage = cols * rows;
+    final int cols = is24 ? 3 : 4;
+    final int rows = is24 ? 8 : 10;
+    final int perPage = cols * rows;
 
-    for (int i = 0; i < products.length; i += perPage) {
-      final chunk = products.skip(i).take(perPage).toList();
+    // Auto-fill logic: if user selected products but fewer than perPage, repeat them to fill the full A4 sheet
+    List<Product> sheetProducts = List.from(products);
+    if (config.autoFillA4Sheet && sheetProducts.isNotEmpty && sheetProducts.length < perPage) {
+      final base = List<Product>.from(sheetProducts);
+      while (sheetProducts.length < perPage) {
+        sheetProducts.addAll(base);
+      }
+      sheetProducts = sheetProducts.sublist(0, perPage);
+    }
+
+    // Exact physical dimensions for A4 sheet stickers (210 x 297 mm):
+    // 24 labels (3x8): Cell width = 64.0 mm, Cell height = 33.5 mm
+    // 40 labels (4x10): Cell width = 47.0 mm, Cell height = 26.0 mm
+    final double cellW = is24 ? (64.0 * PdfPageFormat.mm) : (47.0 * PdfPageFormat.mm);
+    final double cellH = is24 ? (33.5 * PdfPageFormat.mm) : (26.0 * PdfPageFormat.mm);
+    final double hSpacing = is24 ? (2.5 * PdfPageFormat.mm) : (2.0 * PdfPageFormat.mm);
+    final double vSpacing = is24 ? (2.0 * PdfPageFormat.mm) : (1.5 * PdfPageFormat.mm);
+
+    for (int i = 0; i < sheetProducts.length; i += perPage) {
+      final chunk = sheetProducts.skip(i).take(perPage).toList();
 
       doc.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.symmetric(horizontal: 10 * PdfPageFormat.mm, vertical: 12 * PdfPageFormat.mm),
+          margin: const pw.EdgeInsets.symmetric(
+            horizontal: 5 * PdfPageFormat.mm,
+            vertical: 8 * PdfPageFormat.mm,
+          ),
           theme: theme,
           build: (ctx) {
-            return pw.GridView(
-              crossAxisCount: cols,
-              childAspectRatio: is24 ? (70 / 37) : (48 / 25),
-              crossAxisSpacing: 3 * PdfPageFormat.mm,
-              mainAxisSpacing: 3 * PdfPageFormat.mm,
-              children: chunk.map((p) {
-                return pw.Container(
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-                    borderRadius: pw.BorderRadius.circular(3),
-                  ),
-                  padding: const pw.EdgeInsets.all(2 * PdfPageFormat.mm),
-                  child: _buildSingleLabelContent(p, config, fontRegular, fontBold, compact: true),
-                );
-              }).toList(),
+            final List<pw.Widget> rowWidgets = [];
+            for (int r = 0; r < rows; r++) {
+              final List<pw.Widget> colWidgets = [];
+              for (int c = 0; c < cols; c++) {
+                final itemIndex = r * cols + c;
+                if (itemIndex < chunk.length) {
+                  final p = chunk[itemIndex];
+                  colWidgets.add(
+                    pw.Container(
+                      width: cellW,
+                      height: cellH,
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+                        borderRadius: pw.BorderRadius.circular(3),
+                      ),
+                      padding: const pw.EdgeInsets.all(1.5 * PdfPageFormat.mm),
+                      child: _buildSingleLabelContent(p, config, fontRegular, fontBold, compact: true),
+                    ),
+                  );
+                } else {
+                  // Empty slot placeholder on the sticker sheet
+                  colWidgets.add(
+                    pw.Container(
+                      width: cellW,
+                      height: cellH,
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
+                        borderRadius: pw.BorderRadius.circular(3),
+                      ),
+                    ),
+                  );
+                }
+                if (c < cols - 1) {
+                  colWidgets.add(pw.SizedBox(width: hSpacing));
+                }
+              }
+              rowWidgets.add(
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.center,
+                  children: colWidgets,
+                ),
+              );
+              if (r < rows - 1) {
+                rowWidgets.add(pw.SizedBox(height: vSpacing));
+              }
+            }
+
+            return pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: rowWidgets,
             );
           },
         ),
@@ -418,6 +502,100 @@ class ShelfLabelGenerator {
     if (align == 'left') return pw.MainAxisAlignment.start;
     if (align == 'right') return pw.MainAxisAlignment.end;
     return pw.MainAxisAlignment.center;
+  }
+
+  static pw.Widget _buildCodeWidget({
+    required Product product,
+    required ShelfLabelConfig config,
+    required pw.Font fontRegular,
+    required bool isMini,
+    required double maxBarcodeHeight,
+  }) {
+    final cleanBarcode = sanitizeBarcodeData(product.barcode);
+    if (!config.includeBarcode || cleanBarcode.isEmpty) {
+      return pw.SizedBox.shrink();
+    }
+
+    final String qrData = 'NAYLI:ITEM:$cleanBarcode';
+
+    switch (config.codeType) {
+      case LabelCodeType.qrCode:
+        final double qrDim = isMini ? 16.0 : (maxBarcodeHeight * 1.5).clamp(18.0, 26.0);
+        return pw.Align(
+          alignment: _getPdfAlignment(config.elementAlignments['barcode']),
+          child: pw.Column(
+            mainAxisSize: pw.MainAxisSize.min,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.BarcodeWidget(
+                barcode: pw.Barcode.qrCode(),
+                data: qrData,
+                width: qrDim,
+                height: qrDim,
+                color: PdfColors.black,
+              ),
+              if (config.showHriDigits) ...[
+                pw.SizedBox(height: 1),
+                pw.Text(
+                  cleanBarcode,
+                  style: pw.TextStyle(fontSize: isMini ? 5 : 5.8, font: fontRegular),
+                ),
+              ],
+            ],
+          ),
+        );
+
+      case LabelCodeType.both:
+        final double bothQrDim = isMini ? 14.0 : (maxBarcodeHeight * 1.2).clamp(15.0, 20.0);
+        final double both1DWidth = isMini ? 24.0 * PdfPageFormat.mm : 30.0 * PdfPageFormat.mm;
+        return pw.Align(
+          alignment: _getPdfAlignment(config.elementAlignments['barcode']),
+          child: pw.Row(
+            mainAxisSize: pw.MainAxisSize.min,
+            mainAxisAlignment: _getPdfMainAlign(config.elementAlignments['barcode']),
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Container(
+                width: both1DWidth,
+                height: maxBarcodeHeight,
+                child: pw.BarcodeWidget(
+                  barcode: getBarcodeAlgorithm(cleanBarcode),
+                  data: cleanBarcode,
+                  drawText: config.showHriDigits && !isMini,
+                  color: PdfColors.black,
+                  textStyle: pw.TextStyle(fontSize: 4.8, font: fontRegular),
+                ),
+              ),
+              pw.SizedBox(width: 3),
+              pw.BarcodeWidget(
+                barcode: pw.Barcode.qrCode(),
+                data: qrData,
+                width: bothQrDim,
+                height: bothQrDim,
+                color: PdfColors.black,
+              ),
+            ],
+          ),
+        );
+
+      case LabelCodeType.barcode1D:
+      default:
+        final double barW = isMini ? 32.0 * PdfPageFormat.mm : 40.0 * PdfPageFormat.mm;
+        return pw.Align(
+          alignment: _getPdfAlignment(config.elementAlignments['barcode']),
+          child: pw.Container(
+            width: barW,
+            height: maxBarcodeHeight,
+            child: pw.BarcodeWidget(
+              barcode: getBarcodeAlgorithm(cleanBarcode),
+              data: cleanBarcode,
+              drawText: config.showHriDigits && !isMini,
+              color: PdfColors.black,
+              textStyle: pw.TextStyle(fontSize: isMini ? 5.2 : 6, font: fontRegular),
+            ),
+          ),
+        );
+    }
   }
 
   static pw.Widget _buildShelfTagTemplate(
@@ -482,18 +660,12 @@ class ShelfLabelGenerator {
         ],
       ),
       'barcode': hasBarcode
-          ? pw.Align(
-              alignment: _getPdfAlignment(config.elementAlignments['barcode']),
-              child: pw.Container(
-                height: barcodeH,
-                child: pw.BarcodeWidget(
-                  barcode: getBarcodeAlgorithm(cleanBarcode),
-                  data: cleanBarcode,
-                  drawText: config.showHriDigits && !isMini,
-                  color: PdfColors.black,
-                  textStyle: pw.TextStyle(fontSize: 6, font: fontRegular),
-                ),
-              ),
+          ? _buildCodeWidget(
+              product: p,
+              config: config,
+              fontRegular: fontRegular,
+              isMini: isMini,
+              maxBarcodeHeight: barcodeH,
             )
           : pw.SizedBox.shrink(),
       'date_unit': config.includeDate
@@ -538,6 +710,7 @@ class ShelfLabelGenerator {
   ) {
     final cleanName = cleanEmojisForPdf(p.name);
     final cleanShop = cleanEmojisForPdf(config.shopName);
+    final double barcodeH = isMini ? 9.0 : 12.5;
 
     final Map<String, pw.Widget> elementMap = {
       'shop_name': config.includeShopName
@@ -561,17 +734,12 @@ class ShelfLabelGenerator {
         ),
       ),
       'barcode': hasBarcode
-          ? pw.Expanded(
-              child: pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
-                child: pw.BarcodeWidget(
-                  barcode: getBarcodeAlgorithm(cleanBarcode),
-                  data: cleanBarcode,
-                  drawText: config.showHriDigits,
-                  color: PdfColors.black,
-                  textStyle: pw.TextStyle(fontSize: 6.5, font: fontRegular),
-                ),
-              ),
+          ? _buildCodeWidget(
+              product: p,
+              config: config,
+              fontRegular: fontRegular,
+              isMini: isMini,
+              maxBarcodeHeight: barcodeH,
             )
           : pw.SizedBox.shrink(),
       'price': pw.Row(
@@ -664,18 +832,12 @@ class ShelfLabelGenerator {
         ),
       ),
       'barcode': hasBarcode
-          ? pw.Align(
-              alignment: _getPdfAlignment(config.elementAlignments['barcode']),
-              child: pw.Container(
-                height: barcodeH,
-                child: pw.BarcodeWidget(
-                  barcode: getBarcodeAlgorithm(cleanBarcode),
-                  data: cleanBarcode,
-                  drawText: config.showHriDigits,
-                  color: PdfColors.black,
-                  textStyle: pw.TextStyle(fontSize: 6, font: fontRegular),
-                ),
-              ),
+          ? _buildCodeWidget(
+              product: p,
+              config: config,
+              fontRegular: fontRegular,
+              isMini: isMini,
+              maxBarcodeHeight: barcodeH,
             )
           : pw.SizedBox.shrink(),
       'date_unit': pw.Row(

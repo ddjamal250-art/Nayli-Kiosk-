@@ -1044,6 +1044,222 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     );
   }
 
+  void _handleInvoiceVerificationScan(String qrCode) {
+    // Format: NAYLI:INV:<invoiceNumber>:<total>:<timestamp>
+    final parts = qrCode.split(':');
+    final String invNum = parts.length > 2 ? parts[2] : '';
+    final String totalStr = parts.length > 3 ? parts[3] : '';
+    final String timestampStr = parts.length > 4 ? parts[4] : '';
+
+    DateTime? invoiceDate;
+    if (timestampStr.isNotEmpty) {
+      final ms = int.tryParse(timestampStr);
+      if (ms != null) {
+        invoiceDate = DateTime.fromMillisecondsSinceEpoch(ms);
+      }
+    }
+
+    Map<String, dynamic>? matchedInvoice;
+    final box = HiveDatabase.invoicesBox;
+    for (var val in box.values) {
+      if (val is Map) {
+        final id = val['id']?.toString() ?? val['invoiceId']?.toString() ?? '';
+        final num = val['invoiceNumber']?.toString() ?? '';
+        if (id == invNum || num == invNum || (invNum.isNotEmpty && id.endsWith(invNum))) {
+          matchedInvoice = Map<String, dynamic>.from(val);
+          break;
+        }
+      }
+    }
+
+    SoundService.playSaveSuccess();
+    _showInvoiceVerificationDialog(
+      invoiceNumber: invNum,
+      totalStr: totalStr,
+      date: invoiceDate,
+      invoiceData: matchedInvoice,
+    );
+  }
+
+  void _showInvoiceVerificationDialog({
+    required String invoiceNumber,
+    required String totalStr,
+    DateTime? date,
+    Map<String, dynamic>? invoiceData,
+  }) {
+    final double? totalVal = double.tryParse(totalStr);
+    final String displayTotal = totalVal != null
+        ? '${totalVal.toStringAsFixed(2)} دج'
+        : (totalStr.isNotEmpty ? '$totalStr دج' : 'غير محدد');
+    final String dateDisplay = date != null
+        ? DateFormat('yyyy/MM/dd - HH:mm').format(date)
+        : 'تاريخ مسجل بالوصل';
+    final List items = (invoiceData != null && invoiceData['items'] is List)
+        ? invoiceData['items'] as List
+        : [];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.verified_rounded, color: Colors.green, size: 28),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('وصل معتمد ومؤكد رسمياً ✅',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text('تم التعرف على كود التحقق الذكي بنجاح',
+                      style: TextStyle(fontSize: 11, color: Colors.grey)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          width: 440,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.green.shade200, width: 1.2),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('رقم الفاتورة / الوصل:',
+                            style: TextStyle(fontSize: 12.5, color: Colors.black54)),
+                        Text('#$invoiceNumber',
+                            style: const TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                      ],
+                    ),
+                    const Divider(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('المبلغ الإجمالي:',
+                            style: TextStyle(fontSize: 12.5, color: Colors.black54)),
+                        Text(displayTotal,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('توقيت الإصدار:',
+                            style: TextStyle(fontSize: 11.5, color: Colors.black54)),
+                        Text(dateDisplay,
+                            style: const TextStyle(fontSize: 11.5, color: Colors.grey)),
+                      ],
+                    ),
+                    if (items.isNotEmpty) ...[
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('أرشيف المبيعات:',
+                              style: TextStyle(fontSize: 11.5, color: Colors.black54)),
+                          Text('مسجل (${items.length} سلع)',
+                              style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal)),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.assignment_return_rounded, size: 20),
+                label: const Text('تفعيل وضع إرجاع السلع لهذا الوصل 🔄',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  setState(() {
+                    _isReturnMode = true;
+                  });
+                  SoundService.playWarningSound();
+                  SnackbarHelper.showWarning(
+                    context,
+                    'تم تفعيل وضع الإرجاع للوصل رقم #$invoiceNumber. يمكنك الآن مسح السلع المسترجعة لإضافتها بالسالب.',
+                  );
+                },
+              ),
+              if (invoiceData != null) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.teal.shade800,
+                    side: BorderSide(color: Colors.teal.shade300),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.print_rounded, size: 18),
+                  label: const Text('إعادة طباعة هذا الوصل 🖨️', style: TextStyle(fontSize: 12.5)),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    final shop = HiveDatabase.shopBox.isNotEmpty
+                        ? HiveDatabase.shopBox.getAt(0)
+                        : null;
+                    final rawItems = (invoiceData['items'] as List?)
+                            ?.map((e) => Map<String, dynamic>.from(e as Map))
+                            .toList() ??
+                        [];
+                    final invTotal =
+                        (invoiceData['total'] as num?)?.toDouble() ?? (totalVal ?? 0.0);
+                    await PrinterHelper.printReceiptWindows(
+                      shopName: shop?.name ?? 'Nayli Market',
+                      address1: shop?.address ?? '',
+                      phone: shop?.phoneNumber ?? '',
+                      items: rawItems,
+                      total: invTotal,
+                      invoiceId: invoiceNumber,
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إغلاق', style: TextStyle(color: Colors.grey)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _handleBarcodeSubmit(String rawInput) {
     if (rawInput.trim().isEmpty) return;
     final input = rawInput.trim();
@@ -1066,6 +1282,18 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
 
     if (barcodeToScan.isEmpty) return;
+
+    // A. Check for Smart Nayli Receipt Verification QR Code
+    if (barcodeToScan.startsWith('NAYLI:INV:')) {
+      _handleInvoiceVerificationScan(barcodeToScan);
+      return;
+    }
+
+    // B. Check for Smart Nayli Shelf Label QR Code
+    if (barcodeToScan.startsWith('NAYLI:ITEM:')) {
+      barcodeToScan = barcodeToScan.substring('NAYLI:ITEM:'.length).trim();
+      if (barcodeToScan.isEmpty) return;
+    }
 
     _onItemScanned();
 

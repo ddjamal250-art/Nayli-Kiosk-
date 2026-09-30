@@ -825,6 +825,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
       clipBehavior: Clip.antiAlias,
       child: PdfPreview(
         key: ValueKey(_previewRevision),
+        dpi: 250,
         build: (format) async => await PrinterHelper.generateReceiptPdfBytes(
           items: testItems,
           total: 1270.0,

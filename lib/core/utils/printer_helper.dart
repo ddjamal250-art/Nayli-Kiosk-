@@ -728,6 +728,7 @@ class PrinterHelper {
 
         case 'barcode':
           if (showBarcodeAtBottom) {
+            final qrSecurityData = 'NAYLI:INV:$displayInvoiceNumber:${effectiveTotal.toStringAsFixed(0)}:${DateTime.now().millisecondsSinceEpoch}';
             sectionWidgets.add(
               pw.Align(
                 alignment: getAlignment(align),
@@ -739,12 +740,12 @@ class PrinterHelper {
                     children: [
                       pw.BarcodeWidget(
                         barcode: pw.Barcode.qrCode(),
-                        data: displayInvoiceNumber,
+                        data: qrSecurityData,
                         width: 44,
                         height: 44,
                       ),
                       pw.SizedBox(height: 2),
-                      pw.Text('* $displayInvoiceNumber *', style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
+                      pw.Text('كود التحقق الذكي: $displayInvoiceNumber', style: const pw.TextStyle(fontSize: 7.0, color: PdfColors.grey700)),
                     ],
                   ),
                 ),

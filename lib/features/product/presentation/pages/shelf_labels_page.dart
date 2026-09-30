@@ -33,6 +33,8 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   // Label Configuration
   ShelfLabelSize _selectedSize = ShelfLabelSize.standard50x30;
   ShelfLabelTemplate _selectedTemplate = ShelfLabelTemplate.shelfTag;
+  LabelCodeType _selectedCodeType = LabelCodeType.barcode1D;
+  bool _autoFillA4Sheet = true;
   bool _includeShopName = true;
   bool _includeDate = true;
   bool _includeBarcode = true;
@@ -73,6 +75,12 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       final found = ShelfLabelSize.values.where((s) => s.name == savedSizeName).firstOrNull;
       if (found != null) _selectedSize = found;
     }
+    final savedCodeType = box.get('shelf_label_code_type');
+    if (savedCodeType != null) {
+      final found = LabelCodeType.values.where((c) => c.name == savedCodeType).firstOrNull;
+      if (found != null) _selectedCodeType = found;
+    }
+    _autoFillA4Sheet = box.get('shelf_label_autofill_a4', defaultValue: true);
     final savedOrder = box.get('shelf_label_element_order');
     if (savedOrder is List) {
       _elementOrder = savedOrder.map((e) => e.toString()).toList();
@@ -166,6 +174,8 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
       includeBarcode: _includeBarcode,
       showHriDigits: _showHriDigits,
       barcodeHeight: _barcodeHeight,
+      codeType: _selectedCodeType,
+      autoFillA4Sheet: _autoFillA4Sheet,
       currencySymbol: 'دج',
       shopName: ShelfLabelGenerator.getEffectiveShopName(),
       customWidthMm: _customWidthMm,
@@ -277,8 +287,8 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
   }
 
   /// Print or Export via PDF / Windows Printer Dialog
-  Future<void> _printPdfOrWindows(List<Product> allProducts) async {
-    final entries = _getSelectedEntries(allProducts);
+  Future<void> _printPdfOrWindows(List<Product> allProducts, {List<MapEntry<Product, int>>? directEntries}) async {
+    final entries = directEntries ?? _getSelectedEntries(allProducts);
     if (entries.isEmpty) {
       context.showAppSnackBar('يرجى اختيار سلعة واحدة على الأقل لطباعة الملصقات!', backgroundColor: Colors.orange[800]!);
       return;
@@ -648,8 +658,70 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                           selected: _includeDate,
                           onSelected: (v) => setState(() => _includeDate = v),
                         ),
+                        if (_selectedSize == ShelfLabelSize.sheetA4_24 || _selectedSize == ShelfLabelSize.sheetA4_40)
+                          FilterChip(
+                            avatar: const Icon(Icons.auto_awesome, size: 14, color: Colors.indigo),
+                            label: const Text('ملء كامل ورقة A4 تلقائياً', style: TextStyle(fontSize: 10.5)),
+                            selected: _autoFillA4Sheet,
+                            selectedColor: Colors.indigo.withOpacity(0.18),
+                            onSelected: (v) {
+                              setState(() {
+                                _autoFillA4Sheet = v;
+                                _previewRevision++;
+                              });
+                              HiveDatabase.settingsBox.put('shelf_label_autofill_a4', v);
+                            },
+                          ),
                       ],
                     ),
+
+                    // Code Type Selector (1D Barcode / 2D QR Code / Both)
+                    if (_includeBarcode) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.qr_code_2_rounded, size: 16, color: Colors.teal),
+                          const SizedBox(width: 4),
+                          const Text('نوع الكود:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: LabelCodeType.values.map((codeType) {
+                                  final isSel = _selectedCodeType == codeType;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 6.0),
+                                    child: ChoiceChip(
+                                      label: Text(
+                                        codeType.displayName,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                                          color: isSel ? Colors.teal.shade900 : Colors.black87,
+                                        ),
+                                      ),
+                                      selected: isSel,
+                                      selectedColor: Colors.teal.withOpacity(0.22),
+                                      checkmarkColor: Colors.teal.shade800,
+                                      onSelected: (v) {
+                                        if (v) {
+                                          setState(() {
+                                            _selectedCodeType = codeType;
+                                            _previewRevision++;
+                                          });
+                                          HiveDatabase.settingsBox.put('shelf_label_code_type', codeType.name);
+                                        }
+                                      },
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
 
                     // Label Element Ordering & Alignments Expansion Card
                     const SizedBox(height: 8),
@@ -1090,9 +1162,10 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: PdfPreview(
-                  key: ValueKey('lbl_preview_${_previewRevision}_${config.size.name}_${config.customWidthMm}_${config.customHeightMm}'),
+                  key: ValueKey('lbl_preview_${_previewRevision}_${config.size.name}_${config.codeType.name}_${config.autoFillA4Sheet}_${config.customWidthMm}_${config.customHeightMm}'),
+                  dpi: 250,
                   build: (format) async => await ShelfLabelGenerator.generateLabelsPdf(
-                    itemsWithCopies: [MapEntry(first, 1)],
+                    itemsWithCopies: previewEntries,
                     config: config,
                   ),
                   canChangeOrientation: false,
@@ -1131,7 +1204,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                     ),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      _printPdfOrWindows(selectedEntries.isNotEmpty ? allProducts : [first]);
+                      _printPdfOrWindows(allProducts, directEntries: previewEntries);
                     },
                   ),
                 ),
