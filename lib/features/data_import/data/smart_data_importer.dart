@@ -159,8 +159,14 @@ class SmartDataImporter {
 
             String barcode = '';
             if (codesTable != null) {
-              final codes = db.select("SELECT value FROM '$codesTable' WHERE productId = ?", [pId]);
+              final codes = db.select("SELECT value FROM '$codesTable' WHERE productId = ? AND value IS NOT NULL AND value != ''", [pId]);
               if (codes.isNotEmpty) barcode = DataSanitizer.sanitizeBarcode(codes.first['value']);
+            }
+            if (barcode.isEmpty && row['ref'] != null) {
+              final ref = row['ref'].toString().trim();
+              if (ref.isNotEmpty && ref != 'دخان' && ref != 'العطر') {
+                barcode = DataSanitizer.sanitizeBarcode(ref);
+              }
             }
             
             bool isDup = false;
@@ -181,12 +187,17 @@ class SmartDataImporter {
               }
             }
             if (sellPricesTable != null) {
-              final sp = db.select("SELECT value FROM '$sellPricesTable' WHERE productId = ? AND isDefault = 1", [pId]);
-              if (sp.isNotEmpty) {
-                price = DataSanitizer.sanitizePrice(sp.first['value']);
-              } else {
-                final spAll = db.select("SELECT value FROM '$sellPricesTable' WHERE productId = ?", [pId]);
-                if (spAll.isNotEmpty) price = DataSanitizer.sanitizePrice(spAll.first['value']);
+              try {
+                final sp = db.select('SELECT value FROM "$sellPricesTable" WHERE productId = ? AND ("default" = 1 OR isDefault = 1)', [pId]);
+                if (sp.isNotEmpty) {
+                  price = DataSanitizer.sanitizePrice(sp.first['value']);
+                }
+              } catch (_) {}
+              if (price == 0.0) {
+                try {
+                  final spAll = db.select('SELECT value FROM "$sellPricesTable" WHERE productId = ?', [pId]);
+                  if (spAll.isNotEmpty) price = DataSanitizer.sanitizePrice(spAll.first['value']);
+                } catch (_) {}
               }
             }
 

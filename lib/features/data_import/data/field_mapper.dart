@@ -8,6 +8,19 @@ class SmartFieldMapper {
     final name = tableName.toLowerCase().trim();
     final colNames = columns.map((c) => c.name.toLowerCase()).toSet();
 
+    // 1. التطابق المباشر الدقيق (Exact Name Priority)
+    if (name == 'products' || name == 'product' || name == 'articles' || name == 'items') return TableType.products;
+    if (name == 'clients' || name == 'client' || name == 'customers' || name == 'customer') return TableType.customers;
+    if (name == 'suppliers' || name == 'supplier' || name == 'fournisseurs') return TableType.suppliers;
+    if (name == 'groups' || name == 'categories' || name == 'category') return TableType.categories;
+    if (name == 'payments' || name == 'payment' || name == 'reglements') return TableType.payments;
+    if (name == 'saleorders' || name == 'sales' || name == 'invoices' || name == 'factures') return TableType.sales;
+
+    // استبعاد الجداول الفرعية وجداول الربط والأسعار من أن تؤخذ كجدول رئيسي للمنتجات أو الزبائن
+    if (name.contains('item') || name.contains('price') || name.contains('pack') || name.contains('movement') || name.contains('_')) {
+      return TableType.unknown;
+    }
+
     // --- المستوى 1: اسم الجدول ---
     if (_matchesAny(name, _customerTableNames)) return TableType.customers;
     if (_matchesAny(name, _supplierTableNames)) return TableType.suppliers;

@@ -19,9 +19,19 @@ class AnalysisEngine {
 
     String dbPath = filePath;
 
-    // --- كشف ZIP وفك الضغط ---
-    if (filePath.toLowerCase().endsWith('.zip')) {
-      yield AnalysisEvent(phase: 'discovery', progress: 0.02, message: '📦 جاري فك ضغط الملف...', icon: '📦');
+    // --- كشف ZIP وفك الضغط (عبر الامتداد أو الـ Magic Bytes) ---
+    bool isZip = filePath.toLowerCase().endsWith('.zip');
+    if (!isZip) {
+      try {
+        final header = await file.openRead(0, 4).first;
+        if (header.length >= 4 && header[0] == 0x50 && header[1] == 0x4B && (header[2] == 0x03 || header[2] == 0x05)) {
+          isZip = true;
+        }
+      } catch (_) {}
+    }
+
+    if (isZip) {
+      yield AnalysisEvent(phase: 'discovery', progress: 0.02, message: '📦 تم التعرف على أرشيف مضغوط، جاري فك الضغط...', icon: '📦');
       try {
         final extractDir = await _extractZip(file);
         final sqliteFile = await _findSqliteInDir(extractDir);
