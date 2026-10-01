@@ -90,7 +90,6 @@ class ProductUnitsEditorWidget extends StatefulWidget {
 }
 
 class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
-  bool _isSyncing = false;
 
   // --- Convenience Getters to Delegate to Widget Properties ---
   bool get isStockInMode => widget.isStockInMode;
@@ -138,7 +137,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
   void didUpdateWidget(covariant ProductUnitsEditorWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.hasPack != widget.hasPack || oldWidget.hasCarton != widget.hasCarton) {
-      _onCapacityOrTopDownChanged();
+      _onInputsChanged();
     }
   }
 
@@ -152,103 +151,122 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     return double.tryParse(ctrl.text.trim()) ?? 0.0;
   }
 
-  void _setText(TextEditingController ctrl, double val) {
-    final str = val.toStringAsFixed(2);
-    final cleanStr = str.endsWith('.00') ? str.substring(0, str.length - 3) : str;
-    if (ctrl.text != cleanStr) {
-      ctrl.text = cleanStr;
-    }
+  void _onInputsChanged() {
+    widget.onInputsChanged?.call();
+    if (mounted) setState(() {});
   }
 
-  void _onCapacityOrTopDownChanged() {
-    if (_isSyncing) return;
-    _isSyncing = true;
-    try {
-      final cCap = _parse(widget.cartonCapacityCtrl);
-      final pCap = _parse(widget.packCapacityCtrl);
-      
-      final cCost = _parse(widget.cartonCostCtrl);
-      if (cCost > 0) {
-        if (widget.hasPack) {
-          final pCost = _safeDivide(cCost, cCap);
-          _setText(widget.packCostCtrl, pCost);
-          final pieceC = _safeDivide(pCost, pCap);
-          _setText(widget.pieceCostCtrl, pieceC);
-        } else {
-          final pieceC = _safeDivide(cCost, cCap);
-          _setText(widget.pieceCostCtrl, pieceC);
-        }
-      }
-      widget.onInputsChanged?.call();
-    } finally {
-      _isSyncing = false;
+  double? get _suggestedPackCost {
+    final cCost = _parse(widget.cartonCostCtrl);
+    final cCap = _parse(widget.cartonCapacityCtrl);
+    if (cCost > 0 && cCap > 0) {
+      return (cCost / cCap);
     }
+    return null;
   }
 
-  void _onCartonCostChanged() {
-    if (_isSyncing) return;
-    _isSyncing = true;
-    try {
-      final cCap = _parse(widget.cartonCapacityCtrl);
-      final pCap = _parse(widget.packCapacityCtrl);
-      final cCost = _parse(widget.cartonCostCtrl);
-      
-      if (widget.hasPack) {
-        final pCost = _safeDivide(cCost, cCap);
-        _setText(widget.packCostCtrl, pCost);
-        final pieceC = _safeDivide(pCost, pCap);
-        _setText(widget.pieceCostCtrl, pieceC);
-      } else {
-        final pieceC = _safeDivide(cCost, cCap);
-        _setText(widget.pieceCostCtrl, pieceC);
-      }
-      widget.onInputsChanged?.call();
-    } finally {
-      _isSyncing = false;
+  double? get _suggestedPieceCost {
+    final pCost = _parse(widget.packCostCtrl);
+    final pCap = _parse(widget.packCapacityCtrl);
+    if (widget.hasPack && pCost > 0 && pCap > 0) {
+      return (pCost / pCap);
     }
+    final cCost = _parse(widget.cartonCostCtrl);
+    final cCap = _parse(widget.cartonCapacityCtrl);
+    if (cCost > 0 && cCap > 0) {
+      return (widget.hasPack && pCap > 0) ? (cCost / (cCap * pCap)) : (cCost / cCap);
+    }
+    return null;
   }
 
-  void _onPackCostChanged() {
-    if (_isSyncing) return;
-    if (!widget.hasPack) return;
-    _isSyncing = true;
-    try {
-      final cCap = _parse(widget.cartonCapacityCtrl);
-      final pCap = _parse(widget.packCapacityCtrl);
-      final pCost = _parse(widget.packCostCtrl);
-      
-      final cCost = pCost * cCap;
-      _setText(widget.cartonCostCtrl, cCost);
-      
-      final pieceC = _safeDivide(pCost, pCap);
-      _setText(widget.pieceCostCtrl, pieceC);
-      widget.onInputsChanged?.call();
-    } finally {
-      _isSyncing = false;
+  double? get _suggestedPackPrice {
+    final cPrice = _parse(widget.cartonPriceCtrl);
+    final cCap = _parse(widget.cartonCapacityCtrl);
+    if (cPrice > 0 && cCap > 0) {
+      return (cPrice / cCap);
     }
+    return null;
   }
 
-  void _onPieceCostChanged() {
-    if (_isSyncing) return;
-    _isSyncing = true;
-    try {
-      final cCap = _parse(widget.cartonCapacityCtrl);
-      final pCap = _parse(widget.packCapacityCtrl);
-      final pieceC = _parse(widget.pieceCostCtrl);
-      
-      if (widget.hasPack) {
-        final pCost = pieceC * pCap;
-        _setText(widget.packCostCtrl, pCost);
-        final cCost = pCost * cCap;
-        _setText(widget.cartonCostCtrl, cCost);
-      } else if (widget.hasCarton) {
-        final cCost = pieceC * cCap;
-        _setText(widget.cartonCostCtrl, cCost);
-      }
-      widget.onInputsChanged?.call();
-    } finally {
-      _isSyncing = false;
+  double? get _suggestedPiecePrice {
+    final pPrice = _parse(widget.packPriceCtrl);
+    final pCap = _parse(widget.packCapacityCtrl);
+    if (widget.hasPack && pPrice > 0 && pCap > 0) {
+      return (pPrice / pCap);
     }
+    final cPrice = _parse(widget.cartonPriceCtrl);
+    final cCap = _parse(widget.cartonCapacityCtrl);
+    if (cPrice > 0 && cCap > 0) {
+      return (widget.hasPack && pCap > 0) ? (cPrice / (cCap * pCap)) : (cPrice / cCap);
+    }
+    return null;
+  }
+
+  Widget _buildSuggestionBadge({
+    required String label,
+    required double? suggestedVal,
+    required TextEditingController targetCtrl,
+  }) {
+    if (suggestedVal == null || suggestedVal <= 0) return const SizedBox.shrink();
+    final currentVal = _parse(targetCtrl);
+    final isAlreadySame = (currentVal - suggestedVal).abs() < 0.01;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 2),
+      child: InkWell(
+        onTap: () {
+          final str = suggestedVal.toStringAsFixed(2);
+          final clean = str.endsWith('.00') ? str.substring(0, str.length - 3) : str;
+          targetCtrl.text = clean;
+          _onInputsChanged();
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+          decoration: BoxDecoration(
+            color: isAlreadySame ? Colors.grey.shade100 : Colors.amber.shade50,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isAlreadySame ? Colors.grey.shade300 : Colors.amber.shade400,
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isAlreadySame ? Icons.check_circle_outline : Icons.lightbulb_outline_rounded,
+                size: 13,
+                color: isAlreadySame ? Colors.grey.shade600 : Colors.amber.shade900,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$label: ${suggestedVal.toStringAsFixed(2)} دج',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  color: isAlreadySame ? Colors.grey.shade700 : Colors.amber.shade900,
+                ),
+              ),
+              if (!isAlreadySame) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade700,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'تطبيق',
+                    style: TextStyle(fontSize: 9.5, color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -290,7 +308,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: cartonCapacityCtrl,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) { _onCapacityOrTopDownChanged(); onInputsChanged?.call(); },
+                    onChanged: (_) => _onInputsChanged(),
                     decoration: InputDecoration(
                       labelText: hasPack ? 'سعة الكرتونة (كم علبة؟) *' : 'سعة الكرتونة (كم حبة؟) *',
                       suffixText: hasPack ? 'علبة/كرتونة' : 'حبة/كرتونة',
@@ -326,7 +344,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: cartonCostCtrl,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) { _onCartonCostChanged(); onInputsChanged?.call(); },
+                    onChanged: (_) => _onInputsChanged(),
                     decoration: const InputDecoration(
                       labelText: 'سعر شراء الكرتونة (دج)',
                       border: OutlineInputBorder(),
@@ -339,6 +357,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: cartonPriceCtrl,
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => _onInputsChanged(),
                     decoration: const InputDecoration(
                       labelText: 'سعر بيع الكرتونة (دج) *',
                       border: OutlineInputBorder(),
@@ -386,7 +405,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: packCapacityCtrl,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) { _onCapacityOrTopDownChanged(); onInputsChanged?.call(); },
+                    onChanged: (_) => _onInputsChanged(),
                     decoration: const InputDecoration(
                       labelText: 'سعة العلبة (كم حبة؟) *',
                       suffixText: 'حبة/علبة',
@@ -417,29 +436,57 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
             ),
             const SizedBox(height: 10),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: packCostCtrl,
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) { _onPackCostChanged(); onInputsChanged?.call(); },
-                    decoration: const InputDecoration(
-                      labelText: 'سعر شراء العلبة (دج)',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: packCostCtrl,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => _onInputsChanged(),
+                        decoration: InputDecoration(
+                          labelText: 'سعر شراء العلبة (دج)',
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          hintText: _suggestedPackCost != null && packCostCtrl.text.isEmpty
+                              ? 'اقتراح: ${_suggestedPackCost!.toStringAsFixed(2)}'
+                              : null,
+                        ),
+                      ),
+                      _buildSuggestionBadge(
+                        label: 'اقتراح التكلفة',
+                        suggestedVal: _suggestedPackCost,
+                        targetCtrl: packCostCtrl,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: TextField(
-                    controller: packPriceCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'سعر بيع العلبة (دج) *',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: packPriceCtrl,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => _onInputsChanged(),
+                        decoration: InputDecoration(
+                          labelText: 'سعر بيع العلبة (دج) *',
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          hintText: _suggestedPackPrice != null && packPriceCtrl.text.isEmpty
+                              ? 'اقتراح: ${_suggestedPackPrice!.toStringAsFixed(2)}'
+                              : null,
+                        ),
+                      ),
+                      _buildSuggestionBadge(
+                        label: 'اقتراح البيع',
+                        suggestedVal: _suggestedPackPrice,
+                        targetCtrl: packPriceCtrl,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -505,29 +552,57 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
             ),
             const SizedBox(height: 10),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: pieceCostCtrl,
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) { _onPieceCostChanged(); onInputsChanged?.call(); },
-                    decoration: const InputDecoration(
-                      labelText: 'سعر شراء الحبة (دج)',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: pieceCostCtrl,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => _onInputsChanged(),
+                        decoration: InputDecoration(
+                          labelText: 'سعر شراء الحبة (دج)',
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          hintText: _suggestedPieceCost != null && pieceCostCtrl.text.isEmpty
+                              ? 'اقتراح: ${_suggestedPieceCost!.toStringAsFixed(2)}'
+                              : null,
+                        ),
+                      ),
+                      _buildSuggestionBadge(
+                        label: 'اقتراح التكلفة',
+                        suggestedVal: _suggestedPieceCost,
+                        targetCtrl: pieceCostCtrl,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: TextField(
-                    controller: piecePriceCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'سعر بيع الحبة (دج) *',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: piecePriceCtrl,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => _onInputsChanged(),
+                        decoration: InputDecoration(
+                          labelText: 'سعر بيع الحبة (دج) *',
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          hintText: _suggestedPiecePrice != null && piecePriceCtrl.text.isEmpty
+                              ? 'اقتراح: ${_suggestedPiecePrice!.toStringAsFixed(2)}'
+                              : null,
+                        ),
+                      ),
+                      _buildSuggestionBadge(
+                        label: 'اقتراح البيع',
+                        suggestedVal: _suggestedPiecePrice,
+                        targetCtrl: piecePriceCtrl,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -800,6 +875,10 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     final pCost = _parse(widget.packCostCtrl);
     final piCost = _parse(widget.pieceCostCtrl);
 
+    final cPrice = _parse(widget.cartonPriceCtrl);
+    final pPrice = _parse(widget.packPriceCtrl);
+    final piPrice = _parse(widget.piecePriceCtrl);
+
     final cartonMultiplier = widget.hasPack ? (cCap * pCap) : cCap;
     final totalPieces = (widget.hasCarton ? (cCount * cartonMultiplier) : 0)
                       + (widget.hasPack ? (pCount * pCap) : 0)
@@ -809,41 +888,93 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                     + (widget.hasPack ? (pCount * pCost) : 0)
                     + (piCount * piCost);
 
+    final totalRevenue = (widget.hasCarton ? (cCount * cPrice) : 0)
+                       + (widget.hasPack ? (pCount * pPrice) : 0)
+                       + (piCount * piPrice);
+
+    final totalProfit = totalRevenue - totalCost;
+    final marginPct = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0.0;
+    final hasProfitData = totalCost > 0 && totalRevenue > 0;
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.teal.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.teal.shade300, width: 1.3),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.inventory_rounded, color: Colors.teal.shade800, size: 28),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            children: [
+              Icon(Icons.inventory_rounded, color: Colors.teal.shade800, size: 26),
+              const SizedBox(width: 8),
+              Text(
+                'ملخص الاستلام والأرباح التقديرية',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal.shade900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('إجمالي الحبات المضافة:', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                    Text('$totalPieces حبة', style: TextStyle(fontSize: 18, color: Colors.teal.shade900, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('إجمالي تكلفة الشراء:', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                    Text('${totalCost.toStringAsFixed(2)} د.ج', style: TextStyle(fontSize: 16, color: Colors.red.shade800, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (hasProfitData) ...[
+            const Divider(height: 16),
+            Row(
               children: [
-                const Text(
-                  'إجمالي الحبات المضافة:',
-                  style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('إجمالي المبيعات المتوقعة:', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                      Text('${totalRevenue.toStringAsFixed(2)} د.ج', style: TextStyle(fontSize: 15, color: Colors.indigo.shade900, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ),
-                Text(
-                  '$totalPieces حبة',
-                  style: TextStyle(fontSize: 20, color: Colors.teal.shade900, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'إجمالي تكلفة هذه الدفعة:',
-                  style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '${totalCost.toStringAsFixed(2)} د.ج',
-                  style: TextStyle(fontSize: 16, color: Colors.red.shade800, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('صافي الأرباح المتوقعة:', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                      Text(
+                        '${totalProfit >= 0 ? "+" : ""}${totalProfit.toStringAsFixed(2)} د.ج (${marginPct.toStringAsFixed(1)}%)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: totalProfit >= 0 ? Colors.green.shade800 : Colors.red.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
+          ],
         ],
       ),
     );

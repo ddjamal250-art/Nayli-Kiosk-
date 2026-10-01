@@ -209,68 +209,18 @@ class _StockInPageState extends State<StockInPage> {
   }
 
   void _onCartonInputsChanged() {
-    if (_unitMode != ArrivageUnitMode.cartons || _isUpdatingFromCalculation) return;
-    final cartons = int.tryParse(_cartonCountController.text.trim()) ?? 0;
-    
-    int totalUnits = 0;
-    if (_hasMiddleTier) {
-      final packs = int.tryParse(_packsPerCartonController.text.trim()) ?? 0;
-      final unitsPerPack = int.tryParse(_unitsPerPackController.text.trim()) ?? 0;
-      totalUnits = cartons * packs * unitsPerPack;
-    } else {
-      final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
-      totalUnits = cartons * perCarton;
-    }
-    
-    _qtyController.text = totalUnits.toString();
-    _cascadeCostCalculations();
+    if (_unitMode != ArrivageUnitMode.cartons) return;
     setState(() {});
   }
 
   void _onCartonCostChanged() {
-    if (_unitMode != ArrivageUnitMode.cartons || _isUpdatingFromCalculation) return;
-    _cascadeCostCalculations();
+    if (_unitMode != ArrivageUnitMode.cartons) return;
     setState(() {});
   }
 
   void _onPackCostChanged() {
-    if (_unitMode != ArrivageUnitMode.cartons || !_hasMiddleTier || _isUpdatingFromCalculation) return;
-    final packCost = double.tryParse(_packCostController.text.trim()) ?? 0.0;
-    final unitsPerPack = int.tryParse(_unitsPerPackController.text.trim()) ?? 0;
-    if (unitsPerPack > 0 && packCost > 0) {
-      final unitCost = packCost / unitsPerPack;
-      _isUpdatingFromCalculation = true;
-      _costPriceController.text = unitCost.toStringAsFixed(2);
-      _isUpdatingFromCalculation = false;
-    }
+    if (_unitMode != ArrivageUnitMode.cartons) return;
     setState(() {});
-  }
-
-  void _cascadeCostCalculations() {
-    final cartonCost = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
-    if (cartonCost <= 0) return;
-
-    _isUpdatingFromCalculation = true;
-    if (_hasMiddleTier) {
-      final packs = int.tryParse(_packsPerCartonController.text.trim()) ?? 0;
-      if (packs > 0) {
-        final packCost = cartonCost / packs;
-        _packCostController.text = packCost.toStringAsFixed(2);
-        
-        final unitsPerPack = int.tryParse(_unitsPerPackController.text.trim()) ?? 0;
-        if (unitsPerPack > 0) {
-          final unitCost = packCost / unitsPerPack;
-          _costPriceController.text = unitCost.toStringAsFixed(2);
-        }
-      }
-    } else {
-      final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
-      if (perCarton > 0) {
-        final unitCost = cartonCost / perCarton;
-        _costPriceController.text = unitCost.toStringAsFixed(2);
-      }
-    }
-    _isUpdatingFromCalculation = false;
   }
 
   void _onSacInputsChanged() {
@@ -330,24 +280,6 @@ class _StockInPageState extends State<StockInPage> {
   }
 
   void _onUnitCostChanged() {
-    if (_isUpdatingFromCalculation) return;
-    final unitCost = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
-    if (_unitMode == ArrivageUnitMode.cartons) {
-      final perCarton = int.tryParse(_unitsPerCartonController.text.trim()) ?? 0;
-      if (perCarton > 0 && unitCost > 0) {
-        _isUpdatingFromCalculation = true;
-        _cartonCostController.text = (unitCost * perCarton).toStringAsFixed(2);
-        _isUpdatingFromCalculation = false;
-      }
-    } else if (_unitMode == ArrivageUnitMode.vracSacs) {
-      final kgPerSac = double.tryParse(_kgPerSacController.text.trim()) ?? 0.0;
-      if (kgPerSac > 0 && unitCost > 0) {
-        _isUpdatingFromCalculation = true;
-        _costPerKgController.text = unitCost.toStringAsFixed(2);
-        _sacCostController.text = (unitCost * kgPerSac).toStringAsFixed(2);
-        _isUpdatingFromCalculation = false;
-      }
-    }
     setState(() {});
   }
 
