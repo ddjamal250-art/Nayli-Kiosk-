@@ -25,6 +25,7 @@ class HiveDatabase {
   static const String attendanceBoxName = 'attendance_records_box';
   static const String shoppingListBoxName = 'shopping_list_box';
   static const String loosePiecesBoxName = 'loose_pieces_box';
+  static const String suppliersBoxName = 'suppliers_box';
 
   static Future<void> initSafe() async {
     try {
@@ -79,6 +80,7 @@ class HiveDatabase {
     await Hive.openBox(attendanceBoxName); // Staff attendance & pointage
     await Hive.openBox(shoppingListBoxName); // Smart shopping list
     await Hive.openBox(loosePiecesBoxName); // Break-case loose piece inventory
+    await Hive.openBox(suppliersBoxName); // Suppliers (separate from customers)
   }
 
   static Box<ProductModel> get productBox =>
@@ -100,5 +102,6 @@ class HiveDatabase {
   static Box get attendanceBox => Hive.box(attendanceBoxName);
   static Box get shoppingListBox => Hive.box(shoppingListBoxName);
   static Box get loosePiecesBox => Hive.box(loosePiecesBoxName);
+  static Box get suppliersBox => Hive.box(suppliersBoxName);
 }
 

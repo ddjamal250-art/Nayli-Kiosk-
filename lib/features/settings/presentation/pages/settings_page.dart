@@ -34,6 +34,7 @@ import '../../../shop/presentation/bloc/shop_bloc.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
 import '../../../customer/presentation/cubit/customer_state.dart';
+import '../../../data_import/presentation/pages/data_import_page.dart';
 
 class SettingsPage extends StatefulWidget {
   SettingsPage({super.key});
@@ -753,6 +754,19 @@ SizedBox(height: 20),
           final auth = await SecurityPinHelper.authenticate(context, title: 'استرجاع قاعدة البيانات');
           if (auth && context.mounted) {
             context.push('/backups');
+          }
+        },
+      ),
+      _buildDivider(),
+      _buildTile(
+        icon: Icons.swap_horiz_rounded,
+        iconColor: Colors.teal,
+        title: 'استيراد بيانات من برنامج آخر 🔄',
+        subtitle: 'نقل الزبائن والموردين والمنتجات من أي برنامج تجاري سابق',
+        onTap: () async {
+          final auth = await SecurityPinHelper.authenticate(context, title: 'استيراد بيانات خارجية');
+          if (auth && context.mounted) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const DataImportPage()));
           }
         },
       ),
