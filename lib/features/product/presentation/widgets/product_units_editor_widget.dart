@@ -131,16 +131,8 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
   @override
   void initState() {
     super.initState();
-    _attachListeners();
   }
 
-  void _attachListeners() {
-    widget.cartonCapacityCtrl.addListener(_onCapacityOrTopDownChanged);
-    widget.packCapacityCtrl.addListener(_onCapacityOrTopDownChanged);
-    widget.cartonCostCtrl.addListener(_onCartonCostChanged);
-    widget.packCostCtrl.addListener(_onPackCostChanged);
-    widget.pieceCostCtrl.addListener(_onPieceCostChanged);
-  }
 
   @override
   void didUpdateWidget(covariant ProductUnitsEditorWidget oldWidget) {
@@ -298,7 +290,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: cartonCapacityCtrl,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) => onInputsChanged?.call(),
+                    onChanged: (_) { _onCapacityOrTopDownChanged(); onInputsChanged?.call(); },
                     decoration: InputDecoration(
                       labelText: hasPack ? 'سعة الكرتونة (كم علبة؟) *' : 'سعة الكرتونة (كم حبة؟) *',
                       suffixText: hasPack ? 'علبة/كرتونة' : 'حبة/كرتونة',
@@ -334,7 +326,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: cartonCostCtrl,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) => onInputsChanged?.call(),
+                    onChanged: (_) { _onCartonCostChanged(); onInputsChanged?.call(); },
                     decoration: const InputDecoration(
                       labelText: 'سعر شراء الكرتونة (دج)',
                       border: OutlineInputBorder(),
@@ -394,7 +386,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: packCapacityCtrl,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) => onInputsChanged?.call(),
+                    onChanged: (_) { _onCapacityOrTopDownChanged(); onInputsChanged?.call(); },
                     decoration: const InputDecoration(
                       labelText: 'سعة العلبة (كم حبة؟) *',
                       suffixText: 'حبة/علبة',
@@ -430,7 +422,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: packCostCtrl,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) => onInputsChanged?.call(),
+                    onChanged: (_) { _onPackCostChanged(); onInputsChanged?.call(); },
                     decoration: const InputDecoration(
                       labelText: 'سعر شراء العلبة (دج)',
                       border: OutlineInputBorder(),
@@ -518,7 +510,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   child: TextField(
                     controller: pieceCostCtrl,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) => onInputsChanged?.call(),
+                    onChanged: (_) { _onPieceCostChanged(); onInputsChanged?.call(); },
                     decoration: const InputDecoration(
                       labelText: 'سعر شراء الحبة (دج)',
                       border: OutlineInputBorder(),
