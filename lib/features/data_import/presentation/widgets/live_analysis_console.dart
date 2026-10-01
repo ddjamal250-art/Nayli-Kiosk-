@@ -136,7 +136,7 @@ class _LiveAnalysisConsoleState extends State<LiveAnalysisConsole> {
                         ),
                         Expanded(
                           child: Text(
-                            '\${e.icon ?? '>'} \${e.message}',
+                            "\${e.icon ?? '>'} \${e.message}",
                             style: TextStyle(
                               color: textColor,
                               fontFamily: 'monospace',
