@@ -114,6 +114,7 @@ jobs:
         with:
           name: nayli-kiosk-desktop-setup
           path: build/installer/
+          retention-days: 1
 
       - name: Publish Direct Download GitHub Release
         uses: softprops/action-gh-release@v2
