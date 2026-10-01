@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/import_result.dart';
+import '../../data/import_result.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class LiveAnalysisConsole extends StatefulWidget {
@@ -26,7 +26,7 @@ class _LiveAnalysisConsoleState extends State<LiveAnalysisConsole> {
   @override
   void initState() {
     super.initState();
-    widget.stream.listen((event) {
+    widget.stream.listen((AnalysisEvent event) {
       if (mounted) {
         setState(() {
           _events.add(event);

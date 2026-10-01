@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart' as sql;
-import '../../../../core/data/hive_database.dart';
+import '../../../core/data/hive_database.dart';
 import '../../customer/domain/entities/customer.dart';
 import '../../supplier/domain/entities/supplier.dart';
 import '../../product/data/models/product_model.dart';

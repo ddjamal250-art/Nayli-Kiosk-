@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../data/import_result.dart';
-import '../data/analysis_engine.dart';
-import '../data/smart_data_importer.dart';
+import '../../data/import_result.dart';
+import '../../data/analysis_engine.dart';
+import '../../data/smart_data_importer.dart';
 import '../widgets/live_analysis_console.dart';
 
 enum _ImportStep { selectFile, analyzing, preview, importing, results }
