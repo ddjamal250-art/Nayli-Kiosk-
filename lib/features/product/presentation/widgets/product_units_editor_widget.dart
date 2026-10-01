@@ -137,9 +137,6 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
   void _attachListeners() {
     widget.cartonCapacityCtrl.addListener(_onCapacityOrTopDownChanged);
     widget.packCapacityCtrl.addListener(_onCapacityOrTopDownChanged);
-    widget.cartonPriceCtrl.addListener(_onCartonPriceChanged);
-    widget.packPriceCtrl.addListener(_onPackPriceChanged);
-    widget.piecePriceCtrl.addListener(_onPiecePriceChanged);
     widget.cartonCostCtrl.addListener(_onCartonCostChanged);
     widget.packCostCtrl.addListener(_onPackCostChanged);
     widget.pieceCostCtrl.addListener(_onPieceCostChanged);
@@ -178,19 +175,6 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
       final cCap = _parse(widget.cartonCapacityCtrl);
       final pCap = _parse(widget.packCapacityCtrl);
       
-      final cPrice = _parse(widget.cartonPriceCtrl);
-      if (cPrice > 0) {
-        if (widget.hasPack) {
-          final pPrice = _safeDivide(cPrice, cCap).roundToDouble();
-          _setText(widget.packPriceCtrl, pPrice);
-          final pieceP = _safeDivide(pPrice, pCap).roundToDouble();
-          _setText(widget.piecePriceCtrl, pieceP);
-        } else {
-          final pieceP = _safeDivide(cPrice, cCap).roundToDouble();
-          _setText(widget.piecePriceCtrl, pieceP);
-        }
-      }
-      
       final cCost = _parse(widget.cartonCostCtrl);
       if (cCost > 0) {
         if (widget.hasPack) {
@@ -202,72 +186,6 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
           final pieceC = _safeDivide(cCost, cCap);
           _setText(widget.pieceCostCtrl, pieceC);
         }
-      }
-      widget.onInputsChanged?.call();
-    } finally {
-      _isSyncing = false;
-    }
-  }
-
-  void _onCartonPriceChanged() {
-    if (_isSyncing) return;
-    _isSyncing = true;
-    try {
-      final cCap = _parse(widget.cartonCapacityCtrl);
-      final pCap = _parse(widget.packCapacityCtrl);
-      final cPrice = _parse(widget.cartonPriceCtrl);
-      
-      if (widget.hasPack) {
-        final pPrice = _safeDivide(cPrice, cCap).roundToDouble();
-        _setText(widget.packPriceCtrl, pPrice);
-        final pieceP = _safeDivide(pPrice, pCap).roundToDouble();
-        _setText(widget.piecePriceCtrl, pieceP);
-      } else {
-        final pieceP = _safeDivide(cPrice, cCap).roundToDouble();
-        _setText(widget.piecePriceCtrl, pieceP);
-      }
-      widget.onInputsChanged?.call();
-    } finally {
-      _isSyncing = false;
-    }
-  }
-
-  void _onPackPriceChanged() {
-    if (_isSyncing) return;
-    if (!widget.hasPack) return;
-    _isSyncing = true;
-    try {
-      final cCap = _parse(widget.cartonCapacityCtrl);
-      final pCap = _parse(widget.packCapacityCtrl);
-      final pPrice = _parse(widget.packPriceCtrl);
-      
-      final cPrice = (pPrice * cCap).roundToDouble();
-      _setText(widget.cartonPriceCtrl, cPrice);
-      
-      final pieceP = _safeDivide(pPrice, pCap).roundToDouble();
-      _setText(widget.piecePriceCtrl, pieceP);
-      widget.onInputsChanged?.call();
-    } finally {
-      _isSyncing = false;
-    }
-  }
-
-  void _onPiecePriceChanged() {
-    if (_isSyncing) return;
-    _isSyncing = true;
-    try {
-      final cCap = _parse(widget.cartonCapacityCtrl);
-      final pCap = _parse(widget.packCapacityCtrl);
-      final pieceP = _parse(widget.piecePriceCtrl);
-      
-      if (widget.hasPack) {
-        final pPrice = (pieceP * pCap).roundToDouble();
-        _setText(widget.packPriceCtrl, pPrice);
-        final cPrice = (pPrice * cCap).roundToDouble();
-        _setText(widget.cartonPriceCtrl, cPrice);
-      } else if (widget.hasCarton) {
-        final cPrice = (pieceP * cCap).roundToDouble();
-        _setText(widget.cartonPriceCtrl, cPrice);
       }
       widget.onInputsChanged?.call();
     } finally {

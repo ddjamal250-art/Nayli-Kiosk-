@@ -88,7 +88,7 @@ class _LiveAnalysisConsoleState extends State<LiveAnalysisConsole> {
               ),
               const Spacer(),
               Text(
-                '\${(_progress * 100).toInt()}%',
+                '${(_progress * 100).toInt()}%',
                 style: const TextStyle(
                   color: Color(0xFF00FF41),
                   fontWeight: FontWeight.bold,
@@ -127,7 +127,7 @@ class _LiveAnalysisConsoleState extends State<LiveAnalysisConsole> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '[\$time] ',
+                          '[$time] ',
                           style: const TextStyle(
                             color: Colors.white54,
                             fontFamily: 'monospace',
@@ -136,7 +136,7 @@ class _LiveAnalysisConsoleState extends State<LiveAnalysisConsole> {
                         ),
                         Expanded(
                           child: Text(
-                            "\${e.icon ?? '>'} \${e.message}",
+                            "${e.icon ?? '>'} ${e.message}",
                             style: TextStyle(
                               color: textColor,
                               fontFamily: 'monospace',
@@ -157,10 +157,10 @@ class _LiveAnalysisConsoleState extends State<LiveAnalysisConsole> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _buildChip('👤 \${_summary!.customersFound} زبائن', _summary!.customersFound > 0),
-                _buildChip('🏭 \${_summary!.suppliersFound} موردين', _summary!.suppliersFound > 0),
-                _buildChip('📦 \${_summary!.productsFound} منتجات', _summary!.productsFound > 0),
-                _buildChip('📸 \${_summary!.imagesFound} صور', _summary!.imagesFound > 0),
+                _buildChip('👤 ${_summary!.customersFound} زبائن', _summary!.customersFound > 0),
+                _buildChip('🏭 ${_summary!.suppliersFound} موردين', _summary!.suppliersFound > 0),
+                _buildChip('📦 ${_summary!.productsFound} منتجات', _summary!.productsFound > 0),
+                _buildChip('📸 ${_summary!.imagesFound} صور', _summary!.imagesFound > 0),
               ],
             ),
           ],

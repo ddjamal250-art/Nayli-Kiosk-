@@ -65,7 +65,7 @@ class AnalysisEngine {
         final progress = 0.20 + (0.30 * i / tableNames.length);
 
         // قراءة أعمدة الجدول
-        final colsResult = db.select("PRAGMA table_info('\$tName');");
+        final colsResult = db.select("PRAGMA table_info('$tName');");
         final columns = colsResult.map((r) => ColumnInfo(
           name: r['name'] as String,
           type: r['type'] as String,
@@ -73,7 +73,7 @@ class AnalysisEngine {
         )).toList();
 
         // عدد الصفوف
-        final countResult = db.select("SELECT COUNT(*) as c FROM '\$tName';");
+        final countResult = db.select("SELECT COUNT(*) as c FROM '$tName';");
         final rowCount = countResult.first['c'] as int;
 
         // تصنيف ذكي
@@ -84,30 +84,30 @@ class AnalysisEngine {
           case TableType.customers:
             customersTable = tName;
             customersCount = rowCount;
-            yield AnalysisEvent(phase: 'classify', progress: progress, message: '👤 تم التعرف على جدول الزبائن: \$tName (\$rowCount)', icon: '👤');
+            yield AnalysisEvent(phase: 'classify', progress: progress, message: '👤 تم التعرف على جدول الزبائن: $tName ($rowCount)', icon: '👤');
             break;
           case TableType.suppliers:
             suppliersTable = tName;
             suppliersCount = rowCount;
-            yield AnalysisEvent(phase: 'classify', progress: progress, message: '🏭 تم التعرف على جدول الموردين: \$tName (\$rowCount)', icon: '🏭');
+            yield AnalysisEvent(phase: 'classify', progress: progress, message: '🏭 تم التعرف على جدول الموردين: $tName ($rowCount)', icon: '🏭');
             break;
           case TableType.products:
             productsTable = tName;
             productsCount = rowCount;
-            yield AnalysisEvent(phase: 'classify', progress: progress, message: '📦 تم التعرف على جدول المنتجات: \$tName (\$rowCount)', icon: '📦');
+            yield AnalysisEvent(phase: 'classify', progress: progress, message: '📦 تم التعرف على جدول المنتجات: $tName ($rowCount)', icon: '📦');
             break;
           case TableType.categories:
             categoriesTable = tName;
             categoriesCount = rowCount;
-            yield AnalysisEvent(phase: 'classify', progress: progress, message: '🏷️ تم التعرف على جدول الأصناف: \$tName (\$rowCount)', icon: '🏷️');
+            yield AnalysisEvent(phase: 'classify', progress: progress, message: '🏷️ تم التعرف على جدول الأصناف: $tName ($rowCount)', icon: '🏷️');
             break;
           case TableType.payments:
             paymentsTable = tName;
-            yield AnalysisEvent(phase: 'classify', progress: progress, message: '💳 تم التعرف على جدول المدفوعات: \$tName (\$rowCount)', icon: '💳');
+            yield AnalysisEvent(phase: 'classify', progress: progress, message: '💳 تم التعرف على جدول المدفوعات: $tName ($rowCount)', icon: '💳');
             break;
           case TableType.sales:
             salesTable = tName;
-            yield AnalysisEvent(phase: 'classify', progress: progress, message: '🧾 تم التعرف على جدول المبيعات: \$tName (\$rowCount)', icon: '🧾');
+            yield AnalysisEvent(phase: 'classify', progress: progress, message: '🧾 تم التعرف على جدول المبيعات: $tName ($rowCount)', icon: '🧾');
             break;
           default:
             break;
@@ -126,14 +126,14 @@ class AnalysisEngine {
           final debtQuery = '''
             SELECT c.id, c.name,
               COALESCE(s.total_sales, 0) - COALESCE(p.total_paid, 0) as debt
-            FROM '\$customersTable' c
+            FROM '$customersTable' c
             LEFT JOIN (
               SELECT clientId, SUM(total) as total_sales
-              FROM '\$salesTable' WHERE clientId IS NOT NULL GROUP BY clientId
+              FROM '$salesTable' WHERE clientId IS NOT NULL GROUP BY clientId
             ) s ON c.id = s.clientId
             LEFT JOIN (
               SELECT clientId, SUM(value) as total_paid
-              FROM '\$paymentsTable' WHERE clientId IS NOT NULL GROUP BY clientId
+              FROM '$paymentsTable' WHERE clientId IS NOT NULL GROUP BY clientId
             ) p ON c.id = p.clientId
           ''';
           final debtResults = db.select(debtQuery);
@@ -143,11 +143,11 @@ class AnalysisEngine {
             final debt = DataSanitizer.sanitizeDebt(row['debt']);
             if (debt > 0) {
               customerDebts[id] = debt;
-              yield AnalysisEvent(phase: 'debts', progress: 0.70, message: '💰 الزبون "\$name": دين = \${debt.toStringAsFixed(0)} دج', icon: '💰');
+              yield AnalysisEvent(phase: 'debts', progress: 0.70, message: '💰 الزبون "$name": دين = ${debt.toStringAsFixed(0)} دج', icon: '💰');
             }
           }
         } catch (e) {
-          yield AnalysisEvent(phase: 'debts', progress: 0.70, message: '⚠️ تعذر حساب ديون الزبائن: \$e', icon: '⚠️');
+          yield AnalysisEvent(phase: 'debts', progress: 0.70, message: '⚠️ تعذر حساب ديون الزبائن: $e', icon: '⚠️');
         }
       }
 
@@ -159,14 +159,14 @@ class AnalysisEngine {
             final debtQuery = '''
               SELECT s.id, s.name,
                 COALESCE(pu.total_purchases, 0) - COALESCE(pa.total_paid, 0) as debt
-              FROM '\$suppliersTable' s
+              FROM '$suppliersTable' s
               LEFT JOIN (
                 SELECT supplierId, SUM(total) as total_purchases
                 FROM purchases WHERE supplierId IS NOT NULL GROUP BY supplierId
               ) pu ON s.id = pu.supplierId
               LEFT JOIN (
                 SELECT supplierId, SUM(value) as total_paid
-                FROM '\$paymentsTable' WHERE supplierId IS NOT NULL GROUP BY supplierId
+                FROM '$paymentsTable' WHERE supplierId IS NOT NULL GROUP BY supplierId
               ) pa ON s.id = pa.supplierId
             ''';
             final debtResults = db.select(debtQuery);
@@ -177,17 +177,17 @@ class AnalysisEngine {
             }
           }
         } catch (e) {
-          yield AnalysisEvent(phase: 'debts', progress: 0.75, message: '⚠️ تعذر حساب ديون الموردين: \$e', icon: '⚠️');
+          yield AnalysisEvent(phase: 'debts', progress: 0.75, message: '⚠️ تعذر حساب ديون الموردين: $e', icon: '⚠️');
         }
       }
 
       // --- اكتشاف الصور ---
       int imagesCount = 0;
       final zipDir = File(dbPath).parent;
-      final imagesDir = Directory('\${zipDir.path}/images');
+      final imagesDir = Directory('${zipDir.path}/images');
       if (await imagesDir.exists()) {
         imagesCount = await imagesDir.list().where((f) => f is File).length;
-        yield AnalysisEvent(phase: 'images', progress: 0.85, message: '📸 تم اكتشاف \$imagesCount صورة منتج', icon: '📸');
+        yield AnalysisEvent(phase: 'images', progress: 0.85, message: '📸 تم اكتشاف $imagesCount صورة منتج', icon: '📸');
       }
 
       // --- الملخص النهائي ---
@@ -222,11 +222,11 @@ class AnalysisEngine {
   Future<Directory> _extractZip(File zipFile) async {
     final bytes = await zipFile.readAsBytes();
     final archive = ZipDecoder().decodeBytes(bytes);
-    final extractDir = Directory('\${zipFile.parent.path}/nayli_import_temp_\${DateTime.now().millisecondsSinceEpoch}');
+    final extractDir = Directory('${zipFile.parent.path}/nayli_import_temp_${DateTime.now().millisecondsSinceEpoch}');
     await extractDir.create(recursive: true);
 
     for (final file in archive) {
-      final filePath = '\${extractDir.path}/\${file.name}';
+      final filePath = '${extractDir.path}/${file.name}';
       if (file.isFile) {
         final outFile = File(filePath);
         await outFile.create(recursive: true);

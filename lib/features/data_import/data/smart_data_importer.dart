@@ -36,7 +36,7 @@ class SmartDataImporter {
       
       String? custTable, suppTable, prodTable, codesTable, pricesTable, sellPricesTable, groupsTable;
       for (final t in tableNames) {
-        final colsResult = db.select("PRAGMA table_info('\$t');");
+        final colsResult = db.select("PRAGMA table_info('$t');");
         final columns = colsResult.map((r) => ColumnInfo(name: r['name'] as String, type: r['type'] as String, isNullable: (r['notnull'] as int) == 0)).toList();
         final type = SmartFieldMapper.classifyTable(t, columns);
         if (type == TableType.customers) custTable = t;
@@ -50,7 +50,7 @@ class SmartDataImporter {
 
       if (importCustomers && custTable != null) {
         final custBox = HiveDatabase.customersBox;
-        final res = db.select("SELECT * FROM '\$custTable'");
+        final res = db.select("SELECT * FROM '$custTable'");
         for (final row in res) {
           try {
             final sourceId = row['id'];
@@ -100,7 +100,7 @@ class SmartDataImporter {
 
       if (importSuppliers && suppTable != null) {
         final suppBox = HiveDatabase.suppliersBox;
-        final res = db.select("SELECT * FROM '\$suppTable'");
+        final res = db.select("SELECT * FROM '$suppTable'");
         for (final row in res) {
           try {
             final sourceId = row['id'];
@@ -150,7 +150,7 @@ class SmartDataImporter {
 
       if (importProducts && prodTable != null) {
         final prodBox = HiveDatabase.productBox;
-        final res = db.select("SELECT * FROM '\$prodTable'");
+        final res = db.select("SELECT * FROM '$prodTable'");
         for (final row in res) {
           try {
             final pId = row['id'];
@@ -159,7 +159,7 @@ class SmartDataImporter {
 
             String barcode = '';
             if (codesTable != null) {
-              final codes = db.select("SELECT value FROM '\$codesTable' WHERE productId = ?", [pId]);
+              final codes = db.select("SELECT value FROM '$codesTable' WHERE productId = ?", [pId]);
               if (codes.isNotEmpty) barcode = DataSanitizer.sanitizeBarcode(codes.first['value']);
             }
             
@@ -174,25 +174,25 @@ class SmartDataImporter {
 
             double costPrice = 0.0, stock = 0.0, price = 0.0;
             if (pricesTable != null) {
-              final prices = db.select("SELECT value, quantity FROM '\$pricesTable' WHERE productId = ?", [pId]);
+              final prices = db.select("SELECT value, quantity FROM '$pricesTable' WHERE productId = ?", [pId]);
               if (prices.isNotEmpty) {
                 costPrice = DataSanitizer.sanitizePrice(prices.last['value']);
                 stock = DataSanitizer.sanitizeQuantity(prices.last['quantity']);
               }
             }
             if (sellPricesTable != null) {
-              final sp = db.select("SELECT value FROM '\$sellPricesTable' WHERE productId = ? AND isDefault = 1", [pId]);
+              final sp = db.select("SELECT value FROM '$sellPricesTable' WHERE productId = ? AND isDefault = 1", [pId]);
               if (sp.isNotEmpty) {
                 price = DataSanitizer.sanitizePrice(sp.first['value']);
               } else {
-                final spAll = db.select("SELECT value FROM '\$sellPricesTable' WHERE productId = ?", [pId]);
+                final spAll = db.select("SELECT value FROM '$sellPricesTable' WHERE productId = ?", [pId]);
                 if (spAll.isNotEmpty) price = DataSanitizer.sanitizePrice(spAll.first['value']);
               }
             }
 
             String category = 'عام';
             if (groupsTable != null && row['groupId'] != null) {
-              final grps = db.select("SELECT name FROM '\$groupsTable' WHERE id = ?", [row['groupId']]);
+              final grps = db.select("SELECT name FROM '$groupsTable' WHERE id = ?", [row['groupId']]);
               if (grps.isNotEmpty) category = DataSanitizer.sanitizeName(grps.first['name']);
             }
 
@@ -236,16 +236,16 @@ class SmartDataImporter {
       if (importImages && summary.imagesFound > 0) {
         try {
           final zipDir = File(dbPath).parent;
-          final imagesDir = Directory('\${zipDir.path}/images');
+          final imagesDir = Directory('${zipDir.path}/images');
           if (await imagesDir.exists()) {
             final appDocDir = await getApplicationDocumentsDirectory();
-            final targetDir = Directory('\${appDocDir.path}/images');
+            final targetDir = Directory('${appDocDir.path}/images');
             if (!await targetDir.exists()) await targetDir.create(recursive: true);
             
             await for (final file in imagesDir.list()) {
               if (file is File) {
                 final name = file.uri.pathSegments.last;
-                await file.copy('\${targetDir.path}/\$name');
+                await file.copy('${targetDir.path}/$name');
                 iCount++;
               }
             }
