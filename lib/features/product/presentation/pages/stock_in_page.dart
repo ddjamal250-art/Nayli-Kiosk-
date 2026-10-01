@@ -548,7 +548,8 @@ class _StockInPageState extends State<StockInPage> {
       final pCap = int.tryParse(_unitsPerPackController.text.trim()) ?? 1;
       final piCount = int.tryParse(_pieceCountController.text.trim()) ?? 0;
 
-      final totalReceivedPieces = (cartons * cCap) + (pCount * pCap) + piCount;
+      final cartonMultiplier = _hasMiddleTier ? (cCap * pCap) : cCap;
+      final totalReceivedPieces = (cartons * cartonMultiplier) + (pCount * pCap) + piCount;
       if (totalReceivedPieces > 0) {
         effectiveQty = totalReceivedPieces.toDouble();
       }
