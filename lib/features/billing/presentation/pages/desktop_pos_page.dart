@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,6 +44,7 @@ import '../widgets/quick_items_manager_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
+import '../widgets/smart_scale_modal.dart';
 import '../widgets/universal_unit_selector_dialog.dart';
 import '../../../../core/services/github_update_service.dart';
 
@@ -913,7 +915,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'الكتالوج الجزائري الشامل (59 ألف منتج)',
+                            'دليل واقتراحات السلع والباركود',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           Text(
@@ -1216,6 +1218,26 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   );
                 },
               ),
+              if (invoiceData != null && invoiceData['isReturned'] != true) ...[
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepOrange.shade800,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.undo_rounded, size: 20),
+                  label: const Text(
+                    'إلغاء الوصل بالكامل واسترجاع السلع للمخزون فوراً ↩️',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await _returnInvoiceDirectly(invoiceData);
+                  },
+                ),
+              ],
               if (invoiceData != null) ...[
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
@@ -1260,6 +1282,155 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _returnInvoiceDirectly(Map invoiceData) async {
+    final invId = invoiceData['id']?.toString() ?? '';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.deepOrange, size: 28),
+            SizedBox(width: 8),
+            Text('تأكيد إلغاء الوصل وإرجاع السلع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          'هل أنت متأكد من إلغاء هذا الوصل (#$invId) بالكامل؟\nسيتم فوراً إعادة جميع السلع المباعة فيه إلى المخزون وتعديل الحسابات.',
+          style: const TextStyle(fontSize: 13, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('تراجع'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('تأكيد الإلغاء والإرجاع'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final productBox = HiveDatabase.productBox;
+    final rawItems = (invoiceData['items'] as List?) ?? [];
+
+    for (final item in rawItems) {
+      if (item is! Map) continue;
+      String originalId = item['id']?.toString() ?? '';
+      if (originalId.contains('_carton_')) {
+        originalId = originalId.split('_carton_').first;
+      } else if (originalId.contains('_piece_')) {
+        originalId = originalId.split('_piece_').first;
+      } else if (originalId.contains('_meter_')) {
+        originalId = originalId.split('_meter_').first;
+      } else if (originalId.contains('_ml_')) {
+        originalId = originalId.split('_ml_').first;
+      } else if (originalId.endsWith('_pack')) {
+        originalId = originalId.replaceAll('_pack', '');
+      }
+
+      final productModel = productBox.get(originalId);
+      if (productModel != null) {
+        // If coffee recipe product, restore raw materials (e.g. coffee beans)
+        if (productModel.coffeeRecipeJson != null) {
+          try {
+            final recipe = jsonDecode(productModel.coffeeRecipeJson!);
+            if (recipe is List && recipe.isNotEmpty) {
+              final rawEntry = recipe.first;
+              final rawId = rawEntry['rawProductId'];
+              final gramsPerCup = (rawEntry['qty'] as num?)?.toDouble() ?? 0.0;
+              final rawProduct = productBox.get(rawId);
+              if (rawProduct != null) {
+                final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
+                final addGrams = (gramsPerCup * qty).round();
+                final newRawStock = (rawProduct.stock + addGrams).toDouble();
+                productBox.put(rawId, rawProduct.copyWith(stock: newRawStock));
+                if (mounted) {
+                  context.read<ProductBloc>().add(UpdateProduct(rawProduct.copyWith(stock: newRawStock)));
+                }
+              }
+            }
+          } catch (_) {}
+          continue;
+        }
+
+        // Regular or weighable item
+        final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
+        final weightKg = (item['weightKg'] as num?)?.toDouble();
+        final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled) || weightKg != null;
+
+        final double stockToAdd = hasWeighable && weightKg != null
+            ? (weightKg * 1000).toDouble()
+            : qty;
+        final double newStock = (productModel.stock + stockToAdd).toDouble();
+        final updatedProd = productModel.copyWith(stock: newStock);
+        productBox.put(originalId, updatedProd);
+        if (mounted) {
+          context.read<ProductBloc>().add(UpdateProduct(updatedProd));
+        }
+      }
+    }
+
+    // Customer credit deduction if credit sale
+    final isCredit = invoiceData['isCredit'] == true;
+    final totalAmount = (invoiceData['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final customerId = invoiceData['customerId']?.toString();
+    if (isCredit && customerId != null && customerId.isNotEmpty) {
+      try {
+        final cBox = HiveDatabase.customersBox;
+        final cData = cBox.get(customerId);
+        if (cData is Map) {
+          final updated = Map<String, dynamic>.from(cData);
+          final currDebt = (updated['debt'] as num?)?.toDouble() ?? (updated['currentDebt'] as num?)?.toDouble() ?? 0.0;
+          final newDebt = (currDebt - totalAmount).clamp(0.0, double.infinity);
+          updated['debt'] = newDebt;
+          updated['currentDebt'] = newDebt;
+          await cBox.put(customerId, updated);
+        }
+      } catch (_) {}
+    }
+
+    // Mark invoice returned in HiveDatabase.invoicesBox
+    final invoicesBox = HiveDatabase.invoicesBox;
+    final invKey = invoiceData['id'];
+    if (invKey != null && invoicesBox.containsKey(invKey)) {
+      final updatedInv = Map<String, dynamic>.from(invoiceData);
+      updatedInv['isReturned'] = true;
+      updatedInv['status'] = 'returned';
+      updatedInv['returnDate'] = DateTime.now().toIso8601String();
+      await invoicesBox.put(invKey, updatedInv);
+    }
+
+    // Open drawer if cash payment to give money back
+    if (invoiceData['paymentMethod'] == 'Espèces' || invoiceData['paymentMethod'] == 'كاش') {
+      try {
+        await PrinterHelper.openCashDrawer();
+      } catch (_) {}
+    }
+
+    SoundService.playSaveSuccess();
+    if (mounted) {
+      SnackbarHelper.showSuccess(
+        context,
+        '✅ تم إلغاء الوصل #$invId بنجاح وإعادة جميع السلع إلى المخزون! 🔄',
+      );
+    }
+  }
+
+  void _openSmartScaleModal() {
+    SoundService.playTabSwitch();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const SmartScaleModal(),
     );
   }
 
@@ -1471,7 +1642,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       _showQuickCustomItemModal();
       return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f8) {
-      _showPriceChecker();
+      _openSmartScaleModal();
       return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f9) {
       _showRemoteCartsQueueModal();
@@ -2741,13 +2912,22 @@ $itemsSummary
 
     // 3. Reset local POS UI state for next customer
     if (mounted) {
+      final wasReturn = _isReturnMode;
       setState(() {
         _cartDiscountValue = 0.0;
         _selectedCustomerId = null;
         _selectedCustomerName = context.tr('walk_in_customer');
         _customerCreditBalance = 0.0;
+        _isReturnMode = false;
       });
-      SnackbarHelper.showSuccess(context, context.tr('printed_success'));
+      if (wasReturn) {
+        SnackbarHelper.showSuccess(
+          context,
+          '✅ تم تأكيد عملية الإرجاع وإعادة السلع إلى المخزون بنجاح! 🔄',
+        );
+      } else {
+        SnackbarHelper.showSuccess(context, context.tr('printed_success'));
+      }
       _barcodeFocusNode.requestFocus();
     }
   }
@@ -2877,6 +3057,7 @@ $itemsSummary
       pendingRemoteCartsCount: _pendingRemoteCartsCount,
       onOpenDrawer: _openCashDrawerWithSecurity,
       onShowRemoteCartsQueue: _showRemoteCartsQueueModal,
+      onOpenSmartScale: _openSmartScaleModal,
     );
   }
 

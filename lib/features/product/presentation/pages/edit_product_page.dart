@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../widgets/product_image_picker_field.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +15,7 @@ import '../../domain/entities/product_unit.dart';
 import '../../domain/entities/special_offer.dart';
 import '../bloc/product_bloc.dart';
 import '../widgets/product_units_editor_widget.dart';
+import '../widgets/coffee_recipe_modal.dart';
 
 class EditProductPage extends StatefulWidget {
   final Product product;
@@ -32,6 +34,9 @@ class _EditProductPageState extends State<EditProductPage> {
   late TextEditingController _stockCtrl;
   late TextEditingController _baseUnitNameCtrl;
   late TextEditingController _pluCodeCtrl;
+
+  // --- تركيبة ووصفة القهوة الجاهزة ---
+  String? _coffeeRecipeJson;
 
   // --- إعدادات الكرتونة (Large) ---
   bool _hasCarton = false;
@@ -81,6 +86,7 @@ class _EditProductPageState extends State<EditProductPage> {
     _imageUrl = p.imageUrl;
     _pluCodeCtrl = TextEditingController(text: p.pluCode ?? '');
     _selectedCategory = _availableCategories.contains(p.category) ? p.category : 'عام';
+    _coffeeRecipeJson = p.coffeeRecipeJson;
 
     // تحميل إعدادات الكرتونة إن وجدت
     final cartonUnit = p.units.where((u) => u.tier == UnitTier.large || u.name.contains('كرتون')).firstOrNull;
@@ -254,6 +260,8 @@ class _EditProductPageState extends State<EditProductPage> {
       units: units,
       specialOffer: offer,
       pluCode: plu.isNotEmpty ? plu : null,
+      coffeeRecipeJson: _coffeeRecipeJson,
+      isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
     );
 
     context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
@@ -361,6 +369,168 @@ class _EditProductPageState extends State<EditProductPage> {
               ],
             ),
             const SizedBox(height: 16),
+
+            // --- تركيبة ووصفة القهوة الجاهزة ---
+            if (_coffeeRecipeJson != null || _selectedCategory.contains('قهوة') || widget.product.isCoffeeMachineProduct) ...[
+              _SectionCard(
+                title: 'تركيبة ووصفة القهوة الجاهزة ☕',
+                icon: Icons.coffee_rounded,
+                children: [
+                  Builder(
+                    builder: (ctx) {
+                      List<dynamic> recipeItems = [];
+                      if (_coffeeRecipeJson != null) {
+                        try {
+                          recipeItems = jsonDecode(_coffeeRecipeJson!);
+                        } catch (_) {}
+                      }
+
+                      if (recipeItems.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.brown.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.brown.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'هذا المنتج مصنف كمشروب قهوة ولكن لا يملك تركيبة استهلاك مواد خام محددة بعد.',
+                                style: TextStyle(fontSize: 12.5, color: Colors.brown),
+                              ),
+                              const SizedBox(height: 10),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.brown,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.add_circle_outline, size: 18),
+                                label: const Text('إعداد وربط وصفة القهوة والمواد الخام الآن ☕',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                onPressed: () async {
+                                  final res = await CoffeeRecipeModal.show(context, existingProduct: widget.product);
+                                  if (res != null && mounted) {
+                                    setState(() {
+                                      _coffeeRecipeJson = res.coffeeRecipeJson;
+                                      if (res.costPrice > 0) {
+                                        _costPriceCtrl.text = res.costPrice.toStringAsFixed(0);
+                                      }
+                                      if (res.price > 0 && (_priceCtrl.text.isEmpty || _priceCtrl.text == '0')) {
+                                        _priceCtrl.text = res.price.toStringAsFixed(0);
+                                      }
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFBF8F5),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFD7CCC8)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'المواد الخام المستهلكة في الكوب الواحد:',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.brown),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.brown.shade100,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text('${recipeItems.length} مكونات',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.brown)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ...recipeItems.map((item) {
+                              final name = item['rawProductName'] ?? 'مادة خام';
+                              final qty = item['qty'] ?? '';
+                              final unit = item['unit'] == 'g' ? 'غرام' : (item['unit'] == 'ml' ? 'مل' : 'حبة');
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle_outline, size: 14, color: Colors.brown),
+                                    const SizedBox(width: 6),
+                                    Text('$name:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                    const SizedBox(width: 4),
+                                    Text('$qty $unit', style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                                  ],
+                                ),
+                              );
+                            }),
+                            const Divider(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.brown,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    icon: const Icon(Icons.edit_rounded, size: 16),
+                                    label: const Text('تعديل الوصفة والمكونات ⚙️',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                    onPressed: () async {
+                                      final res = await CoffeeRecipeModal.show(context, existingProduct: widget.product.copyWith(
+                                        coffeeRecipeJson: _coffeeRecipeJson,
+                                        price: double.tryParse(_priceCtrl.text) ?? widget.product.price,
+                                      ));
+                                      if (res != null && mounted) {
+                                        setState(() {
+                                          _coffeeRecipeJson = res.coffeeRecipeJson;
+                                          if (res.costPrice > 0) {
+                                            _costPriceCtrl.text = res.costPrice.toStringAsFixed(0);
+                                          }
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                    side: const BorderSide(color: Colors.red),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  icon: const Icon(Icons.delete_outline, size: 16),
+                                  label: const Text('إلغاء الوصفة', style: TextStyle(fontSize: 11)),
+                                  onPressed: () {
+                                    setState(() {
+                                      _coffeeRecipeJson = null;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // --- تفاصيل الوحدات العمودية الثلاث والعروض الخاصة ---
             ProductUnitsEditorWidget(

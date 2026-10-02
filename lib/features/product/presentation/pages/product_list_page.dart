@@ -24,6 +24,7 @@ import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
 import '../widgets/quick_receive_modal.dart';
 import '../widgets/coffee_recipe_modal.dart';
+import '../../../billing/presentation/widgets/smart_scale_modal.dart';
 
 class ProductListPage extends StatefulWidget {
   ProductListPage({super.key});
@@ -467,7 +468,7 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-  /// Advanced Weighable Restock Modal (استلام سلع الميزان بالكغ والأكياس والفاقد)
+  /// Advanced Weighable Restock Modal (استلام سلع الميزان بالكغ والأكياس والفاقد والقيمة)
   void _showWeighableRestockModal(Product product) {
     double grossWeight = 10.0;
     double tareLossPercent = 0.0;
@@ -475,6 +476,8 @@ class _ProductListPageState extends State<ProductListPage> {
     final TextEditingController grossWeightCtrl = TextEditingController(text: '10.0');
     final TextEditingController costCtrl = TextEditingController(text: costPerKg.toStringAsFixed(0));
     final TextEditingController tareCtrl = TextEditingController(text: '0');
+    final TextEditingController totalCostValCtrl = TextEditingController(text: (10.0 * costPerKg).toStringAsFixed(0));
+    bool isByValue = false;
 
     AdaptiveModalHelper.showAdaptiveModal(
       context: context,
@@ -520,35 +523,100 @@ class _ProductListPageState extends State<ProductListPage> {
                       style: TextStyle(fontSize: 11.5, color: Colors.grey)),
                   SizedBox(height: 14),
 
-                  // Gross Weight Input & Presets
-                  Text('الوزن الإجمالي المستلم (بالكيلوغرام):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                  SizedBox(height: 6),
-                  TextFormField(
-                    controller: grossWeightCtrl,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      hintText: '0.0',
-                      suffixText: 'كغ (Kg)',
-                      prefixIcon: Icon(Icons.fitness_center),
+                  // Mode Toggle: Weight vs Total Value
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(value: false, label: Text('استلام بالوزن (كغ)')),
+                      ButtonSegment(value: true, label: Text('استلام بالقيمة (دج)')),
+                    ],
+                    selected: {isByValue},
+                    onSelectionChanged: (s) {
+                      setModalState(() {
+                        isByValue = s.first;
+                      });
+                    },
+                  ),
+                  SizedBox(height: 12),
+
+                  if (!isByValue) ...[
+                    // Gross Weight Input & Presets
+                    Text('الوزن الإجمالي المستلم (بالكيلوغرام):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    SizedBox(height: 6),
+                    TextFormField(
+                      controller: grossWeightCtrl,
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: '0.0',
+                        suffixText: 'كغ (Kg)',
+                        prefixIcon: Icon(Icons.fitness_center),
+                      ),
+                      onChanged: (val) {
+                        final w = double.tryParse(val.trim()) ?? 0.0;
+                        final c = double.tryParse(costCtrl.text.trim()) ?? costPerKg;
+                        totalCostValCtrl.text = (w * c).toStringAsFixed(0);
+                        setModalState(() {});
+                      },
                     ),
-                    onChanged: (_) => setModalState(() {}),
-                  ),
-                  SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    children: [2.5, 5.0, 10.0, 25.0, 50.0].map((amt) {
-                      return ActionChip(
-                        label: Text('+$amt كغ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        backgroundColor: Colors.teal.withOpacity(0.1),
-                        side: BorderSide(color: Colors.teal.withOpacity(0.3)),
-                        onPressed: () {
-                          setModalState(() {
-                            grossWeightCtrl.text = amt.toStringAsFixed(1);
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
+                    SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      children: [2.5, 5.0, 10.0, 25.0, 50.0].map((amt) {
+                        return ActionChip(
+                          label: Text('+$amt كغ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          backgroundColor: Colors.teal.withOpacity(0.1),
+                          side: BorderSide(color: Colors.teal.withOpacity(0.3)),
+                          onPressed: () {
+                            setModalState(() {
+                              grossWeightCtrl.text = amt.toStringAsFixed(1);
+                              final c = double.tryParse(costCtrl.text.trim()) ?? costPerKg;
+                              totalCostValCtrl.text = (amt * c).toStringAsFixed(0);
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ] else ...[
+                    // Total Value Input & Presets
+                    Text('القيمة الإجمالية المدفوعة للشحنة (بالدينار):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    SizedBox(height: 6),
+                    TextFormField(
+                      controller: totalCostValCtrl,
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: '0.0',
+                        suffixText: 'دج (DA)',
+                        prefixIcon: Icon(Icons.payments_outlined),
+                      ),
+                      onChanged: (val) {
+                        final costTotal = double.tryParse(val.trim()) ?? 0.0;
+                        final c = double.tryParse(costCtrl.text.trim()) ?? costPerKg;
+                        if (c > 0) {
+                          grossWeightCtrl.text = (costTotal / c).toStringAsFixed(2);
+                        }
+                        setModalState(() {});
+                      },
+                    ),
+                    SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      children: [500.0, 1000.0, 2000.0, 5000.0, 10000.0].map((amt) {
+                        return ActionChip(
+                          label: Text('+${amt.toInt()} دج', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          backgroundColor: Colors.teal.withOpacity(0.1),
+                          side: BorderSide(color: Colors.teal.withOpacity(0.3)),
+                          onPressed: () {
+                            setModalState(() {
+                              totalCostValCtrl.text = amt.toInt().toString();
+                              final c = double.tryParse(costCtrl.text.trim()) ?? costPerKg;
+                              if (c > 0) {
+                                grossWeightCtrl.text = (amt / c).toStringAsFixed(2);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
                   SizedBox(height: 14),
 
                   // Cost & Tare Row
@@ -757,9 +825,16 @@ class _ProductListPageState extends State<ProductListPage> {
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.auto_awesome, color: AppTheme.primaryColor),
-                  tooltip: 'كتالوج السلع الجزائرية (15,500+)',
-                  onPressed: () => context.push('/products/catalog'),
+                  icon: const Icon(Icons.scale_rounded, color: Colors.teal),
+                  tooltip: 'الميزان الافتراضي وتجزئة السلع ⚖️',
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const SmartScaleModal(),
+                    );
+                  },
                 ),
               ],
             ),
@@ -1082,6 +1157,31 @@ class _ProductListPageState extends State<ProductListPage> {
                                         ),
                                         SizedBox(width: 4),
                                       ],
+                                      if (product.isCoffeeMachineProduct || product.coffeeRecipeJson != null || product.category.contains('قهوة')) ...[
+                                        InkWell(
+                                          onTap: () => CoffeeRecipeModal.show(context, existingProduct: product),
+                                          borderRadius: BorderRadius.circular(6),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.brown.withOpacity(0.12),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: Colors.brown.withOpacity(0.3)),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text('☕ وصفة', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.brown)),
+                                                if (product.coffeeRecipeJson != null) ...[
+                                                  SizedBox(width: 2),
+                                                  Icon(Icons.check_circle_rounded, size: 10, color: Colors.brown),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 4),
+                                      ],
                                     ],
                                   ),
                                   SizedBox(height: 4),
@@ -1159,6 +1259,8 @@ class _ProductListPageState extends State<ProductListPage> {
                               onSelected: (action) async {
                                 if (action == 'restock') {
                                   _showQuickRestockModal(product);
+                                } else if (action == 'coffee_recipe') {
+                                  CoffeeRecipeModal.show(context, existingProduct: product);
                                 } else if (action == 'label') {
                                   _printSingleShelfLabel(context, product);
                                 } else if (action == 'pin') {
@@ -1175,59 +1277,73 @@ class _ProductListPageState extends State<ProductListPage> {
                                   _confirmDelete(context, product);
                                 }
                               },
-                              itemBuilder: (ctx) => [
-                                PopupMenuItem(
-                                  value: 'restock',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
-                                      SizedBox(width: 10),
-                                      Text(context.tr('quick_restock_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                    ],
+                              itemBuilder: (ctx) {
+                                final isCoffee = product.isCoffeeMachineProduct || product.coffeeRecipeJson != null || product.category.contains('قهوة');
+                                return [
+                                  PopupMenuItem(
+                                    value: 'restock',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.add_shopping_cart_rounded, color: Colors.green, size: 20),
+                                        SizedBox(width: 10),
+                                        Text(context.tr('quick_restock_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                PopupMenuItem(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
-                                      SizedBox(width: 10),
-                                      Text(context.tr('edit_product_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                    ],
+                                  if (isCoffee)
+                                    PopupMenuItem(
+                                      value: 'coffee_recipe',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.coffee_rounded, color: Colors.brown, size: 20),
+                                          SizedBox(width: 10),
+                                          Text(product.coffeeRecipeJson != null ? 'تعديل تركيبة ووصفة القهوة ☕' : 'إضافة تركيبة ووصفة القهوة ☕', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                        ],
+                                      ),
+                                    ),
+                                  PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit_rounded, color: AppTheme.primaryColor, size: 20),
+                                        SizedBox(width: 10),
+                                        Text(context.tr('edit_product_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                PopupMenuItem(
-                                  value: 'label',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
-                                      SizedBox(width: 10),
-                                      Text(context.tr('shelf_label_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                    ],
+                                  PopupMenuItem(
+                                    value: 'label',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.label_important_outline, color: Colors.amber, size: 20),
+                                        SizedBox(width: 10),
+                                        Text(context.tr('shelf_label_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                PopupMenuItem(
-                                  value: 'pin',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
-                                      SizedBox(width: 10),
-                                      Text(context.tr('pin_to_quick_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                                    ],
+                                  PopupMenuItem(
+                                    value: 'pin',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.bolt_rounded, color: Colors.teal, size: 20),
+                                        SizedBox(width: 10),
+                                        Text(context.tr('pin_to_quick_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                PopupMenuDivider(),
-                                PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                                      SizedBox(width: 10),
-                                      Text(context.tr('delete_product_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
-                                    ],
+                                  PopupMenuDivider(),
+                                  PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                        SizedBox(width: 10),
+                                        Text(context.tr('delete_product_menu'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ];
+                              },
                             ),
                           ],
                         ),

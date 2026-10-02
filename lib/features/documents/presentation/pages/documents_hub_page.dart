@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/data/hive_database.dart';
@@ -8,6 +10,8 @@ import '../../../../core/utils/commercial_pdf_generator.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../product/presentation/bloc/product_bloc.dart';
+import '../../../product/presentation/bloc/product_event.dart';
 import '../../data/commercial_document_service.dart';
 import '../../domain/entities/commercial_document.dart';
 import '../widgets/document_editor_dialog.dart';
@@ -208,6 +212,147 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
     }
   }
 
+  Future<void> _returnPosTicketDirectly(BuildContext context, Map inv, VoidCallback onDone) async {
+    final invId = inv['id']?.toString() ?? '';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.deepOrange, size: 28),
+            SizedBox(width: 8),
+            Text('تأكيد إلغاء الوصل وإرجاع السلع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          'هل أنت متأكد من إلغاء هذا الوصل (#$invId)؟\nسيتم فوراً إعادة جميع السلع المباعة ومكونات القهوة إلى المخزون وتعديل ديون الزبون إن وجدت.',
+          style: const TextStyle(fontSize: 13, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('تراجع'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('تأكيد الإلغاء والإرجاع'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final productBox = HiveDatabase.productBox;
+    final rawItems = (inv['items'] as List?) ?? [];
+
+    for (final item in rawItems) {
+      if (item is! Map) continue;
+      String originalId = item['id']?.toString() ?? '';
+      if (originalId.contains('_carton_')) {
+        originalId = originalId.split('_carton_').first;
+      } else if (originalId.contains('_piece_')) {
+        originalId = originalId.split('_piece_').first;
+      } else if (originalId.contains('_meter_')) {
+        originalId = originalId.split('_meter_').first;
+      } else if (originalId.contains('_ml_')) {
+        originalId = originalId.split('_ml_').first;
+      } else if (originalId.endsWith('_pack')) {
+        originalId = originalId.replaceAll('_pack', '');
+      }
+
+      final productModel = productBox.get(originalId);
+      if (productModel != null) {
+        if (productModel.coffeeRecipeJson != null) {
+          try {
+            final recipe = jsonDecode(productModel.coffeeRecipeJson!);
+            if (recipe is List && recipe.isNotEmpty) {
+              for (final rawEntry in recipe) {
+                if (rawEntry is! Map) continue;
+                final rawId = rawEntry['rawProductId']?.toString();
+                final gramsPerCup = (rawEntry['qty'] as num?)?.toDouble() ?? 0.0;
+                if (rawId == null) continue;
+                final rawProduct = productBox.get(rawId);
+                if (rawProduct != null) {
+                  final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
+                  final addGrams = (gramsPerCup * qty).round();
+                  final newRawStock = (rawProduct.stock + addGrams).toDouble();
+                  productBox.put(rawId, rawProduct.copyWith(stock: newRawStock));
+                  if (context.mounted) {
+                    context.read<ProductBloc>().add(UpdateProduct(rawProduct.copyWith(stock: newRawStock)));
+                  }
+                }
+              }
+            }
+          } catch (_) {}
+          continue;
+        }
+
+        final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
+        final weightKg = (item['weightKg'] as num?)?.toDouble();
+        final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled) || weightKg != null;
+
+        final double stockToAdd = hasWeighable && weightKg != null
+            ? (weightKg * 1000).toDouble()
+            : qty;
+        final double newStock = (productModel.stock + stockToAdd).toDouble();
+        final updatedProd = productModel.copyWith(stock: newStock);
+        productBox.put(originalId, updatedProd);
+        if (context.mounted) {
+          context.read<ProductBloc>().add(UpdateProduct(updatedProd));
+        }
+      }
+    }
+
+    // Customer credit deduction if credit sale
+    final isCredit = inv['isCredit'] == true;
+    final totalAmount = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final customerId = inv['customerId']?.toString();
+    if (isCredit && customerId != null && customerId.isNotEmpty) {
+      try {
+        final cBox = HiveDatabase.customersBox;
+        final cData = cBox.get(customerId);
+        if (cData is Map) {
+          final updated = Map<String, dynamic>.from(cData);
+          final currDebt = (updated['debt'] as num?)?.toDouble() ?? (updated['currentDebt'] as num?)?.toDouble() ?? 0.0;
+          final newDebt = (currDebt - totalAmount).clamp(0.0, double.infinity);
+          updated['debt'] = newDebt;
+          updated['currentDebt'] = newDebt;
+          await cBox.put(customerId, updated);
+        }
+      } catch (_) {}
+    }
+
+    // Mark invoice returned in HiveDatabase.invoicesBox
+    final invoicesBox = HiveDatabase.invoicesBox;
+    final invKey = inv['id'];
+    if (invKey != null && invoicesBox.containsKey(invKey)) {
+      final updatedInv = Map<String, dynamic>.from(inv);
+      updatedInv['isReturned'] = true;
+      updatedInv['status'] = 'returned';
+      updatedInv['returnDate'] = DateTime.now().toIso8601String();
+      await invoicesBox.put(invKey, updatedInv);
+    }
+
+    // Open drawer if cash payment
+    if (inv['paymentMethod'] == 'Espèces' || inv['paymentMethod'] == 'كاش') {
+      try {
+        await PrinterHelper.openCashDrawer();
+      } catch (_) {}
+    }
+
+    SoundService.playSaveSuccess();
+    if (context.mounted) {
+      SnackbarHelper.showSuccess(
+        context,
+        '✅ تم إلغاء الوصل #$invId بنجاح وإعادة جميع السلع والمواد إلى المخزون! 🔄',
+      );
+    }
+    onDone();
+  }
+
   void _showPosTicketsArchiveModal(BuildContext context) {
     SoundService.playTabSwitch();
     final rawInvoices = HiveDatabase.invoicesBox.values.whereType<Map>().toList().reversed.toList();
@@ -227,8 +372,8 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
               ],
             ),
             content: SizedBox(
-              width: 600,
-              height: 480,
+              width: 680,
+              height: 500,
               child: rawInvoices.isEmpty
                   ? const Center(
                       child: Text('لا توجد وصولات مسجلة بعد في النظام',
@@ -245,57 +390,110 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                         final customer = inv['customerName']?.toString() ?? 'زبون عابر';
                         final method = inv['paymentMethod']?.toString() ?? (inv['isCredit'] == true ? 'Crédit' : 'Espèces');
                         final items = List<Map<String, dynamic>>.from(inv['items'] ?? []);
+                        final isReturned = inv['isReturned'] == true || inv['status'] == 'returned';
 
                         return ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           leading: CircleAvatar(
-                            backgroundColor: Colors.indigo.shade50,
-                            child: const Icon(Icons.receipt_rounded, color: Colors.indigo),
+                            backgroundColor: isReturned ? Colors.red.shade50 : Colors.indigo.shade50,
+                            child: Icon(
+                              isReturned ? Icons.undo_rounded : Icons.receipt_rounded,
+                              color: isReturned ? Colors.red : Colors.indigo,
+                            ),
                           ),
                           title: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('وصل #${inv['id'] ?? (idx + 1)} • $customer',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(
+                                'وصل #${inv['id'] ?? (idx + 1)} • $customer',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  decoration: isReturned ? TextDecoration.lineThrough : null,
+                                  color: isReturned ? Colors.grey : null,
+                                ),
+                              ),
+                              if (isReturned) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.red.shade200),
+                                  ),
+                                  child: const Text('ملغى ومسترجع ↩️',
+                                      style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                              const Spacer(),
                               Text('${total.toStringAsFixed(2)} DA',
-                                  style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.teal, fontSize: 14)),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: isReturned ? Colors.grey : Colors.teal,
+                                    fontSize: 14,
+                                    decoration: isReturned ? TextDecoration.lineThrough : null,
+                                  )),
                             ],
                           ),
                           subtitle: Text(
                             '${DateFormat('yyyy/MM/dd HH:mm').format(dt)}  |  طريقة الدفع: $method  |  عدد السلع: ${items.length}',
                             style: const TextStyle(fontSize: 11, color: Colors.grey),
                           ),
-                          trailing: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal,
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            ),
-                            icon: const Icon(Icons.print_rounded, size: 16, color: Colors.white),
-                            label: const Text('طباعة نسخة مطابقة للوصل',
-                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                            onPressed: () async {
-                              final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Kiosk');
-                              final shopPhone = HiveDatabase.settingsBox.get('shop_phone', defaultValue: '');
-                              final printed = await PrinterHelper.printReceiptWindows(
-                                shopName: '$shopName (DUPLICATA)',
-                                phone: shopPhone,
-                                items: items,
-                                total: total,
-                                customerName: customer,
-                                isCredit: inv['isCredit'] == true,
-                                paidAmount: (inv['paidAmount'] as num?)?.toDouble() ?? 0.0,
-                              );
-                              if (printed) {
-                                SoundService.playCheckoutSuccess();
-                                if (context.mounted) {
-                                  SnackbarHelper.showSuccess(context, '✅ تم إرسال النسخة المطابقة إلى طابعة الويندوز');
-                                }
-                              } else {
-                                if (context.mounted) {
-                                  SnackbarHelper.showWarning(context, '⚠️ تعذر إرسال أمر الطباعة، تأكد من اتصال الطابعة');
-                                }
-                              }
-                            },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!isReturned) ...[
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                    side: const BorderSide(color: Colors.red),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    minimumSize: const Size(0, 32),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  icon: const Icon(Icons.undo_rounded, size: 14, color: Colors.red),
+                                  label: const Text('إلغاء وإرجاع ↩️',
+                                      style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                                  onPressed: () => _returnPosTicketDirectly(context, inv, () => setModalState(() {})),
+                                ),
+                                const SizedBox(width: 6),
+                              ],
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isReturned ? Colors.grey.shade600 : Colors.teal,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  minimumSize: const Size(0, 32),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.print_rounded, size: 16, color: Colors.white),
+                                label: Text(isReturned ? 'طباعة نسخة ملغاة' : 'طباعة نسخة',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                onPressed: () async {
+                                  final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Kiosk');
+                                  final shopPhone = HiveDatabase.settingsBox.get('shop_phone', defaultValue: '');
+                                  final duplicataPrefix = isReturned ? ' (ANNULÉ/ملغى)' : ' (DUPLICATA)';
+                                  final printed = await PrinterHelper.printReceiptWindows(
+                                    shopName: '$shopName$duplicataPrefix',
+                                    phone: shopPhone,
+                                    items: items,
+                                    total: total,
+                                    customerName: customer,
+                                    isCredit: inv['isCredit'] == true,
+                                    paidAmount: (inv['paidAmount'] as num?)?.toDouble() ?? 0.0,
+                                  );
+                                  if (printed) {
+                                    SoundService.playCheckoutSuccess();
+                                    if (context.mounted) {
+                                      SnackbarHelper.showSuccess(context, '✅ تم إرسال النسخة المطابقة إلى طابعة الويندوز');
+                                    }
+                                  } else {
+                                    if (context.mounted) {
+                                      SnackbarHelper.showWarning(context, '⚠️ تعذر إرسال أمر الطباعة، تأكد من اتصال الطابعة');
+                                    }
+                                  }
+                                },
+                              ),
+                            ],
                           ),
                         );
                       },

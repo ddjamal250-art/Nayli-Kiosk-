@@ -128,9 +128,27 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     return _activeProductUnit?.name ?? p.baseUnitName;
   }
 
+  bool get _isCurrentWeighable {
+    return _activeProductUnit?.isWeighable == true ||
+        widget.product.isWeighted ||
+        widget.product.barcode.startsWith('SCALE_') ||
+        widget.product.name.contains('ميزان') ||
+        widget.product.name.contains('كغ') ||
+        widget.product.unit.trim() == 'كغ' ||
+        widget.product.unit.trim().toLowerCase() == 'kg';
+  }
+
   double get _totalPrice {
     if (_selectedUnit == 'custom') {
       return double.tryParse(_customPriceController.text.trim()) ?? 0.0;
+    }
+    if (_isCurrentWeighable) {
+      if (_weightByPrice) {
+        return double.tryParse(_weightPriceController.text.trim()) ?? 0.0;
+      } else {
+        final w = double.tryParse(_weightKgController.text.trim()) ?? 0.0;
+        return w * _currentUnitPrice;
+      }
     }
     return _currentUnitPrice * _quantity;
   }
@@ -207,7 +225,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       return;
     }
 
-    final isWeighable = _activeProductUnit?.isWeighable == true;
+    final isWeighable = _isCurrentWeighable;
     double? resolvedWeightKg;
 
     if (isWeighable) {
@@ -446,7 +464,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
 
                 // Section 1: Standard Quantity Selector OR Scale Inputs
                 if (_selectedUnit != 'custom') ...[
-                  if (_activeProductUnit?.isWeighable == true)
+                  if (_isCurrentWeighable)
                     _buildScaleInputs(isDark, textColor)
                   else
                     Container(
@@ -868,6 +886,11 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   }
 
   Widget _buildScaleInputs(bool isDark, Color textColor) {
+    final double currentW = double.tryParse(_weightKgController.text.trim()) ?? 0.0;
+    final double currentP = double.tryParse(_weightPriceController.text.trim()) ?? 0.0;
+    final double equivPrice = currentW * _currentUnitPrice;
+    final double equivWeight = _currentUnitPrice > 0 ? (currentP / _currentUnitPrice) : 0.0;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -896,7 +919,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
               SegmentedButton<bool>(
                 segments: const [
                   ButtonSegment(value: false, label: Text('وزن (كغ)')),
-                  ButtonSegment(value: true, label: Text('سعر إجمالي (دج)')),
+                  ButtonSegment(value: true, label: Text('قيمة (دج)')),
                 ],
                 selected: {_weightByPrice},
                 onSelectionChanged: (set) {
@@ -905,8 +928,8 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          if (!_weightByPrice)
+          const SizedBox(height: 14),
+          if (!_weightByPrice) ...[
             TextField(
               controller: _weightKgController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -914,30 +937,123 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               decoration: InputDecoration(
                 labelText: 'الوزن بالكيلوغرام (كغ)',
-                hintText: 'مثال: 1.5',
+                hintText: 'مثال: 0.5 أو 1.5',
                 suffixText: 'كغ',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 filled: true,
                 fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
               ),
+              onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _applySelection(),
-            )
-          else
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                {'label': '100غ', 'val': 0.100},
+                {'label': '250غ', 'val': 0.250},
+                {'label': '500غ (رطل)', 'val': 0.500},
+                {'label': '1 كغ', 'val': 1.0},
+                {'label': '1.5 كغ', 'val': 1.5},
+                {'label': '2 كغ', 'val': 2.0},
+                {'label': '3 كغ', 'val': 3.0},
+                {'label': '5 كغ', 'val': 5.0},
+              ].map((chip) {
+                final double v = chip['val'] as double;
+                return ActionChip(
+                  label: Text(chip['label'] as String, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  backgroundColor: (currentW == v) ? Colors.teal : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                  labelStyle: TextStyle(
+                    color: (currentW == v) ? Colors.white : (isDark ? Colors.tealAccent : Colors.teal.shade900),
+                  ),
+                  side: BorderSide(color: Colors.teal.withOpacity(0.4)),
+                  onPressed: () {
+                    setState(() {
+                      _weightKgController.text = v.toString();
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+            if (currentW > 0) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('السعر الإجمالي المقابل:', style: TextStyle(fontSize: 12, color: textColor)),
+                    Text(
+                      '${equivPrice.toStringAsFixed(2)} دج',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.teal),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ] else ...[
             TextField(
               controller: _weightPriceController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               decoration: InputDecoration(
-                labelText: 'السعر الإجمالي (دج)',
-                hintText: 'مثال: 500',
+                labelText: 'القيمة الإجمالية المطلوبة (دج)',
+                hintText: 'مثال: 50 أو 100 أو 200',
                 suffixText: 'دج',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 filled: true,
                 fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
               ),
+              onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _applySelection(),
             ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [50.0, 100.0, 150.0, 200.0, 300.0, 500.0, 1000.0].map((amt) {
+                return ActionChip(
+                  label: Text('${amt.toInt()} دج', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  backgroundColor: (currentP == amt) ? Colors.teal : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                  labelStyle: TextStyle(
+                    color: (currentP == amt) ? Colors.white : (isDark ? Colors.tealAccent : Colors.teal.shade900),
+                  ),
+                  side: BorderSide(color: Colors.teal.withOpacity(0.4)),
+                  onPressed: () {
+                    setState(() {
+                      _weightPriceController.text = amt.toInt().toString();
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+            if (currentP > 0) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('الوزن المقابل المستخرج:', style: TextStyle(fontSize: 12, color: textColor)),
+                    Text(
+                      '${equivWeight.toStringAsFixed(3)} كغ (${(equivWeight * 1000).toStringAsFixed(0)} غرام)',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.teal),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ],
       ),
     );

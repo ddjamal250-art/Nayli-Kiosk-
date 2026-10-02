@@ -456,46 +456,50 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
             // The cup itself has stock=999, no need to deduct.
             try {
               final recipe = jsonDecode(productModel.coffeeRecipeJson!);
-              if (recipe.isNotEmpty) {
-                 final item = recipe.first;
-                 final rawId = item['rawProductId'];
-                 final double gramsPerCup = (item['qty'] as num).toDouble();
-                 final rawProduct = productBox.get(rawId);
-                 if (rawProduct != null) {
-                    final deductGrams = (gramsPerCup * cartItem.quantity).round();
+              if (recipe is List && recipe.isNotEmpty) {
+                for (final item in recipe) {
+                  if (item is! Map) continue;
+                  final rawId = item['rawProductId']?.toString();
+                  if (rawId == null) continue;
+                  final double qtyPerCup = (item['qty'] as num?)?.toDouble() ?? 0.0;
+                  final rawProduct = productBox.get(rawId);
+                  if (rawProduct != null) {
+                    final deductUnits = (qtyPerCup * cartItem.quantity).round();
                     final double newRawStock = state.isReturnMode 
-                        ? (rawProduct.stock + deductGrams).toDouble() : (rawProduct.stock - deductGrams).toDouble().clamp(0.0, 9999999.0);
+                        ? (rawProduct.stock + deductUnits).toDouble() 
+                        : (rawProduct.stock - deductUnits).toDouble().clamp(0.0, 9999999.0);
                     
-          // FIFO Batch Deduction
-          List<PurchaseBatch> updatedBatches = List.from(rawProduct.stockBatches);
-          if (!state.isReturnMode && updatedBatches.isNotEmpty) {
-             double remainingToDeduct = (rawProduct.stock - newRawStock).toDouble();
-             updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
-             
-             for (int i = 0; i < updatedBatches.length; i++) {
-                 if (remainingToDeduct <= 0) break;
-                 
-                 final batch = updatedBatches[i];
-                 if (batch.remainingQuantity <= remainingToDeduct) {
-                     remainingToDeduct -= batch.remainingQuantity;
-                     updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
-                 } else {
-                     updatedBatches[i] = batch.copyWith(remainingQuantity: batch.remainingQuantity - remainingToDeduct);
-                     remainingToDeduct = 0;
-                 }
-             }
-             updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
-          } else if (state.isReturnMode) {
-             // On return, just add it to the newest batch or create one
-             if (updatedBatches.isNotEmpty) {
-                 updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
-                 final newest = updatedBatches.first;
-                 updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + (newRawStock - rawProduct.stock).toDouble());
-             }
-          }
+                    // FIFO Batch Deduction
+                    List<PurchaseBatch> updatedBatches = List.from(rawProduct.stockBatches);
+                    if (!state.isReturnMode && updatedBatches.isNotEmpty) {
+                       double remainingToDeduct = (rawProduct.stock - newRawStock).toDouble();
+                       updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
+                       
+                       for (int i = 0; i < updatedBatches.length; i++) {
+                           if (remainingToDeduct <= 0) break;
+                           
+                           final batch = updatedBatches[i];
+                           if (batch.remainingQuantity <= remainingToDeduct) {
+                               remainingToDeduct -= batch.remainingQuantity;
+                               updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
+                           } else {
+                               updatedBatches[i] = batch.copyWith(remainingQuantity: batch.remainingQuantity - remainingToDeduct);
+                               remainingToDeduct = 0;
+                           }
+                       }
+                       updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
+                    } else if (state.isReturnMode) {
+                       // On return, just add it to the newest batch or create one
+                       if (updatedBatches.isNotEmpty) {
+                           updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
+                           final newest = updatedBatches.first;
+                           updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + (newRawStock - rawProduct.stock).toDouble());
+                       }
+                    }
 
-          productBox.put(rawId, rawProduct.copyWith(stock: newRawStock, stockBatches: updatedBatches));
-                 }
+                    productBox.put(rawId, rawProduct.copyWith(stock: newRawStock, stockBatches: updatedBatches));
+                  }
+                }
               }
             } catch (_) {}
             continue; // Skip the rest of the deduction for the cup itself
@@ -582,14 +586,25 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
          if (i.product.coffeeRecipeJson != null) {
             try {
               final recipe = jsonDecode(i.product.coffeeRecipeJson!);
-              if (recipe.isNotEmpty) {
-                 final rawId = recipe.first['rawProductId'];
-                 final double gramsPerCup = (recipe.first['qty'] as num).toDouble();
-                 final rawProduct = productBox.get(rawId);
-                 if (rawProduct != null && rawProduct.stockBatches.isNotEmpty) {
-                    final newestBatch = rawProduct.stockBatches.first; // Or oldest batch
-                    final costPerGram = newestBatch.costPrice / 1000.0;
-                    itemCost = costPerGram * gramsPerCup * i.quantity;
+              if (recipe is List && recipe.isNotEmpty) {
+                 double totalCupCost = 0.0;
+                 for (final rawEntry in recipe) {
+                   if (rawEntry is! Map) continue;
+                   final rawId = rawEntry['rawProductId']?.toString();
+                   if (rawId == null) continue;
+                   final double qtyPerCup = (rawEntry['qty'] as num?)?.toDouble() ?? 0.0;
+                   final rawProduct = productBox.get(rawId);
+                   if (rawProduct != null) {
+                     double costPerUnit = (rawProduct.costPrice / 1000.0);
+                     if (rawProduct.stockBatches.isNotEmpty) {
+                       final newestBatch = rawProduct.stockBatches.first;
+                       costPerUnit = newestBatch.costPrice / 1000.0;
+                     }
+                     totalCupCost += costPerUnit * qtyPerCup;
+                   }
+                 }
+                 if (totalCupCost > 0) {
+                   itemCost = totalCupCost * i.quantity;
                  }
               }
             } catch (_) {}

@@ -202,6 +202,32 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     return null;
   }
 
+  int? get _suggestedPacksFromCarton {
+    final cCount = _parse(widget.cartonCountCtrl).toInt();
+    final cCap = _parse(widget.cartonCapacityCtrl).toInt();
+    if (widget.hasCarton && cCount > 0 && cCap > 0) {
+      return cCount * cCap;
+    }
+    return null;
+  }
+
+  int? get _suggestedPiecesFromTiers {
+    final cCount = _parse(widget.cartonCountCtrl).toInt();
+    final cCap = _parse(widget.cartonCapacityCtrl).toInt();
+    final pCount = _parse(widget.packCountCtrl).toInt();
+    final pCap = _parse(widget.packCapacityCtrl).toInt();
+
+    int total = 0;
+    if (widget.hasCarton && cCount > 0 && cCap > 0) {
+      final multiplier = widget.hasPack && pCap > 0 ? (cCap * pCap) : cCap;
+      total += (cCount * multiplier);
+    }
+    if (widget.hasPack && pCount > 0 && pCap > 0) {
+      total += (pCount * pCap);
+    }
+    return total > 0 ? total : null;
+  }
+
   Widget _buildSuggestionBadge({
     required String label,
     required double? suggestedVal,
@@ -384,15 +410,53 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
           onToggle: onHasPackChange,
           children: [
             if (isStockInMode && packCountCtrl != null) ...[
+              if (hasCarton && _suggestedPacksFromCarton != null && _suggestedPacksFromCarton! > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.indigo.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, size: 15, color: Colors.indigo),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'المحسوب من الكراتين: $_suggestedPacksFromCarton علبة (${_parse(widget.cartonCountCtrl).toInt()} كرتونة × ${_parse(widget.cartonCapacityCtrl).toInt()})',
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.indigo.shade900),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          packCountCtrl?.text = _suggestedPacksFromCarton.toString();
+                          _onInputsChanged();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.indigo.shade600,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text('اعتماد كإجمالي', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               TextField(
                 controller: packCountCtrl,
                 keyboardType: TextInputType.number,
                 onChanged: (_) => onInputsChanged?.call(),
-                decoration: const InputDecoration(
-                  labelText: 'عدد العلب المستلمة (خارج الكراتين)',
+                decoration: InputDecoration(
+                  labelText: hasCarton ? 'عدد العلب (إضافية منفردة أو إجمالي)' : 'عدد العلب المستلمة',
+                  hintText: 'أدخل العلب الإضافية إن وجدت أو الإجمالي',
                   suffixText: 'علبة',
-                  prefixIcon: Icon(Icons.inventory_2_outlined),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.inventory_2_outlined),
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
@@ -500,15 +564,53 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
           context: context,
           children: [
             if (isStockInMode && pieceCountCtrl != null) ...[
+              if (_suggestedPiecesFromTiers != null && _suggestedPiecesFromTiers! > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, size: 15, color: Colors.green),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'المحسوب من العلب والكراتين: $_suggestedPiecesFromTiers حبة',
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.green.shade900),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          pieceCountCtrl?.text = _suggestedPiecesFromTiers.toString();
+                          _onInputsChanged();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade700,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text('اعتماد كإجمالي', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               TextField(
                 controller: pieceCountCtrl,
                 keyboardType: TextInputType.number,
                 onChanged: (_) => onInputsChanged?.call(),
-                decoration: const InputDecoration(
-                  labelText: 'عدد الحبات المستلمة (فردية منفصلة)',
+                decoration: InputDecoration(
+                  labelText: (hasCarton || hasPack) ? 'عدد الحبات (فردية إضافية أو إجمالي)' : 'عدد الحبات المستلمة',
+                  hintText: 'أدخل الحبات الإضافية إن وجدت أو الإجمالي',
                   suffixText: 'حبة',
-                  prefixIcon: Icon(Icons.tag),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.tag),
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
               ),

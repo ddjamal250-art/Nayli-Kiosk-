@@ -47,7 +47,7 @@ class ProductImageSearchService {
           results.add(ProductImageSearchResult(
             url: m.imageUrl!,
             title: m.name,
-            source: 'الكتالوج الجزائري الشامل 🇩🇿',
+            source: 'دليل السلع',
           ));
         }
       }
@@ -60,7 +60,7 @@ class ProductImageSearchService {
             results.add(ProductImageSearchResult(
               url: m.imageUrl!,
               title: m.name,
-              source: 'الكتالوج الجزائري الشامل 🇩🇿',
+              source: 'دليل السلع',
             ));
             if (results.length >= 4) break;
           }

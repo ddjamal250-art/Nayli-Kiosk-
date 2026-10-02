@@ -26,6 +26,7 @@ class PosHeaderToolbar extends StatelessWidget {
   final int pendingRemoteCartsCount;
   final VoidCallback onOpenDrawer;
   final VoidCallback onShowRemoteCartsQueue;
+  final VoidCallback? onOpenSmartScale;
 
   const PosHeaderToolbar({
     super.key,
@@ -34,6 +35,7 @@ class PosHeaderToolbar extends StatelessWidget {
     required this.pendingRemoteCartsCount,
     required this.onOpenDrawer,
     required this.onShowRemoteCartsQueue,
+    this.onOpenSmartScale,
   });
 
   @override
@@ -201,6 +203,16 @@ class PosHeaderToolbar extends StatelessWidget {
                 onPressed: () => context.push('/products'),
               ),
 
+              // 3. Direct Virtual Scale Access (F8)
+              if (onOpenSmartScale != null)
+                IconButton(
+                  tooltip: Localizations.localeOf(context).languageCode == 'ar'
+                      ? 'الميزان الافتراضي وتجزئة السلع (F8) ⚖️'
+                      : 'Virtual Scale (F8)',
+                  icon: const Icon(Icons.scale_rounded, color: Colors.tealAccent, size: 22),
+                  onPressed: onOpenSmartScale,
+                ),
+
 
 
               // 4. Custom Header Palette Button
@@ -359,8 +371,10 @@ class PosHeaderToolbar extends StatelessWidget {
                     case 'expiry':
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpiryMonitorPage()));
                       break;
-                    case 'catalog':
-                      context.push('/master-catalog');
+                    case 'scale':
+                      if (onOpenSmartScale != null) {
+                        onOpenSmartScale!();
+                      }
                       break;
                     case 'update':
                       GitHubUpdateService.checkForUpdates(context, silent: false);
@@ -430,12 +444,17 @@ class PosHeaderToolbar extends StatelessWidget {
                     ),
                   ),
                   PopupMenuItem(
-                    value: 'catalog',
+                    value: 'scale',
                     child: Row(
                       children: [
-                        const Icon(Icons.library_books_rounded, color: Colors.deepOrange, size: 20),
+                        const Icon(Icons.scale_rounded, color: Colors.teal, size: 20),
                         const SizedBox(width: 10),
-                        Text(context.tr('master_catalog_btn'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(
+                          Localizations.localeOf(context).languageCode == 'ar'
+                              ? 'الميزان الافتراضي وتجزئة السلع (F8)'
+                              : 'Virtual Scale (F8)',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
                       ],
                     ),
                   ),

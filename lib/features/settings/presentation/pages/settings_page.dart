@@ -333,133 +333,7 @@ SizedBox(height: 20),
     );
   }
 
-  /// Master Catalog & Instant Setup Banner
-  Widget _buildMasterCatalogHeroBanner(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF1E293B),
-            Color(0xFF0F172A),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.amber.shade400, Colors.amber.shade700],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(Icons.auto_awesome, color: Colors.white, size: 24),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            context.tr('master_catalog_title'),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade700,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '+100,000',
-                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      context.tr('master_catalog_subtitle'),
-                      style: TextStyle(color: Colors.grey.shade300, fontSize: 11.5, height: 1.3),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber.shade600,
-                    foregroundColor: Colors.black87,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: Icon(Icons.flash_on_rounded, size: 16),
-                  label: Text(
-                    context.tr('setup_wizard_btn'),
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onPressed: () => context.push('/master-catalog'),
-                ),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: Icon(Icons.search_rounded, size: 16),
-                  label: Text(
-                    context.tr('browse_catalog_btn'),
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onPressed: () => context.push('/master-catalog'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildHubCard({
     required BuildContext context,
@@ -1010,17 +884,7 @@ SizedBox(height: 20),
                   context.push('/products/stock-in');
                 },
               ),
-              Divider(height: 8),
-              _buildHubActionTile(
-                icon: Icons.auto_awesome,
-                iconColor: Colors.amber[900]!,
-                title: 'كتالوج السلع الجزائرية (100,000+)',
-                subtitle: 'تصفح واستيراد سلع السوبرماركت لمخزونك بضغطة زر',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  context.push('/master-catalog');
-                },
-              ),
+
               Divider(height: 8),
               _buildHubActionTile(
                 icon: Icons.inventory_rounded,
