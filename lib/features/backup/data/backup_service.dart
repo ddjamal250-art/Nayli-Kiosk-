@@ -11,6 +11,7 @@ import '../../../core/data/hive_database.dart';
 import '../../../core/data/local_sync_server.dart';
 import '../../../core/utils/telegram_service.dart';
 import '../../../core/utils/product_image_helper.dart';
+import '../../../core/utils/category_taxonomy.dart';
 import '../../documents/data/commercial_document_service.dart';
 import '../../product/data/models/product_model.dart';
 
@@ -698,6 +699,26 @@ class UniversalDatabaseImporter {
                 ? model.barcode
                 : 'prod_${DateTime.now().microsecondsSinceEpoch}_${products.length}';
             model = model.copyWith(id: fallbackId);
+          }
+          if (model.category == 'عام' || model.category.isEmpty || model.category == 'فريقو' || model.category == 'دخان' || model.category == 'العطر') {
+            if (model.category == 'دخان') {
+              model = model.copyWith(category: 'تبغ وسجائر');
+            } else if (model.category == 'العطر') {
+              model = model.copyWith(category: 'كوسميتيك وعطور');
+            } else if (model.category == 'فريقو') {
+              final n = model.name.toLowerCase();
+              if (n.contains('حليب') || n.contains('ياغورت') || n.contains('جبن') || n.contains('فرماج') || n.contains('كانديا') || n.contains('سومام') || n.contains('دانون')) {
+                model = model.copyWith(category: 'حليب ومشتقاته');
+              } else {
+                model = model.copyWith(category: 'مشروبات ومياه');
+              }
+            } else {
+              final smartSub = CategoryTaxonomy.smartDetect(model.name);
+              final smartDomain = CategoryTaxonomy.findDomain(smartSub.domainId);
+              if (smartDomain != null && smartDomain.id != 'general') {
+                model = model.copyWith(category: smartDomain.titleAr);
+              }
+            }
           }
           products.add(model);
         } catch (_) {}

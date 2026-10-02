@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +18,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
 import '../../../../core/utils/category_taxonomy.dart';
+import '../../../../core/utils/product_image_helper.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
@@ -3771,6 +3773,10 @@ $itemsSummary
     }
 
     if (matched != null) {
+      final itemImg = item['imageUrl']?.toString().trim() ?? item['image']?.toString().trim();
+      if ((matched.imageUrl == null || matched.imageUrl!.trim().isEmpty) && itemImg != null && itemImg.isNotEmpty) {
+        matched = matched.copyWith(imageUrl: itemImg);
+      }
       if (_isReturnMode) {
         return matched.copyWith(
           name: '[${context.tr("return_mode")}] ${matched.name}',
@@ -3827,7 +3833,8 @@ $itemsSummary
       costPrice: cost,
       stock: stock,
       category: isTob ? 'المواد التبغية' : (isCoffee ? 'القهوة الجاهزة' : (isBev ? 'المشروبات والعصائر' : detectedSub.titleAr)),
-      );
+      imageUrl: item['imageUrl']?.toString() ?? item['image']?.toString(),
+    );
   }
 
   Widget _buildQuickItemsGrid() {
@@ -3838,12 +3845,13 @@ $itemsSummary
       if (it is Map) quickList.add(it);
     }
     quickList.sort((a, b) => ((a['orderIndex'] as num?)?.toInt() ?? 0).compareTo((b['orderIndex'] as num?)?.toInt() ?? 0));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GridView.builder(
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 1.35,
+        childAspectRatio: 1.15,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -3895,11 +3903,21 @@ $itemsSummary
         final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
         final stock = (item['stock'] as num?)?.toDouble() ?? 999.0;
 
+        final prod = _resolveProductForQuickItem(item);
+        final rawImg = item['imageUrl']?.toString().trim() ??
+            item['image']?.toString().trim() ??
+            prod.imageUrl?.trim();
+        final resolvedImg = ProductImageHelper.resolveImagePathSync(rawImg);
+        final bool hasValidImage = resolvedImg != null &&
+            resolvedImg.isNotEmpty &&
+            (resolvedImg.startsWith('http://') ||
+             resolvedImg.startsWith('https://') ||
+             File(resolvedImg).existsSync());
+
         return InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
             _onItemScanned();
-            final prod = _resolveProductForQuickItem(item);
             if (prod.isCoffeeMachineProduct && !_isReturnMode) {
               _showCoffeeSaleDialog(prod, 1);
             } else {
@@ -3907,7 +3925,7 @@ $itemsSummary
             }
           },
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
@@ -3917,44 +3935,65 @@ $itemsSummary
               ],
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
-                        borderRadius: BorderRadius.circular(10),
+                // Top: Image frame or default color placeholder frame
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        width: 1,
                       ),
-                      child: Text(icon, style: const TextStyle(fontSize: 22)),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(context.tr('quick_badge'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.teal)),
-                    ),
-                  ],
+                    clipBehavior: Clip.antiAlias,
+                    child: hasValidImage
+                        ? (resolvedImg!.startsWith('http')
+                            ? Image.network(
+                                resolvedImg,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _buildQuickItemDefaultFrame(icon, isDark),
+                              )
+                            : Image.file(
+                                File(resolvedImg),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _buildQuickItemDefaultFrame(icon, isDark),
+                              ))
+                        : _buildQuickItemDefaultFrame(icon, isDark),
+                  ),
                 ),
+                const SizedBox(height: 6),
+                // Product name placed directly above the price
                 Text(
                   name,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
                 ),
+                const SizedBox(height: 2),
+                // Price row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${price.toStringAsFixed(2)} DA',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.teal),
+                    Expanded(
+                      child: Text(
+                        '${price.toStringAsFixed(2)} DA',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13.5,
+                          color: Colors.teal,
+                        ),
+                      ),
                     ),
-                    const Icon(Icons.add_shopping_cart_rounded, size: 18, color: Colors.teal),
+                    const Icon(Icons.add_shopping_cart_rounded, size: 16, color: Colors.teal),
                   ],
                 ),
               ],
@@ -3962,6 +4001,24 @@ $itemsSummary
           ),
         );
       },
+    );
+  }
+
+  Widget _buildQuickItemDefaultFrame(String icon, bool isDark) {
+    return Container(
+      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+      child: Center(
+        child: icon.isNotEmpty
+            ? Text(
+                icon,
+                style: const TextStyle(fontSize: 26),
+              )
+            : Icon(
+                Icons.inventory_2_outlined,
+                size: 26,
+                color: isDark ? Colors.blueGrey.shade400 : Colors.blueGrey.shade300,
+              ),
+      ),
     );
   }
 

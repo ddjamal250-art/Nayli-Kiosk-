@@ -8,6 +8,7 @@ import '../../supplier/domain/entities/supplier.dart';
 import '../../product/data/models/product_model.dart';
 import '../../product/data/models/product_unit_model.dart';
 import '../../product/domain/entities/product.dart';
+import '../../../core/utils/category_taxonomy.dart';
 import 'analysis_engine.dart';
 import 'data_sanitizer.dart';
 import 'field_mapper.dart';
@@ -201,11 +202,12 @@ class SmartDataImporter {
               }
             }
 
-            String category = 'عام';
+            String rawCategory = 'عام';
             if (groupsTable != null && row['groupId'] != null) {
               final grps = db.select("SELECT name FROM '$groupsTable' WHERE id = ?", [row['groupId']]);
-              if (grps.isNotEmpty) category = DataSanitizer.sanitizeName(grps.first['name']);
+              if (grps.isNotEmpty) rawCategory = DataSanitizer.sanitizeName(grps.first['name']);
             }
+            final category = mapSmartCategory(rawCategory, name);
 
             final List<ProductUnitModel> units = [];
             if (row['customUnits'] != null) {
@@ -230,7 +232,7 @@ class SmartDataImporter {
               price: price,
               stock: stock,
               costPrice: costPrice,
-              category: category.isEmpty ? 'عام' : category,
+              category: category,
               isWeighted: row['weighted'] == 1,
               expiryDate: row['expiration'] != null ? DataSanitizer.sanitizeDate(row['expiration']).toIso8601String() : null,
               units: units,
@@ -281,5 +283,104 @@ class SmartDataImporter {
       errorRecords: errors,
       duration: DateTime.now().difference(startTime),
     );
+  }
+
+  static String mapSmartCategory(String rawCategory, String productName) {
+    final cat = rawCategory.trim().toLowerCase();
+    final name = productName.trim().toLowerCase();
+
+    // 1. Tobacco / تبغ وسجائر
+    if (cat.contains('دخان') || cat.contains('تبغ') || cat.contains('سجائر') ||
+        name.contains('مارلبورو') || name.contains('marlboro') || name.contains('ريم') || name.contains('rym') ||
+        name.contains('سجائر') || name.contains('دخان') || name.contains('شمة') || name.contains('معسل') ||
+        name.contains('فحم') || name.contains('ولاعة') || name.contains('غالواز') || name.contains('روثمان') ||
+        name.contains('وينستون') || name.contains('tabac') || name.contains('جمر')) {
+      return 'تبغ وسجائر';
+    }
+
+    // 2. Dairy / حليب ومشتقاته
+    if (name.contains('حليب') || name.contains('لبن') || name.contains('رايب') || name.contains('جبن') ||
+        name.contains('فرماج') || name.contains('زبادي') || name.contains('ياغورت') || name.contains('ياغو') ||
+        name.contains('كانديا') || name.contains('candia') || name.contains('سومام') || name.contains('soummam') ||
+        name.contains('دانون') || name.contains('danone') || name.contains('برير') || name.contains('la vache') ||
+        name.contains('fromage') || name.contains('lait') || name.contains('yaourt') || name.contains('كيري') ||
+        name.contains('شيفار')) {
+      return 'حليب ومشتقاته';
+    }
+
+    // 3. Cold Drinks, Juices, Waters / مشروبات ومياه
+    if (cat.contains('فريقو') || cat.contains('مشروب') || cat.contains('عصير') || cat.contains('ماء') ||
+        name.contains('ماء') || name.contains('مياه') || name.contains('مشروب') || name.contains('عصير') ||
+        name.contains('غازوز') || name.contains('سودا') || name.contains('كوكا') || name.contains('coca') ||
+        name.contains('بيبسي') || name.contains('pepsi') || name.contains('حمود') || name.contains('hamoud') ||
+        name.contains('سيليكتو') || name.contains('selecto') || name.contains('سليم') || name.contains('slim') ||
+        name.contains('بوقلاز') || name.contains('رامي') || name.contains('ramy') || name.contains('رويبة') ||
+        name.contains('rouiba') || name.contains('إفري') || name.contains('ifri') || name.contains('مسعد') ||
+        name.contains('شوابس') || name.contains('schweppes') || name.contains('فانتا') || name.contains('fanta') ||
+        name.contains('سبرايت') || name.contains('sprite') || name.contains('تويست') || name.contains('نقاوس') ||
+        name.contains('jus') || name.contains('eau') || name.contains('soda') || name.contains('boisson') ||
+        name.contains('كانيط') || name.contains('قرعة') || name.contains('tnt') || name.contains('vody') ||
+        name.contains('زعيم') || name.contains('افروي') || name.contains('frutty') || name.contains('جنينة') ||
+        name.contains('ياقو') || name.contains('yago')) {
+      return 'مشروبات ومياه';
+    }
+
+    // 4. Sweets, Biscuits, Chips / حلويات وسكاكر
+    if (cat.contains('حلويات') || cat.contains('شيبس') || cat.contains('سكاكر') ||
+        name.contains('شوكولا') || name.contains('chocolat') || name.contains('بسكويت') || name.contains('biscuit') ||
+        name.contains('قوفريط') || name.contains('gaufrette') || name.contains('حلوى') || name.contains('bonbon') ||
+        name.contains('علك') || name.contains('chewing') || name.contains('كابريس') || name.contains('كابريز') ||
+        name.contains('caprice') || name.contains('مارشميلو') || name.contains('شيبس') || name.contains('chips') ||
+        name.contains('كاوكاو') || name.contains('cacahuete') || name.contains('مكسرات') || name.contains('بوب كورن') ||
+        name.contains('ماكسون') || name.contains('maxon') || name.contains('بيمو') || name.contains('bimo') ||
+        name.contains('تيفينا') || name.contains('كراميل') || name.contains('نوتيلا') || name.contains('طاكوس حلو') ||
+        name.contains('ريكو') || name.contains('4 winners') || name.contains('ديالنا') || name.contains('pop snak') ||
+        name.contains('wafer') || name.contains('قاطو') || name.contains('gouter') || name.contains('كروستي') ||
+        name.contains('حلويات') || name.contains('علاء الدين')) {
+      return 'حلويات وسكاكر';
+    }
+
+    // 5. Cosmetics & Perfumes / كوسميتيك وعطور
+    if (cat.contains('عطر') || cat.contains('كوسميتيك') || cat.contains('تجميل') ||
+        name.contains('عطر') || name.contains('parfum') || name.contains('ديودوران') || name.contains('deodorant') ||
+        name.contains('ريحة') || name.contains('كوسميتيك') || name.contains('شامبو') || name.contains('shampoing') ||
+        name.contains('صابون') || name.contains('savon') || name.contains('معجون أسنان') || name.contains('dentifrice') ||
+        name.contains('دونتفريس') || name.contains('كريم') || name.contains('ماسك') || name.contains('كحل') ||
+        name.contains('فازلين') || name.contains('vaseline') || name.contains('أحمر شفاه') || name.contains('مكياج') ||
+        name.contains('منظف وجه') || name.contains('بلو شانيل') || name.contains('ارماني') || name.contains('طريزور') ||
+        name.contains('good girle') || name.contains('جون باول') || name.contains('ميس ديور') || name.contains('شلوي') ||
+        name.contains('سوفاج') || name.contains('سكاندال') || name.contains('فاليريا') || name.contains('المسواك')) {
+      return 'كوسميتيك وعطور';
+    }
+
+    // 6. Phone accessories & Electronics
+    if (cat.contains('phone') || (cat.contains('اكسيسوار') && (name.contains('شاحن') || name.contains('كابل') || name.contains('سماع') || name.contains('بوشات') || name.contains('انكاسابل') || name.contains('usb') || name.contains('هاتف')))) {
+      return 'لواحق هواتف وإلكترونيات';
+    }
+
+    // 7. Batteries
+    if (name.contains('بطارية') || name.contains('batterie') || name.contains('حجرة') || name.contains('حجرات') || name.contains('بيل') || name.contains('pile')) {
+      return 'بطاريات وكهربائيات';
+    }
+
+    // 8. Stationery
+    if (cat.contains('مدرس') || cat.contains('مكتب') || name.contains('كراس') || name.contains('دفتر') || name.contains('قلم') || name.contains('ورق') || name.contains('مبراة') || name.contains('بيك')) {
+      return 'أدوات مدرسية ومكتبية';
+    }
+
+    // 9. Groceries
+    if (cat.contains('غذائ') || cat.contains('معلب') || name.contains('طماطم') || name.contains('زيت') || name.contains('تونة') || name.contains('سردين') || name.contains('كسكسي') || name.contains('مقرونة')) {
+      return 'مواد غذائية ومعلبات';
+    }
+
+    // 10. Fallback: use taxonomy smart detect
+    final detected = CategoryTaxonomy.smartDetect(name);
+    final domain = CategoryTaxonomy.findDomain(detected.domainId);
+    if (domain != null && domain.id != 'general') {
+      return domain.titleAr;
+    }
+
+    if (rawCategory.isNotEmpty && rawCategory != 'عام') return rawCategory;
+    return 'عام';
   }
 }

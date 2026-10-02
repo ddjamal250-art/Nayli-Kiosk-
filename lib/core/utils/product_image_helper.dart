@@ -79,10 +79,19 @@ class ProductImageHelper {
     }
 
     final fileName = trimmed.replaceAll('\\', '/').split('/').last;
-    if (imagesDir != null && fileName.isNotEmpty) {
-      final imgFile = File('${imagesDir.path}/$fileName');
-      if (imgFile.existsSync()) {
-        return imgFile.path;
+    if (fileName.isNotEmpty) {
+      if (imagesDir != null) {
+        final imgFile = File('${imagesDir.path}/$fileName');
+        if (imgFile.existsSync()) return imgFile.path;
+      }
+      if (_imagesDirectory != null) {
+        final imgFile = File('${_imagesDirectory!.path}/$fileName');
+        if (imgFile.existsSync()) return imgFile.path;
+      }
+      final userProfile = Platform.environment['USERPROFILE'];
+      if (userProfile != null) {
+        final fallbackFile = File('$userProfile/Documents/nayli_kiosk_images/$fileName');
+        if (fallbackFile.existsSync()) return fallbackFile.path;
       }
     }
 
