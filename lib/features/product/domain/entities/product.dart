@@ -91,6 +91,7 @@ class Product extends Equatable {
   double get piecesPerPack => units.where((u) => u.tier == UnitTier.small).firstOrNull?.multiplier ?? (units.isNotEmpty ? units.first.multiplier : 20.0);
   double get packsPerCartonCount => units.where((u) => u.tier == UnitTier.medium).firstOrNull?.multiplier ?? (units.isNotEmpty ? units.first.multiplier : 10.0);
   String get unitType => unitSystemType.name;
+  String get unit => baseUnitName;
   double get resolvedPiecePrice {
     final small = units.where((u) => u.tier == UnitTier.small).firstOrNull;
     if (small != null && small.price > 0) return small.price;
@@ -171,6 +172,9 @@ class Product extends Equatable {
     List<ProductUnit>? units,
     String? pluCode,
     SpecialOffer? specialOffer,
+    bool? isCoffeeMachineProduct,
+    bool? isTobacco,
+    bool? isBeverage,
   }) {
     return Product(
       id: id ?? this.id,
@@ -180,6 +184,7 @@ class Product extends Equatable {
       costPrice: costPrice ?? this.costPrice,
       stock: stock ?? this.stock,
       category: category ?? this.category,
+      isWeighted: isWeighted ?? this.isWeighted,
       wholesalePrice: wholesalePrice ?? this.wholesalePrice,
       expiryDate: expiryDate ?? this.expiryDate,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -199,11 +204,11 @@ class Product extends Equatable {
       cartonBarcode: cartonBarcode,
       cartonPrice: cartonPrice,
       packsPerCarton: packsPerCarton,
-      isTobacco: isTobacco,
+      isTobacco: isTobacco ?? this.isTobacco,
       hasCarton: hasCarton,
       hasMultiUnit: hasMultiUnit,
-      isCoffeeMachineProduct: isCoffeeMachineProduct,
-      isBeverage: isBeverage,
+      isCoffeeMachineProduct: isCoffeeMachineProduct ?? this.isCoffeeMachineProduct,
+      isBeverage: isBeverage ?? this.isBeverage,
       singlePiecePrice: singlePiecePrice,
     );
   }

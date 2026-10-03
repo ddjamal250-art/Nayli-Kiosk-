@@ -131,11 +131,12 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   bool get _isCurrentWeighable {
     return _activeProductUnit?.isWeighable == true ||
         widget.product.isWeighted ||
+        widget.product.unitSystemType == UnitSystemType.weight ||
         widget.product.barcode.startsWith('SCALE_') ||
         widget.product.name.contains('ميزان') ||
         widget.product.name.contains('كغ') ||
-        widget.product.unit.trim() == 'كغ' ||
-        widget.product.unit.trim().toLowerCase() == 'kg';
+        widget.product.baseUnitName.trim() == 'كغ' ||
+        widget.product.baseUnitName.trim().toLowerCase() == 'kg';
   }
 
   double get _totalPrice {

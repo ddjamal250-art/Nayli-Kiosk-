@@ -11,7 +11,6 @@ import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
-import '../../../product/presentation/bloc/product_event.dart';
 import '../../data/commercial_document_service.dart';
 import '../../domain/entities/commercial_document.dart';
 import '../widgets/document_editor_dialog.dart';

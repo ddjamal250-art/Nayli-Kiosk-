@@ -167,6 +167,7 @@ class ProductModel extends Product {
     this.stockBatchesModels = const [],
     this.coffeeRecipeJson,
     this.specialOfferJson,
+    bool isCoffeeMachineProduct = false,
   }) : super(
           id: id,
           name: name,
@@ -189,6 +190,7 @@ class ProductModel extends Product {
           specialOffer: specialOfferJson != null && specialOfferJson.trim().isNotEmpty
               ? SpecialOffer.fromJson(jsonDecode(specialOfferJson))
               : null,
+          isCoffeeMachineProduct: isCoffeeMachineProduct,
         );
 
   @override
@@ -213,6 +215,9 @@ class ProductModel extends Product {
     String? pluCode,
     SpecialOffer? specialOffer,
     String? specialOfferJson,
+    bool? isCoffeeMachineProduct,
+    bool? isTobacco,
+    bool? isBeverage,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -222,6 +227,7 @@ class ProductModel extends Product {
       costPrice: costPrice ?? this.costPrice,
       stock: stock ?? this.stock,
       category: category ?? this.category,
+      isWeighted: isWeighted ?? this.isWeighted,
       wholesalePrice: wholesalePrice ?? this.wholesalePrice,
       expiryDate: expiryDate ?? this.expiryDate,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -239,6 +245,7 @@ class ProductModel extends Product {
       specialOfferJson: specialOffer != null
           ? jsonEncode(specialOffer.toJson())
           : (specialOfferJson ?? this.specialOfferJson),
+      isCoffeeMachineProduct: isCoffeeMachineProduct ?? this.isCoffeeMachineProduct,
     );
   }
 
@@ -251,6 +258,7 @@ class ProductModel extends Product {
       stock: product.stock,
       costPrice: product.costPrice,
       category: product.category,
+      isWeighted: product.isWeighted,
       wholesalePrice: product.wholesalePrice,
       expiryDate: product.expiryDate,
       imageUrl: product.imageUrl,
@@ -262,6 +270,7 @@ class ProductModel extends Product {
       stockBatchesModels: product.stockBatches.map((b) => PurchaseBatchModel.fromEntity(b)).toList(),
       coffeeRecipeJson: product.coffeeRecipeJson,
       specialOfferJson: product.specialOffer != null ? jsonEncode(product.specialOffer!.toJson()) : null,
+      isCoffeeMachineProduct: product.isCoffeeMachineProduct,
     );
   }
 
@@ -274,6 +283,7 @@ class ProductModel extends Product {
       stock: stock,
       costPrice: costPrice,
       category: category,
+      isWeighted: isWeighted,
       wholesalePrice: wholesalePrice,
       expiryDate: expiryDate,
       imageUrl: imageUrl,
@@ -285,6 +295,7 @@ class ProductModel extends Product {
       stockBatches: stockBatchesModels,
       coffeeRecipeJson: coffeeRecipeJson,
       specialOffer: specialOffer,
+      isCoffeeMachineProduct: isCoffeeMachineProduct,
     );
   }
 
