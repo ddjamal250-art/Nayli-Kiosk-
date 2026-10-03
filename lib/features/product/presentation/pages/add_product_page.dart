@@ -207,7 +207,6 @@ class _AddProductPageState extends State<AddProductPage> {
       baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
       units: units,
       specialOffers: resolvedOffers,
-      specialOffer: resolvedOffers.firstOrNull,
       pluCode: plu.isNotEmpty ? plu : null,
       unitSystemType: _unitSystemType,
     );

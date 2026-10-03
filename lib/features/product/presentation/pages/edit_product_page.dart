@@ -263,7 +263,6 @@ class _EditProductPageState extends State<EditProductPage> {
       baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
       units: units,
       specialOffers: resolvedOffers,
-      specialOffer: resolvedOffers.firstOrNull,
       pluCode: plu.isNotEmpty ? plu : null,
       coffeeRecipeJson: _coffeeRecipeJson,
       isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
