@@ -56,7 +56,7 @@ class GitHubUpdateService {
   static const String repoName = 'Nayli-Kiosk-';
 
   /// رقم الإصدار الحالي المضمن في التطبيق لضمان دقة الفحص على الويندوز
-  static const String currentAppVersion = '2.0.2';
+  static const String currentAppVersion = '2.2.0';
 
   static bool _isChecking = false;
   static bool _hasAutoChecked = false;

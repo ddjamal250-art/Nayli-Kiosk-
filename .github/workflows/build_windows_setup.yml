@@ -39,7 +39,7 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
           (Get-Content "windows\CMakeLists.txt") -replace 'set\(BINARY_NAME "billing_app"\)', 'set(BINARY_NAME "Nayli-Kiosk")' | Set-Content "windows\CMakeLists.txt"
           (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Kiosk POS"' | Set-Content "windows\runner\main.cpp"
-          (Get-Content "windows\runner\Runner.rc") -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' -replace '1,0,0,1', '2,0,2,0' -replace '"1.0.0.1"', '"2.0.2.0"' | Set-Content "windows\runner\Runner.rc"
+          (Get-Content "windows\runner\Runner.rc") -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' -replace '1,0,0,1', '2,2,0,0' -replace '"1.0.0.1"', '"2.2.0.0"' | Set-Content "windows\runner\Runner.rc"
 
       - name: Install dependencies
         run: flutter pub get
@@ -120,25 +120,25 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v2.1.0-release
-          name: "Nayli Kiosk Desktop POS v2.1.0 (Official Release)"
+          tag_name: v2.2.0-release
+          name: "Nayli Kiosk Desktop POS v2.2.0 (Official Release)"
           draft: false
           prerelease: false
           generate_release_notes: false
           body: |
-            ## 🚀 Nayli Kiosk Desktop POS v2.1.0
-            
+            ## 🚀 Nayli Kiosk Desktop POS v2.2.0 - التحديث الرسمي
+
             ### 📥 روابط التحميل المباشرة بنقرة واحدة (Direct 1-Click Downloads):
-            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/v2.1.0-release/Nayli-Kiosk-Desktop-Setup.exe)**
-            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/v2.1.0-release/Nayli-Kiosk-Desktop-Portable.zip)**
-            
+            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/v2.2.0-release/Nayli-Kiosk-Desktop-Setup.exe)**
+            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/v2.2.0-release/Nayli-Kiosk-Desktop-Portable.zip)**
+
             ---
-            ✅ **المميزات والإصلاحات المطبقة:**
-            1. إصلاح طباعة الوصلات الحرارية والملصقات بدقة تامة وبدون أي رموز مشوهة للغتين العربية والفرنسية.
-            2. مطابقة الوصل المطبوع مع المعاينة في شاشة الإعدادات بنسبة 100%.
-            3. نظام الحماية الشاملة ضد الانهيار (Crash Recovery) مع تسجيل الأعطال.
-            4. منع التضارب والتراكم في الخلفية وتثبيت نظيف 100%.
-            5. الحفاظ التام والمضمون على جميع قواعد بيانات المبيعات والمنتجات السابقة.
+            ✅ **المميزات والإصلاحات المطبقة في هذا التحديث (v2.2.0):**
+            1. **إدارة وتركيبات القهوة والمشروبات:** دعم كامل لوصفات القهوة والمشروبات المركبة مع خصم ديناميكي للمواد الأولية (كأس، حليب، بن، سكر).
+            2. **واجهة البيع السريع المحسنة:** دعم عرض صور السلع، تحسين عرض البطاقات والتنقل الذكي بين الأقسام.
+            3. **دعم الميزان الإلكتروني واحتساب الأوزان التلقائي:** قراءة دقيقة لباركود الميزان واحتساب الكمية بالقيمة أو الوزن بدقة تامة.
+            4. **نظام الإرجاع السريع للفواتير:** استرجاع الفواتير بنقرة واحدة وإعادة كميات السلع للمخزون بدقة متناهية.
+            5. **إصلاحات شاملة للتجميع والاستقرار:** حل كافة مشاكل التوافق، وحماية تامة لقواعد البيانات والنسخ الاحتياطي.
           files: |
             build/installer/Nayli-Kiosk-Desktop-Setup.exe
             build/installer/Nayli-Kiosk-Desktop-Portable.zip
