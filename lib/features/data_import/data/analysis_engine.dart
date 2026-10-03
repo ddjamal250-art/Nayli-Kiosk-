@@ -142,8 +142,11 @@ class AnalysisEngine {
               FROM '$salesTable' WHERE clientId IS NOT NULL GROUP BY clientId
             ) s ON c.id = s.clientId
             LEFT JOIN (
-              SELECT clientId, SUM(value) as total_paid
-              FROM '$paymentsTable' WHERE clientId IS NOT NULL GROUP BY clientId
+              SELECT clientId, SUM(val) as total_paid FROM (
+                SELECT id as pid, clientId, value as val FROM '$paymentsTable' WHERE clientId IS NOT NULL
+                UNION
+                SELECT pay.id as pid, so.clientId, pay.value as val FROM '$paymentsTable' pay JOIN '$salesTable' so ON pay.saleOrderId = so.id WHERE so.clientId IS NOT NULL
+              ) GROUP BY clientId
             ) p ON c.id = p.clientId
           ''';
           final debtResults = db.select(debtQuery);

@@ -180,16 +180,32 @@ class SmartDataImporter {
             if (isDup) { skipCount++; continue; }
 
             double costPrice = 0.0, stock = 0.0, price = 0.0;
+            final List<PurchaseBatchModel> batches = [];
             if (pricesTable != null) {
-              final prices = db.select("SELECT value, quantity FROM '$pricesTable' WHERE productId = ?", [pId]);
+              final prices = db.select("SELECT value, quantity, createdAt FROM '$pricesTable' WHERE productId = ?", [pId]);
               if (prices.isNotEmpty) {
                 costPrice = DataSanitizer.sanitizePrice(prices.last['value']);
                 stock = prices.map((p) => DataSanitizer.sanitizeQuantity(p['quantity'])).fold(0.0, (a, b) => a + b);
+                for (final pr in prices) {
+                  final bQty = DataSanitizer.sanitizeQuantity(pr['quantity']);
+                  final bCost = DataSanitizer.sanitizePrice(pr['value']);
+                  DateTime bDate = DateTime.now();
+                  try {
+                    if (pr['createdAt'] != null) {
+                      bDate = DataSanitizer.sanitizeDate(pr['createdAt']);
+                    }
+                  } catch (_) {}
+                  batches.add(PurchaseBatchModel(
+                    costPrice: bCost,
+                    remainingQuantity: bQty,
+                    dateAdded: bDate,
+                  ));
+                }
               }
             }
             if (sellPricesTable != null) {
               try {
-                final sp = db.select('SELECT value FROM "$sellPricesTable" WHERE productId = ? AND ("default" = 1 OR isDefault = 1)', [pId]);
+                final sp = db.select('SELECT value FROM "$sellPricesTable" WHERE productId = ? AND "default" = 1', [pId]);
                 if (sp.isNotEmpty) {
                   price = DataSanitizer.sanitizePrice(sp.first['value']);
                 }
@@ -231,12 +247,20 @@ class SmartDataImporter {
                     else if (i == 1) tIndex = 1; // Pack
                     else tIndex = 0; // Piece
                   } else {
-                    if (multiplier >= 12) tIndex = 2; // Carton
+                    if (multiplier >= 10) tIndex = 2; // Carton
                     else tIndex = 1; // Pack
                   }
 
+                  String uName = u['unit']?.toString().trim() ?? '';
+                  String displayName = uName;
+                  if (tIndex == 2) {
+                    displayName = (uName.toLowerCase().contains('carton') || multiplier >= 12) ? 'كرتونة' : (uName.isNotEmpty ? uName : 'كرتونة');
+                  } else if (tIndex == 1) {
+                    displayName = (uName.toLowerCase().contains('boite') || uName.toLowerCase().contains('paquet')) ? 'علبة' : (uName.isNotEmpty ? uName : 'علبة');
+                  }
+
                   units.add(ProductUnitModel(
-                    name: u['unit']?.toString() ?? 'وحدة',
+                    name: displayName,
                     multiplier: multiplier,
                     price: DataSanitizer.sanitizePrice(u['sellingPrice']),
                     tierIndex: tIndex,
@@ -258,6 +282,7 @@ class SmartDataImporter {
               expiryDate: row['expiration'] != null ? DataSanitizer.sanitizeDate(row['expiration']).toIso8601String() : null,
               units: units,
               imageUrl: row['image']?.toString(),
+              stockBatchesModels: batches,
             );
             await prodBox.put(uuid, p);
             pCount++;
