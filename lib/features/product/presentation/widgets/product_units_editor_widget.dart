@@ -83,13 +83,49 @@ class ProductUnitsEditorWidget extends StatefulWidget {
     required this.onOfferTierChange,
     required this.offerQtyCtrl,
     required this.offerPriceCtrl,
+    this.specialOffers,
+    this.onSpecialOffersChange,
   });
+
+  final List<SpecialOffer>? specialOffers;
+  final ValueChanged<List<SpecialOffer>>? onSpecialOffersChange;
 
   @override
   State<ProductUnitsEditorWidget> createState() => _ProductUnitsEditorWidgetState();
 }
 
+class _OfferRowControllers {
+  UnitTier tier;
+  final TextEditingController qtyCtrl;
+  final TextEditingController priceCtrl;
+
+  _OfferRowControllers({
+    required this.tier,
+    required double quantity,
+    required double price,
+  })  : qtyCtrl = TextEditingController(
+          text: quantity > 0
+              ? (quantity == quantity.roundToDouble()
+                  ? quantity.toInt().toString()
+                  : quantity.toString())
+              : '',
+        ),
+        priceCtrl = TextEditingController(
+          text: price > 0
+              ? (price == price.roundToDouble()
+                  ? price.toInt().toString()
+                  : price.toString())
+              : '',
+        );
+
+  void dispose() {
+    qtyCtrl.dispose();
+    priceCtrl.dispose();
+  }
+}
+
 class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
+  final List<_OfferRowControllers> _offerControllers = [];
 
   // --- Convenience Getters to Delegate to Widget Properties ---
   bool get isStockInMode => widget.isStockInMode;
@@ -130,14 +166,88 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
   @override
   void initState() {
     super.initState();
+    _initOfferControllers();
   }
 
+  void _initOfferControllers() {
+    for (final c in _offerControllers) {
+      c.dispose();
+    }
+    _offerControllers.clear();
+
+    if (widget.specialOffers != null && widget.specialOffers!.isNotEmpty) {
+      for (final offer in widget.specialOffers!) {
+        _offerControllers.add(_OfferRowControllers(
+          tier: offer.targetTier,
+          quantity: offer.quantity,
+          price: offer.offerPrice,
+        ));
+      }
+    } else if (hasSpecialOffer) {
+      final q = double.tryParse(offerQtyCtrl.text.trim()) ?? 3.0;
+      final pr = double.tryParse(offerPriceCtrl.text.trim()) ?? 0.0;
+      _offerControllers.add(_OfferRowControllers(
+        tier: offerTier,
+        quantity: q,
+        price: pr,
+      ));
+    }
+    if (_offerControllers.isEmpty && hasSpecialOffer) {
+      _offerControllers.add(_OfferRowControllers(
+        tier: UnitTier.small,
+        quantity: 3.0,
+        price: 0.0,
+      ));
+    }
+  }
+
+  void _notifyOffersChanged() {
+    final list = _offerControllers.map((c) {
+      final q = double.tryParse(c.qtyCtrl.text.trim()) ?? 0.0;
+      final p = double.tryParse(c.priceCtrl.text.trim()) ?? 0.0;
+      return SpecialOffer(
+        targetTier: c.tier,
+        quantity: q,
+        offerPrice: p,
+        isEnabled: true,
+      );
+    }).where((o) => o.isValid).toList();
+
+    widget.onSpecialOffersChange?.call(list);
+
+    if (_offerControllers.isNotEmpty) {
+      final first = _offerControllers.first;
+      offerQtyCtrl.text = first.qtyCtrl.text;
+      offerPriceCtrl.text = first.priceCtrl.text;
+      if (first.tier != offerTier) {
+        onOfferTierChange(first.tier);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _offerControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant ProductUnitsEditorWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.hasPack != widget.hasPack || oldWidget.hasCarton != widget.hasCarton) {
       _onInputsChanged();
+    }
+    if (oldWidget.hasSpecialOffer != widget.hasSpecialOffer) {
+      if (widget.hasSpecialOffer && _offerControllers.isEmpty) {
+        _offerControllers.add(_OfferRowControllers(
+          tier: UnitTier.small,
+          quantity: 3.0,
+          price: 0.0,
+        ));
+        _notifyOffersChanged();
+      }
     }
   }
 
@@ -858,81 +968,171 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
               ),
             ),
             subtitle: Text(
-              'تحديد كمية محددة بسعر مخفض (مثلاً: 3 حبات بـ 100 دج أو كرتونتين بـ 4500 دج)',
+              'تحديد كميات محددة بأسعار مخفضة (مثلاً: 3 حبات بـ 100 دج أو 10 حبات بـ 300 دج)',
               style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
             ),
             trailing: Switch(
               value: hasSpecialOffer,
               activeColor: Colors.amber.shade800,
-              onChanged: onHasSpecialOfferChange,
+              onChanged: (val) {
+                onHasSpecialOfferChange(val);
+                if (val && _offerControllers.isEmpty) {
+                  _offerControllers.add(_OfferRowControllers(
+                    tier: UnitTier.small,
+                    quantity: 3.0,
+                    price: 0.0,
+                  ));
+                }
+                _notifyOffersChanged();
+              },
             ),
           ),
           if (hasSpecialOffer)
             Padding(
               padding: const EdgeInsets.only(left: 14, right: 14, bottom: 14),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      // نافذة اختيار الوحدة (كرتونة / علبة / حبة)
-                      Expanded(
-                        flex: 3,
-                        child: DropdownButtonFormField<UnitTier>(
-                          value: offerTier,
-                          decoration: const InputDecoration(
-                            labelText: 'وحدة العرض *',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: UnitTier.small,
-                              child: Text('🍬 حبة (منفردة)'),
-                            ),
-                            DropdownMenuItem(
-                              value: UnitTier.medium,
-                              child: Text('🛍️ علبة'),
-                            ),
-                            DropdownMenuItem(
-                              value: UnitTier.large,
-                              child: Text('📦 كرتونة'),
-                            ),
-                          ],
-                          onChanged: onOfferTierChange,
-                        ),
+                  for (int idx = 0; idx < _offerControllers.length; idx++) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.amber.shade300),
                       ),
-                      const SizedBox(width: 8),
-                      // خانة الكمية
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          controller: offerQtyCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'الكمية *',
-                            hintText: 'مثلاً 3',
-                            border: OutlineInputBorder(),
-                            isDense: true,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade800,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'عرض ${idx + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_offerControllers.length > 1)
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                  tooltip: 'حذف هذا العرض',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () {
+                                    setState(() {
+                                      final removed = _offerControllers.removeAt(idx);
+                                      removed.dispose();
+                                      _notifyOffersChanged();
+                                    });
+                                  },
+                                ),
+                            ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // خانة السعر الإجمالي
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          controller: offerPriceCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'سعر العرض (دج) *',
-                            hintText: 'مثلاً 100',
-                            border: OutlineInputBorder(),
-                            isDense: true,
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              // نافذة اختيار الوحدة (كرتونة / علبة / حبة)
+                              Expanded(
+                                flex: 3,
+                                child: DropdownButtonFormField<UnitTier>(
+                                  value: _offerControllers[idx].tier,
+                                  decoration: const InputDecoration(
+                                    labelText: 'وحدة العرض *',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: UnitTier.small,
+                                      child: Text('🍬 حبة (منفردة)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: UnitTier.medium,
+                                      child: Text('🛍️ علبة'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: UnitTier.large,
+                                      child: Text('📦 كرتونة'),
+                                    ),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        _offerControllers[idx].tier = val;
+                                        _notifyOffersChanged();
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // خانة الكمية
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: _offerControllers[idx].qtyCtrl,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'الكمية *',
+                                    hintText: 'مثلاً 3',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  onChanged: (_) => _notifyOffersChanged(),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // خانة السعر الإجمالي
+                              Expanded(
+                                flex: 3,
+                                child: TextField(
+                                  controller: _offerControllers[idx].priceCtrl,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'سعر العرض (دج) *',
+                                    hintText: 'مثلاً 100',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  onChanged: (_) => _notifyOffersChanged(),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
+                  ],
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.amber.shade900,
+                      side: BorderSide(color: Colors.amber.shade700),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.add_circle_outline, size: 18),
+                    label: const Text(
+                      '+ إضافة عرض ترويجي آخر لهذا المنتج',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _offerControllers.add(_OfferRowControllers(
+                          tier: UnitTier.small,
+                          quantity: 0,
+                          price: 0,
+                        ));
+                      });
+                    },
                   ),
                   const SizedBox(height: 8),
                   Container(
@@ -947,7 +1147,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'عند البيع أو الإرجاع: إذا وصلت الكمية إلى مضاعفات العرض تُحسب بسعر العرض أوتوماتيكياً.',
+                            'يمكنك تحديد عرض واحد أو أكثر (مثلاً: 3 بـ 100 دج و 10 بـ 300 دج). في الكاشير تظهر العروض للاختيار المباشر أو تُطبق تلقائياً.',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,

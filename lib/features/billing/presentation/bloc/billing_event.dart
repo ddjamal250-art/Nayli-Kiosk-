@@ -22,6 +22,8 @@ class AddProductToCartEvent extends BillingEvent {
   final double? customUnitCost;
   /// وزن بالكغ للمنتجات الميزانية
   final double? weightKg;
+  /// معامل الضرب للوحدة عند العروض الخاصة والصفقات
+  final double? customMultiplier;
 
   const AddProductToCartEvent(
     this.product, {
@@ -31,6 +33,7 @@ class AddProductToCartEvent extends BillingEvent {
     this.customUnitName,
     this.customUnitCost,
     this.weightKg,
+    this.customMultiplier,
   });
 
   @override
@@ -42,6 +45,7 @@ class AddProductToCartEvent extends BillingEvent {
         customUnitName ?? '',
         customUnitCost ?? 0.0,
         weightKg ?? 0.0,
+        customMultiplier ?? 1.0,
       ];
 }
 
@@ -53,6 +57,8 @@ class SwitchCartItemUnitEvent extends BillingEvent {
   final String? customUnitName;
   /// وزن بالكغ للمنتجات الميزانية عند التبديل
   final double? weightKg;
+  /// معامل الضرب للوحدة عند العروض الخاصة والصفقات
+  final double? customMultiplier;
 
   const SwitchCartItemUnitEvent({
     required this.cartKey,
@@ -61,6 +67,7 @@ class SwitchCartItemUnitEvent extends BillingEvent {
     this.customUnitPrice,
     this.customUnitName,
     this.weightKg,
+    this.customMultiplier,
   });
 
   @override
@@ -71,6 +78,7 @@ class SwitchCartItemUnitEvent extends BillingEvent {
         customUnitPrice ?? 0.0,
         customUnitName ?? '',
         weightKg ?? 0.0,
+        customMultiplier ?? 1.0,
       ];
 }
 

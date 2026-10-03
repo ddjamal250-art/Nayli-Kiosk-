@@ -177,7 +177,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final existingItem = cleanState.cartItems[existingIndex];
       final backendItems = List<CartItem>.from(cleanState.cartItems);
       final newQty = existingItem.quantity + event.quantity;
-      final proposedDeduct = newQty * (existingItem.selectedUnit?.multiplier ?? 1.0);
+      final mult = event.customMultiplier ?? (existingItem.customMultiplier ?? (existingItem.selectedUnit?.multiplier ?? 1.0));
+      final proposedDeduct = newQty * mult;
       String? warning;
       if (proposedDeduct > event.product.stock && !event.product.isUnlimitedStock) {
         warning = '|';
@@ -188,6 +189,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         customUnitPrice: event.customPrice ?? existingItem.customUnitPrice,
         customUnitName: event.customUnitName ?? existingItem.customUnitName,
         customUnitCost: event.customUnitCost ?? existingItem.customUnitCost,
+        customMultiplier: event.customMultiplier ?? existingItem.customMultiplier,
       );
       emit(cleanState.copyWith(cartItems: backendItems, error: null, stockWarning: warning));
     } else {
@@ -200,6 +202,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         customUnitName: event.customUnitName,
         customUnitCost: event.customUnitCost,
         weightKg: event.weightKg,
+        customMultiplier: event.customMultiplier,
       );
       emit(cleanState.copyWith(
           cartItems: [...cleanState.cartItems, newItem], error: null));
@@ -224,6 +227,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         customUnitPrice: event.customUnitPrice ?? currentItem.customUnitPrice,
         customUnitName: event.customUnitName ?? currentItem.customUnitName,
         weightKg: targetWeight,
+        customMultiplier: event.customMultiplier ?? currentItem.customMultiplier,
       );
       emit(state.copyWith(cartItems: updatedCart, error: null));
       return;
@@ -239,6 +243,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         quantity: existingTarget.quantity + targetQuantity,
         customUnitPrice: event.customUnitPrice ?? existingTarget.customUnitPrice,
         customUnitName: event.customUnitName ?? existingTarget.customUnitName,
+        customMultiplier: event.customMultiplier ?? existingTarget.customMultiplier,
       );
       updatedCart.removeAt(index);
     } else {
@@ -248,6 +253,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         customUnitPrice: event.customUnitPrice,
         customUnitName: event.customUnitName,
         weightKg: targetWeight,
+        customMultiplier: event.customMultiplier ?? currentItem.customMultiplier,
       );
     }
 

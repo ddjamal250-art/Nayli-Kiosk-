@@ -64,7 +64,9 @@ class Product extends Equatable {
   final bool isDeleted; // Soft Deletes
   final List<PurchaseBatch> stockBatches; // Embedded FIFO Queue
   final String? coffeeRecipeJson; // Coffee System Payload
-  final SpecialOffer? specialOffer; // العرض الخاص والتخفيض الذكي
+  final List<SpecialOffer> specialOffers; // العروض الخاصة والتخفيضات الذكية
+  SpecialOffer? get specialOffer =>
+      specialOffers.where((o) => o.isValid).firstOrNull ?? specialOffers.firstOrNull;
   
   // --- Legacy fields for backward compatibility (ignored by new UI) ---
   final String? packName;
@@ -132,7 +134,7 @@ class Product extends Equatable {
     this.isDeleted = false,
     this.stockBatches = const [],
     this.coffeeRecipeJson,
-    this.specialOffer,
+    this.specialOffers = const [],
 
     this.packName,
     this.packBarcode,
@@ -171,6 +173,7 @@ class Product extends Equatable {
     String? baseUnitName,
     List<ProductUnit>? units,
     String? pluCode,
+    List<SpecialOffer>? specialOffers,
     SpecialOffer? specialOffer,
     bool? isCoffeeMachineProduct,
     bool? isTobacco,
@@ -192,7 +195,7 @@ class Product extends Equatable {
       isDeleted: isDeleted ?? this.isDeleted,
       stockBatches: stockBatches ?? this.stockBatches,
       coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
-      specialOffer: specialOffer ?? this.specialOffer,
+      specialOffers: specialOffers ?? (specialOffer != null ? [specialOffer] : this.specialOffers),
       baseUnitName: baseUnitName ?? this.baseUnitName,
       units: units ?? this.units,
       pluCode: pluCode ?? this.pluCode,
@@ -218,7 +221,7 @@ class Product extends Equatable {
         id, name, barcode, price, costPrice, stock, category,
         isWeighted, wholesalePrice, expiryDate, imageUrl,
         unitSystemType, isDeleted, stockBatches, coffeeRecipeJson,
-        specialOffer, baseUnitName, units, pluCode,
+        specialOffers, baseUnitName, units, pluCode,
       ];
 }
 

@@ -138,13 +138,12 @@ class ProductModel extends Product {
   final String? specialOfferJson;
 
   @override
+  List<SpecialOffer> get specialOffers => SpecialOffer.listFromJsonString(specialOfferJson);
+
+  @override
   SpecialOffer? get specialOffer {
-    if (specialOfferJson == null || specialOfferJson!.trim().isEmpty) return null;
-    try {
-      return SpecialOffer.fromJson(jsonDecode(specialOfferJson!));
-    } catch (_) {
-      return null;
-    }
+    final list = specialOffers;
+    return list.where((o) => o.isValid).firstOrNull ?? list.firstOrNull;
   }
 
   ProductModel({
@@ -187,9 +186,7 @@ class ProductModel extends Product {
           isDeleted: isDeleted,
           stockBatches: stockBatchesModels,
           coffeeRecipeJson: coffeeRecipeJson,
-          specialOffer: specialOfferJson != null && specialOfferJson.trim().isNotEmpty
-              ? SpecialOffer.fromJson(jsonDecode(specialOfferJson))
-              : null,
+          specialOffers: SpecialOffer.listFromJsonString(specialOfferJson),
           isCoffeeMachineProduct: isCoffeeMachineProduct,
         );
 
@@ -213,6 +210,7 @@ class ProductModel extends Product {
     String? baseUnitName,
     List<ProductUnit>? units,
     String? pluCode,
+    List<SpecialOffer>? specialOffers,
     SpecialOffer? specialOffer,
     String? specialOfferJson,
     bool? isCoffeeMachineProduct,
@@ -242,9 +240,11 @@ class ProductModel extends Product {
           ? stockBatches.map((b) => PurchaseBatchModel.fromEntity(b)).toList() 
           : this.stockBatchesModels,
       coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
-      specialOfferJson: specialOffer != null
-          ? jsonEncode(specialOffer.toJson())
-          : (specialOfferJson ?? this.specialOfferJson),
+      specialOfferJson: specialOffers != null
+          ? SpecialOffer.listToJsonString(specialOffers)
+          : (specialOffer != null
+              ? jsonEncode(specialOffer.toJson())
+              : (specialOfferJson ?? this.specialOfferJson)),
       isCoffeeMachineProduct: isCoffeeMachineProduct ?? this.isCoffeeMachineProduct,
     );
   }
@@ -269,7 +269,9 @@ class ProductModel extends Product {
       isDeleted: product.isDeleted,
       stockBatchesModels: product.stockBatches.map((b) => PurchaseBatchModel.fromEntity(b)).toList(),
       coffeeRecipeJson: product.coffeeRecipeJson,
-      specialOfferJson: product.specialOffer != null ? jsonEncode(product.specialOffer!.toJson()) : null,
+      specialOfferJson: product.specialOffers.isNotEmpty
+          ? SpecialOffer.listToJsonString(product.specialOffers)
+          : (product.specialOffer != null ? jsonEncode(product.specialOffer!.toJson()) : null),
       isCoffeeMachineProduct: product.isCoffeeMachineProduct,
     );
   }
@@ -294,7 +296,7 @@ class ProductModel extends Product {
       isDeleted: isDeleted,
       stockBatches: stockBatchesModels,
       coffeeRecipeJson: coffeeRecipeJson,
-      specialOffer: specialOffer,
+      specialOffers: specialOffers,
       isCoffeeMachineProduct: isCoffeeMachineProduct,
     );
   }

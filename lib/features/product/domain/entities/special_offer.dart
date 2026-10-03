@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:equatable/equatable.dart';
 import 'product_unit.dart';
 
@@ -29,6 +30,8 @@ class SpecialOffer extends Equatable {
     }
   }
 
+  String get label => '${quantity == quantity.roundToDouble() ? quantity.toInt() : quantity} $tierNameAr بـ ${offerPrice.toStringAsFixed(0)} دج';
+
   Map<String, dynamic> toJson() => {
         'targetTier': targetTier.index,
         'quantity': quantity,
@@ -44,6 +47,27 @@ class SpecialOffer extends Equatable {
         offerPrice: (json['offerPrice'] as num?)?.toDouble() ?? 0.0,
         isEnabled: json['isEnabled'] as bool? ?? false,
       );
+
+  static List<SpecialOffer> listFromJsonString(String? jsonStr) {
+    if (jsonStr == null || jsonStr.trim().isEmpty) return const [];
+    try {
+      final decoded = json.decode(jsonStr);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map>()
+            .map((m) => SpecialOffer.fromJson(Map<String, dynamic>.from(m)))
+            .toList();
+      } else if (decoded is Map) {
+        return [SpecialOffer.fromJson(Map<String, dynamic>.from(decoded))];
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+  static String listToJsonString(List<SpecialOffer> offers) {
+    if (offers.isEmpty) return '';
+    return json.encode(offers.map((e) => e.toJson()).toList());
+  }
 
   /// حساب الإجمالي للبيع أو الإرجاع
   /// إذا اشترى الزبون مضاعفات كمية العرض، يُحسب بسعر العرض، والمتبقي بالسعر العادي

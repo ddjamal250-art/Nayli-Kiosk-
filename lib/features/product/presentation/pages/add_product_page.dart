@@ -53,6 +53,7 @@ class _AddProductPageState extends State<AddProductPage> {
   UnitTier _offerTier = UnitTier.small;
   final _offerQtyCtrl = TextEditingController(text: '3');
   final _offerPriceCtrl = TextEditingController();
+  List<SpecialOffer> _specialOffers = [];
 
   String _selectedCategory = 'عام';
   String? _imageUrl;
@@ -167,17 +168,24 @@ class _AddProductPageState extends State<AddProductPage> {
     }
 
     // بناء العرض الخاص والتخفيض
-    SpecialOffer? offer;
+    List<SpecialOffer> resolvedOffers = [];
     if (_hasSpecialOffer) {
-      final q = double.tryParse(_offerQtyCtrl.text.trim()) ?? 0.0;
-      final p = double.tryParse(_offerPriceCtrl.text.trim()) ?? 0.0;
-      if (q > 1 && p > 0) {
-        offer = SpecialOffer(
-          targetTier: _offerTier,
-          quantity: q,
-          offerPrice: p,
-          isEnabled: true,
-        );
+      if (_specialOffers.isNotEmpty) {
+        resolvedOffers = _specialOffers.where((o) => o.isValid).toList();
+      }
+      if (resolvedOffers.isEmpty) {
+        final q = double.tryParse(_offerQtyCtrl.text.trim()) ?? 0.0;
+        final p = double.tryParse(_offerPriceCtrl.text.trim()) ?? 0.0;
+        if (q > 1 && p > 0) {
+          resolvedOffers = [
+            SpecialOffer(
+              targetTier: _offerTier,
+              quantity: q,
+              offerPrice: p,
+              isEnabled: true,
+            )
+          ];
+        }
       }
     }
 
@@ -198,7 +206,8 @@ class _AddProductPageState extends State<AddProductPage> {
       imageUrl: _imageUrl,
       baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
       units: units,
-      specialOffer: offer,
+      specialOffers: resolvedOffers,
+      specialOffer: resolvedOffers.firstOrNull,
       pluCode: plu.isNotEmpty ? plu : null,
       unitSystemType: _unitSystemType,
     );
@@ -344,6 +353,8 @@ class _AddProductPageState extends State<AddProductPage> {
               },
               offerQtyCtrl: _offerQtyCtrl,
               offerPriceCtrl: _offerPriceCtrl,
+              specialOffers: _specialOffers,
+              onSpecialOffersChange: (v) => setState(() => _specialOffers = v),
             ),
             const SizedBox(height: 32),
             ElevatedButton(

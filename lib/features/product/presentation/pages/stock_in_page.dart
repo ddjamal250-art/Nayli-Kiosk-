@@ -96,6 +96,7 @@ class _StockInPageState extends State<StockInPage> {
   UnitTier _offerTier = UnitTier.small;
   final TextEditingController _offerQtyController = TextEditingController(text: '3');
   final TextEditingController _offerPriceController = TextEditingController();
+  List<SpecialOffer> _specialOffers = [];
 
   bool _pinToQuickItems = false;
 
@@ -360,11 +361,16 @@ class _StockInPageState extends State<StockInPage> {
             _hasMiddleTier = false;
           }
 
-          if (existing.specialOffer != null && existing.specialOffer!.isEnabled) {
-            _hasSpecialOffer = true;
-            _offerTier = existing.specialOffer!.targetTier;
-            _offerQtyController.text = existing.specialOffer!.quantity.toInt().toString();
-            _offerPriceController.text = existing.specialOffer!.offerPrice.toStringAsFixed(2);
+          _specialOffers = List<SpecialOffer>.from(existing.specialOffers);
+          if (_specialOffers.isEmpty && existing.specialOffer != null && existing.specialOffer!.isEnabled) {
+            _specialOffers = [existing.specialOffer!];
+          }
+          if (_specialOffers.isNotEmpty) {
+            _hasSpecialOffer = _specialOffers.any((o) => o.isEnabled);
+            final first = _specialOffers.first;
+            _offerTier = first.targetTier;
+            _offerQtyController.text = first.quantity.toInt().toString();
+            _offerPriceController.text = first.offerPrice.toStringAsFixed(2);
           } else {
             _hasSpecialOffer = false;
           }
@@ -509,18 +515,25 @@ class _StockInPageState extends State<StockInPage> {
             ? _selectedCategory.trim()
             : (existingProduct?.category ?? masterMatch?.category ?? 'عام'));
 
-    // Resolve Special Offer
-    SpecialOffer? resolvedOffer;
+    // Resolve Special Offers
+    List<SpecialOffer> resolvedOffers = [];
     if (_hasSpecialOffer) {
-      final q = double.tryParse(_offerQtyController.text.trim()) ?? 0.0;
-      final p = double.tryParse(_offerPriceController.text.trim()) ?? 0.0;
-      if (q > 1 && p > 0) {
-        resolvedOffer = SpecialOffer(
-          targetTier: _offerTier,
-          quantity: q,
-          offerPrice: p,
-          isEnabled: true,
-        );
+      if (_specialOffers.isNotEmpty) {
+        resolvedOffers = _specialOffers.where((o) => o.isValid).toList();
+      }
+      if (resolvedOffers.isEmpty) {
+        final q = double.tryParse(_offerQtyController.text.trim()) ?? 0.0;
+        final p = double.tryParse(_offerPriceController.text.trim()) ?? 0.0;
+        if (q > 1 && p > 0) {
+          resolvedOffers = [
+            SpecialOffer(
+              targetTier: _offerTier,
+              quantity: q,
+              offerPrice: p,
+              isEnabled: true,
+            )
+          ];
+        }
       }
     }
 
@@ -530,13 +543,14 @@ class _StockInPageState extends State<StockInPage> {
       final pCap = int.tryParse(_unitsPerPackController.text.trim()) ?? 1;
 
       if (_hasCarton) {
-        final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? (effectivePrice * cCap);
-        final cCost = double.tryParse(_cartonCostController.text.trim()) ?? (effectiveCost * cCap);
+        final cartonMultiplier = _hasMiddleTier ? (cCap * pCap).toDouble() : cCap.toDouble();
+        final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? (effectivePrice * cartonMultiplier);
+        final cCost = double.tryParse(_cartonCostController.text.trim()) ?? (effectiveCost * cartonMultiplier);
         final cBarcode = _cartonBarcodeController.text.trim();
         resolvedUnits.add(ProductUnit(
           tier: UnitTier.large,
           name: 'كرتونة',
-          multiplier: cCap.toDouble(),
+          multiplier: cartonMultiplier,
           price: cPrice,
           cost: cCost,
           barcode: cBarcode.isNotEmpty ? cBarcode : null,
@@ -610,7 +624,8 @@ class _StockInPageState extends State<StockInPage> {
         costPrice: effectiveCost,
         stock: _currentStock + effectiveQty,
         units: resolvedUnits,
-        specialOffer: resolvedOffer,
+        specialOffers: resolvedOffers,
+        specialOffer: resolvedOffers.firstOrNull,
         stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
@@ -633,7 +648,8 @@ class _StockInPageState extends State<StockInPage> {
         costPrice: effectiveCost,
         stock: effectiveQty,
         units: resolvedUnits,
-        specialOffer: resolvedOffer,
+        specialOffers: resolvedOffers,
+        specialOffer: resolvedOffers.firstOrNull,
         stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
@@ -1303,6 +1319,8 @@ class _StockInPageState extends State<StockInPage> {
                       onOfferTierChange: (v) { if (v != null) setState(() => _offerTier = v); },
                       offerQtyCtrl: _offerQtyController,
                       offerPriceCtrl: _offerPriceController,
+                      specialOffers: _specialOffers,
+                      onSpecialOffersChange: (v) => setState(() => _specialOffers = v),
                       onInputsChanged: () => setState(() {}),
                     ),
                   ] else if (_unitMode == ArrivageUnitMode.coffeeMachine) ...[

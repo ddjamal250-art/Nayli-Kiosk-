@@ -88,12 +88,32 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     _quantity = widget.initialQuantity;
     _qtyController = TextEditingController(text: _quantity.toString());
 
-    final double initialCustomQty = 3.0;
-    final initialCustomPrice = p.price * initialCustomQty;
+    final validOffers = p.specialOffers.where((o) => o.isValid).toList();
+    final firstOffer = validOffers.firstOrNull;
+    final double initialCustomQty = firstOffer?.quantity ?? 3.0;
+    final initialCustomPrice = firstOffer?.offerPrice ?? (p.price * initialCustomQty);
 
-    _customBaseUnit = 'base';
-    _customQtyController = TextEditingController(text: initialCustomQty.toString());
-    _customPriceController = TextEditingController(text: initialCustomPrice.toStringAsFixed(0));
+    if (firstOffer != null) {
+      if (firstOffer.targetTier == UnitTier.large) {
+        _customBaseUnit = 'carton';
+      } else if (firstOffer.targetTier == UnitTier.medium) {
+        _customBaseUnit = 'pack';
+      } else {
+        _customBaseUnit = 'piece';
+      }
+    } else {
+      _customBaseUnit = 'piece';
+    }
+    _customQtyController = TextEditingController(
+      text: initialCustomQty == initialCustomQty.roundToDouble()
+          ? initialCustomQty.toInt().toString()
+          : initialCustomQty.toString(),
+    );
+    _customPriceController = TextEditingController(
+      text: initialCustomPrice == initialCustomPrice.roundToDouble()
+          ? initialCustomPrice.toInt().toString()
+          : initialCustomPrice.toStringAsFixed(0),
+    );
   }
 
   @override
@@ -116,7 +136,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
 
   double get _currentUnitPrice {
     if (_selectedUnit == 'custom') {
-      final q = int.tryParse(_customQtyController.text.trim()) ?? 1;
+      final q = double.tryParse(_customQtyController.text.trim()) ?? 1.0;
       final pr = double.tryParse(_customPriceController.text.trim()) ?? 0.0;
       return q > 0 ? (pr / q) : 0.0;
     }
@@ -124,7 +144,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   }
 
   String get _currentUnitName {
-    if (_selectedUnit == 'custom') return 'سعر كمية مخصص';
+    if (_selectedUnit == 'custom') return 'عرض ترويجي';
     return _activeProductUnit?.name ?? p.baseUnitName;
   }
 
@@ -197,8 +217,25 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       final double qty = (double.tryParse(_customQtyController.text.trim()) ?? 1.0).clamp(1.0, 9999.0);
       final total = (double.tryParse(_customPriceController.text.trim()) ?? 0.0).clamp(0.0, 999999.0);
       final unitEffectivePrice = qty > 0 ? (total / qty) : 0.0;
-      final baseUnitLabel = p.baseUnitName;
-      final customName = '$qty $baseUnitLabel = ${total.toStringAsFixed(0)} دج';
+      
+      String unitLabel = p.baseUnitName;
+      double tierMultiplier = 1.0;
+      if (_customBaseUnit == 'carton') {
+        final cartonUnit = p.units.firstWhereOrNull((u) => u.tier == UnitTier.large);
+        unitLabel = cartonUnit?.name ?? 'كرتونة';
+        tierMultiplier = cartonUnit?.multiplier ?? (p.packMultiplier > 1 ? (p.packMultiplier * p.packsPerCarton).toDouble() : p.packsPerCarton.toDouble());
+      } else if (_customBaseUnit == 'pack') {
+        final packUnit = p.units.firstWhereOrNull((u) => u.tier == UnitTier.medium || (u.tier != UnitTier.large && u.multiplier > 1));
+        unitLabel = packUnit?.name ?? p.resolvedPackName;
+        tierMultiplier = packUnit?.multiplier ?? (p.packMultiplier > 1 ? p.packMultiplier.toDouble() : 1.0);
+      } else {
+        unitLabel = p.baseUnitName;
+        tierMultiplier = 1.0;
+      }
+      if (tierMultiplier <= 0) tierMultiplier = 1.0;
+
+      final qtyLabel = qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toString();
+      final customName = 'عرض: $qtyLabel $unitLabel = ${total.toStringAsFixed(0)} دج';
 
       if (widget.cartItem != null) {
         context.read<BillingBloc>().add(
@@ -208,9 +245,10 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                 newQuantity: qty,
                 customUnitPrice: unitEffectivePrice,
                 customUnitName: customName,
+                customMultiplier: tierMultiplier,
               ),
             );
-        SnackbarHelper.showSuccess(context, 'تم تعديل السعر المخصص: $customName');
+        SnackbarHelper.showSuccess(context, 'تم تعديل العرض الترويجي: $customName');
       } else {
         context.read<BillingBloc>().add(
               AddProductToCartEvent(
@@ -218,9 +256,11 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                 unitLevel: 'custom',
                 quantity: qty,
                 customPrice: unitEffectivePrice,
+                customUnitName: customName,
+                customMultiplier: tierMultiplier,
               ),
             );
-        SnackbarHelper.showSuccess(context, 'تمت الإضافة بالسعر المخصص: $customName');
+        SnackbarHelper.showSuccess(context, 'تمت إضافة العرض الترويجي: $customName');
       }
       Navigator.pop(context);
       return;
@@ -326,16 +366,19 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       shortcut++;
     }
 
-    // 3. Custom Quantity Deal Card
+    // 3. Custom Quantity Deal / Promotional Offer Card
+    final validOffers = p.specialOffers.where((o) => o.isValid).toList();
     unitCards.add(
       Expanded(
         child: _buildUnitOptionCard(
           unitKey: 'custom',
-          title: 'سعر مخصص للكمية',
-          subtitle: 'تحديد عدد بسعر',
-          price: p.price * 3,
+          title: 'عرض ترويجي',
+          subtitle: validOffers.isNotEmpty
+              ? (validOffers.length == 1 ? '1 عرض متوفر' : '${validOffers.length} عروض متوفرة')
+              : 'تحديد كمية بسعر',
+          price: validOffers.isNotEmpty ? validOffers.first.offerPrice : p.price * 3,
           iconData: Icons.local_offer_rounded,
-          accentColor: Colors.teal,
+          accentColor: Colors.deepOrange,
           shortcutKey: '4',
           isDark: isDark,
         ),
@@ -561,7 +604,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                 ],
 
 
-                // Section 2: Custom Multi-Quantity Pricing Deal (If custom selected)
+                // Section 2: Custom Multi-Quantity Pricing Deal / Promotional Offers
                 if (_selectedUnit == 'custom') ...[
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -576,15 +619,111 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // A: Pre-defined Offers Section (if available)
+                        if (validOffers.isNotEmpty) ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.local_offer, color: Colors.deepOrange, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                'العروض الترويجية المسجلة للمنتج (اضغط للاختيار السريع):',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: isDark ? Colors.orange.shade300 : Colors.deepOrange.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: validOffers.map((offer) {
+                              final qStr = offer.quantity == offer.quantity.roundToDouble()
+                                  ? offer.quantity.toInt().toString()
+                                  : offer.quantity.toString();
+                              final pStr = offer.offerPrice == offer.offerPrice.roundToDouble()
+                                  ? offer.offerPrice.toInt().toString()
+                                  : offer.offerPrice.toStringAsFixed(0);
+                              
+                              final isSelectedOffer = _customQtyController.text.trim() == qStr &&
+                                  _customPriceController.text.trim() == pStr;
+
+                              return InkWell(
+                                borderRadius: BorderRadius.circular(10),
+                                onTap: () {
+                                  setState(() {
+                                    _customQtyController.text = qStr;
+                                    _customPriceController.text = pStr;
+                                    if (offer.targetTier == UnitTier.large) {
+                                      _customBaseUnit = 'carton';
+                                    } else if (offer.targetTier == UnitTier.medium) {
+                                      _customBaseUnit = 'pack';
+                                    } else {
+                                      _customBaseUnit = 'piece';
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isSelectedOffer
+                                        ? (isDark ? Colors.orange.shade900.withOpacity(0.5) : Colors.orange.shade100)
+                                        : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: isSelectedOffer
+                                          ? Colors.deepOrange
+                                          : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                                      width: isSelectedOffer ? 2.0 : 1.0,
+                                    ),
+                                    boxShadow: isSelectedOffer
+                                        ? [BoxShadow(color: Colors.orange.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
+                                        : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isSelectedOffer ? Icons.check_circle_rounded : Icons.local_offer_outlined,
+                                        size: 16,
+                                        color: isSelectedOffer ? Colors.deepOrange : (isDark ? Colors.orange.shade300 : Colors.orange.shade800),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        offer.label,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: isSelectedOffer ? FontWeight.bold : FontWeight.w600,
+                                          color: isSelectedOffer
+                                              ? (isDark ? Colors.white : Colors.deepOrange.shade900)
+                                              : textColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(),
+                          const SizedBox(height: 8),
+                        ],
+
+                        // B: Custom Multi-Quantity Pricing Input (or Manual Override)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.price_change_rounded, color: Colors.teal, size: 20),
+                                const Icon(Icons.tune_rounded, color: Colors.teal, size: 20),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'تحديد بيع عدد معين بسعر مخصص (آنياً):',
+                                  validOffers.isNotEmpty
+                                      ? 'أو حدد عرضاً / سعراً مخصصاً آنياً:'
+                                      : 'تحديد بيع عدد معين بسعر مخصص (آنياً):',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
@@ -596,22 +735,33 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                             // Unit selector for custom deal
                             Row(
                               children: [
-                                if (p.hasSubUnit)
-                                  ChoiceChip(
-                                    label: Text('بالـ ${p.resolvedSubUnitName}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                    selected: _customBaseUnit == 'piece',
-                                    onSelected: (val) {
-                                      if (val) setState(() => _customBaseUnit = 'piece');
-                                    },
-                                  ),
-                                const SizedBox(width: 6),
                                 ChoiceChip(
-                                  label: Text('بالـ ${p.resolvedPackName}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                  selected: _customBaseUnit == 'pack',
+                                  label: Text(p.baseUnitName, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  selected: _customBaseUnit == 'piece' || _customBaseUnit == 'base',
                                   onSelected: (val) {
-                                    if (val) setState(() => _customBaseUnit = 'pack');
+                                    if (val) setState(() => _customBaseUnit = 'piece');
                                   },
                                 ),
+                                if (p.units.any((u) => u.tier == UnitTier.medium || (u.tier != UnitTier.large && u.multiplier > 1)) || p.packMultiplier > 1) ...[
+                                  const SizedBox(width: 6),
+                                  ChoiceChip(
+                                    label: Text(p.resolvedPackName, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    selected: _customBaseUnit == 'pack',
+                                    onSelected: (val) {
+                                      if (val) setState(() => _customBaseUnit = 'pack');
+                                    },
+                                  ),
+                                ],
+                                if (p.units.any((u) => u.tier == UnitTier.large) || p.hasCarton) ...[
+                                  const SizedBox(width: 6),
+                                  ChoiceChip(
+                                    label: const Text('كرتونة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    selected: _customBaseUnit == 'carton',
+                                    onSelected: (val) {
+                                      if (val) setState(() => _customBaseUnit = 'carton');
+                                    },
+                                  ),
+                                ],
                               ],
                             ),
                           ],
@@ -675,44 +825,26 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // Quick Deal Chip if pre-saved on product
-                        if (p.hasCustomQuantityPricing) ...[
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _customQtyController.text = p.packMultiplier.toString();
-                                _customPriceController.text = p.packPrice.toStringAsFixed(0);
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.amber.shade300),
+                        Builder(
+                          builder: (context) {
+                            String activeUnitLabel = p.baseUnitName;
+                            if (_customBaseUnit == 'carton') {
+                              activeUnitLabel = 'كرتونة';
+                            } else if (_customBaseUnit == 'pack') {
+                              activeUnitLabel = p.resolvedPackName;
+                            }
+                            final qVal = double.tryParse(_customQtyController.text.trim()) ?? 1.0;
+                            final pVal = double.tryParse(_customPriceController.text.trim()) ?? 0.0;
+                            final unitAvg = qVal > 0 ? (pVal / qVal) : 0.0;
+                            return Text(
+                              'المعادلة: ${_customQtyController.text} $activeUnitLabel بسعر إجمالي ${_customPriceController.text} دج (معدل الـ $activeUnitLabel: ${unitAvg.toStringAsFixed(1)} دج)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.flash_on, color: Colors.amber, size: 16),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'تطبيق السعر المحفوظ للمنتج: ${p.packMultiplier} بـ ${p.packPrice.toStringAsFixed(0)} دج',
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber.shade900),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                        ],
-                        Text(
-                          'المعادلة: ${_customQtyController.text} ${_customBaseUnit == "piece" ? p.resolvedSubUnitName : p.resolvedPackName} بسعر إجمالي ${_customPriceController.text} دج (متوسط الحبة: ${_currentUnitPrice.toStringAsFixed(1)} دج)',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
-                          ),
+                            );
+                          },
                         ),
                       ],
                     ),

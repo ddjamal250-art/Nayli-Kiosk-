@@ -52,11 +52,12 @@ class _EditProductPageState extends State<EditProductPage> {
   late TextEditingController _packCostCtrl;
   late TextEditingController _packPriceCtrl;
 
-  // --- العروض الخاصة والتخفيض الذكي ---
+  // --- العروض الخاصة والتخفيضات الذكي ---
   bool _hasSpecialOffer = false;
   UnitTier _offerTier = UnitTier.small;
   late TextEditingController _offerQtyCtrl;
   late TextEditingController _offerPriceCtrl;
+  List<SpecialOffer> _specialOffers = [];
 
   late String _selectedCategory;
   List<String> _availableCategories = [];
@@ -112,11 +113,16 @@ class _EditProductPageState extends State<EditProductPage> {
     }
 
     // تحميل العروض الخاصة والتخفيضات إن وجدت
-    if (p.specialOffer != null && p.specialOffer!.isValid) {
-      _hasSpecialOffer = p.specialOffer!.isEnabled;
-      _offerTier = p.specialOffer!.targetTier;
-      _offerQtyCtrl = TextEditingController(text: p.specialOffer!.quantity.toStringAsFixed(0));
-      _offerPriceCtrl = TextEditingController(text: p.specialOffer!.offerPrice.toStringAsFixed(0));
+    _specialOffers = List<SpecialOffer>.from(p.specialOffers);
+    if (_specialOffers.isEmpty && p.specialOffer != null && p.specialOffer!.isValid) {
+      _specialOffers = [p.specialOffer!];
+    }
+    if (_specialOffers.isNotEmpty) {
+      _hasSpecialOffer = _specialOffers.any((o) => o.isEnabled);
+      final first = _specialOffers.first;
+      _offerTier = first.targetTier;
+      _offerQtyCtrl = TextEditingController(text: first.quantity.toStringAsFixed(0));
+      _offerPriceCtrl = TextEditingController(text: first.offerPrice.toStringAsFixed(0));
     } else {
       _hasSpecialOffer = false;
       _offerTier = UnitTier.small;
@@ -220,17 +226,24 @@ class _EditProductPageState extends State<EditProductPage> {
     }
 
     // بناء العرض الخاص والتخفيض
-    SpecialOffer? offer;
+    List<SpecialOffer> resolvedOffers = [];
     if (_hasSpecialOffer) {
-      final q = double.tryParse(_offerQtyCtrl.text.trim()) ?? 0.0;
-      final p = double.tryParse(_offerPriceCtrl.text.trim()) ?? 0.0;
-      if (q > 1 && p > 0) {
-        offer = SpecialOffer(
-          targetTier: _offerTier,
-          quantity: q,
-          offerPrice: p,
-          isEnabled: true,
-        );
+      if (_specialOffers.isNotEmpty) {
+        resolvedOffers = _specialOffers.where((o) => o.isValid).toList();
+      }
+      if (resolvedOffers.isEmpty) {
+        final q = double.tryParse(_offerQtyCtrl.text.trim()) ?? 0.0;
+        final p = double.tryParse(_offerPriceCtrl.text.trim()) ?? 0.0;
+        if (q > 1 && p > 0) {
+          resolvedOffers = [
+            SpecialOffer(
+              targetTier: _offerTier,
+              quantity: q,
+              offerPrice: p,
+              isEnabled: true,
+            )
+          ];
+        }
       }
     }
 
@@ -249,7 +262,8 @@ class _EditProductPageState extends State<EditProductPage> {
       imageUrl: _imageUrl,
       baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
       units: units,
-      specialOffer: offer,
+      specialOffers: resolvedOffers,
+      specialOffer: resolvedOffers.firstOrNull,
       pluCode: plu.isNotEmpty ? plu : null,
       coffeeRecipeJson: _coffeeRecipeJson,
       isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
@@ -552,6 +566,8 @@ class _EditProductPageState extends State<EditProductPage> {
               },
               offerQtyCtrl: _offerQtyCtrl,
               offerPriceCtrl: _offerPriceCtrl,
+              specialOffers: _specialOffers,
+              onSpecialOffersChange: (v) => setState(() => _specialOffers = v),
             ),
             const SizedBox(height: 32),
             ElevatedButton(

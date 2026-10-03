@@ -12,6 +12,8 @@ class CartItem extends Equatable {
   final double? customUnitCost;
   /// وزن حقيقي بالكيلوغرام للمنتجات الميزانية (null = منتج عادي)
   final double? weightKg;
+  /// معامل الضرب المخصص للوحدة عند العروض الخاصة والصفقات المخصصة
+  final double? customMultiplier;
 
   const CartItem({
     required this.product,
@@ -21,6 +23,7 @@ class CartItem extends Equatable {
     this.customUnitPrice,
     this.customUnitCost,
     this.weightKg,
+    this.customMultiplier,
   });
 
   ProductUnit? get selectedUnit {
@@ -62,24 +65,46 @@ class CartItem extends Equatable {
   double get total {
     if (weightKg != null) return customUnitPrice ?? (weightKg! * unitPrice);
 
-    final offer = product.specialOffer;
+    // إذا تم تحديد عرض خاص أو سعر مخصص بالصفقة مباشرة
+    if (unitLevel == 'custom' && customUnitPrice != null) {
+      final isNegative = unitPrice < 0 || quantity < 0;
+      final t = (customUnitPrice! * quantity.abs());
+      return isNegative ? -t : t;
+    }
+
     final currentTier = selectedUnit?.tier ?? UnitTier.small;
     final isNegative = unitPrice < 0 || quantity < 0;
     final absQty = quantity.abs();
     final absPrice = unitPrice.abs();
 
-    if (offer != null && offer.isValid && offer.targetTier == currentTier && absQty >= offer.quantity) {
-      final calculated = offer.calculateTotal(itemQty: absQty, normalUnitPrice: absPrice);
-      return isNegative ? -calculated : calculated;
+    final matchingOffers = product.specialOffers
+        .where((o) => o.isValid && o.targetTier == currentTier && absQty >= o.quantity)
+        .toList()
+      ..sort((a, b) => b.quantity.compareTo(a.quantity));
+
+    if (matchingOffers.isNotEmpty) {
+      double remainingQty = absQty;
+      double totalAmount = 0.0;
+      for (final offer in matchingOffers) {
+        if (remainingQty >= offer.quantity) {
+          final int bundles = (remainingQty / offer.quantity).floor();
+          totalAmount += bundles * offer.offerPrice;
+          remainingQty -= (bundles * offer.quantity);
+        }
+      }
+      totalAmount += (remainingQty * absPrice);
+      return isNegative ? -totalAmount : totalAmount;
     }
 
     return unitPrice * quantity;
   }
 
   bool get hasOfferApplied {
-    final offer = product.specialOffer;
+    if (unitLevel == 'custom') return true;
     final currentTier = selectedUnit?.tier ?? UnitTier.small;
-    return offer != null && offer.isValid && offer.targetTier == currentTier && quantity.abs() >= offer.quantity;
+    return product.specialOffers.any(
+      (o) => o.isValid && o.targetTier == currentTier && quantity.abs() >= o.quantity,
+    );
   }
 
   double get offerSavedAmount {
@@ -92,6 +117,9 @@ class CartItem extends Equatable {
   /// الكمية الحقيقية للخصم من المخزون
   double get totalStockDeduct {
     if (weightKg != null) return weightKg!;
+    if (customMultiplier != null && customMultiplier! > 0) {
+      return quantity * customMultiplier!;
+    }
     final unit = selectedUnit;
     final multiplier = unit?.multiplier ?? 1.0;
     return quantity * multiplier;
@@ -100,6 +128,9 @@ class CartItem extends Equatable {
   /// للتوافق مع الكود القديم
   double get totalBaseQuantity {
     if (weightKg != null) return 1.0; 
+    if (customMultiplier != null && customMultiplier! > 0) {
+      return quantity * customMultiplier!;
+    }
     final unit = selectedUnit;
     final multiplier = unit?.multiplier ?? 1.0;
     return quantity * multiplier;
@@ -126,6 +157,7 @@ class CartItem extends Equatable {
     double? customUnitPrice,
     double? customUnitCost,
     double? weightKg,
+    double? customMultiplier,
   }) {
     return CartItem(
       product: product ?? this.product,
@@ -135,12 +167,13 @@ class CartItem extends Equatable {
       customUnitPrice: customUnitPrice ?? this.customUnitPrice,
       customUnitCost: customUnitCost ?? this.customUnitCost,
       weightKg: weightKg ?? this.weightKg,
+      customMultiplier: customMultiplier ?? this.customMultiplier,
     );
   }
 
   @override
   List<Object?> get props => [
     product, quantity, unitLevel, customUnitName,
-    customUnitPrice, customUnitCost, weightKg,
+    customUnitPrice, customUnitCost, weightKg, customMultiplier,
   ];
 }
