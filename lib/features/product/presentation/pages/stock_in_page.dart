@@ -457,10 +457,6 @@ class _StockInPageState extends State<StockInPage> {
     if (_activeBarcode.isEmpty) {
       _generateGreyProductBarcode();
     }
-    if (qty <= 0) {
-      SnackbarHelper.showWarning(context, 'يرجى تحديد كمية استلام صحيحة');
-      return;
-    }
 
     final isWeighted = _unitMode == ArrivageUnitMode.vracSacs;
     double effectiveQty = qty;
@@ -485,6 +481,11 @@ class _StockInPageState extends State<StockInPage> {
       if (totalReceivedPieces > 0) {
         effectiveQty = totalReceivedPieces.toDouble();
       }
+    }
+
+    if (effectiveQty <= 0) {
+      SnackbarHelper.showWarning(context, 'يرجى تحديد كمية استلام صحيحة');
+      return;
     }
 
     // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products

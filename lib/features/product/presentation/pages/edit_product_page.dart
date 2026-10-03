@@ -66,15 +66,6 @@ class _EditProductPageState extends State<EditProductPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_hasCarton && _hasPack) {
-        final cCap = double.tryParse(_cartonCapacityCtrl.text) ?? 24.0;
-        final pCap = double.tryParse(_packCapacityCtrl.text) ?? 6.0;
-        if (pCap > 0) {
-          _cartonCapacityCtrl.text = (cCap / pCap).toStringAsFixed(0);
-        }
-      }
-    });
     _availableCategories = CategoryTaxonomy.getDropdownCategories();
     final p = widget.product;
     _barcodeCtrl = TextEditingController(text: p.barcode);

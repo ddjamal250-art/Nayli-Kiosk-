@@ -184,7 +184,7 @@ class SmartDataImporter {
               final prices = db.select("SELECT value, quantity FROM '$pricesTable' WHERE productId = ?", [pId]);
               if (prices.isNotEmpty) {
                 costPrice = DataSanitizer.sanitizePrice(prices.last['value']);
-                stock = DataSanitizer.sanitizeQuantity(prices.last['quantity']);
+                stock = prices.map((p) => DataSanitizer.sanitizeQuantity(p['quantity'])).fold(0.0, (a, b) => a + b);
               }
             }
             if (sellPricesTable != null) {
@@ -213,12 +213,33 @@ class SmartDataImporter {
             if (row['customUnits'] != null) {
               try {
                 final List dynamicUnits = jsonDecode(row['customUnits'].toString());
-                for (var u in dynamicUnits) {
+                
+                // Sort by multiplier descending to safely deduce Carton vs Pack
+                dynamicUnits.sort((a, b) {
+                  double valA = DataSanitizer.sanitizeQuantity(a['value']);
+                  double valB = DataSanitizer.sanitizeQuantity(b['value']);
+                  return valB.compareTo(valA);
+                });
+
+                for (int i = 0; i < dynamicUnits.length; i++) {
+                  var u = dynamicUnits[i];
+                  int tIndex = 1; // medium by default
+                  double multiplier = DataSanitizer.sanitizeQuantity(u['value']);
+                  
+                  if (dynamicUnits.length >= 2) {
+                    if (i == 0) tIndex = 2; // Carton
+                    else if (i == 1) tIndex = 1; // Pack
+                    else tIndex = 0; // Piece
+                  } else {
+                    if (multiplier >= 12) tIndex = 2; // Carton
+                    else tIndex = 1; // Pack
+                  }
+
                   units.add(ProductUnitModel(
                     name: u['unit']?.toString() ?? 'وحدة',
-                    multiplier: DataSanitizer.sanitizeQuantity(u['value']),
+                    multiplier: multiplier,
                     price: DataSanitizer.sanitizePrice(u['sellingPrice']),
-                    tierIndex: 1, // medium
+                    tierIndex: tIndex,
                   ));
                 }
               } catch (_) {}
