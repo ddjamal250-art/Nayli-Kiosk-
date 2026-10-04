@@ -1,9 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
-import '../bloc/product_event.dart';
-import '../bloc/product_state.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class BulkPriceUpdatePage extends StatefulWidget {
@@ -146,7 +144,7 @@ class _BulkPriceUpdatePageState extends State<BulkPriceUpdatePage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('تم تحديث أسعار \ منتج بنجاح!'),
+        content: Text('تم تحديث أسعار $count منتج بنجاح!'),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
@@ -265,7 +263,7 @@ class _BulkPriceUpdatePageState extends State<BulkPriceUpdatePage> {
                                       children: [
                                         Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                         const SizedBox(height: 4),
-                                        Text('المخزون: \', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                         Text('المخزون: ${p.stock}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                                       ],
                                     ),
                                   ),
@@ -330,7 +328,7 @@ class _BulkPriceUpdatePageState extends State<BulkPriceUpdatePage> {
                 child: Row(
                   children: [
                     Text(
-                      'التعديلات: \ منتج',
+                      'التعديلات: ${_editedCostPrices.length + _editedSellPrices.length} منتج',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const Spacer(),
