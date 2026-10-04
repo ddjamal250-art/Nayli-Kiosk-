@@ -8,6 +8,7 @@ import '../../../../core/service_locator.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../shifts/data/shift_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 
 import '../../../product/domain/repositories/product_repository.dart';
@@ -183,6 +184,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ? (double.tryParse(_acompteController.text.trim()) ?? 0.0)
               : 0.0);
 
+      final activeShift = await ShiftService.getActiveShift();
+
       await HiveDatabase.invoicesBox.put(invoiceId, {
         'id': invoiceId,
         'timestamp': DateTime.now().toIso8601String(),
@@ -195,6 +198,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
         'customerName': _selectedCustomer?.name ?? '',
         'paidAmount': paidAmount,
         'paymentMode': _paymentMode.name,
+        'shiftId': activeShift?.id,
+        'workerName': activeShift?.workerName ?? 'Unknown',
       });
 
       // 3. Record customer debt if credit

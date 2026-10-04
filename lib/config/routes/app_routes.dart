@@ -42,6 +42,7 @@ import '../../features/product/presentation/pages/expiry_monitor_page.dart';
 import '../../features/product/presentation/pages/shopping_list_page.dart';
 import '../../features/documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
 import '../../features/settings/presentation/pages/eula_page.dart';
+import '../../features/shifts/presentation/pages/cashier_login_page.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -57,6 +58,7 @@ final router = GoRouter(
     final isGoingToActivation = state.matchedLocation == '/activation';
     final isGoingToScanner = state.matchedLocation == '/scanner';
     final isGoingToEula = state.matchedLocation == '/eula';
+    final isGoingToLogin = state.matchedLocation == '/login';
     final isKioskRoute = state.matchedLocation == '/kiosk' || state.matchedLocation == '/kiosk-settings';
     
     // Check if device is configured as a dedicated Customer Price-Checker Kiosk terminal
@@ -85,9 +87,28 @@ final router = GoRouter(
     if (isActivated && isGoingToActivation) {
       return '/';
     }
+
+    // Shift check: Ensure an active shift exists before accessing POS
+    if (isActivated && !isKioskDevice && !isGoingToLogin && state.matchedLocation == '/') {
+      bool hasActiveShift = false;
+      try {
+        final box = HiveDatabase.shiftsBox;
+        hasActiveShift = box.values.any((val) => val is Map && val['isClosed'] == false);
+      } catch (e) {
+        debugPrint('Error checking active shift: $e');
+      }
+      if (!hasActiveShift) {
+        return '/login';
+      }
+    }
+
     return null;
   },
   routes: [
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const CashierLoginPage(),
+    ),
     GoRoute(
       path: '/eula',
       builder: (context, state) => EulaPage(),

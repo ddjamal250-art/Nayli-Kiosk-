@@ -93,6 +93,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   String _hardwareBarcodeBuffer = '';
   DateTime _lastHardwareKeyTime = DateTime.now();
 
+  CashierShift? _activeShift;
+
+  Future<void> _loadActiveShift() async {
+    final shift = await ShiftService.getActiveShift();
+    if (mounted) {
+      setState(() => _activeShift = shift);
+    }
+  }
+
   static const List<Map<String, String>> _categoriesDef = [
     {'key': 'all', 'tr': 'cat_all', 'ar': 'الكل', 'icon': '🛒'},
     {'key': 'tobacco', 'tr': 'tobacco_btn', 'ar': 'المواد التبغية', 'icon': '🚬'},
@@ -122,6 +131,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
     _initLocalServer();
     _startIpmCalculator();
+    _loadActiveShift();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _barcodeFocusNode.requestFocus();
       _restoreAutoSavedCart();
@@ -3055,9 +3065,82 @@ $itemsSummary
       isServerRunning: _isServerRunning,
       serverIp: _serverIp,
       pendingRemoteCartsCount: _pendingRemoteCartsCount,
+      activeShift: _activeShift,
       onOpenDrawer: _openCashDrawerWithSecurity,
       onShowRemoteCartsQueue: _showRemoteCartsQueueModal,
       onOpenSmartScale: _openSmartScaleModal,
+      onSwitchShift: _activeShift == null ? null : _showSwitchShiftDialog,
+    );
+  }
+
+  void _showSwitchShiftDialog() {
+    if (_activeShift == null) return;
+    
+    final actualCashCtrl = TextEditingController();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.swap_horiz, color: Colors.blueAccent),
+            SizedBox(width: 8),
+            Text('تبديل المناوبة / إغلاق الحساب', style: TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('سيتم إنهاء مناوبة الكاشير: ${_activeShift!.workerName}', style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 16),
+            const Text('شحال كاين دراهم في لاكيس حالياً (الفعلي)؟', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: actualCashCtrl,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: Colors.blueAccent, fontSize: 24, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFF0F172A),
+                hintText: '0.0',
+                hintStyle: const TextStyle(color: Colors.white38),
+                suffixText: 'دج',
+                suffixStyle: const TextStyle(color: Colors.white),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('تراجع', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+            onPressed: () async {
+              final actual = double.tryParse(actualCashCtrl.text) ?? 0.0;
+              Navigator.pop(ctx);
+              
+              await ShiftService.closeShift(
+                activeShift: _activeShift!,
+                actualCashInDrawer: actual,
+              );
+              
+              SoundService.playSaveSuccess();
+              if (mounted) {
+                context.go('/login');
+              }
+            },
+            child: const Text('إنهاء وتبديل 🚀', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 

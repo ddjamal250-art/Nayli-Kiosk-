@@ -18,24 +18,29 @@ import 'header_color_dialog.dart';
 import 'session_lock_overlay.dart';
 import 'cash_drawer_action_dialog.dart';
 import 'package:window_manager/window_manager.dart';
+import '../../../shifts/data/shift_service.dart';
 import '../../../../core/services/github_update_service.dart';
 
 class PosHeaderToolbar extends StatelessWidget {
   final bool isServerRunning;
   final String serverIp;
   final int pendingRemoteCartsCount;
+  final CashierShift? activeShift;
   final VoidCallback onOpenDrawer;
   final VoidCallback onShowRemoteCartsQueue;
   final VoidCallback? onOpenSmartScale;
+  final VoidCallback? onSwitchShift;
 
   const PosHeaderToolbar({
     super.key,
     required this.isServerRunning,
     required this.serverIp,
     required this.pendingRemoteCartsCount,
+    this.activeShift,
     required this.onOpenDrawer,
     required this.onShowRemoteCartsQueue,
     this.onOpenSmartScale,
+    this.onSwitchShift,
   });
 
   @override
@@ -121,20 +126,30 @@ class PosHeaderToolbar extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        'Nayli Kiosk POS',
+                        activeShift != null ? 'الكاشير: ${activeShift!.workerName}' : 'Nayli Kiosk POS',
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
-                          fontSize: 16.5,
+                          fontSize: 15.5,
                           color: textColor,
                           letterSpacing: 0.3,
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Text('🇩🇿', style: TextStyle(fontSize: 14)),
+                      if (activeShift != null) 
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('متصل', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                        )
+                      else 
+                        const Text('🇩🇿', style: TextStyle(fontSize: 14)),
                     ],
                   ),
                   Text(
-                    context.tr('pos_title'),
+                    activeShift != null ? 'مناوبة مفتوحة' : context.tr('pos_title'),
                     style: TextStyle(
                       fontSize: 11,
                       color: subtextColor,
@@ -146,6 +161,39 @@ class PosHeaderToolbar extends StatelessWidget {
               const Spacer(),
 
               // Quick Actions Toolbar Buttons
+              
+              if (onSwitchShift != null)
+                Tooltip(
+                  message: 'إنهاء المناوبة الحالية وتبديل العامل',
+                  child: InkWell(
+                    onTap: onSwitchShift,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.blue.shade600, width: 1.2),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.swap_horiz_rounded, color: Colors.blueAccent, size: 20),
+                          const SizedBox(width: 5),
+                          Text(
+                            'تبديل المناوبة',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkHeader ? Colors.blueAccent : Colors.blue.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
 
               // 0. Session Pause (Break Mode) Quick Button
               Tooltip(
@@ -195,6 +243,70 @@ class PosHeaderToolbar extends StatelessWidget {
                 icon: const Icon(Icons.payments_rounded, color: Colors.tealAccent, size: 22),
                 onPressed: () => CashDrawerActionDialog.show(context),
               ),
+              
+              // 1.2 Check Drawer Status (حالة الصندوق)
+              if (activeShift != null)
+                Tooltip(
+                  message: 'حالة الصندوق (شحال كاين دراهم)',
+                  child: InkWell(
+                    onTap: () {
+                      final exp = activeShift!.expectedTotalCashInDrawer;
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: const Color(0xFF1E293B),
+                          title: const Row(
+                            children: [
+                              Icon(Icons.monetization_on, color: Colors.green),
+                              SizedBox(width: 8),
+                              Text('حالة الصندوق الحالية', style: TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('الصرف الابتدائي: ${activeShift!.floatAmount.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.white70)),
+                              const SizedBox(height: 8),
+                              Text('المبيعات النقدية: ${activeShift!.cashSales.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.white70)),
+                              const SizedBox(height: 8),
+                              Text('إيداعات نقدية: ${activeShift!.cashIn.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.white70)),
+                              const SizedBox(height: 8),
+                              Text('سحوبات ومصاريف: ${activeShift!.cashOut.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.white70)),
+                              const Divider(color: Colors.white24, height: 24),
+                              const Text('المبلغ المتوقع في الدرج الآن:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              Text('${exp.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.greenAccent, fontSize: 24, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق', style: TextStyle(color: Colors.grey))),
+                          ],
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade600, width: 1),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.greenAccent, size: 18),
+                          SizedBox(width: 4),
+                          Text(
+                            'حالة الصندوق',
+                            style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
 
               // 2. Direct Inventory Access (F4)
               IconButton(

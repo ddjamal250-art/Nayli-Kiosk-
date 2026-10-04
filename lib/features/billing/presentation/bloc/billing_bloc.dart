@@ -8,6 +8,7 @@ import '../../domain/entities/held_cart.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/data/models/product_model.dart';
 import '../../../product/domain/usecases/product_usecases.dart';
+import '../../../shifts/data/shift_service.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/scale_barcode_parser.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
@@ -650,8 +651,12 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final double finalTotalAmount = isReturn ? -positiveTotal : positiveTotal;
       final double finalTotalCost = isReturn ? -totalCost : totalCost;
       final double finalNetProfit = isReturn ? -netProfit : netProfit;
+      
+      final activeShift = await ShiftService.getActiveShift();
 
       await invoicesBox.put(invoiceId, {
+        'shiftId': activeShift?.id,
+        'workerName': activeShift?.workerName ?? 'Unknown',
         'id': invoiceId,
         'timestamp': DateTime.now().toIso8601String(),
         'totalAmount': finalTotalAmount,

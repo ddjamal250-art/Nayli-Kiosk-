@@ -17,7 +17,7 @@ class HiveDatabase {
   static const String supplierInvoicesBoxName = 'supplier_invoices';
   static const String expensesBoxName = 'expenses';
   static const String devisBoxName = 'devis_invoices';
-  static const String shiftsBoxName = 'cashier_shifts';
+  static const String shiftsBoxName = 'cashier_shifts_box';
   static const String lossesBoxName = 'product_losses';
   static const String commercialDocsBoxName = 'commercial_documents_box';
   static const String staffBoxName = 'staff_members_box';
