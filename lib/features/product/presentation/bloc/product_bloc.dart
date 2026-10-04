@@ -43,7 +43,8 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
 
   Future<void> _onAddProduct(
       AddProduct event, Emitter<ProductState> emit) async {
-    emit(state.copyWith(status: ProductStatus.loading)); // Keep products
+    final updatedList = [event.product, ...state.products];
+    emit(state.copyWith(status: ProductStatus.loading, products: updatedList));
     final result = await addProductUseCase(event.product);
     result.fold(
       (failure) => emit(state.copyWith(
@@ -51,6 +52,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       (_) {
         emit(state.copyWith(
             status: ProductStatus.success,
+            products: updatedList,
             message: null));
         add(LoadProducts());
       },
@@ -59,7 +61,8 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
 
   Future<void> _onUpdateProduct(
       UpdateProduct event, Emitter<ProductState> emit) async {
-    emit(state.copyWith(status: ProductStatus.loading));
+    final updatedList = state.products.map((p) => p.id == event.product.id ? event.product : p).toList();
+    emit(state.copyWith(status: ProductStatus.loading, products: updatedList));
     final result = await updateProductUseCase(event.product);
     result.fold(
       (failure) => emit(state.copyWith(
@@ -67,6 +70,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       (_) {
         emit(state.copyWith(
             status: ProductStatus.success,
+            products: updatedList,
             message: null));
         add(LoadProducts());
       },

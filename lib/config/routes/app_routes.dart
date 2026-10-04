@@ -245,7 +245,15 @@ final router = GoRouter(
         GoRoute(
           path: 'edit/:id',
           builder: (context, state) {
-            final product = state.extra as Product?;
+            final id = state.pathParameters['id'];
+            Product? product;
+            if (id != null && id.isNotEmpty) {
+              final boxProduct = HiveDatabase.productBox.get(id);
+              if (boxProduct != null) {
+                product = boxProduct.toEntity();
+              }
+            }
+            product ??= state.extra as Product?;
             if (product == null) {
               return ProductListPage();
             }

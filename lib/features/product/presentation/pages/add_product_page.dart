@@ -11,6 +11,8 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/utils/barcode_generator_helper.dart';
 import '../../../../core/widgets/input_label.dart';
+import '../../../../core/data/hive_database.dart';
+import '../../data/models/product_model.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
 import '../../domain/entities/special_offer.dart';
@@ -208,6 +210,18 @@ class _AddProductPageState extends State<AddProductPage> {
         ? BarcodeGeneratorHelper.generateUniqueInStoreEan13()
         : cleanBarcode;
 
+    final baseName = _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة';
+
+    // إضافة وحدة القطعة/الحبة الأساسية (Small Tier) لضمان اتساق الحسابات
+    units.add(ProductUnit(
+      name: baseName,
+      tier: UnitTier.small,
+      multiplier: 1.0,
+      price: _parsePrice(_priceCtrl.text),
+      cost: effectiveCost,
+      barcode: validBarcode,
+    ));
+
     final product = Product(
       id: const Uuid().v4(),
       name: _nameCtrl.text.trim(),
@@ -218,16 +232,19 @@ class _AddProductPageState extends State<AddProductPage> {
       stock: _parsePrice(_stockCtrl.text),
       category: _selectedCategory,
       imageUrl: _imageUrl,
-      baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
+      baseUnitName: baseName,
       units: units,
       specialOffers: resolvedOffers,
       pluCode: plu.isNotEmpty ? plu : null,
       unitSystemType: _unitSystemType,
     );
 
-    context.read<ProductBloc>().add(AddProduct(product));
+    // الحفظ المباشر والفوري في قاعدة بيانات Hive لمنع أي تأخير
+    final model = ProductModel.fromEntity(product);
+    await HiveDatabase.productBox.put(model.id, model);
 
     if (mounted) {
+      context.read<ProductBloc>().add(AddProduct(product));
       SnackbarHelper.showSuccess(context, 'تم إضافة المنتج بنجاح');
       context.pop();
     }

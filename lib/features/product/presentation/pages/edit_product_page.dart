@@ -10,6 +10,8 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/barcode_generator_helper.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
+import '../../../../core/data/hive_database.dart';
+import '../../data/models/product_model.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
 import '../../domain/entities/special_offer.dart';
@@ -28,8 +30,12 @@ class EditProductPage extends StatefulWidget {
 class _EditProductPageState extends State<EditProductPage> {
 
   String _formatDouble(double val) {
-    if (val == val.toInt()) return (val == val.roundToDouble() ? val.toInt().toString() : val.toString());
-    return val.toString();
+    if (val == val.toInt()) return val.toInt().toString();
+    String s = val.toStringAsFixed(3);
+    while (s.contains('.') && (s.endsWith('0') || s.endsWith('.'))) {
+      s = s.substring(0, s.length - 1);
+    }
+    return s;
   }
 
   final _formKey = GlobalKey<FormState>();
@@ -273,6 +279,18 @@ class _EditProductPageState extends State<EditProductPage> {
         ? BarcodeGeneratorHelper.generateUniqueInStoreEan13()
         : rawBc;
 
+    final baseName = _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة';
+
+    // إضافة وحدة القطعة/الحبة الأساسية (Small Tier) لضمان اتساق الحسابات
+    units.add(ProductUnit(
+      name: baseName,
+      tier: UnitTier.small,
+      multiplier: 1.0,
+      price: _parsePrice(_priceCtrl.text),
+      cost: effectiveCost,
+      barcode: validBc,
+    ));
+
     final updatedProduct = widget.product.copyWith(
       name: _nameCtrl.text.trim(),
       barcode: validBc,
@@ -281,7 +299,7 @@ class _EditProductPageState extends State<EditProductPage> {
       stock: _parsePrice(_stockCtrl.text),
       category: _selectedCategory,
       imageUrl: _imageUrl,
-      baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',
+      baseUnitName: baseName,
       units: units,
       specialOffers: resolvedOffers,
       pluCode: plu.isNotEmpty ? plu : null,
@@ -289,9 +307,12 @@ class _EditProductPageState extends State<EditProductPage> {
       isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
     );
 
-    context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
+    // الحفظ المباشر والفوري في قاعدة بيانات Hive لمنع أي تأخير أو تزامن غير مكتمل
+    final model = ProductModel.fromEntity(updatedProduct);
+    await HiveDatabase.productBox.put(model.id, model);
 
     if (mounted) {
+      context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
       SnackbarHelper.showSuccess(context, 'تم تعديل المنتج بنجاح');
       context.pop();
     }
