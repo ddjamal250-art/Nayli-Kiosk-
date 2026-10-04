@@ -273,7 +273,7 @@ class _BulkPriceUpdatePageState extends State<BulkPriceUpdatePage> {
                                     flex: 2,
                                     child: TextFormField(
                                       initialValue: (currentCost == currentCost.roundToDouble() ? currentCost.toInt().toString() : currentCost.toString()),
-                                      keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                       decoration: InputDecoration(
                                         labelText: 'سعر الشراء',
                                         isDense: true,
@@ -296,7 +296,7 @@ class _BulkPriceUpdatePageState extends State<BulkPriceUpdatePage> {
                                     flex: 2,
                                     child: TextFormField(
                                       initialValue: (currentPrice == currentPrice.roundToDouble() ? currentPrice.toInt().toString() : currentPrice.toString()),
-                                      keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                       decoration: InputDecoration(
                                         labelText: 'سعر البيع',
                                         isDense: true,

@@ -545,7 +545,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     SizedBox(height: 6),
                     TextFormField(
                       controller: grossWeightCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         hintText: '0.0',
                         suffixText: 'كغ (Kg)',
@@ -582,7 +582,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     SizedBox(height: 6),
                     TextFormField(
                       controller: totalCostValCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         hintText: '0.0',
                         suffixText: 'دج (DA)',
@@ -631,7 +631,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             SizedBox(height: 4),
                             TextFormField(
                               controller: costCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               decoration: InputDecoration(hintText: '0', suffixText: 'دج/كغ'),
                               onChanged: (_) => setModalState(() {}),
                             ),
@@ -647,7 +647,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             SizedBox(height: 4),
                             TextFormField(
                               controller: tareCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               decoration: InputDecoration(hintText: '0', suffixText: '%'),
                               onChanged: (_) => setModalState(() {}),
                             ),

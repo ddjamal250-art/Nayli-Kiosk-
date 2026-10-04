@@ -3102,7 +3102,7 @@ $itemsSummary
             TextField(
               controller: actualCashCtrl,
               autofocus: true,
-              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(color: Colors.blueAccent, fontSize: 24, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 filled: true,

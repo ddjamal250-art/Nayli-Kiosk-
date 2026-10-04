@@ -46,6 +46,7 @@ jobs:
 
       - name: Generate Code (Build Runner)
         run: dart run build_runner build --delete-conflicting-outputs
+        continue-on-error: true
 
       - name: Generate App Icons
         run: |

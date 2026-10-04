@@ -135,7 +135,7 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
             TextField(
               controller: ctrl,
               autofocus: true,
-              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(color: Colors.greenAccent, fontSize: 20, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 filled: true,

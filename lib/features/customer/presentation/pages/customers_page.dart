@@ -106,7 +106,7 @@ class _CustomersPageState extends State<CustomersPage> {
                   Expanded(
                     child: TextFormField(
                       controller: initialDebtController,
-                      keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: context.tr('initial_debt'),
                         prefixText: '${AppConstants.currencySymbol} ',
@@ -117,7 +117,7 @@ class _CustomersPageState extends State<CustomersPage> {
                   Expanded(
                     child: TextFormField(
                       controller: limitController,
-                      keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: context.tr('max_debt_limit'),
                         prefixText: '${AppConstants.currencySymbol} ',
@@ -203,7 +203,7 @@ class _CustomersPageState extends State<CustomersPage> {
               TextFormField(
                 controller: amountController,
                 autofocus: true,
-                keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) {
                   final val = double.tryParse(v ?? '');
                   if (val == null || val <= 0) return context.tr('enter_valid_amount');

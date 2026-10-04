@@ -1495,7 +1495,7 @@ class _StockInPageState extends State<StockInPage> {
                           focusNode: _qtyFocusNode,
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) => _saveStockIn(),
-                          keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: isScaleProduct ? 'الوزن المستلم (كغ)' : 'الكمية المستلمة (بالحبة)',
                             suffixText: isScaleProduct ? 'كغ' : 'حبة',

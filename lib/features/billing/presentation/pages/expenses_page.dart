@@ -114,7 +114,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                 const SizedBox(height: 10),
                 TextField(
                   controller: amountCtrl,
-                  keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     labelText: 'المبلغ المدفوع (دج)',
                     suffixText: 'دج',

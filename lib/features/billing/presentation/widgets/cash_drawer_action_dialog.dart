@@ -253,7 +253,7 @@ class _CashDrawerActionDialogState extends State<CashDrawerActionDialog> {
                 controller: _amountCtrl,
                 focusNode: _amountFocusNode,
                 autofocus: true,
-                keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(

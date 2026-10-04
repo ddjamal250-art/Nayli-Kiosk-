@@ -1065,7 +1065,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           if (!_weightByPrice) ...[
             TextField(
               controller: _weightKgController,
-              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               decoration: InputDecoration(
@@ -1132,7 +1132,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           ] else ...[
             TextField(
               controller: _weightPriceController,
-              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               decoration: InputDecoration(

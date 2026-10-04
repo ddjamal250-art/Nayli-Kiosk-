@@ -564,7 +564,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         Expanded(
                           child: TextField(
                             controller: _cartonCostController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'سعر الكرتونة',
                               suffixText: 'دج',
@@ -594,7 +594,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         Expanded(
                           child: TextField(
                             controller: _unitCostController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'سعر الشراء (التكلفة)',
                               suffixText: 'دج',
@@ -613,7 +613,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                       Expanded(
                         child: TextField(
                           controller: _sellPriceController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: 'سعر البيع للزبون (دج)',
                             suffixText: 'دج',
@@ -743,7 +743,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                     SizedBox(height: 8),
                     TextField(
                       controller: _acompteController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: 'المبلغ المدفوع كاش للمورد (دج)',
                         suffixText: 'دج',
