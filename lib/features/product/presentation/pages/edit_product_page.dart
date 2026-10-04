@@ -26,6 +26,12 @@ class EditProductPage extends StatefulWidget {
 }
 
 class _EditProductPageState extends State<EditProductPage> {
+
+  String _formatDouble(double val) {
+    if (val == val.toInt()) return (val == val.roundToDouble() ? val.toInt().toString() : val.toString());
+    return val.toString();
+  }
+
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _barcodeCtrl;
   late TextEditingController _nameCtrl;
@@ -71,9 +77,9 @@ class _EditProductPageState extends State<EditProductPage> {
     final p = widget.product;
     _barcodeCtrl = TextEditingController(text: p.barcode);
     _nameCtrl = TextEditingController(text: p.name);
-    _priceCtrl = TextEditingController(text: p.price > 0 ? p.price.toStringAsFixed(0) : '');
-    _costPriceCtrl = TextEditingController(text: p.costPrice > 0 ? p.costPrice.toStringAsFixed(0) : '');
-    _stockCtrl = TextEditingController(text: p.stock.toStringAsFixed(0));
+    _priceCtrl = TextEditingController(text: p.price > 0 ? _formatDouble(p.price) : '');
+    _costPriceCtrl = TextEditingController(text: p.costPrice > 0 ? _formatDouble(p.costPrice) : '');
+    _stockCtrl = TextEditingController(text: _formatDouble(p.stock));
     _baseUnitNameCtrl = TextEditingController(text: p.baseUnitName);
     _imageUrl = p.imageUrl;
     _pluCodeCtrl = TextEditingController(text: p.pluCode ?? '');
@@ -85,9 +91,9 @@ class _EditProductPageState extends State<EditProductPage> {
     if (cartonUnit != null) {
       _hasCarton = cartonUnit.isEnabled;
       _cartonBarcodeCtrl = TextEditingController(text: cartonUnit.barcode ?? '');
-      _cartonCapacityCtrl = TextEditingController(text: cartonUnit.multiplier.toStringAsFixed(0));
-      _cartonCostCtrl = TextEditingController(text: cartonUnit.cost > 0 ? cartonUnit.cost.toStringAsFixed(0) : '');
-      _cartonPriceCtrl = TextEditingController(text: cartonUnit.price > 0 ? cartonUnit.price.toStringAsFixed(0) : '');
+      _cartonCapacityCtrl = TextEditingController(text: _formatDouble(cartonUnit.multiplier));
+      _cartonCostCtrl = TextEditingController(text: cartonUnit.cost > 0 ? _formatDouble(cartonUnit.cost) : '');
+      _cartonPriceCtrl = TextEditingController(text: cartonUnit.price > 0 ? _formatDouble(cartonUnit.price) : '');
     } else {
       _hasCarton = false;
       _cartonBarcodeCtrl = TextEditingController();
@@ -101,9 +107,9 @@ class _EditProductPageState extends State<EditProductPage> {
     if (packUnit != null) {
       _hasPack = packUnit.isEnabled;
       _packBarcodeCtrl = TextEditingController(text: packUnit.barcode ?? '');
-      _packCapacityCtrl = TextEditingController(text: packUnit.multiplier.toStringAsFixed(0));
-      _packCostCtrl = TextEditingController(text: packUnit.cost > 0 ? packUnit.cost.toStringAsFixed(0) : '');
-      _packPriceCtrl = TextEditingController(text: packUnit.price > 0 ? packUnit.price.toStringAsFixed(0) : '');
+      _packCapacityCtrl = TextEditingController(text: _formatDouble(packUnit.multiplier));
+      _packCostCtrl = TextEditingController(text: packUnit.cost > 0 ? _formatDouble(packUnit.cost) : '');
+      _packPriceCtrl = TextEditingController(text: packUnit.price > 0 ? _formatDouble(packUnit.price) : '');
     } else {
       _hasPack = false;
       _packBarcodeCtrl = TextEditingController();
@@ -121,8 +127,8 @@ class _EditProductPageState extends State<EditProductPage> {
       _hasSpecialOffer = _specialOffers.any((o) => o.isEnabled);
       final first = _specialOffers.first;
       _offerTier = first.targetTier;
-      _offerQtyCtrl = TextEditingController(text: first.quantity.toStringAsFixed(0));
-      _offerPriceCtrl = TextEditingController(text: first.offerPrice.toStringAsFixed(0));
+      _offerQtyCtrl = TextEditingController(text: _formatDouble(first.quantity));
+      _offerPriceCtrl = TextEditingController(text: _formatDouble(first.offerPrice));
     } else {
       _hasSpecialOffer = false;
       _offerTier = UnitTier.small;
@@ -420,10 +426,10 @@ class _EditProductPageState extends State<EditProductPage> {
                                     setState(() {
                                       _coffeeRecipeJson = res.coffeeRecipeJson;
                                       if (res.costPrice > 0) {
-                                        _costPriceCtrl.text = res.costPrice.toStringAsFixed(0);
+                                        _costPriceCtrl.text = _formatDouble(res.costPrice);
                                       }
                                       if (res.price > 0 && (_priceCtrl.text.isEmpty || _priceCtrl.text == '0')) {
-                                        _priceCtrl.text = res.price.toStringAsFixed(0);
+                                        _priceCtrl.text = _formatDouble(res.price);
                                       }
                                     });
                                   }
@@ -502,7 +508,7 @@ class _EditProductPageState extends State<EditProductPage> {
                                         setState(() {
                                           _coffeeRecipeJson = res.coffeeRecipeJson;
                                           if (res.costPrice > 0) {
-                                            _costPriceCtrl.text = res.costPrice.toStringAsFixed(0);
+                                            _costPriceCtrl.text = _formatDouble(res.costPrice);
                                           }
                                         });
                                       }

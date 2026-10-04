@@ -132,7 +132,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                           Text(dateStr, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                           const Spacer(),
                           Text(
-                            'الكمية: ${batch.remainingQuantity.toStringAsFixed(0)}',
+                            'الكمية: ${(batch.remainingQuantity == batch.remainingQuantity.roundToDouble() ? (batch.remainingQuantity == batch.remainingQuantity.roundToDouble() ? batch.remainingQuantity.toInt().toString() : batch.remainingQuantity.toString()) : batch.remainingQuantity.toString())}',
                             style: const TextStyle(fontSize: 12),
                           ),
                           const SizedBox(width: 12),

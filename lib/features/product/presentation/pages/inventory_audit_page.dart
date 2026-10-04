@@ -238,10 +238,10 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
             Text('سيتم تعديل وتحديث أرصدة $changedCount سلعة في قاعدة بيانات المحل فوراً.'),
             const SizedBox(height: 10),
             if (totalLossCost > 0)
-              Text('🚨 قيمة العجز والنقص بالتكلفة: -${totalLossCost.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+              Text('🚨 قيمة العجز والنقص بالتكلفة: -${(totalLossCost == totalLossCost.roundToDouble() ? (totalLossCost == totalLossCost.roundToDouble() ? totalLossCost.toInt().toString() : totalLossCost.toString()) : totalLossCost.toString())} ${AppConstants.currencySymbol}',
                   style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
             if (totalGainCost > 0)
-              Text('🟢 قيمة الزيادة في المخزون: +${totalGainCost.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+              Text('🟢 قيمة الزيادة في المخزون: +${(totalGainCost == totalGainCost.roundToDouble() ? (totalGainCost == totalGainCost.roundToDouble() ? totalGainCost.toInt().toString() : totalGainCost.toString()) : totalGainCost.toString())} ${AppConstants.currencySymbol}',
                   style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(height: 10),
             const Text('هل أنت متأكد من تثبيت نتائج هذا الجرد وتصفير الفوارق؟', style: TextStyle(fontSize: 11, color: Colors.grey)),
@@ -390,7 +390,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                           children: [
                             const Text('رأس مال السلع بالتكلفة:', style: TextStyle(color: Colors.white70, fontSize: 11)),
                             Text(
-                              '${totalCostCapital.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                              '${(totalCostCapital == totalCostCapital.roundToDouble() ? (totalCostCapital == totalCostCapital.roundToDouble() ? totalCostCapital.toInt().toString() : totalCostCapital.toString()) : totalCostCapital.toString())} ${AppConstants.currencySymbol}',
                               style: const TextStyle(color: Colors.amber, fontSize: 17, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -401,7 +401,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                           children: [
                             const Text('قيمة البضاعة بالبيع:', style: TextStyle(color: Colors.white70, fontSize: 11)),
                             Text(
-                              '${totalRetailValue.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                              '${(totalRetailValue == totalRetailValue.roundToDouble() ? (totalRetailValue == totalRetailValue.roundToDouble() ? totalRetailValue.toInt().toString() : totalRetailValue.toString()) : totalRetailValue.toString())} ${AppConstants.currencySymbol}',
                               style: const TextStyle(color: Colors.greenAccent, fontSize: 17, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -424,11 +424,11 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                             children: [
                               const Icon(Icons.account_balance_wallet_outlined, color: Colors.orangeAccent, size: 16),
                               const SizedBox(width: 6),
-                              Text('ديون الزبائن بالسوق: ${totalCustomerDebts.toStringAsFixed(0)} دج',
+                              Text('ديون الزبائن بالسوق: ${(totalCustomerDebts == totalCustomerDebts.roundToDouble() ? (totalCustomerDebts == totalCustomerDebts.roundToDouble() ? totalCustomerDebts.toInt().toString() : totalCustomerDebts.toString()) : totalCustomerDebts.toString())} دج',
                                   style: const TextStyle(color: Colors.orangeAccent, fontSize: 11.5, fontWeight: FontWeight.bold)),
                             ],
                           ),
-                          Text('الرصيد الحقيقي: ${adjustedNetCapital.toStringAsFixed(0)} دج',
+                          Text('الرصيد الحقيقي: ${(adjustedNetCapital == adjustedNetCapital.roundToDouble() ? (adjustedNetCapital == adjustedNetCapital.roundToDouble() ? adjustedNetCapital.toInt().toString() : adjustedNetCapital.toString()) : adjustedNetCapital.toString())} دج',
                               style: const TextStyle(color: Colors.cyanAccent, fontSize: 11.5, fontWeight: FontWeight.bold)),
                         ],
                       ),
@@ -462,7 +462,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('📈 الربح الكامن: +${projectedProfit.toStringAsFixed(0)} دج',
+                          Text('📈 الربح الكامن: +${(projectedProfit == projectedProfit.roundToDouble() ? (projectedProfit == projectedProfit.roundToDouble() ? projectedProfit.toInt().toString() : projectedProfit.toString()) : projectedProfit.toString())} دج',
                               style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600)),
                           Text('📊 السلع المعدلة: $discrepancyItemsCount سلعة',
                               style: TextStyle(

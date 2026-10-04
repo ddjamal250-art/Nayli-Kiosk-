@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'bulk_price_update_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -474,7 +475,7 @@ class _ProductListPageState extends State<ProductListPage> {
     double tareLossPercent = 0.0;
     double costPerKg = product.costPrice > 0 ? product.costPrice : (product.price * 0.75);
     final TextEditingController grossWeightCtrl = TextEditingController(text: '10.0');
-    final TextEditingController costCtrl = TextEditingController(text: costPerKg.toStringAsFixed(0));
+    final TextEditingController costCtrl = TextEditingController(text: (costPerKg == costPerKg.roundToDouble() ? (costPerKg == costPerKg.roundToDouble() ? costPerKg.toInt().toString() : costPerKg.toString()) : costPerKg.toString()));
     final TextEditingController tareCtrl = TextEditingController(text: '0');
     final TextEditingController totalCostValCtrl = TextEditingController(text: (10.0 * costPerKg).toStringAsFixed(0));
     bool isByValue = false;
@@ -519,7 +520,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   ),
                   SizedBox(height: 4),
                   Text(product.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text('المخزون الحالي: ${product.stock} كغ • سعر البيع: ${product.price.toStringAsFixed(0)} دج/كغ',
+                  Text('المخزون الحالي: ${product.stock} كغ • سعر البيع: ${(product.price == product.price.roundToDouble() ? (product.price == product.price.roundToDouble() ? product.price.toInt().toString() : product.price.toString()) : product.price.toString())} دج/كغ',
                       style: TextStyle(fontSize: 11.5, color: Colors.grey)),
                   SizedBox(height: 14),
 
@@ -606,7 +607,7 @@ class _ProductListPageState extends State<ProductListPage> {
                           side: BorderSide(color: Colors.teal.withOpacity(0.3)),
                           onPressed: () {
                             setModalState(() {
-                              totalCostValCtrl.text = amt.toInt().toString();
+                              totalCostValCtrl.text = (amt == amt.roundToDouble() ? amt.toInt().toString() : amt.toString());
                               final c = double.tryParse(costCtrl.text.trim()) ?? costPerKg;
                               if (c > 0) {
                                 grossWeightCtrl.text = (amt / c).toStringAsFixed(2);
@@ -680,7 +681,7 @@ class _ProductListPageState extends State<ProductListPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('إجمالي تكلفة الشحنة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                            Text('${totalBatchCost.toStringAsFixed(0)} دج',
+                            Text('${(totalBatchCost == totalBatchCost.roundToDouble() ? (totalBatchCost == totalBatchCost.roundToDouble() ? totalBatchCost.toInt().toString() : totalBatchCost.toString()) : totalBatchCost.toString())} دج',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           ],
                         ),
@@ -689,7 +690,7 @@ class _ProductListPageState extends State<ProductListPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('الربح الصافي المتوقع:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
-                            Text('+${estimatedProfit.toStringAsFixed(0)} دج',
+                            Text('+${(estimatedProfit == estimatedProfit.roundToDouble() ? (estimatedProfit == estimatedProfit.roundToDouble() ? estimatedProfit.toInt().toString() : estimatedProfit.toString()) : estimatedProfit.toString())} دج',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
                           ],
                         ),
@@ -817,7 +818,15 @@ class _ProductListPageState extends State<ProductListPage> {
                   onPressed: () => setState(() => _isMultiSelectMode = true),
                 ),
                 IconButton(
-                  icon: Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
+                  IconButton(
+                    icon: Icon(Icons.price_change_outlined, color: AppTheme.primaryColor),
+                    tooltip: '????? ????? ?????',
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const BulkPriceUpdatePage()));
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
                   tooltip: context.tr('export_excel_tooltip'),
                   onPressed: () {
                     final productState = context.read<ProductBloc>().state;
@@ -1188,7 +1197,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                   Row(
                                     children: [
                                       Text(
-                                        '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                        '${(product.price == product.price.roundToDouble() ? (product.price == product.price.roundToDouble() ? product.price.toInt().toString() : product.price.toString()) : product.price.toString())} ${AppConstants.currencySymbol}',
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13.5,
@@ -1573,7 +1582,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         Text(product.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                         SizedBox(height: 4),
                         Text(
-                          '${product.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                          '${(product.price == product.price.roundToDouble() ? (product.price == product.price.roundToDouble() ? product.price.toInt().toString() : product.price.toString()) : product.price.toString())} ${AppConstants.currencySymbol}',
                           style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
                         ),
                         if (product.barcode.isNotEmpty) ...[

@@ -1,4 +1,4 @@
-name: billing_app
+﻿name: billing_app
 description: A new Flutter project.
 publish_to: 'none'
 version: 2.2.1+14
@@ -102,3 +102,4 @@ flutter_launcher_icons:
     image_path: "assets/images/app_logo.png"
     background_color: "#06325C"
     theme_color: "#06325C"
+

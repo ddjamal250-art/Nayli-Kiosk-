@@ -127,7 +127,7 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
     setState(() {
       _quantity = validQ;
       _quantityCtrl.text = validQ == validQ.roundToDouble()
-          ? validQ.toInt().toString()
+          ? (validQ == validQ.roundToDouble() ? validQ.toInt().toString() : validQ.toString())
           : validQ.toString();
     });
   }
@@ -313,7 +313,7 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
                         ),
                         ..._availableUnits.map((u) {
                           final multLabel = u.multiplier == u.multiplier.roundToDouble()
-                              ? u.multiplier.toInt().toString()
+                              ? (u.multiplier == u.multiplier.roundToDouble() ? u.multiplier.toInt().toString() : u.multiplier.toString())
                               : u.multiplier.toString();
                           return DropdownMenuItem<ProductUnit?>(
                             value: u,

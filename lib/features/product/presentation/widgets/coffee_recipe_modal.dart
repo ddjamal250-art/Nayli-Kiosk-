@@ -16,7 +16,7 @@ class _RecipeIngredientRow {
     this.rawProduct,
     required double qty,
     this.unit = 'غرام',
-  }) : qtyCtrl = TextEditingController(text: qty > 0 ? (qty % 1 == 0 ? qty.toInt().toString() : qty.toString()) : '18');
+  }) : qtyCtrl = TextEditingController(text: qty > 0 ? (qty % 1 == 0 ? (qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toString()) : qty.toString()) : '18');
 
   double get cost {
     if (rawProduct == null) return 0.0;
@@ -65,7 +65,7 @@ class _CoffeeRecipeModalState extends State<CoffeeRecipeModal> {
       _nameCtrl.text = widget.existingProduct!.name;
       _sellPriceCtrl.text = widget.existingProduct!.price > 0
           ? (widget.existingProduct!.price % 1 == 0
-              ? widget.existingProduct!.price.toInt().toString()
+              ? widget.existingProduct!(.price == .price.roundToDouble() ? .price.toInt().toString() : .price.toString())
               : widget.existingProduct!.price.toString())
           : '';
     }
@@ -350,7 +350,7 @@ class _CoffeeRecipeModalState extends State<CoffeeRecipeModal> {
                               fillColor: Colors.white,
                             ),
                             items: availableRaw.map((r) {
-                              final costStr = r.costPrice > 0 ? ' (تكلفة: ${r.costPrice.toStringAsFixed(0)} دج)' : '';
+                              final costStr = r.costPrice > 0 ? ' (تكلفة: ${(r.costPrice == r.costPrice.roundToDouble() ? (r.costPrice == r.costPrice.roundToDouble() ? r.costPrice.toInt().toString() : r.costPrice.toString()) : r.costPrice.toString())} دج)' : '';
                               return DropdownMenuItem(
                                 value: r,
                                 child: Text('${r.name}$costStr', style: const TextStyle(fontSize: 12)),

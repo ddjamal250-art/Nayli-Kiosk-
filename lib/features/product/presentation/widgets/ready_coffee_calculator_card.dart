@@ -90,13 +90,13 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
   void initState() {
     super.initState();
     _data = widget.initialData;
-    _basePackCostCtrl = TextEditingController(text: _data.basePackCost > 0 ? _data.basePackCost.toStringAsFixed(0) : '');
+    _basePackCostCtrl = TextEditingController(text: _data.basePackCost > 0 ? (_data.basePackCost == _data.basePackCost.roundToDouble() ? (_data.basePackCost == _data.basePackCost.roundToDouble() ? _data.basePackCost.toInt().toString() : _data.basePackCost.toString()) : _data.basePackCost.toString()) : '');
     _baseYieldCtrl = TextEditingController(text: _data.baseYieldCount > 0 ? _data.baseYieldCount.toString() : '50');
-    _gobeletCostCtrl = TextEditingController(text: _data.gobeletPackCost > 0 ? _data.gobeletPackCost.toStringAsFixed(0) : '250');
+    _gobeletCostCtrl = TextEditingController(text: _data.gobeletPackCost > 0 ? (_data.gobeletPackCost == _data.gobeletPackCost.roundToDouble() ? (_data.gobeletPackCost == _data.gobeletPackCost.roundToDouble() ? _data.gobeletPackCost.toInt().toString() : _data.gobeletPackCost.toString()) : _data.gobeletPackCost.toString()) : '250');
     _gobeletQtyCtrl = TextEditingController(text: _data.gobeletPackCount > 0 ? _data.gobeletPackCount.toString() : '50');
-    _sugarCostCtrl = TextEditingController(text: _data.sugarPackCost > 0 ? _data.sugarPackCost.toStringAsFixed(0) : '300');
+    _sugarCostCtrl = TextEditingController(text: _data.sugarPackCost > 0 ? (_data.sugarPackCost == _data.sugarPackCost.roundToDouble() ? (_data.sugarPackCost == _data.sugarPackCost.roundToDouble() ? _data.sugarPackCost.toInt().toString() : _data.sugarPackCost.toString()) : _data.sugarPackCost.toString()) : '300');
     _sugarQtyCtrl = TextEditingController(text: _data.sugarPackCount > 0 ? _data.sugarPackCount.toString() : '100');
-    _salePriceCtrl = TextEditingController(text: _data.salePrice > 0 ? _data.salePrice.toStringAsFixed(0) : '40');
+    _salePriceCtrl = TextEditingController(text: _data.salePrice > 0 ? (_data.salePrice == _data.salePrice.roundToDouble() ? (_data.salePrice == _data.salePrice.roundToDouble() ? _data.salePrice.toInt().toString() : _data.salePrice.toString()) : _data.salePrice.toString()) : '40');
     _shortCodeCtrl = TextEditingController(text: _data.quickShortCode);
   }
 
@@ -559,7 +559,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        '${item.name} (${item.packCost.toStringAsFixed(0)} دج ÷ ${item.packUnits} حبة = ${item.unitCost.toStringAsFixed(2)} دج/كأس)',
+                        '${item.name} (${(item.packCost == item.packCost.roundToDouble() ? (item.packCost == item.packCost.roundToDouble() ? item.packCost.toInt().toString() : item.packCost.toString()) : item.packCost.toString())} دج ÷ ${item.packUnits} حبة = ${item.unitCost.toStringAsFixed(2)} دج/كأس)',
                         style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
                       ),
                     ),

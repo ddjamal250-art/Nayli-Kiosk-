@@ -57,7 +57,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
     final auth = await SecurityPinHelper.authenticate(context, title: 'تسديد دين للمورد');
     if (!auth || !mounted) return;
 
-    final amountCtrl = TextEditingController(text: remaining.toStringAsFixed(0));
+    final amountCtrl = TextEditingController(text: (remaining == remaining.roundToDouble() ? (remaining == remaining.roundToDouble() ? remaining.toInt().toString() : remaining.toString()) : remaining.toString()));
 
     showDialog(
       context: context,
@@ -70,7 +70,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
           children: [
             Text('رقم الفاتورة: ${invoice['invoiceNumber']}'),
             const SizedBox(height: 4),
-            Text('الدين المتبقي: ${remaining.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+            Text('الدين المتبقي: ${(remaining == remaining.roundToDouble() ? (remaining == remaining.roundToDouble() ? remaining.toInt().toString() : remaining.toString()) : remaining.toString())} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
             const SizedBox(height: 12),
             TextField(
               controller: amountCtrl,
@@ -156,7 +156,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
                       children: [
                         const Text('إجمالي المشتريات', style: TextStyle(fontSize: 11, color: Colors.blueGrey)),
                         const SizedBox(height: 4),
-                        Text('${_totalPurchases.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)),
+                        Text('${(_totalPurchases == _totalPurchases.roundToDouble() ? (_totalPurchases == _totalPurchases.roundToDouble() ? _totalPurchases.toInt().toString() : _totalPurchases.toString()) : _totalPurchases.toString())} دج', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)),
                       ],
                     ),
                   ),
@@ -175,7 +175,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
                       children: [
                         const Text('ديون الموردين المستحقة', style: TextStyle(fontSize: 11, color: Colors.redAccent)),
                         const SizedBox(height: 4),
-                        Text('${_totalDebts.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
+                        Text('${(_totalDebts == _totalDebts.roundToDouble() ? (_totalDebts == _totalDebts.roundToDouble() ? _totalDebts.toInt().toString() : _totalDebts.toString()) : _totalDebts.toString())} دج', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
                       ],
                     ),
                   ),
@@ -232,7 +232,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      remainingDebt == 0 ? 'خالصة (كاش)' : 'باقي دين: ${remainingDebt.toStringAsFixed(0)} دج',
+                                      remainingDebt == 0 ? 'خالصة (كاش)' : 'باقي دين: ${(remainingDebt == remainingDebt.roundToDouble() ? (remainingDebt == remainingDebt.roundToDouble() ? remainingDebt.toInt().toString() : remainingDebt.toString()) : remainingDebt.toString())} دج',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
@@ -255,7 +255,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('إجمالي الفاتورة: ${totalCost.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text('إجمالي الفاتورة: ${(totalCost == totalCost.roundToDouble() ? (totalCost == totalCost.roundToDouble() ? totalCost.toInt().toString() : totalCost.toString()) : totalCost.toString())} دج', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   if (remainingDebt > 0)
                                     ElevatedButton(
                                       style: ElevatedButton.styleFrom(

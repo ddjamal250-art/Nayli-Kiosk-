@@ -94,8 +94,8 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     if (savedAligns is Map) {
       _elementAlignments = savedAligns.map((k, v) => MapEntry(k.toString(), v.toString()));
     }
-    _customWidthCtrl = TextEditingController(text: _customWidthMm.toStringAsFixed(0));
-    _customHeightCtrl = TextEditingController(text: _customHeightMm.toStringAsFixed(0));
+    _customWidthCtrl = TextEditingController(text: (_customWidthMm == _customWidthMm.roundToDouble() ? (_customWidthMm == _customWidthMm.roundToDouble() ? _customWidthMm.toInt().toString() : _customWidthMm.toString()) : _customWidthMm.toString()));
+    _customHeightCtrl = TextEditingController(text: (_customHeightMm == _customHeightMm.roundToDouble() ? (_customHeightMm == _customHeightMm.roundToDouble() ? _customHeightMm.toInt().toString() : _customHeightMm.toString()) : _customHeightMm.toString()));
     _customMarginCtrl = TextEditingController(text: _customMarginMm.toStringAsFixed(1));
   }
 
@@ -481,7 +481,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    '${_customWidthMm.toStringAsFixed(0)} × ${_customHeightMm.toStringAsFixed(0)} مم',
+                                    '${(_customWidthMm == _customWidthMm.roundToDouble() ? (_customWidthMm == _customWidthMm.roundToDouble() ? _customWidthMm.toInt().toString() : _customWidthMm.toString()) : _customWidthMm.toString())} × ${(_customHeightMm == _customHeightMm.roundToDouble() ? (_customHeightMm == _customHeightMm.roundToDouble() ? _customHeightMm.toInt().toString() : _customHeightMm.toString()) : _customHeightMm.toString())} مم',
                                     style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.indigo),
                                   ),
                                 ),
@@ -580,8 +580,8 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                                       setState(() {
                                         _customWidthMm = w;
                                         _customHeightMm = h;
-                                        _customWidthCtrl.text = w.toStringAsFixed(0);
-                                        _customHeightCtrl.text = h.toStringAsFixed(0);
+                                        _customWidthCtrl.text = (w == w.roundToDouble() ? (w == w.roundToDouble() ? w.toInt().toString() : w.toString()) : w.toString());
+                                        _customHeightCtrl.text = (h == h.roundToDouble() ? (h == h.roundToDouble() ? h.toInt().toString() : h.toString()) : h.toString());
                                       });
                                       HiveDatabase.settingsBox.put('shelf_label_custom_width', w);
                                       HiveDatabase.settingsBox.put('shelf_label_custom_height', h);
@@ -865,7 +865,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                               ),
                               title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               subtitle: Text(
-                                '${p.barcode.isNotEmpty ? p.barcode : 'بدون كود'} • السعر: ${p.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                '${p.barcode.isNotEmpty ? p.barcode : 'بدون كود'} • السعر: ${(p.price == p.price.roundToDouble() ? (p.price == p.price.roundToDouble() ? p.price.toInt().toString() : p.price.toString()) : p.price.toString())} ${AppConstants.currencySymbol}',
                                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                               ),
                               trailing: isSelected

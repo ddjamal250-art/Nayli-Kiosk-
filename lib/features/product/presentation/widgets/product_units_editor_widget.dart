@@ -106,14 +106,14 @@ class _OfferRowControllers {
   })  : qtyCtrl = TextEditingController(
           text: quantity > 0
               ? (quantity == quantity.roundToDouble()
-                  ? quantity.toInt().toString()
+                  ? (quantity == quantity.roundToDouble() ? quantity.toInt().toString() : quantity.toString())
                   : quantity.toString())
               : '',
         ),
         priceCtrl = TextEditingController(
           text: price > 0
               ? (price == price.roundToDouble()
-                  ? price.toInt().toString()
+                  ? (price == price.roundToDouble() ? price.toInt().toString() : price.toString())
                   : price.toString())
               : '',
         );

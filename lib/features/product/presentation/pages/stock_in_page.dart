@@ -342,7 +342,7 @@ class _StockInPageState extends State<StockInPage> {
             _cartonsPriceController.text = largeUnit.price > 0 ? largeUnit.price.toStringAsFixed(2) : '';
             _cartonCostController.text = largeUnit.cost > 0 ? largeUnit.cost.toStringAsFixed(2) : '';
             _cartonBarcodeController.text = largeUnit.barcode ?? '';
-            _unitsPerCartonController.text = largeUnit.multiplier.toInt().toString();
+            _unitsPerCartonController.text = (largeUnit.multiplier == largeUnit.multiplier.roundToDouble() ? largeUnit.multiplier.toInt().toString() : largeUnit.multiplier.toString());
           } else {
             _hasCarton = false;
           }
@@ -353,7 +353,7 @@ class _StockInPageState extends State<StockInPage> {
             _packPriceController.text = mediumUnit.price > 0 ? mediumUnit.price.toStringAsFixed(2) : '';
             _packCostController.text = mediumUnit.cost > 0 ? mediumUnit.cost.toStringAsFixed(2) : '';
             _packBarcodeController.text = mediumUnit.barcode ?? '';
-            _unitsPerPackController.text = mediumUnit.multiplier.toInt().toString();
+            _unitsPerPackController.text = (mediumUnit.multiplier == mediumUnit.multiplier.roundToDouble() ? mediumUnit.multiplier.toInt().toString() : mediumUnit.multiplier.toString());
             if (largeUnit != null && mediumUnit.multiplier > 0) {
               _packsPerCartonController.text = (largeUnit.multiplier / mediumUnit.multiplier).toInt().toString();
             }
@@ -369,7 +369,7 @@ class _StockInPageState extends State<StockInPage> {
             _hasSpecialOffer = _specialOffers.any((o) => o.isEnabled);
             final first = _specialOffers.first;
             _offerTier = first.targetTier;
-            _offerQtyController.text = first.quantity.toInt().toString();
+            _offerQtyController.text = (first.quantity == first.quantity.roundToDouble() ? first.quantity.toInt().toString() : first.quantity.toString());
             _offerPriceController.text = first.offerPrice.toStringAsFixed(2);
           } else {
             _hasSpecialOffer = false;
@@ -796,7 +796,7 @@ class _StockInPageState extends State<StockInPage> {
       _activeOcrIndex = index;
       _unitMode = ArrivageUnitMode.singleUnits;
       _nameController.text = item.designation;
-      _qtyController.text = item.quantity.toInt().toString();
+      _qtyController.text = (item.quantity == item.quantity.roundToDouble() ? item.quantity.toInt().toString() : item.quantity.toString());
       _costPriceController.text = item.unitPrice > 0 ? item.unitPrice.toStringAsFixed(2) : '';
 
       final products = context.read<ProductBloc>().state.products;
@@ -830,10 +830,10 @@ class _StockInPageState extends State<StockInPage> {
               _packPriceController.text = mediumUnit.price.toStringAsFixed(2);
               _packCostController.text = mediumUnit.cost.toStringAsFixed(2);
               _packsPerCartonController.text = (largeUnit.multiplier / mediumUnit.multiplier).toInt().toString();
-              _unitsPerPackController.text = mediumUnit.multiplier.toInt().toString();
+              _unitsPerPackController.text = (mediumUnit.multiplier == mediumUnit.multiplier.roundToDouble() ? mediumUnit.multiplier.toInt().toString() : mediumUnit.multiplier.toString());
             } else {
               _hasMiddleTier = false;
-              _unitsPerCartonController.text = largeUnit.multiplier.toInt().toString();
+              _unitsPerCartonController.text = (largeUnit.multiplier == largeUnit.multiplier.roundToDouble() ? largeUnit.multiplier.toInt().toString() : largeUnit.multiplier.toString());
             }
           }
         }
@@ -1091,7 +1091,7 @@ class _StockInPageState extends State<StockInPage> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'x${item.quantity.toInt()} | ${item.unitPrice.toStringAsFixed(0)} دج',
+                            'x${item.quantity.toInt()} | ${(item.unitPrice == item.unitPrice.roundToDouble() ? (item.unitPrice == item.unitPrice.roundToDouble() ? item.unitPrice.toInt().toString() : item.unitPrice.toString()) : item.unitPrice.toString())} دج',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -1388,7 +1388,7 @@ class _StockInPageState extends State<StockInPage> {
                       onChanged: (data) {
                         setState(() {
                           _coffeeData = data;
-                          _priceController.text = data.salePrice.toStringAsFixed(0);
+                          _priceController.text = (data.salePrice == data.salePrice.roundToDouble() ? (data.salePrice == data.salePrice.roundToDouble() ? data.salePrice.toInt().toString() : data.salePrice.toString()) : data.salePrice.toString());
                           _costPriceController.text = data.totalCupCost.toStringAsFixed(2);
                           final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
                           _qtyController.text = ((bags > 0 ? bags : 1) * data.baseYieldCount).toString();
@@ -1817,7 +1817,7 @@ class _StockInPageState extends State<StockInPage> {
                   _nameController.text.contains('شكارة')) {
                 _nameController.text = _coffeeData.drinkName;
               }
-              _priceController.text = _coffeeData.salePrice.toStringAsFixed(0);
+              _priceController.text = (_coffeeData.salePrice == _coffeeData.salePrice.roundToDouble() ? (_coffeeData.salePrice == _coffeeData.salePrice.roundToDouble() ? _coffeeData.salePrice.toInt().toString() : _coffeeData.salePrice.toString()) : _coffeeData.salePrice.toString());
               _costPriceController.text = _coffeeData.totalCupCost.toStringAsFixed(2);
               final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
               _qtyController.text = (_coffeeData.baseYieldCount * (bags > 0 ? bags : 1)).toString();
@@ -1916,7 +1916,7 @@ class _StockInPageState extends State<StockInPage> {
                       _nameController.text.contains('شكارة')) {
                     _nameController.text = _coffeeData.drinkName;
                   }
-                  _priceController.text = _coffeeData.salePrice.toStringAsFixed(0);
+                  _priceController.text = (_coffeeData.salePrice == _coffeeData.salePrice.roundToDouble() ? (_coffeeData.salePrice == _coffeeData.salePrice.roundToDouble() ? _coffeeData.salePrice.toInt().toString() : _coffeeData.salePrice.toString()) : _coffeeData.salePrice.toString());
                   _costPriceController.text = _coffeeData.totalCupCost.toStringAsFixed(2);
                   final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
                   _qtyController.text = (_coffeeData.baseYieldCount * (bags > 0 ? bags : 1)).toString();

@@ -1,4 +1,4 @@
-#define MyAppName "Nayli Kiosk Desktop POS"
+﻿#define MyAppName "Nayli Kiosk Desktop POS"
 #define MyAppVersion "2.2.1"
 #define MyAppPublisher "Nayli POS"
 #define MyAppExeName "Nayli-Kiosk.exe"
@@ -40,7 +40,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
-Name: "startup"; Description: "تشغيل البرنامج تلقائياً مع Windows / Lancer au démarrage"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "startup"; Description: "ØªØ´ØºÙŠÙ„ Ø§Ù„Ø¨Ø±Ù†Ø§Ù…Ø¬ ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹ Ù…Ø¹ Windows / Lancer au dÃ©marrage"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
 ; VC++ 2015-2022 Redistributable
@@ -56,7 +56,7 @@ Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: st
 
 [Run]
 ; 1. Install VC++ silently if needed
-Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/quiet /norestart"; StatusMsg: "جاري تثبيت مكتبات النظام... / Installation des composants système..."; Check: NeedsVCRedist; Flags: waituntilterminated
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/quiet /norestart"; StatusMsg: "Ø¬Ø§Ø±ÙŠ ØªØ«Ø¨ÙŠØª Ù…ÙƒØªØ¨Ø§Øª Ø§Ù„Ù†Ø¸Ø§Ù…... / Installation des composants systÃ¨me..."; Check: NeedsVCRedist; Flags: waituntilterminated
 
 ; 2. Launch Program
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
@@ -108,23 +108,23 @@ begin
   begin
     if ActiveLanguage = 'arabic' then
     begin
-      WizardForm.Caption := 'تحديث برنامج ' + '{#MyAppName}';
-      WizardForm.WelcomeLabel1.Caption := 'مرحباً بك في معالج تحديث ' + '{#MyAppName}';
-      WizardForm.WelcomeLabel2.Caption := 'تم اكتشاف إصدار سابق من البرنامج على جهازك.' + #13#10#13#10 +
-                                          'سيقوم هذا المعالج بتحديث ملفات البرنامج إلى الإصدار ' + '{#MyAppVersion}' + ' مباشرة دون الحاجة لإنترنت.' + #13#10#13#10 +
-                                          '✅ الحفاظ التام والمضمون 100% على كافة قواعد البيانات السابقة، المبيعات، والسلع.' + #13#10#13#10 +
-                                          'اضغط على التالي لبدء التحديث.';
-      WizardForm.NextButton.Caption := 'تحديث >';
+      WizardForm.Caption := 'ØªØ­Ø¯ÙŠØ« Ø¨Ø±Ù†Ø§Ù…Ø¬ ' + '{#MyAppName}';
+      WizardForm.WelcomeLabel1.Caption := 'Ù…Ø±Ø­Ø¨Ø§Ù‹ Ø¨Ùƒ ÙÙŠ Ù…Ø¹Ø§Ù„Ø¬ ØªØ­Ø¯ÙŠØ« ' + '{#MyAppName}';
+      WizardForm.WelcomeLabel2.Caption := 'ØªÙ… Ø§ÙƒØªØ´Ø§Ù Ø¥ØµØ¯Ø§Ø± Ø³Ø§Ø¨Ù‚ Ù…Ù† Ø§Ù„Ø¨Ø±Ù†Ø§Ù…Ø¬ Ø¹Ù„Ù‰ Ø¬Ù‡Ø§Ø²Ùƒ.' + #13#10#13#10 +
+                                          'Ø³ÙŠÙ‚ÙˆÙ… Ù‡Ø°Ø§ Ø§Ù„Ù…Ø¹Ø§Ù„Ø¬ Ø¨ØªØ­Ø¯ÙŠØ« Ù…Ù„ÙØ§Øª Ø§Ù„Ø¨Ø±Ù†Ø§Ù…Ø¬ Ø¥Ù„Ù‰ Ø§Ù„Ø¥ØµØ¯Ø§Ø± ' + '{#MyAppVersion}' + ' Ù…Ø¨Ø§Ø´Ø±Ø© Ø¯ÙˆÙ† Ø§Ù„Ø­Ø§Ø¬Ø© Ù„Ø¥Ù†ØªØ±Ù†Øª.' + #13#10#13#10 +
+                                          'âœ… Ø§Ù„Ø­ÙØ§Ø¸ Ø§Ù„ØªØ§Ù… ÙˆØ§Ù„Ù…Ø¶Ù…ÙˆÙ† 100% Ø¹Ù„Ù‰ ÙƒØ§ÙØ© Ù‚ÙˆØ§Ø¹Ø¯ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø³Ø§Ø¨Ù‚Ø©ØŒ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§ØªØŒ ÙˆØ§Ù„Ø³Ù„Ø¹.' + #13#10#13#10 +
+                                          'Ø§Ø¶ØºØ· Ø¹Ù„Ù‰ Ø§Ù„ØªØ§Ù„ÙŠ Ù„Ø¨Ø¯Ø¡ Ø§Ù„ØªØ­Ø¯ÙŠØ«.';
+      WizardForm.NextButton.Caption := 'ØªØ­Ø¯ÙŠØ« >';
     end
     else if ActiveLanguage = 'french' then
     begin
-      WizardForm.Caption := 'Mise à jour de ' + '{#MyAppName}';
-      WizardForm.WelcomeLabel1.Caption := 'Bienvenue dans l''assistant de mise à jour de ' + '{#MyAppName}';
-      WizardForm.WelcomeLabel2.Caption := 'Une version précédente a été détectée sur votre système.' + #13#10#13#10 +
-                                          'Cet assistant va mettre à jour le programme vers la version ' + '{#MyAppVersion}' + '.' + #13#10#13#10 +
-                                          '✅ Vos bases de données, stocks et ventes seront intégralement préservés sans aucune modification.' + #13#10#13#10 +
+      WizardForm.Caption := 'Mise Ã  jour de ' + '{#MyAppName}';
+      WizardForm.WelcomeLabel1.Caption := 'Bienvenue dans l''assistant de mise Ã  jour de ' + '{#MyAppName}';
+      WizardForm.WelcomeLabel2.Caption := 'Une version prÃ©cÃ©dente a Ã©tÃ© dÃ©tectÃ©e sur votre systÃ¨me.' + #13#10#13#10 +
+                                          'Cet assistant va mettre Ã  jour le programme vers la version ' + '{#MyAppVersion}' + '.' + #13#10#13#10 +
+                                          'âœ… Vos bases de donnÃ©es, stocks et ventes seront intÃ©gralement prÃ©servÃ©s sans aucune modification.' + #13#10#13#10 +
                                           'Cliquez sur Suivant pour continuer.';
-      WizardForm.NextButton.Caption := 'Mettre à jour >';
+      WizardForm.NextButton.Caption := 'Mettre Ã  jour >';
     end
     else
     begin
@@ -132,7 +132,7 @@ begin
       WizardForm.WelcomeLabel1.Caption := 'Welcome to ' + '{#MyAppName}' + ' Update Wizard';
       WizardForm.WelcomeLabel2.Caption := 'A previous installation was detected on your system.' + #13#10#13#10 +
                                           'This wizard will update your application files to version ' + '{#MyAppVersion}' + '.' + #13#10#13#10 +
-                                          '✅ All your existing databases, store products, and sales are 100% preserved.' + #13#10#13#10 +
+                                          'âœ… All your existing databases, store products, and sales are 100% preserved.' + #13#10#13#10 +
                                           'Click Next to proceed.';
       WizardForm.NextButton.Caption := 'Update >';
     end;
@@ -145,15 +145,15 @@ begin
   begin
     if ActiveLanguage = 'arabic' then
     begin
-      WizardForm.PageNameLabel.Caption := 'جاهز للتحديث';
-      WizardForm.PageDescriptionLabel.Caption := 'البرنامج جاهز لتطبيق التحديث الجديد دون أي مساس ببياناتك.';
-      WizardForm.NextButton.Caption := 'تحديث';
+      WizardForm.PageNameLabel.Caption := 'Ø¬Ø§Ù‡Ø² Ù„Ù„ØªØ­Ø¯ÙŠØ«';
+      WizardForm.PageDescriptionLabel.Caption := 'Ø§Ù„Ø¨Ø±Ù†Ø§Ù…Ø¬ Ø¬Ø§Ù‡Ø² Ù„ØªØ·Ø¨ÙŠÙ‚ Ø§Ù„ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø¬Ø¯ÙŠØ¯ Ø¯ÙˆÙ† Ø£ÙŠ Ù…Ø³Ø§Ø³ Ø¨Ø¨ÙŠØ§Ù†Ø§ØªÙƒ.';
+      WizardForm.NextButton.Caption := 'ØªØ­Ø¯ÙŠØ«';
     end
     else if ActiveLanguage = 'french' then
     begin
-      WizardForm.PageNameLabel.Caption := 'Prêt pour la mise à jour';
-      WizardForm.PageDescriptionLabel.Caption := 'Le programme est prêt à appliquer la mise à jour sans toucher à vos données.';
-      WizardForm.NextButton.Caption := 'Mettre à jour';
+      WizardForm.PageNameLabel.Caption := 'PrÃªt pour la mise Ã  jour';
+      WizardForm.PageDescriptionLabel.Caption := 'Le programme est prÃªt Ã  appliquer la mise Ã  jour sans toucher Ã  vos donnÃ©es.';
+      WizardForm.NextButton.Caption := 'Mettre Ã  jour';
     end
     else
     begin
@@ -187,3 +187,4 @@ begin
       Result := True;
   end;
 end;
+

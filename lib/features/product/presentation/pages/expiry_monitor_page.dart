@@ -222,7 +222,7 @@ class _ExpiryMonitorPageState extends State<ExpiryMonitorPage> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    '${p.price.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                    '${(p.price == p.price.roundToDouble() ? (p.price == p.price.roundToDouble() ? p.price.toInt().toString() : p.price.toString()) : p.price.toString())} ${AppConstants.currencySymbol}',
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.green),
                                   ),
                                 ],

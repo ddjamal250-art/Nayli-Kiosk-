@@ -641,7 +641,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('قائمة سلع الفاتورة (${_invoiceItems.length})', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text('المجموع: ${_totalInvoiceCost.toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue)),
+                Text('المجموع: ${(_totalInvoiceCost == _totalInvoiceCost.roundToDouble() ? (_totalInvoiceCost == _totalInvoiceCost.roundToDouble() ? _totalInvoiceCost.toInt().toString() : _totalInvoiceCost.toString()) : _totalInvoiceCost.toString())} دج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue)),
               ],
             ),
             SizedBox(height: 8),
