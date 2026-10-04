@@ -473,11 +473,11 @@ class _ProductListPageState extends State<ProductListPage> {
   void _showWeighableRestockModal(Product product) {
     double grossWeight = 10.0;
     double tareLossPercent = 0.0;
-    double costPerKg = product.costPrice > 0 ? product.costPrice : (product.price * 0.75);
+    double costPerKg = product.costPrice > 0 ? product.costPrice : (product.effectiveCostPrice > 0 ? product.effectiveCostPrice : (product.price * 0.75));
     final TextEditingController grossWeightCtrl = TextEditingController(text: '10.0');
     final TextEditingController costCtrl = TextEditingController(text: (costPerKg == costPerKg.roundToDouble() ? (costPerKg == costPerKg.roundToDouble() ? costPerKg.toInt().toString() : costPerKg.toString()) : costPerKg.toString()));
     final TextEditingController tareCtrl = TextEditingController(text: '0');
-    final TextEditingController totalCostValCtrl = TextEditingController(text: (10.0 * costPerKg).toStringAsFixed(0));
+    final TextEditingController totalCostValCtrl = TextEditingController(text: (10.0 * costPerKg).toStringAsFixed(2));
     bool isByValue = false;
 
     AdaptiveModalHelper.showAdaptiveModal(
@@ -485,9 +485,9 @@ class _ProductListPageState extends State<ProductListPage> {
       desktopMaxWidth: 560,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          final double parsedGross = double.tryParse(grossWeightCtrl.text.trim()) ?? grossWeight;
-          final double parsedTare = double.tryParse(tareCtrl.text.trim()) ?? tareLossPercent;
-          final double parsedCost = double.tryParse(costCtrl.text.trim()) ?? costPerKg;
+          final double parsedGross = double.tryParse(grossWeightCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? grossWeight;
+          final double parsedTare = double.tryParse(tareCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? tareLossPercent;
+          final double parsedCost = double.tryParse(costCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? costPerKg;
           final double netWeight = (parsedGross * (1.0 - (parsedTare / 100.0))).clamp(0.0, 999999.0);
           final double totalBatchCost = netWeight * parsedCost;
           final double totalBatchSale = netWeight * product.price;
@@ -711,16 +711,9 @@ class _ProductListPageState extends State<ProductListPage> {
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      final updated = Product(
-                        id: product.id,
-                        name: product.name,
-                        barcode: product.barcode,
-                        price: product.price,
+                      final updated = product.copyWith(
                         costPrice: parsedCost,
-                        wholesalePrice: product.wholesalePrice,
                         stock: (product.stock + netWeight).toDouble(),
-                        category: product.category,
-                        expiryDate: product.expiryDate,
                       );
                       context.read<ProductBloc>().add(UpdateProduct(updated));
                       SoundService.playRestockSound();

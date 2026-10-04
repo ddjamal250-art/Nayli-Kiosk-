@@ -43,9 +43,9 @@ class CartItem extends Equatable {
     final unit = selectedUnit;
     if (unit != null) {
       if (unit.cost > 0) return unit.cost;
-      return product.costPrice * unit.multiplier; // Derive cost if not set
+      return product.effectiveCostPrice * unit.multiplier; // Derive cost if not set
     }
-    return product.costPrice; // Base unit cost
+    return product.effectiveCostPrice; // Base unit cost
   }
 
   String get unitDisplayName {
@@ -140,7 +140,7 @@ class CartItem extends Equatable {
   double get totalCostForInvoice {
     if (weightKg != null) {
       final unit = selectedUnit;
-      final costPerKg = (unit != null && unit.cost > 0) ? unit.cost : product.costPrice;
+      final costPerKg = (unit != null && unit.cost > 0) ? unit.cost : product.effectiveCostPrice;
       return weightKg! * costPerKg;
     }
     return unitCost * quantity;

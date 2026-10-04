@@ -113,9 +113,11 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
 
     if (existing != null) {
       _nameController.text = existing.name;
-      _unitCostController.text = existing.costPrice.toStringAsFixed(2);
-      _sellPriceController.text = existing.price.toStringAsFixed(2);
-      _cartonCostController.text = (existing.costPrice * (int.tryParse(_unitsPerCartonController.text) ?? 24)).toStringAsFixed(0);
+      final effCost = existing.effectiveCostPrice;
+      _unitCostController.text = effCost > 0 ? (effCost % 1 == 0 ? effCost.toInt().toString() : effCost.toStringAsFixed(2)) : '';
+      _sellPriceController.text = existing.price > 0 ? (existing.price % 1 == 0 ? existing.price.toInt().toString() : existing.price.toStringAsFixed(2)) : '';
+      final cartonCost = effCost * (int.tryParse(_unitsPerCartonController.text.trim()) ?? 24);
+      _cartonCostController.text = cartonCost > 0 ? (cartonCost % 1 == 0 ? cartonCost.toInt().toString() : cartonCost.toStringAsFixed(2)) : '';
       _activeCategory = existing.category.isNotEmpty ? existing.category : 'عام';
       _isCategoryUserSelected = true;
       setState(() {});
@@ -125,9 +127,10 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
     final master = MasterCatalogService.instance.lookup(barcode.trim());
     if (master != null) {
       _nameController.text = master.name;
-      _unitCostController.text = master.defaultCost.toStringAsFixed(2);
-      _sellPriceController.text = master.defaultPrice.toStringAsFixed(2);
-      _cartonCostController.text = (master.defaultCost * (int.tryParse(_unitsPerCartonController.text) ?? 24)).toStringAsFixed(0);
+      _unitCostController.text = master.defaultCost > 0 ? (master.defaultCost % 1 == 0 ? master.defaultCost.toInt().toString() : master.defaultCost.toStringAsFixed(2)) : '';
+      _sellPriceController.text = master.defaultPrice > 0 ? (master.defaultPrice % 1 == 0 ? master.defaultPrice.toInt().toString() : master.defaultPrice.toStringAsFixed(2)) : '';
+      final masterCartonCost = master.defaultCost * (int.tryParse(_unitsPerCartonController.text.trim()) ?? 24);
+      _cartonCostController.text = masterCartonCost > 0 ? (masterCartonCost % 1 == 0 ? masterCartonCost.toInt().toString() : masterCartonCost.toStringAsFixed(2)) : '';
       _activeCategory = master.category.isNotEmpty ? master.category : CategoryTaxonomy.smartDetect(master.name).titleAr;
       _isCategoryUserSelected = true;
       setState(() {});
@@ -142,13 +145,14 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       return;
     }
 
-    final unitCost = double.tryParse(_unitCostController.text.trim()) ?? 0.0;
-    final sellPrice = double.tryParse(_sellPriceController.text.trim()) ?? (unitCost * 1.25);
+    final unitCost = double.tryParse(_unitCostController.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 0.0;
+    final sellPrice = double.tryParse(_sellPriceController.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? (unitCost * 1.25);
     final cartons = _isCartonMode ? (int.tryParse(_cartonCountController.text.trim()) ?? 1) : 0;
     final perCarton = _isCartonMode ? (int.tryParse(_unitsPerCartonController.text.trim()) ?? 24) : 1;
     final totalUnits = _isCartonMode ? (cartons * perCarton) : (int.tryParse(_unitQtyController.text.trim()) ?? 1);
+    final parsedCartonCost = double.tryParse(_cartonCostController.text.trim().replaceAll(',', '.').replaceAll('،', '.'));
     final itemTotalCost = _isCartonMode
-        ? (cartons * (double.tryParse(_cartonCostController.text.trim()) ?? (unitCost * perCarton)))
+        ? (cartons * (parsedCartonCost ?? (unitCost * perCarton)))
         : (totalUnits * unitCost);
 
     final itemCategory = _activeCategory.isNotEmpty ? _activeCategory : CategoryTaxonomy.smartDetect(name).titleAr;
@@ -237,10 +241,8 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
         } else {
           effectiveCost = unitCost > 0 ? unitCost : existing.costPrice;
         }
-        final p = Product(
-          id: existing.id,
+        final p = existing.copyWith(
           name: name,
-          barcode: existing.barcode,
           category: existing.category.isNotEmpty && existing.category != 'عام' ? existing.category : category,
           price: sellPrice > 0 ? sellPrice : existing.price,
           costPrice: effectiveCost,
@@ -683,7 +685,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('${(item['totalCost'] as double).toStringAsFixed(0)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                          Text('${(item['totalCost'] as double) % 1 == 0 ? (item['totalCost'] as double).toInt() : (item['totalCost'] as double).toStringAsFixed(2)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                           IconButton(
                             icon: Icon(Icons.delete_outline, color: Colors.red, size: 20),
                             onPressed: () => setState(() => _invoiceItems.removeAt(i)),

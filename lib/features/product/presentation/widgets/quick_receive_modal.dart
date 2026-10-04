@@ -154,8 +154,8 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
   }
 
   void _confirmReceive() {
-    final enteredCost = double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0;
-    final enteredSell = double.tryParse(_sellPriceCtrl.text.trim()) ?? 0.0;
+    final enteredCost = double.tryParse(_costPriceCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 0.0;
+    final enteredSell = double.tryParse(_sellPriceCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 0.0;
     final multiplier = _effectiveMultiplier;
     final realQtyAdded = _totalPiecesAdded;
 
@@ -167,7 +167,7 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
     final pieceCost = multiplier > 0 ? (enteredCost / multiplier) : enteredCost;
 
     final newBatch = PurchaseBatch(
-      costPrice: pieceCost > 0 ? pieceCost : _product.costPrice,
+      costPrice: pieceCost > 0 ? pieceCost : _product.effectiveCostPrice,
       remainingQuantity: realQtyAdded,
       dateAdded: _dateAdded,
     );
@@ -188,7 +188,7 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
 
     final updated = _product.copyWith(
       stock: _product.stock + realQtyAdded,
-      costPrice: pieceCost > 0 ? pieceCost : _product.costPrice,
+      costPrice: pieceCost > 0 ? pieceCost : _product.effectiveCostPrice,
       price: _selectedUnit == null ? (enteredSell > 0 ? enteredSell : _product.price) : _product.price,
       units: updatedUnits,
       stockBatches: newBatches,

@@ -80,7 +80,7 @@ class _BulkPriceUpdatePageState extends State<BulkPriceUpdatePage> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
                   onPressed: () {
-                    final amount = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                    final amount = double.tryParse(amountCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 0.0;
                     if (amount <= 0) return;
 
                     this.setState(() {
@@ -278,7 +278,7 @@ class _BulkPriceUpdatePageState extends State<BulkPriceUpdatePage> {
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                       ),
                                       onChanged: (val) {
-                                        final v = double.tryParse(val);
+                                        final v = double.tryParse(val.trim().replaceAll(',', '.').replaceAll('،', '.'));
                                         setState(() {
                                           if (v != null && v != p.costPrice) {
                                             _editedCostPrices[p.id] = v;
@@ -301,7 +301,7 @@ class _BulkPriceUpdatePageState extends State<BulkPriceUpdatePage> {
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                       ),
                                       onChanged: (val) {
-                                        final v = double.tryParse(val);
+                                        final v = double.tryParse(val.trim().replaceAll(',', '.').replaceAll('،', '.'));
                                         setState(() {
                                           if (v != null && v != p.price) {
                                             _editedSellPrices[p.id] = v;

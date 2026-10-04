@@ -213,9 +213,9 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
       if (diff != 0) {
         changedCount++;
         if (diff < 0) {
-          totalLossCost += (diff.abs() * p.costPrice);
+          totalLossCost += (diff.abs() * p.effectiveCostPrice);
         } else {
-          totalGainCost += (diff * p.costPrice);
+          totalGainCost += (diff * p.effectiveCostPrice);
         }
       }
     }
@@ -332,11 +332,12 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
 
           for (final p in products) {
             final counted = _countedStock[p.id] ?? p.stock;
-            totalCostCapital += (counted * p.costPrice);
+            final effCost = p.effectiveCostPrice;
+            totalCostCapital += (counted * effCost);
             totalRetailValue += (counted * p.price);
             totalItemsCount += counted;
             final diff = counted - p.stock;
-            totalVarianceCost += (diff * p.costPrice);
+            totalVarianceCost += (diff * effCost);
             if (counted != p.stock) discrepancyItemsCount++;
           }
 
@@ -573,7 +574,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
                           String diffLabel = 'مطابق (0)';
                           if (diff < 0) {
                             statusColor = Colors.red;
-                            diffLabel = 'عجز: $diff (${(diff.abs() * p.costPrice).toStringAsFixed(0)} دج)';
+                            diffLabel = 'عجز: $diff (${(diff.abs() * p.effectiveCostPrice).toStringAsFixed(2)} دج)';
                           } else if (diff > 0) {
                             statusColor = Colors.green;
                             diffLabel = 'زيادة: +$diff';

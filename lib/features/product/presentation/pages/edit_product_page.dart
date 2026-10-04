@@ -78,7 +78,8 @@ class _EditProductPageState extends State<EditProductPage> {
     _barcodeCtrl = TextEditingController(text: p.barcode);
     _nameCtrl = TextEditingController(text: p.name);
     _priceCtrl = TextEditingController(text: p.price > 0 ? _formatDouble(p.price) : '');
-    _costPriceCtrl = TextEditingController(text: p.costPrice > 0 ? _formatDouble(p.costPrice) : '');
+    final initialCost = p.costPrice > 0 ? p.costPrice : p.effectiveCostPrice;
+    _costPriceCtrl = TextEditingController(text: initialCost > 0 ? _formatDouble(initialCost) : '');
     _stockCtrl = TextEditingController(text: _formatDouble(p.stock));
     _baseUnitNameCtrl = TextEditingController(text: p.baseUnitName);
     _imageUrl = p.imageUrl;
@@ -190,21 +191,26 @@ class _EditProductPageState extends State<EditProductPage> {
     );
   }
 
+  double _parsePrice(String text) {
+    final cleaned = text.trim().replaceAll(',', '.').replaceAll('،', '.');
+    return double.tryParse(cleaned) ?? 0.0;
+  }
+
   void _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 
     final plu = _pluCodeCtrl.text.trim();
 
+    final cartonCapUI = _parsePrice(_cartonCapacityCtrl.text);
+    final packCapUI = _parsePrice(_packCapacityCtrl.text);
+    final cartonMultiplier = _hasPack ? (cartonCapUI * packCapUI) : (cartonCapUI > 0 ? cartonCapUI : 24.0);
+
     // بناء وحدات البيع (كرتونة، علبة، حبة)
     final List<ProductUnit> units = [];
     if (_hasCarton) {
-      final cartonCapUI = double.tryParse(_cartonCapacityCtrl.text.trim()) ?? 24.0;
-      final packCapUI = double.tryParse(_packCapacityCtrl.text.trim()) ?? 6.0;
-      final cartonMultiplier = _hasPack ? (cartonCapUI * packCapUI) : cartonCapUI;
-
-      final pr = double.tryParse(_cartonPriceCtrl.text.trim()) ?? 0.0;
-      final cst = double.tryParse(_cartonCostCtrl.text.trim()) ?? 0.0;
+      final pr = _parsePrice(_cartonPriceCtrl.text);
+      final cst = _parsePrice(_cartonCostCtrl.text);
       final bc = _cartonBarcodeCtrl.text.trim();
       units.add(ProductUnit(
         name: 'كرتونة',
@@ -217,9 +223,9 @@ class _EditProductPageState extends State<EditProductPage> {
     }
 
     if (_hasPack) {
-      final cap = double.tryParse(_packCapacityCtrl.text.trim()) ?? 6.0;
-      final pr = double.tryParse(_packPriceCtrl.text.trim()) ?? 0.0;
-      final cst = double.tryParse(_packCostCtrl.text.trim()) ?? 0.0;
+      final cap = packCapUI > 0 ? packCapUI : 6.0;
+      final pr = _parsePrice(_packPriceCtrl.text);
+      final cst = _parsePrice(_packCostCtrl.text);
       final bc = _packBarcodeCtrl.text.trim();
       units.add(ProductUnit(
         name: 'علبة',
@@ -238,8 +244,8 @@ class _EditProductPageState extends State<EditProductPage> {
         resolvedOffers = _specialOffers.where((o) => o.isValid).toList();
       }
       if (resolvedOffers.isEmpty) {
-        final q = double.tryParse(_offerQtyCtrl.text.trim()) ?? 0.0;
-        final p = double.tryParse(_offerPriceCtrl.text.trim()) ?? 0.0;
+        final q = _parsePrice(_offerQtyCtrl.text);
+        final p = _parsePrice(_offerPriceCtrl.text);
         if (q > 0 && p > 0) {
           resolvedOffers = [
             SpecialOffer(
@@ -253,6 +259,15 @@ class _EditProductPageState extends State<EditProductPage> {
       }
     }
 
+    final enteredCost = _parsePrice(_costPriceCtrl.text);
+    final cartonCost = _hasCarton ? _parsePrice(_cartonCostCtrl.text) : 0.0;
+    final packCost = _hasPack ? _parsePrice(_packCostCtrl.text) : 0.0;
+    final effectiveCost = enteredCost > 0
+        ? enteredCost
+        : (_hasCarton && cartonMultiplier > 0 && cartonCost > 0
+            ? (cartonCost / cartonMultiplier)
+            : (_hasPack && packCapUI > 0 && packCost > 0 ? (packCost / packCapUI) : widget.product.effectiveCostPrice));
+
     final rawBc = _barcodeCtrl.text.trim();
     final validBc = (rawBc.isEmpty || rawBc.startsWith('NO_BARCODE_'))
         ? BarcodeGeneratorHelper.generateUniqueInStoreEan13()
@@ -261,9 +276,9 @@ class _EditProductPageState extends State<EditProductPage> {
     final updatedProduct = widget.product.copyWith(
       name: _nameCtrl.text.trim(),
       barcode: validBc,
-      price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
-      costPrice: double.tryParse(_costPriceCtrl.text.trim()) ?? 0.0,
-      stock: double.tryParse(_stockCtrl.text.trim()) ?? 0.0,
+      price: _parsePrice(_priceCtrl.text),
+      costPrice: effectiveCost,
+      stock: _parsePrice(_stockCtrl.text),
       category: _selectedCategory,
       imageUrl: _imageUrl,
       baseUnitName: _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة',

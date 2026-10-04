@@ -184,8 +184,8 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
         ));
       }
     } else if (hasSpecialOffer) {
-      final q = double.tryParse(offerQtyCtrl.text.trim()) ?? 3.0;
-      final pr = double.tryParse(offerPriceCtrl.text.trim()) ?? 0.0;
+      final q = double.tryParse(offerQtyCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 3.0;
+      final pr = double.tryParse(offerPriceCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 0.0;
       _offerControllers.add(_OfferRowControllers(
         tier: offerTier,
         quantity: q,
@@ -203,8 +203,8 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
 
   void _notifyOffersChanged() {
     final list = _offerControllers.map((c) {
-      final q = double.tryParse(c.qtyCtrl.text.trim()) ?? 0.0;
-      final p = double.tryParse(c.priceCtrl.text.trim()) ?? 0.0;
+      final q = double.tryParse(c.qtyCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 0.0;
+      final p = double.tryParse(c.priceCtrl.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 0.0;
       return SpecialOffer(
         targetTier: c.tier,
         quantity: q,
@@ -258,7 +258,8 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
 
   double _parse(TextEditingController? ctrl) {
     if (ctrl == null) return 0.0;
-    return double.tryParse(ctrl.text.trim()) ?? 0.0;
+    final cleaned = ctrl.text.trim().replaceAll(',', '.').replaceAll('،', '.');
+    return double.tryParse(cleaned) ?? 0.0;
   }
 
   void _onInputsChanged() {

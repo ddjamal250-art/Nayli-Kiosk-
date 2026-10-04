@@ -222,7 +222,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
     for (var key in box.keys) {
       final p = box.get(key);
       if (p != null) {
-        capital += (p.stock * p.costPrice);
+        capital += (p.stock * p.effectiveCostPrice);
       }
     }
     return capital;
@@ -680,7 +680,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           icon: Icons.inventory_2_outlined,
                           color: Colors.teal[700]!,
                           title: 'رأس مال المخزون',
-                          value: '${stockCapital.toStringAsFixed(0)} دج',
+                          value: '${stockCapital % 1 == 0 ? stockCapital.toInt() : stockCapital.toStringAsFixed(2)} دج',
                           onTap: () => context.push('/products/inventory-audit'),
                         ),
                       ),
@@ -690,7 +690,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           icon: Icons.remove_shopping_cart_rounded,
                           color: Colors.red[700]!,
                           title: 'خسائر التوالف والكسر',
-                          value: '${totalLosses.toStringAsFixed(0)} دج',
+                          value: '${totalLosses % 1 == 0 ? totalLosses.toInt() : totalLosses.toStringAsFixed(2)} دج',
                           onTap: () => context.push('/products/losses'),
                         ),
                       ),
@@ -848,7 +848,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 Expanded(
                   child: _buildMetricCard(
                     title: _selectedDepartment == 'الشامل 📊' ? 'تكلفة المبيعات' : 'تكلفة الشراء',
-                    value: '${(_selectedDepartment == 'الشامل 📊' ? totalCost : deptCost).toStringAsFixed(0)} دج',
+                    value: '${(_selectedDepartment == 'الشامل 📊' ? totalCost : deptCost).toStringAsFixed((_selectedDepartment == 'الشامل 📊' ? totalCost : deptCost) % 1 == 0 ? 0 : 2)} دج',
                     icon: Icons.inventory_2_outlined,
                     color: Colors.brown,
                   ),
@@ -1116,7 +1116,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                     children: [
                       Text(context.tr('رأس المال المستثمر في السلع والرفوف'), style: TextStyle(fontSize: 11, color: Colors.grey)),
                       SizedBox(height: 2),
-                      Text('${stockCapital.toStringAsFixed(0)} دج', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                      Text('${stockCapital % 1 == 0 ? stockCapital.toInt() : stockCapital.toStringAsFixed(2)} دج', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.indigo)),
                     ],
                   ),
                 ],

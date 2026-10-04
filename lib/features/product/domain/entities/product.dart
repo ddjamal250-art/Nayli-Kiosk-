@@ -105,6 +105,19 @@ class Product extends Equatable {
     if (small != null && small.cost > 0) return small.cost;
     return (piecesPerPack > 0 ? costPrice / piecesPerPack : costPrice);
   }
+
+  /// سعر التكلفة الفعلي للوحدة الأساسية (الحبة)، مع الحساب التلقائي من الكرتونة أو العلبة إذا كان غير محدد
+  double get effectiveCostPrice {
+    if (costPrice > 0) return costPrice;
+    final small = units.where((u) => u.tier == UnitTier.small).firstOrNull;
+    if (small != null && small.cost > 0) return small.cost;
+    final medium = units.where((u) => u.tier == UnitTier.medium).firstOrNull;
+    if (medium != null && medium.cost > 0 && medium.multiplier > 0) return medium.cost / medium.multiplier;
+    final large = units.where((u) => u.tier == UnitTier.large).firstOrNull;
+    if (large != null && large.cost > 0 && large.multiplier > 0) return large.cost / large.multiplier;
+    if (resolvedPieceCost > 0) return resolvedPieceCost;
+    return 0.0;
+  }
   String get resolvedPackName => packName ?? 'علبة';
   String get resolvedSubUnitName => baseUnitName;
   double get cupsYield => 0.0;

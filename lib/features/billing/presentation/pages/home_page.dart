@@ -1053,27 +1053,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                             ),
                             SizedBox(height: 20),
 
-                            PrimaryButton(
-                              label: 'حفظ وإضافة لشريط البيع السريع',
-                              onPressed: () async {
-                                final name = nameController.text.trim();
-                                final price = double.tryParse(priceController.text.trim()) ?? 0.0;
-                                final costPrice = double.tryParse(costPriceController.text.trim()) ?? (price * 0.8);
-                                final icon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : '🏷️';
+                              PrimaryButton(
+                                label: 'حفظ وإضافة لشريط البيع السريع',
+                                onPressed: () async {
+                                  final name = nameController.text.trim();
+                                  final price = double.tryParse(priceController.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? 0.0;
+                                  final costPrice = double.tryParse(costPriceController.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? (price * 0.8);
+                                  final icon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : '🏷️';
 
-                                if (name.isNotEmpty && price > 0) {
-                                  final newItem = QuickItem(
-                                    id: 'quick_${DateTime.now().millisecondsSinceEpoch}',
-                                    name: name,
-                                    price: price,
-                                    costPrice: costPrice,
-                                    icon: icon,
-                                  );
-                                  await _saveQuickItem(newItem);
-                                  if (mounted) Navigator.pop(ctx);
-                                }
-                              },
-                            ),
+                                  if (name.isNotEmpty && price > 0) {
+                                    final newItem = QuickItem(
+                                      id: 'quick_${DateTime.now().millisecondsSinceEpoch}',
+                                      name: name,
+                                      price: price,
+                                      costPrice: costPrice,
+                                      icon: icon,
+                                    );
+                                    await _saveQuickItem(newItem);
+                                    if (mounted) Navigator.pop(ctx);
+                                  }
+                                },
+                              ),
                           ],
                         ),
                       ),
@@ -1090,8 +1090,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
 
   void _showEditQuickItemDialog(QuickItem item) {
     final nameController = TextEditingController(text: item.name);
-    final priceController = TextEditingController(text: item.price.toStringAsFixed(0));
-    final costPriceController = TextEditingController(text: item.costPrice > 0 ? item.costPrice.toStringAsFixed(0) : '');
+    final priceController = TextEditingController(text: item.price > 0 ? (item.price % 1 == 0 ? item.price.toInt().toString() : item.price.toString()) : '');
+    final costPriceController = TextEditingController(text: item.costPrice > 0 ? (item.costPrice % 1 == 0 ? item.costPrice.toInt().toString() : item.costPrice.toString()) : '');
     final iconController = TextEditingController(text: item.icon);
 
     showModalBottomSheet(
@@ -1182,8 +1182,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                         label: const Text('حفظ التعديل', style: TextStyle(color: Colors.white)),
                         onPressed: () async {
                           final name = nameController.text.trim();
-                          final price = double.tryParse(priceController.text.trim()) ?? item.price;
-                          final costPrice = double.tryParse(costPriceController.text.trim()) ?? item.costPrice;
+                          final price = double.tryParse(priceController.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? item.price;
+                          final costPrice = double.tryParse(costPriceController.text.trim().replaceAll(',', '.').replaceAll('،', '.')) ?? item.costPrice;
                           final icon = iconController.text.trim().isNotEmpty ? iconController.text.trim() : item.icon;
 
                           if (name.isNotEmpty && price > 0) {

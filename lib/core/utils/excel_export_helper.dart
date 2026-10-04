@@ -55,7 +55,7 @@ class ExcelExportHelper {
     for (var p in products) {
       final barcode = '"${p.barcode.replaceAll('"', '""')}"';
       final name = '"${p.name.replaceAll('"', '""')}"';
-      final cost = p.costPrice;
+      final cost = p.effectiveCostPrice;
       final price = p.price;
       final stock = p.stock;
       final lineCostTotal = cost * stock;
@@ -124,12 +124,13 @@ class ExcelExportHelper {
       final recorded = p.stock;
       final counted = countedStock[p.id] ?? recorded;
       final diff = counted - recorded;
-      final diffCost = diff * p.costPrice;
+      final effCost = p.effectiveCostPrice;
+      final diffCost = diff * effCost;
 
       totalDiscrepancyCost += diffCost;
       final status = diff == 0 ? 'مطابق 🟢' : (diff < 0 ? 'عجز ونقص 🚨' : 'زيادة فائض 🟡');
 
-      buffer.writeln('$index,$barcode,$name,$recorded,$counted,$diff,${p.costPrice.toStringAsFixed(2)},${diffCost.toStringAsFixed(2)},$status');
+      buffer.writeln('$index,$barcode,$name,$recorded,$counted,$diff,${effCost.toStringAsFixed(2)},${diffCost.toStringAsFixed(2)},$status');
       index++;
     }
 
