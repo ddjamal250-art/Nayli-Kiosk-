@@ -539,7 +539,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                         Expanded(
                           child: TextField(
                             controller: priceController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(
                               labelText: 'سعر البيع (د.ج) *',
                               border: OutlineInputBorder(),
@@ -551,7 +551,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                         Expanded(
                           child: TextField(
                             controller: costController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(
                               labelText: 'سعر الشراء / التكلفة (د.ج)',
                               border: OutlineInputBorder(),
@@ -569,7 +569,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                         Expanded(
                           child: TextField(
                             controller: stockController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(
                               labelText: 'المخزون الحالي (القطع)',
                               border: OutlineInputBorder(),

@@ -123,7 +123,7 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
             TextField(
               controller: ctrl,
               autofocus: true,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
                 labelText: 'العدد الفعلي المجرود على الرف',
                 suffixText: 'قطعة',

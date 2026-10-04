@@ -538,7 +538,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         Expanded(
                           child: TextField(
                             controller: _cartonCountController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'عدد الكراتين',
                               suffixText: 'كرتونة',
@@ -551,7 +551,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         Expanded(
                           child: TextField(
                             controller: _unitsPerCartonController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'سعة الكرتونة',
                               suffixText: 'حبة',
@@ -564,7 +564,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         Expanded(
                           child: TextField(
                             controller: _cartonCostController,
-                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'سعر الكرتونة',
                               suffixText: 'دج',
@@ -581,7 +581,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         Expanded(
                           child: TextField(
                             controller: _unitQtyController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'الكمية المستلمة',
                               suffixText: 'حبة',
@@ -594,7 +594,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                         Expanded(
                           child: TextField(
                             controller: _unitCostController,
-                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'سعر الشراء (التكلفة)',
                               suffixText: 'دج',
@@ -613,7 +613,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                       Expanded(
                         child: TextField(
                           controller: _sellPriceController,
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: 'سعر البيع للزبون (دج)',
                             suffixText: 'دج',
@@ -743,7 +743,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
                     SizedBox(height: 8),
                     TextField(
                       controller: _acompteController,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: 'المبلغ المدفوع كاش للمورد (دج)',
                         suffixText: 'دج',

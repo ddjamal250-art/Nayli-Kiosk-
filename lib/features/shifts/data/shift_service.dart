@@ -452,7 +452,7 @@ class _LockScreenDialogState extends State<_LockScreenDialog> {
                       controller: masterPinCtrl,
                       obscureText: true,
                       autofocus: true,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         labelText: 'رمز المدير (Manager PIN)',
                         prefixIcon: Icon(Icons.security),
@@ -474,7 +474,7 @@ class _LockScreenDialogState extends State<_LockScreenDialog> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: newPinCtrl,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       maxLength: 4,
                       decoration: const InputDecoration(
                         labelText: 'الرمز السري الجديد للعامل (4 أرقام)',

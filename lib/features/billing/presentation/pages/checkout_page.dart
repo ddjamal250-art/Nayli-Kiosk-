@@ -528,7 +528,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         Expanded(
                                           child: TextFormField(
                                             controller: _paidController,
-                                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                                            keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                                             decoration: InputDecoration(
                                               labelText: context.tr('paid_amount'),
                                               hintText: '0.00',
@@ -679,7 +679,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                       SizedBox(height: 12),
                                       TextFormField(
                                         controller: _acompteController,
-                                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                                        keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                                         decoration: InputDecoration(
                                           labelText: context.tr('acompte_amount'),
                                           hintText: '0.00',

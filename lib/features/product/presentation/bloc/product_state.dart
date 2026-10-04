@@ -29,6 +29,8 @@ class ProductState extends Equatable {
     );
   }
 
+  bool get isLoading => status == ProductStatus.loading;
+
   @override
   List<Object?> get props => [status, products, message];
 }

@@ -62,11 +62,9 @@ class _CoffeeRecipeModalState extends State<CoffeeRecipeModal> {
   void initState() {
     super.initState();
     if (widget.existingProduct != null) {
-      _nameCtrl.text = widget.existingProduct!.name;
-      _sellPriceCtrl.text = widget.existingProduct!.price > 0
-          ? (widget.existingProduct!.price % 1 == 0
-              ? widget.existingProduct!(.price == .price.roundToDouble() ? .price.toInt().toString() : .price.toString())
-              : widget.existingProduct!.price.toString())
+      final p = widget.existingProduct!.price;
+      _sellPriceCtrl.text = p > 0
+          ? (p % 1 == 0 ? p.toInt().toString() : p.toString())
           : '';
     }
     _sellPriceCtrl.addListener(() => setState(() {}));
@@ -259,7 +257,7 @@ class _CoffeeRecipeModalState extends State<CoffeeRecipeModal> {
                           flex: 2,
                           child: TextField(
                             controller: _sellPriceCtrl,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'سعر البيع للزبون (دج)',
                               hintText: '50, 70, 100...',
@@ -370,7 +368,7 @@ class _CoffeeRecipeModalState extends State<CoffeeRecipeModal> {
                           flex: 2,
                           child: TextField(
                             controller: row.qtyCtrl,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: 'الكمية',
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

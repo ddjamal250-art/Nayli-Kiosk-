@@ -493,7 +493,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                                 Expanded(
                                   child: TextField(
                                     controller: _customWidthCtrl,
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: InputDecoration(
                                       labelText: 'العرض (مم)',
                                       isDense: true,
@@ -513,7 +513,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                                 Expanded(
                                   child: TextField(
                                     controller: _customHeightCtrl,
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: InputDecoration(
                                       labelText: 'الارتفاع (مم)',
                                       isDense: true,
@@ -533,7 +533,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
                                 Expanded(
                                   child: TextField(
                                     controller: _customMarginCtrl,
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: InputDecoration(
                                       labelText: 'الهامش (مم)',
                                       isDense: true,

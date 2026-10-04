@@ -425,7 +425,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
                     width: 75,
                     child: TextField(
                       controller: _itemQtyCtrl,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         labelText: 'الكمية',
                         border: OutlineInputBorder(),
@@ -440,7 +440,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
                     width: 100,
                     child: TextField(
                       controller: _itemPriceCtrl,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         labelText: 'السعر (DA)',
                         border: OutlineInputBorder(),
@@ -521,7 +521,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
                 Expanded(
                   child: TextField(
                     controller: _globalDiscountCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'تخفيض (DA)', border: OutlineInputBorder(), isDense: true),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -530,7 +530,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
                 Expanded(
                   child: TextField(
                     controller: _previousBalanceCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'رصيد سابق (DA)', border: OutlineInputBorder(), isDense: true),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -539,7 +539,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
                 Expanded(
                   child: TextField(
                     controller: _amountPaidCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'الدفعة المسددة (DA)', border: OutlineInputBorder(), isDense: true),
                     onChanged: (_) => setState(() {}),
                   ),

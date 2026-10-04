@@ -968,7 +968,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                             Expanded(
                               child: TextField(
                                 controller: _paperWidthCtrl,
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 decoration: InputDecoration(
                                   labelText: 'عرض الورق (مم)',
                                   hintText: 'مثال: 76 أو 72 أو 80',
@@ -988,7 +988,7 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
                             Expanded(
                               child: TextField(
                                 controller: _marginCtrl,
-                                keyboardType: TextInputType.number,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 decoration: InputDecoration(
                                   labelText: 'الهامش الجانبي (مم)',
                                   hintText: 'مثال: 6.0 أو 4.0',

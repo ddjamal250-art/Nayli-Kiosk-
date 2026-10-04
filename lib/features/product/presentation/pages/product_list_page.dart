@@ -545,7 +545,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     SizedBox(height: 6),
                     TextFormField(
                       controller: grossWeightCtrl,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                       decoration: InputDecoration(
                         hintText: '0.0',
                         suffixText: 'كغ (Kg)',
@@ -582,7 +582,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     SizedBox(height: 6),
                     TextFormField(
                       controller: totalCostValCtrl,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                       decoration: InputDecoration(
                         hintText: '0.0',
                         suffixText: 'دج (DA)',
@@ -631,7 +631,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             SizedBox(height: 4),
                             TextFormField(
                               controller: costCtrl,
-                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                               decoration: InputDecoration(hintText: '0', suffixText: 'دج/كغ'),
                               onChanged: (_) => setModalState(() {}),
                             ),
@@ -647,7 +647,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             SizedBox(height: 4),
                             TextFormField(
                               controller: tareCtrl,
-                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                               decoration: InputDecoration(hintText: '0', suffixText: '%'),
                               onChanged: (_) => setModalState(() {}),
                             ),
@@ -818,13 +818,12 @@ class _ProductListPageState extends State<ProductListPage> {
                   onPressed: () => setState(() => _isMultiSelectMode = true),
                 ),
                 IconButton(
-                  IconButton(
-                    icon: Icon(Icons.price_change_outlined, color: AppTheme.primaryColor),
-                    tooltip: '????? ????? ?????',
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const BulkPriceUpdatePage()));
-                    },
-                  ),
+                  icon: Icon(Icons.price_change_outlined, color: AppTheme.primaryColor),
+                  tooltip: 'تحديث الأسعار الجماعي',
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const BulkPriceUpdatePage()));
+                  },
+                ),
                   IconButton(
                     icon: Icon(Icons.file_download_outlined, color: AppTheme.primaryColor),
                   tooltip: context.tr('export_excel_tooltip'),

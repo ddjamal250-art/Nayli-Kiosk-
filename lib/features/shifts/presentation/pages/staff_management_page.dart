@@ -587,7 +587,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        Expanded(child: TextField(controller: salaryCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الأجر الأساسي (دج)', border: OutlineInputBorder()))),
+                        Expanded(child: TextField(controller: salaryCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'الأجر الأساسي (دج)', border: OutlineInputBorder()))),
                         const SizedBox(width: 10),
                         Expanded(
                           child: DropdownButtonFormField<String>(
@@ -608,7 +608,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
                         Expanded(
                           child: TextField(
                             controller: pinCtrl,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             maxLength: 4,
                             decoration: const InputDecoration(labelText: 'رمز الـ PIN (4 أرقام فريدة) *', border: OutlineInputBorder()),
                           ),
@@ -718,7 +718,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: TextField(
                         controller: maxDiscountCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: const InputDecoration(labelText: 'سقف التخفيض الأقصى المسموح (دج)', border: OutlineInputBorder()),
                       ),
                     ),
@@ -741,7 +741,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: TextField(
                         controller: maxCreditCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: const InputDecoration(labelText: 'سقف الدين الأقصى للفاتورة (دج)', border: OutlineInputBorder()),
                       ),
                     ),
@@ -821,7 +821,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> with SingleTi
                 const SizedBox(height: 12),
                 TextField(
                   controller: amountCtrl,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   autofocus: true,
                   decoration: const InputDecoration(labelText: 'المبلغ (د.ج) *', prefixIcon: Icon(Icons.payments), border: OutlineInputBorder()),
                 ),

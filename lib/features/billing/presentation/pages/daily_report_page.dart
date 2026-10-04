@@ -336,7 +336,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
               children: [
                 TextField(
                   controller: floatController,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'الخردة الافتتاحية (الصرف)',
                     hintText: 'كم كان في الصندوق صباحاً؟',
@@ -364,7 +364,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 SizedBox(height: 12),
                 TextField(
                   controller: actualController,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   autofocus: true,
                   decoration: InputDecoration(
                     labelText: 'المال الحقيقي في الصندوق',

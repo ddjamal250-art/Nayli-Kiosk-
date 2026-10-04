@@ -500,7 +500,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     SizedBox(height: 10),
                     TextField(
                       controller: priceCtrl,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: isFullPack ? context.tr('سعر بيع العلبة') : context.tr('سعر بيع الكأس الواحد للزبون'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -1789,7 +1789,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   TextField(
                     controller: discountController,
                     autofocus: true,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: isPercent ? context.tr('discount_percentage') : context.tr('discount_amount'),
                       border: const OutlineInputBorder(),
@@ -1860,7 +1860,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     flex: 2,
                     child: TextField(
                       controller: priceController,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: context.tr('item_price'),
                         border: const OutlineInputBorder(),
@@ -1871,7 +1871,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   Expanded(
                     child: TextField(
                       controller: qtyController,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: context.tr('quantity'),
                         border: const OutlineInputBorder(),
@@ -3102,7 +3102,7 @@ $itemsSummary
             TextField(
               controller: actualCashCtrl,
               autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
               style: const TextStyle(color: Colors.blueAccent, fontSize: 24, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 filled: true,

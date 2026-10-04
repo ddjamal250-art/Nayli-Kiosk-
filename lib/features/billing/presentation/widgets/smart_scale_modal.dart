@@ -298,7 +298,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                     Expanded(
                       child: TextField(
                         controller: priceCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                         decoration: InputDecoration(
                           labelText: context.tr('selling_price_per_kg'),
                           suffixText: AppConstants.currencySymbol,
@@ -311,7 +311,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                     Expanded(
                       child: TextField(
                         controller: costCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                         decoration: InputDecoration(
                           labelText: context.tr('cost_price'),
                           suffixText: AppConstants.currencySymbol,
@@ -350,7 +350,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                       Expanded(
                         child: TextField(
                           controller: bagsCountCtrl,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: context.tr('sacks_count'),
                             suffixText: 'شكارة',
@@ -364,7 +364,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                       Expanded(
                         child: TextField(
                           controller: bagWeightCtrl,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: context.tr('sack_weight'),
                             suffixText: 'كغ',
@@ -395,7 +395,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                 ] else ...[
                   TextField(
                     controller: directKgCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: context.tr('direct_total_stock_kg'),
                       suffixText: 'كغ',
@@ -741,7 +741,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   flex: 1,
                   child: TextField(
                     controller: _pricePerKgController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: context.tr('price_per_kg'),
                       suffixText: AppConstants.currencySymbol,
@@ -791,7 +791,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
             if (_isByWeight) ...[
               TextField(
                 controller: _weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                 autofocus: true,
                 decoration: InputDecoration(
                   labelText: context.tr('weight_in_grams'),
@@ -817,7 +817,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
             ] else ...[
               TextField(
                 controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                 autofocus: true,
                 decoration: InputDecoration(
                   labelText: '${context.tr("amount")} (${context.tr("currency_symbol")})',

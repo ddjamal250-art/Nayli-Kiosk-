@@ -584,7 +584,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
                                   width: 90,
                                   child: TextFormField(
                                     initialValue: item.quantity.toString(),
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: const InputDecoration(labelText: 'الكمية', border: OutlineInputBorder(), isDense: true),
                                     onChanged: (val) {
                                       final q = double.tryParse(val) ?? 1.0;
@@ -607,7 +607,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
                                   width: 120,
                                   child: TextFormField(
                                     initialValue: item.unitPriceHt.toStringAsFixed(2),
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     decoration: const InputDecoration(labelText: 'سعر HT (د.ج)', border: OutlineInputBorder(), isDense: true),
                                     onChanged: (val) {
                                       final p = double.tryParse(val) ?? 0.0;

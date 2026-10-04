@@ -1336,7 +1336,7 @@ class _StockInPageState extends State<StockInPage> {
                           Expanded(
                             child: TextField(
                               controller: _sacCountController,
-                              keyboardType: TextInputType.number,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               decoration: InputDecoration(
                                 labelText: _coffeeData.drinkType == 'capsule'
                                     ? 'عدد علب الكبسولات المستلمة'
@@ -1447,7 +1447,7 @@ class _StockInPageState extends State<StockInPage> {
                         Expanded(
                           child: TextField(
                             controller: _sacCountController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(labelText: 'عدد الشكاير / الأكياس', suffixText: 'شكارة', border: OutlineInputBorder()),
                           ),
                         ),
@@ -1455,7 +1455,7 @@ class _StockInPageState extends State<StockInPage> {
                         Expanded(
                           child: TextField(
                             controller: _kgPerSacController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(labelText: 'وزن الشكارة (كغ)', suffixText: 'كغ/شكارة', border: OutlineInputBorder()),
                           ),
                         ),
@@ -1467,7 +1467,7 @@ class _StockInPageState extends State<StockInPage> {
                         Expanded(
                           child: TextField(
                             controller: _sacCostController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(labelText: 'سعر شراء الشكارة (DA)', suffixText: 'DA/شكارة', border: OutlineInputBorder()),
                           ),
                         ),
@@ -1475,7 +1475,7 @@ class _StockInPageState extends State<StockInPage> {
                         Expanded(
                           child: TextField(
                             controller: _costPerKgController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(labelText: 'تكلفة الكيلوغرام (DA)', suffixText: 'DA/كغ', border: OutlineInputBorder()),
                           ),
                         ),
@@ -1495,7 +1495,7 @@ class _StockInPageState extends State<StockInPage> {
                           focusNode: _qtyFocusNode,
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) => _saveStockIn(),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: isScaleProduct ? 'الوزن المستلم (كغ)' : 'الكمية المستلمة (بالحبة)',
                             suffixText: isScaleProduct ? 'كغ' : 'حبة',
@@ -1520,7 +1520,7 @@ class _StockInPageState extends State<StockInPage> {
                             focusNode: _priceFocusNode,
                             textInputAction: TextInputAction.next,
                             onSubmitted: (_) => _costPriceFocusNode.requestFocus(),
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'سعر بيع الكيلوغرام *' : 'سعر بيع الحبة *',
                               suffixText: 'DA',
@@ -1535,7 +1535,7 @@ class _StockInPageState extends State<StockInPage> {
                             focusNode: _costPriceFocusNode,
                             textInputAction: TextInputAction.next,
                             onSubmitted: (_) => _qtyFocusNode.requestFocus(),
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: _unitMode == ArrivageUnitMode.vracSacs ? 'تكلفة الكيلوغرام المتوسطة' : 'سعر التكلفة المتوسط للحبة',
                               suffixText: 'DA',

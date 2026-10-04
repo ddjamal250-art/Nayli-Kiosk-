@@ -579,7 +579,7 @@ class _ReceiptOcrScannerDialogState extends State<ReceiptOcrScannerDialog> with 
                       flex: 2,
                       child: TextFormField(
                         initialValue: item.quantity % 1 == 0 ? item.quantity.toInt().toString() : item.quantity.toString(),
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         textAlign: TextAlign.center,
                         decoration: const InputDecoration(
                           isDense: true,
@@ -602,7 +602,7 @@ class _ReceiptOcrScannerDialogState extends State<ReceiptOcrScannerDialog> with 
                       flex: 2,
                       child: TextFormField(
                         initialValue: item.unitPrice % 1 == 0 ? item.unitPrice.toInt().toString() : item.unitPrice.toStringAsFixed(2),
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         textAlign: TextAlign.center,
                         decoration: const InputDecoration(
                           isDense: true,

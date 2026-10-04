@@ -176,7 +176,7 @@ class _AddProductPageState extends State<AddProductPage> {
       if (resolvedOffers.isEmpty) {
         final q = double.tryParse(_offerQtyCtrl.text.trim()) ?? 0.0;
         final p = double.tryParse(_offerPriceCtrl.text.trim()) ?? 0.0;
-        if (q > 1 && p > 0) {
+        if (q > 0 && p > 0) {
           resolvedOffers = [
             SpecialOffer(
               targetTier: _offerTier,
@@ -285,7 +285,7 @@ class _AddProductPageState extends State<AddProductPage> {
                 const InputLabel(text: 'كود PLU للميزان التجاري (اختياري)'),
                 TextFormField(
                   controller: _pluCodeCtrl,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     hintText: 'مثال: 1، 42...',
                     prefixIcon: Icon(Icons.scale, size: 18),
@@ -318,7 +318,7 @@ class _AddProductPageState extends State<AddProductPage> {
               icon: Icons.inventory_2_outlined,
               children: [
                 const InputLabel(text: 'الكمية المتوفرة بالمخزون حالياً (بالحبة)'),
-                TextFormField(controller: _stockCtrl, keyboardType: TextInputType.number),
+                TextFormField(controller: _stockCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
               ],
             ),
             const SizedBox(height: 16),

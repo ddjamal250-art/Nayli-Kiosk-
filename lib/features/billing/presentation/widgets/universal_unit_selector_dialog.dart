@@ -545,7 +545,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                                     width: 55,
                                     child: TextField(
                                       controller: _qtyController,
-                                      keyboardType: TextInputType.number,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
@@ -781,7 +781,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                                   const SizedBox(height: 4),
                                   TextField(
                                     controller: _customQtyController,
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
                                     decoration: InputDecoration(
@@ -808,7 +808,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                                   const SizedBox(height: 4),
                                   TextField(
                                     controller: _customPriceController,
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.teal),
                                     decoration: InputDecoration(
@@ -1065,7 +1065,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           if (!_weightByPrice) ...[
             TextField(
               controller: _weightKgController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
               autofocus: true,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               decoration: InputDecoration(
@@ -1132,7 +1132,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           ] else ...[
             TextField(
               controller: _weightPriceController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
               autofocus: true,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               decoration: InputDecoration(

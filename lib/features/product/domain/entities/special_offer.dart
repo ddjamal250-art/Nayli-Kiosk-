@@ -17,7 +17,7 @@ class SpecialOffer extends Equatable {
     this.isEnabled = false,
   });
 
-  bool get isValid => isEnabled && quantity > 1 && offerPrice > 0;
+  bool get isValid => isEnabled && quantity > 0 && offerPrice > 0;
 
   String get tierNameAr {
     switch (targetTier) {

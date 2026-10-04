@@ -285,7 +285,7 @@ class _LossesPageState extends State<LossesPage> {
                         Expanded(
                           child: TextField(
                             controller: qtyCtrl,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true, suffixText: 'قطعة'),
                           ),
                         ),

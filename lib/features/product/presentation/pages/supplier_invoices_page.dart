@@ -74,7 +74,7 @@ class _SupplierInvoicesPageState extends State<SupplierInvoicesPage> {
             const SizedBox(height: 12),
             TextField(
               controller: amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
               decoration: const InputDecoration(
                 labelText: 'المبلغ المسدد الآن (دج)',
                 suffixText: 'دج',

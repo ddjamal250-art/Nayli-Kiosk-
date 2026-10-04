@@ -54,7 +54,7 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
   void initState() {
     super.initState();
     _product = widget.product;
-    _quantityCtrl = TextEditingController(text: '10');
+    _quantityCtrl = TextEditingController(text: '1');
     _costPriceCtrl = TextEditingController(text: _product.costPrice.toStringAsFixed(2));
     _sellPriceCtrl = TextEditingController(text: _product.price.toStringAsFixed(2));
     
@@ -400,7 +400,7 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
               Expanded(
                 child: TextField(
                   controller: _costPriceCtrl,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'سعر شراء $_currentUnitName',
                     prefixIcon: const Icon(Icons.attach_money, size: 18),
@@ -412,7 +412,7 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
               Expanded(
                 child: TextField(
                   controller: _sellPriceCtrl,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'سعر بيع $_currentUnitName',
                     prefixIcon: const Icon(Icons.price_change, size: 18),

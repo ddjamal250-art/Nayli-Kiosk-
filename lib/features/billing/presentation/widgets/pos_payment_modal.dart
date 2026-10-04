@@ -140,7 +140,7 @@ class PosPaymentModal {
                         Expanded(
                           child: TextField(
                             autofocus: true,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               labelText: context.tr('paid_amount'),
                               border: const OutlineInputBorder(),

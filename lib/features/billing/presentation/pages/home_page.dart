@@ -585,7 +585,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 Expanded(
                   child: TextFormField(
                     controller: priceController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: 'سعر البيع',
                       suffixText: AppConstants.currencySymbol,
@@ -596,7 +596,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 Expanded(
                   child: TextFormField(
                     controller: costPriceController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                     decoration: InputDecoration(
                       labelText: 'سعر الشراء (التكلفة)',
                       suffixText: AppConstants.currencySymbol,
@@ -608,7 +608,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             SizedBox(height: 12),
             TextFormField(
               controller: stockController,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'الكمية الأولية بالمخزون',
               ),
@@ -795,7 +795,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 SizedBox(height: 16),
                 TextField(
                   controller: controller,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                   autofocus: true,
                   decoration: InputDecoration(
                     labelText: isPercent ? context.tr('discount_percentage') : context.tr('discount_amount'),
@@ -1009,7 +1009,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                 Expanded(
                                   child: TextFormField(
                                     controller: priceController,
-                                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                                     decoration: InputDecoration(labelText: 'سعر البيع (دج)', suffixText: AppConstants.currencySymbol),
                                   ),
                                 ),
@@ -1017,7 +1017,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                                 Expanded(
                                   child: TextFormField(
                                     controller: costPriceController,
-                                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                                     decoration: InputDecoration(labelText: 'سعر الشراء / التكلفة 🔒', suffixText: AppConstants.currencySymbol),
                                   ),
                                 ),
@@ -1132,7 +1132,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     Expanded(
                       child: TextFormField(
                         controller: priceController,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                         decoration: InputDecoration(labelText: 'سعر البيع', suffixText: AppConstants.currencySymbol),
                       ),
                     ),
@@ -1140,7 +1140,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                     Expanded(
                       child: TextFormField(
                         controller: costPriceController,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                         decoration: InputDecoration(labelText: 'سعر التكلفة 🔒', suffixText: AppConstants.currencySymbol),
                       ),
                     ),

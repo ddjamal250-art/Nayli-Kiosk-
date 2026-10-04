@@ -1262,7 +1262,7 @@ SizedBox(height: 20),
             SizedBox(height: 12),
             TextField(
               controller: pinController,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               maxLength: 4,
               obscureText: true,
               decoration: InputDecoration(
@@ -1312,7 +1312,7 @@ SizedBox(height: 20),
           children: [
             TextField(
               controller: oldPinController,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               maxLength: 4,
               obscureText: true,
               decoration: InputDecoration(
@@ -1323,7 +1323,7 @@ SizedBox(height: 20),
             SizedBox(height: 8),
             TextField(
               controller: newPinController,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               maxLength: 4,
               obscureText: true,
               decoration: InputDecoration(

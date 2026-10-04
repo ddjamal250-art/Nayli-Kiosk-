@@ -196,7 +196,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                   flex: 3,
                   child: TextField(
                     controller: costCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'سعر العبوة (دج)',
                       border: OutlineInputBorder(),
@@ -208,7 +208,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                   flex: 2,
                   child: TextField(
                     controller: qtyCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'الكمية/حبات',
                       border: OutlineInputBorder(),
@@ -358,7 +358,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                       flex: 3,
                       child: TextFormField(
                         controller: _basePackCostCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
                           labelText: _data.drinkType == 'capsule' ? 'سعر علبة الكبسولات (دج)' : 'سعر كيس البن / العبوة (دج)',
                           hintText: 'مثلاً: 1500',
@@ -376,7 +376,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                       flex: 2,
                       child: TextFormField(
                         controller: _baseYieldCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
                           labelText: _data.drinkType == 'capsule' ? 'عدد الكبسولات' : 'عدد الكؤوس المنتجة',
                           hintText: 'مثلاً: 50',
@@ -434,7 +434,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                       Expanded(
                         child: TextFormField(
                           controller: _gobeletCostCtrl,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: 'سعر باكي الغوبلي (دج)',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -450,7 +450,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                       Expanded(
                         child: TextFormField(
                           controller: _gobeletQtyCtrl,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: 'عدد الغوبليات بالباكي',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -503,7 +503,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                       Expanded(
                         child: TextFormField(
                           controller: _sugarCostCtrl,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: 'سعر علبة السكر (دج)',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -519,7 +519,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                       Expanded(
                         child: TextFormField(
                           controller: _sugarQtyCtrl,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: 'عدد الأكياس بالعلبة',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -623,7 +623,7 @@ class _ReadyCoffeeCalculatorCardState extends State<ReadyCoffeeCalculatorCard> {
                       width: 130,
                       child: TextFormField(
                         controller: _salePriceCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B5E20)),
                         decoration: InputDecoration(
                           labelText: 'سعر بيع الكأس',

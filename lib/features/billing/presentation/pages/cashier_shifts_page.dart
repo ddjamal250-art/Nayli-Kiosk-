@@ -75,7 +75,7 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
             const SizedBox(height: 10),
             TextField(
               controller: cashCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
               decoration: const InputDecoration(
                 labelText: 'رصيد بداية الصندوق (عهدة البداية)',
                 suffixText: 'دج',
@@ -178,7 +178,7 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: actualCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'المبلغ الفعلي الموجود في الدرج',
                       suffixText: 'دج',

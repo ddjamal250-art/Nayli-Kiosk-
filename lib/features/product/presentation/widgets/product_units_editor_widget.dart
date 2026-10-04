@@ -425,7 +425,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
             if (isStockInMode && cartonCountCtrl != null) ...[
               TextField(
                 controller: cartonCountCtrl,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (_) => onInputsChanged?.call(),
                 decoration: const InputDecoration(
                   labelText: 'عدد الكراتين المستلمة في هذه الشحنة *',
@@ -443,7 +443,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   flex: 3,
                   child: TextField(
                     controller: cartonCapacityCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => _onInputsChanged(),
                     decoration: InputDecoration(
                       labelText: hasPack ? 'سعة الكرتونة (كم علبة؟) *' : 'سعة الكرتونة (كم حبة؟) *',
@@ -479,7 +479,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                 Expanded(
                   child: TextField(
                     controller: cartonCostCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => _onInputsChanged(),
                     decoration: const InputDecoration(
                       labelText: 'سعر شراء الكرتونة (دج)',
@@ -492,7 +492,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                 Expanded(
                   child: TextField(
                     controller: cartonPriceCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => _onInputsChanged(),
                     decoration: const InputDecoration(
                       labelText: 'سعر بيع الكرتونة (دج) *',
@@ -559,7 +559,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
               ],
               TextField(
                 controller: packCountCtrl,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (_) => onInputsChanged?.call(),
                 decoration: InputDecoration(
                   labelText: hasCarton ? 'عدد العلب (إضافية منفردة أو إجمالي)' : 'عدد العلب المستلمة',
@@ -578,7 +578,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                   flex: 3,
                   child: TextField(
                     controller: packCapacityCtrl,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => _onInputsChanged(),
                     decoration: const InputDecoration(
                       labelText: 'سعة العلبة (كم حبة؟) *',
@@ -618,7 +618,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                     children: [
                       TextField(
                         controller: packCostCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         onChanged: (_) => _onInputsChanged(),
                         decoration: InputDecoration(
                           labelText: 'سعر شراء العلبة (دج)',
@@ -644,7 +644,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                     children: [
                       TextField(
                         controller: packPriceCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         onChanged: (_) => _onInputsChanged(),
                         decoration: InputDecoration(
                           labelText: 'سعر بيع العلبة (دج) *',
@@ -713,7 +713,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
               ],
               TextField(
                 controller: pieceCountCtrl,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (_) => onInputsChanged?.call(),
                 decoration: InputDecoration(
                   labelText: (hasCarton || hasPack) ? 'عدد الحبات (فردية إضافية أو إجمالي)' : 'عدد الحبات المستلمة',
@@ -772,7 +772,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                     children: [
                       TextField(
                         controller: pieceCostCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         onChanged: (_) => _onInputsChanged(),
                         decoration: InputDecoration(
                           labelText: 'سعر شراء الحبة (دج)',
@@ -798,7 +798,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                     children: [
                       TextField(
                         controller: piecePriceCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         onChanged: (_) => _onInputsChanged(),
                         decoration: InputDecoration(
                           labelText: 'سعر بيع الحبة (دج) *',
@@ -1080,7 +1080,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                                 flex: 2,
                                 child: TextField(
                                   controller: _offerControllers[idx].qtyCtrl,
-                                  keyboardType: TextInputType.number,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   decoration: const InputDecoration(
                                     labelText: 'الكمية *',
                                     hintText: 'مثلاً 3',
@@ -1096,7 +1096,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                                 flex: 3,
                                 child: TextField(
                                   controller: _offerControllers[idx].priceCtrl,
-                                  keyboardType: TextInputType.number,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   decoration: const InputDecoration(
                                     labelText: 'سعر العرض (دج) *',
                                     hintText: 'مثلاً 100',
@@ -1132,6 +1132,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                           price: 0,
                         ));
                       });
+                      _notifyOffersChanged();
                     },
                   ),
                   const SizedBox(height: 8),

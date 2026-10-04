@@ -341,7 +341,7 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
                 // OTP Input Field with Auto-Submit
                 TextField(
                   controller: otpController,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   textAlign: TextAlign.center,
                   autofocus: true,
                   maxLength: 6,
@@ -444,7 +444,7 @@ class _PinAuthDialogState extends State<_PinAuthDialog> {
               const SizedBox(height: 16),
               TextField(
                 controller: newPinCtrl,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textAlign: TextAlign.center,
                 autofocus: true,
                 maxLength: 4,

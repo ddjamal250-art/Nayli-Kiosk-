@@ -120,25 +120,25 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v2.2.1-release
-          name: "Nayli Kiosk Desktop POS v2.2.1 (Official Release)"
+          tag_name: v2.4.0
+          name: "Nayli Kiosk Desktop POS v2.4.0 (Official Release)"
           draft: false
           prerelease: false
           generate_release_notes: false
           body: |
-            ## 🚀 Nayli Kiosk Desktop POS v2.2.1 - التحديث الرسمي
+            ## 🚀 Nayli Kiosk Desktop POS v2.4.0 - التحديث الرسمي الشامل
 
             ### 📥 روابط التحميل المباشرة بنقرة واحدة (Direct 1-Click Downloads):
-            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/v2.2.1-release/Nayli-Kiosk-Desktop-Setup.exe)**
-            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/v2.2.1-release/Nayli-Kiosk-Desktop-Portable.zip)**
+            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/v2.4.0/Nayli-Kiosk-Desktop-Setup.exe)**
+            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/v2.4.0/Nayli-Kiosk-Desktop-Portable.zip)**
 
             ---
-            ✅ **المميزات والإصلاحات المطبقة في هذا التحديث (v2.2.1):**
-            1. **عروض ترويجية متعددة ومرنة:** إمكانية إضافة عرض أو أكثر لكل منتج على أي وحدة (حبة، علبة، كرتونة) مع واجهة إدارة متكاملة وسلسة.
-            2. **تطبيق العروض السريع في الكاشير:** عند الضغط على "عرض ترويجي" تظهر جميع العروض المسجلة مسبقاً للاختيار بنقرة واحدة، مع إمكانية تحديد عرض مخصص آنياً.
-            3. **الاستلام السريع الذكي (Quick Receive):** إمكانية إدخال الكمية مباشرة في حقل كتابة مخصص، مع بطاقة معاينة حية للمخزون قبل التأكيد.
-            4. **إصلاح دقيق لمضاعفات الكرتونة والعلبة:** تصحيح احتساب سعة الكرتونة والعلبة ومعالجة أي بيانات سابقة تلقائياً لضمان إضافة المخزون بدقة تامة.
-            5. **تحسينات الأداء واستقرار قواعد البيانات:** توافق كامل 100% مع قواعد بيانات Hive القديمة دون أي خطر لفقدان البيانات.
+            ✅ **المميزات والإصلاحات الكبرى في هذا التحديث (v2.4.0):**
+            1. **نظام المناوبات ودخول الكاشير المتكامل:** شاشة تسجيل دخول موحدة برمز PIN، إدخال صندوف البداية (Fond de Caisse)، تبديل المناوبات وإغلاق الصندوق مع الحساب التلقائي، واستعادة كلمة سر المدير عبر رمز التفعيل.
+            2. **الدعم الكامل للأسعار بالفاصلة:** دعم كتابة الفواصل وحساب الأسعار والتكاليف العائمة بدقة (مثل 22.25 دج) دون أي تقريب أو ضياع في كل أجزاء البرنامج والمخزون.
+            3. **التعديل الذكي للأسعار بالجملة (Smart Bulk Price Update):** ميزة احترافية جديدة لزيادة أو تخفيض الأسعار بنسبة مئوية أو مبلغ ثابت للتعامل السريع مع تقلبات الأسعار.
+            4. **إصلاح العروض الترويجية المتعددة:** إمكانية إضافة وحفظ عدة عروض ترويجية لنفس المنتج وتطبيقها مباشرة من شاشة البيع.
+            5. **إصلاح كافة أخطاء البناء واستقرار قواعد البيانات:** توافق كامل مع قواعد بيانات Hive وضمان حماية بيانات المبيعات والمخزون.
           files: |
             build/installer/Nayli-Kiosk-Desktop-Setup.exe
             build/installer/Nayli-Kiosk-Desktop-Portable.zip

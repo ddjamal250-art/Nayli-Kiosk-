@@ -80,7 +80,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
             const SizedBox(height: 12),
             TextField(
               controller: floatController,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'رصيد بداية الصندوق - الفكة (Fond de caisse د.ج)',
                 border: const OutlineInputBorder(),
@@ -146,7 +146,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
             TextField(
               controller: actualCashController,
               autofocus: true,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'المبلغ الفعلي الموجود في درج النقود (د.ج) *',
                 border: const OutlineInputBorder(),

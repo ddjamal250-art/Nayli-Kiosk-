@@ -135,7 +135,7 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
             TextField(
               controller: ctrl,
               autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const const TextInputType.numberWithOptions(decimal: true)WithOptions(decimal: true),
               style: const TextStyle(color: Colors.greenAccent, fontSize: 20, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 filled: true,
@@ -264,7 +264,7 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
         title: const Text('تعيين رمز جديد', style: TextStyle(color: Colors.white)),
         content: TextField(
           controller: newPinCtrl,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           maxLength: 4,
           style: const TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 8),
           decoration: const InputDecoration(
