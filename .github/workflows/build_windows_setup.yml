@@ -61,6 +61,10 @@ jobs:
           dart run flutter_launcher_icons
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
+      - name: Analyze Project Code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        continue-on-error: true
+
       - name: Build Windows Executable Release
         shell: cmd
         run: flutter build windows -v > build_log.txt 2>&1 || exit 1

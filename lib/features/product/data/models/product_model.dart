@@ -167,6 +167,18 @@ class ProductModel extends Product {
     this.coffeeRecipeJson,
     this.specialOfferJson,
     bool isCoffeeMachineProduct = false,
+    int packMultiplier = 1,
+    int packsPerCarton = 10,
+    bool hasMultiUnit = false,
+    bool hasCarton = false,
+    String? packName,
+    String? packBarcode,
+    double packPrice = 0.0,
+    String? cartonBarcode,
+    double cartonPrice = 0.0,
+    double singlePiecePrice = 0.0,
+    bool isTobacco = false,
+    bool isBeverage = false,
   }) : super(
           id: id,
           name: name,
@@ -188,6 +200,18 @@ class ProductModel extends Product {
           coffeeRecipeJson: coffeeRecipeJson,
           specialOffers: SpecialOffer.listFromJsonString(specialOfferJson),
           isCoffeeMachineProduct: isCoffeeMachineProduct,
+          packMultiplier: packMultiplier,
+          packsPerCarton: packsPerCarton,
+          hasMultiUnit: hasMultiUnit,
+          hasCarton: hasCarton,
+          packName: packName,
+          packBarcode: packBarcode,
+          packPrice: packPrice,
+          cartonBarcode: cartonBarcode,
+          cartonPrice: cartonPrice,
+          singlePiecePrice: singlePiecePrice,
+          isTobacco: isTobacco,
+          isBeverage: isBeverage,
         );
 
   @override
@@ -216,6 +240,16 @@ class ProductModel extends Product {
     bool? isCoffeeMachineProduct,
     bool? isTobacco,
     bool? isBeverage,
+    int? packMultiplier,
+    int? packsPerCarton,
+    bool? hasMultiUnit,
+    bool? hasCarton,
+    String? packName,
+    String? packBarcode,
+    double? packPrice,
+    String? cartonBarcode,
+    double? cartonPrice,
+    double? singlePiecePrice,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -246,6 +280,18 @@ class ProductModel extends Product {
               ? jsonEncode(specialOffer.toJson())
               : (specialOfferJson ?? this.specialOfferJson)),
       isCoffeeMachineProduct: isCoffeeMachineProduct ?? this.isCoffeeMachineProduct,
+      packMultiplier: packMultiplier ?? this.packMultiplier,
+      packsPerCarton: packsPerCarton ?? this.packsPerCarton,
+      hasMultiUnit: hasMultiUnit ?? this.hasMultiUnit,
+      hasCarton: hasCarton ?? this.hasCarton,
+      packName: packName ?? this.packName,
+      packBarcode: packBarcode ?? this.packBarcode,
+      packPrice: packPrice ?? this.packPrice,
+      cartonBarcode: cartonBarcode ?? this.cartonBarcode,
+      cartonPrice: cartonPrice ?? this.cartonPrice,
+      singlePiecePrice: singlePiecePrice ?? this.singlePiecePrice,
+      isTobacco: isTobacco ?? this.isTobacco,
+      isBeverage: isBeverage ?? this.isBeverage,
     );
   }
 
@@ -273,6 +319,18 @@ class ProductModel extends Product {
           ? SpecialOffer.listToJsonString(product.specialOffers)
           : (product.specialOffer != null ? jsonEncode(product.specialOffer!.toJson()) : null),
       isCoffeeMachineProduct: product.isCoffeeMachineProduct,
+      packMultiplier: product.packMultiplier,
+      packsPerCarton: product.packsPerCarton,
+      hasMultiUnit: product.hasMultiUnit,
+      hasCarton: product.hasCarton,
+      packName: product.packName,
+      packBarcode: product.packBarcode,
+      packPrice: product.packPrice,
+      cartonBarcode: product.cartonBarcode,
+      cartonPrice: product.cartonPrice,
+      singlePiecePrice: product.singlePiecePrice,
+      isTobacco: product.isTobacco,
+      isBeverage: product.isBeverage,
     );
   }
 
