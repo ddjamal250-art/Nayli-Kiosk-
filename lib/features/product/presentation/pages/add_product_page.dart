@@ -132,6 +132,15 @@ class _AddProductPageState extends State<AddProductPage> {
     return double.tryParse(cleaned) ?? 0.0;
   }
 
+  String _formatDouble(double val) {
+    if (val == val.toInt()) return val.toInt().toString();
+    String s = val.toStringAsFixed(3);
+    while (s.contains('.') && (s.endsWith('0') || s.endsWith('.'))) {
+      s = s.substring(0, s.length - 1);
+    }
+    return s;
+  }
+
   void _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
