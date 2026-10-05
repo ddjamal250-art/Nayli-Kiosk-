@@ -39,7 +39,15 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
           (Get-Content "windows\CMakeLists.txt") -replace 'set\(BINARY_NAME "billing_app"\)', 'set(BINARY_NAME "Nayli-Kiosk")' | Set-Content "windows\CMakeLists.txt"
           (Get-Content "windows\runner\main.cpp") -replace 'window\.Create\(L"billing_app"', 'window.Create(L"Nayli Kiosk POS"' | Set-Content "windows\runner\main.cpp"
-          (Get-Content "windows\runner\Runner.rc") -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' -replace '1,0,0,1', '2,2,0,0' -replace '"1.0.0.1"', '"2.2.0.0"' | Set-Content "windows\runner\Runner.rc"
+          $rawVer = (Get-Content pubspec.yaml | Select-String -Pattern '^version:\s*([0-9\.]+)').Matches.Groups[1].Value
+          if (-not $rawVer) { $rawVer = "2.4.1" }
+          $vp = $rawVer.Split('.')
+          $v1 = if ($vp.Count -gt 0) { $vp[0] } else { '1' }
+          $v2 = if ($vp.Count -gt 1) { $vp[1] } else { '0' }
+          $v3 = if ($vp.Count -gt 2) { $vp[2] } else { '0' }
+          $rcComma = "$v1,$v2,$v3,0"
+          $rcDot = "$v1.$v2.$v3.0"
+          (Get-Content "windows\runner\Runner.rc") -replace 'VALUE "FileDescription", "billing_app"', 'VALUE "FileDescription", "Nayli Kiosk Desktop POS"' -replace 'VALUE "ProductName", "billing_app"', 'VALUE "ProductName", "Nayli Kiosk Desktop POS"' -replace 'VALUE "InternalName", "billing_app"', 'VALUE "InternalName", "Nayli-Kiosk"' -replace '1,0,0,1', $rcComma -replace '"1.0.0.1"', "`"$rcDot`"" | Set-Content "windows\runner\Runner.rc"
 
       - name: Install dependencies
         run: flutter pub get
@@ -121,25 +129,25 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v2.4.0
-          name: "Nayli Kiosk Desktop POS v2.4.0 (Official Release)"
+          tag_name: v2.4.3
+          name: "Nayli Kiosk Desktop POS v2.4.3 (Official Release)"
           draft: false
           prerelease: false
           generate_release_notes: false
           body: |
-            ## 🚀 Nayli Kiosk Desktop POS v2.4.0 - التحديث الرسمي الشامل
+            ## 🚀 Nayli Kiosk Desktop POS v2.4.3 - التحديث الرسمي الشامل
 
             ### 📥 روابط التحميل المباشرة بنقرة واحدة (Direct 1-Click Downloads):
-            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/v2.4.0/Nayli-Kiosk-Desktop-Setup.exe)**
-            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/v2.4.0/Nayli-Kiosk-Desktop-Portable.zip)**
+            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/v2.4.3/Nayli-Kiosk-Desktop-Setup.exe)**
+            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/v2.4.3/Nayli-Kiosk-Desktop-Portable.zip)**
 
             ---
-            ✅ **المميزات والإصلاحات الكبرى في هذا التحديث (v2.4.0):**
-            1. **نظام المناوبات ودخول الكاشير المتكامل:** شاشة تسجيل دخول موحدة برمز PIN، إدخال صندوف البداية (Fond de Caisse)، تبديل المناوبات وإغلاق الصندوق مع الحساب التلقائي، واستعادة كلمة سر المدير عبر رمز التفعيل.
-            2. **الدعم الكامل للأسعار بالفاصلة:** دعم كتابة الفواصل وحساب الأسعار والتكاليف العائمة بدقة (مثل 22.25 دج) دون أي تقريب أو ضياع في كل أجزاء البرنامج والمخزون.
-            3. **التعديل الذكي للأسعار بالجملة (Smart Bulk Price Update):** ميزة احترافية جديدة لزيادة أو تخفيض الأسعار بنسبة مئوية أو مبلغ ثابت للتعامل السريع مع تقلبات الأسعار.
-            4. **إصلاح العروض الترويجية المتعددة:** إمكانية إضافة وحفظ عدة عروض ترويجية لنفس المنتج وتطبيقها مباشرة من شاشة البيع.
-            5. **إصلاح كافة أخطاء البناء واستقرار قواعد البيانات:** توافق كامل مع قواعد بيانات Hive وضمان حماية بيانات المبيعات والمخزون.
+            ✅ **المميزات والإصلاحات الكبرى في هذا التحديث (v2.4.3):**
+            1. **إصلاح حاسبة الميزان الذكي والربط بالمخزون:** حذف كافة المنتجات الافتراضية والوهمية من قسم الميزان، وجلب سلع الميزان المسجلة مسبقاً في المخزون الحقيقي فقط مع خصم وزنها بدقة وإدراج تكاليفها وأرباحها في الداشبورد.
+            2. **إصلاح شريط البيع السريع وتثبيت الأسعار:** حل مشكلة تقسيم وتغيير سعر السلعة عند إضافتها لشريط البيع السريع، واعتماد سعر المخزون الحقيقي وسعر التكلفة دون أي تشويه، والحفاظ على بيانات الوحدات والعلب عبر copyWith.
+            3. **حسابات الصندوق الدقيقة وبطاقة الرصيد اللحظي:** تصحيح معادلة حساب الصندوق (رصيد البداية + المبيعات النقدية + مقبوضات الديون - المصاريف)، وإضافة مستطيل علوي مميز يعرض رصيد الصندوق الفعلي في نفس اللحظة مع زر التحديث الفوري (Refresh).
+            4. **الدعم الكامل للأسعار العشرية بالفاصلة:** دعم حفظ واستعراض أسعار وتكاليف السلع العشرية (مثل 22.25 دج) دون أي تقريب إلى أعداد صحيحة.
+            5. **تكامل نظام العامل والمدير وصلاحيات الكاشير:** حماية إلغاء السلع والتخفيضات وتعديل الأسعار برمز المدير، وإدارة العمال ومناوبات الصندوق وربطها التام بقواعد بيانات Hive.
           files: |
             build/installer/Nayli-Kiosk-Desktop-Setup.exe
             build/installer/Nayli-Kiosk-Desktop-Portable.zip

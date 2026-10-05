@@ -254,19 +254,30 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
         ? (productBox.get(item.linkedProductId) ?? productBox.values.where((p) => p.barcode == item.barcode || p.id == item.id).firstOrNull)
         : productBox.values.where((p) => p.barcode == item.barcode || p.id == item.id).firstOrNull;
 
+    if (existing != null) {
+      final updated = existing.copyWith(
+        name: item.name,
+        price: item.price,
+        costPrice: item.costPrice > 0 ? item.costPrice : existing.costPrice,
+      );
+      productBox.put(updated.id, updated);
+      context.read<ProductBloc>().add(LoadProducts());
+      return;
+    }
+
     final nameL = item.name.toLowerCase();
     final isCoffee = nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('كبسول') || nameL.contains('express');
 
     final productModel = ProductModel(
-      id: existing?.id ?? (item.linkedProductId ?? item.id),
+      id: item.linkedProductId ?? item.id,
       name: item.name,
       barcode: item.barcode,
       price: item.price,
       costPrice: item.costPrice,
-      stock: existing != null ? existing.stock : item.stock,
-      category: isCoffee ? 'القهوة الجاهزة' : (existing?.category ?? 'بيع سريع'),
+      stock: item.stock,
+      category: isCoffee ? 'القهوة الجاهزة' : 'بيع سريع',
       wholesalePrice: item.price,
-      );
+    );
 
     productBox.put(productModel.id, productModel);
     CatalogCrowdsourceHelper.silentHarvest(
@@ -294,7 +305,6 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
         orderIndex: i,
       );
       await box.put(updated.id, updated.toMap());
-      _syncWithProductBox(updated);
     }
   }
 
@@ -400,8 +410,8 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                               final isAlreadyAdded = _items.any((it) => it.linkedProductId == p.id || (it.barcode.isNotEmpty && it.barcode == p.barcode));
                               final isCoffee = p.category.contains('قهوة') || p.category.contains('شاي') || p.isCoffeeMachineProduct;
                               final icon = isCoffee ? '☕' : (p.isTobacco ? '🚬' : '🛍️');
-                              final price = p.resolvedPiecePrice > 0 ? p.resolvedPiecePrice : p.price;
-                              final cost = p.resolvedPieceCost > 0 ? p.resolvedPieceCost : p.costPrice;
+                              final price = p.price;
+                              final cost = p.costPrice > 0 ? p.costPrice : p.effectiveCostPrice;
 
                               return ListTile(
                                 leading: Container(
@@ -410,7 +420,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                                   child: Text(icon, style: const TextStyle(fontSize: 20)),
                                 ),
                                 title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                subtitle: Text('${p.category} • المخزون: ${p.stock} • التكلفة: ${cost.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                subtitle: Text('${p.category} • المخزون: ${p.stock} • التكلفة: ${(cost % 1 == 0 ? cost.toInt().toString() : cost.toStringAsFixed(2))} دج', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                                 trailing: isAlreadyAdded
                                     ? Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -444,7 +454,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
                                           SoundService.playSaveSuccess();
                                           SnackbarHelper.showSuccess(context, 'تمت إضافة "${p.name}" إلى شريط البيع السريع بنجاح!');
                                         },
-                                        child: Text('${price.toStringAsFixed(0)} دج +', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                        child: Text('${(price % 1 == 0 ? price.toInt().toString() : price.toStringAsFixed(2))} دج +', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                                       ),
                               );
                             },

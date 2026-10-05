@@ -165,9 +165,8 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
     final List<Map<String, dynamic>> list = [];
     final pBox = HiveDatabase.productBox;
 
-    // Load from products database
     for (final p in pBox.values) {
-      if (p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')) {
+      if (p.isWeighted == true || p.unitSystemTypeIndex == 1 || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')) {
         list.add({
           'id': p.id,
           'name': p.name,
@@ -175,15 +174,8 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
           'costPerKg': p.costPrice,
           'stockKg': p.stock.toDouble(),
           'barcode': p.barcode,
-          'category': '🌾 بقوليات وحبوب',
+          'category': p.category,
         });
-      }
-    }
-
-    // Merge default presets if not in database
-    for (final def in _defaultPresets) {
-      if (!list.any((e) => e['name'].toString().trim() == def['name'].toString().trim())) {
-        list.add(Map<String, dynamic>.from(def));
       }
     }
 
@@ -518,30 +510,23 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
     final customItemName = '$name ($weightLabel)';
     final rawBarcode = 'SCALE_${DateTime.now().millisecondsSinceEpoch}';
 
-    // 1. Add to cart
-    context.read<BillingBloc>().add(AddCustomItemEvent(
-      name: customItemName,
-      price: finalTotal,
-      costPrice: (costPerKg * weightKg).roundToDouble(),
-      quantity: 1,
-      barcode: rawBarcode,
-    ));
-
-    // 2. Deduct from product stock if registered in ProductBox
     final pBox = HiveDatabase.productBox;
     final matching = pBox.values.where((p) => p.name.trim() == name.trim() || p.id == _selectedProductId).firstOrNull;
+
     if (matching != null) {
-      final current = matching.stock;
-      final newStock = (current - weightKg).clamp(0.0, double.infinity).toDouble();
-      final updated = Product(
-        id: matching.id,
-        name: matching.name,
-        barcode: matching.barcode,
-        price: matching.price,
-        costPrice: matching.costPrice,
-        stock: newStock,
-      );
-      context.read<ProductBloc>().add(UpdateProduct(updated));
+      context.read<BillingBloc>().add(AddProductToCartEvent(
+        matching,
+        weightKg: weightKg,
+        customPrice: finalTotal,
+      ));
+    } else {
+      context.read<BillingBloc>().add(AddCustomItemEvent(
+        name: customItemName,
+        price: finalTotal,
+        costPrice: (costPerKg * weightKg).roundToDouble(),
+        quantity: 1,
+        barcode: rawBarcode,
+      ));
     }
 
     Navigator.pop(context);
@@ -658,16 +643,39 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
             const SizedBox(height: 10),
 
             // SCALE PRODUCTS HORIZONTAL LIST / GRID
-            SizedBox(
-              height: 72,
-              child: _filteredProducts.isEmpty
-                  ? Center(
+            if (_scaleProducts.isEmpty)
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange.shade800),
+                    const SizedBox(width: 8),
+                    Expanded(
                       child: Text(
-                        'لا توجد مواد تطابق "${_searchController.text}"',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        'لا توجد منتجات ميزان مسجلة في المخزون بعد. يرجى إضافة منتجات ميزان وتفعيل خيار (يباع بالوزن) أولاً.',
+                        style: TextStyle(color: Colors.orange.shade900, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
-                    )
-                  : ListView.separated(
+                    ),
+                  ],
+                ),
+              )
+            else
+              SizedBox(
+                height: 72,
+                child: _filteredProducts.isEmpty
+                    ? Center(
+                        child: Text(
+                          'لا توجد مواد تطابق "${_searchController.text}"',
+                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        ),
+                      )
+                    : ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: _filteredProducts.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 8),

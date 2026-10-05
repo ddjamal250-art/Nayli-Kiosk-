@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -64,7 +64,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   String _selectedCategoryKey = 'all';
   String? _selectedCustomerId;
-  String _selectedCustomerName = 'زبون عادي';
+  String _selectedCustomerName = 'Ø²Ø¨ÙˆÙ† Ø¹Ø§Ø¯ÙŠ';
   double _customerCreditBalance = 0.0;
 
   // Operating Modes
@@ -103,26 +103,26 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   }
 
   static const List<Map<String, String>> _categoriesDef = [
-    {'key': 'all', 'tr': 'cat_all', 'ar': 'الكل', 'icon': '🛒'},
-    {'key': 'tobacco', 'tr': 'tobacco_btn', 'ar': 'المواد التبغية', 'icon': '🚬'},
-    {'key': 'cold_drinks', 'tr': 'cat_beverages', 'ar': 'المشروبات والعصائر', 'icon': '🥤'},
-    {'key': 'dairy', 'tr': 'cat_dairy', 'ar': 'الألبان والأجبان', 'icon': '🥛'},
-    {'key': 'coffee_tea', 'tr': 'cat_coffee_tea', 'ar': 'القهوة الجاهزة', 'icon': '☕'},
-    {'key': 'sweets', 'tr': 'cat_sweets', 'ar': 'الحلويات والسكاكر', 'icon': '🍫'},
-    {'key': 'scale', 'tr': 'cat_scale', 'ar': 'سلع الميزان', 'icon': '⚖️'},
-    {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'البقوليات والحبوب', 'icon': '🌾'},
-    {'key': 'canned', 'tr': 'cat_canned', 'ar': 'المعلبات والزيوت', 'icon': '🥫'},
-    {'key': 'bakery', 'tr': 'cat_bakery', 'ar': 'المخبوزات والعجائن', 'icon': '🥖'},
-    {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات والتطهير', 'icon': '🧽'},
-    {'key': 'hygiene', 'tr': 'cat_hygiene', 'ar': 'العناية الشخصية', 'icon': '🧴'},
-    {'key': 'stationery', 'tr': 'cat_stationery', 'ar': 'الأدوات المدرسية والمكتبية', 'icon': '📚'},
-    {'key': 'phone_accessories', 'tr': 'cat_phone_acc', 'ar': 'لواحق هواتف وإلكترونيات', 'icon': '📱'},
-    {'key': 'batteries', 'tr': 'cat_batteries', 'ar': 'بطاريات وكهربائيات', 'icon': '🔋'},
-    {'key': 'cosmetics', 'tr': 'cat_cosmetics', 'ar': 'كوسميتيك وعطور', 'icon': '💄'},
-    {'key': 'toys', 'tr': 'cat_toys', 'ar': 'ألعاب وهدايا', 'icon': '🧸'},
-    {'key': 'produce', 'tr': 'cat_produce', 'ar': 'الخضر والفواكه واللحوم', 'icon': '🍏'},
-    {'key': 'general_news', 'tr': 'cat_general', 'ar': 'منتجات عامة وجرائد', 'icon': '📰'},
-    {'key': 'spices', 'tr': 'cat_spices', 'ar': 'التوابل والبهارات', 'icon': '🧂'},
+    {'key': 'all', 'tr': 'cat_all', 'ar': 'Ø§Ù„ÙƒÙ„', 'icon': 'ðŸ›’'},
+    {'key': 'tobacco', 'tr': 'tobacco_btn', 'ar': 'Ø§Ù„Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ¨ØºÙŠØ©', 'icon': 'ðŸš¬'},
+    {'key': 'cold_drinks', 'tr': 'cat_beverages', 'ar': 'Ø§Ù„Ù…Ø´Ø±ÙˆØ¨Ø§Øª ÙˆØ§Ù„Ø¹ØµØ§Ø¦Ø±', 'icon': 'ðŸ¥¤'},
+    {'key': 'dairy', 'tr': 'cat_dairy', 'ar': 'Ø§Ù„Ø£Ù„Ø¨Ø§Ù† ÙˆØ§Ù„Ø£Ø¬Ø¨Ø§Ù†', 'icon': 'ðŸ¥›'},
+    {'key': 'coffee_tea', 'tr': 'cat_coffee_tea', 'ar': 'Ø§Ù„Ù‚Ù‡ÙˆØ© Ø§Ù„Ø¬Ø§Ù‡Ø²Ø©', 'icon': 'â˜•'},
+    {'key': 'sweets', 'tr': 'cat_sweets', 'ar': 'Ø§Ù„Ø­Ù„ÙˆÙŠØ§Øª ÙˆØ§Ù„Ø³ÙƒØ§ÙƒØ±', 'icon': 'ðŸ«'},
+    {'key': 'scale', 'tr': 'cat_scale', 'ar': 'Ø³Ù„Ø¹ Ø§Ù„Ù…ÙŠØ²Ø§Ù†', 'icon': 'âš–ï¸'},
+    {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'Ø§Ù„Ø¨Ù‚ÙˆÙ„ÙŠØ§Øª ÙˆØ§Ù„Ø­Ø¨ÙˆØ¨', 'icon': 'ðŸŒ¾'},
+    {'key': 'canned', 'tr': 'cat_canned', 'ar': 'Ø§Ù„Ù…Ø¹Ù„Ø¨Ø§Øª ÙˆØ§Ù„Ø²ÙŠÙˆØª', 'icon': 'ðŸ¥«'},
+    {'key': 'bakery', 'tr': 'cat_bakery', 'ar': 'Ø§Ù„Ù…Ø®Ø¨ÙˆØ²Ø§Øª ÙˆØ§Ù„Ø¹Ø¬Ø§Ø¦Ù†', 'icon': 'ðŸ¥–'},
+    {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'Ø§Ù„Ù…Ù†Ø¸ÙØ§Øª ÙˆØ§Ù„ØªØ·Ù‡ÙŠØ±', 'icon': 'ðŸ§½'},
+    {'key': 'hygiene', 'tr': 'cat_hygiene', 'ar': 'Ø§Ù„Ø¹Ù†Ø§ÙŠØ© Ø§Ù„Ø´Ø®ØµÙŠØ©', 'icon': 'ðŸ§´'},
+    {'key': 'stationery', 'tr': 'cat_stationery', 'ar': 'Ø§Ù„Ø£Ø¯ÙˆØ§Øª Ø§Ù„Ù…Ø¯Ø±Ø³ÙŠØ© ÙˆØ§Ù„Ù…ÙƒØªØ¨ÙŠØ©', 'icon': 'ðŸ“š'},
+    {'key': 'phone_accessories', 'tr': 'cat_phone_acc', 'ar': 'Ù„ÙˆØ§Ø­Ù‚ Ù‡ÙˆØ§ØªÙ ÙˆØ¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠØ§Øª', 'icon': 'ðŸ“±'},
+    {'key': 'batteries', 'tr': 'cat_batteries', 'ar': 'Ø¨Ø·Ø§Ø±ÙŠØ§Øª ÙˆÙƒÙ‡Ø±Ø¨Ø§Ø¦ÙŠØ§Øª', 'icon': 'ðŸ”‹'},
+    {'key': 'cosmetics', 'tr': 'cat_cosmetics', 'ar': 'ÙƒÙˆØ³Ù…ÙŠØªÙŠÙƒ ÙˆØ¹Ø·ÙˆØ±', 'icon': 'ðŸ’„'},
+    {'key': 'toys', 'tr': 'cat_toys', 'ar': 'Ø£Ù„Ø¹Ø§Ø¨ ÙˆÙ‡Ø¯Ø§ÙŠØ§', 'icon': 'ðŸ§¸'},
+    {'key': 'produce', 'tr': 'cat_produce', 'ar': 'Ø§Ù„Ø®Ø¶Ø± ÙˆØ§Ù„ÙÙˆØ§ÙƒÙ‡ ÙˆØ§Ù„Ù„Ø­ÙˆÙ…', 'icon': 'ðŸ'},
+    {'key': 'general_news', 'tr': 'cat_general', 'ar': 'Ù…Ù†ØªØ¬Ø§Øª Ø¹Ø§Ù…Ø© ÙˆØ¬Ø±Ø§Ø¦Ø¯', 'icon': 'ðŸ“°'},
+    {'key': 'spices', 'tr': 'cat_spices', 'ar': 'Ø§Ù„ØªÙˆØ§Ø¨Ù„ ÙˆØ§Ù„Ø¨Ù‡Ø§Ø±Ø§Øª', 'icon': 'ðŸ§‚'},
   ];
 
   @override
@@ -139,7 +139,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     });
   }
 
-  /// استعادة السلة المعلقة تلقائياً إذا تم حفظها قبل تثبيت تحديث
+  /// Ø§Ø³ØªØ¹Ø§Ø¯Ø© Ø§Ù„Ø³Ù„Ø© Ø§Ù„Ù…Ø¹Ù„Ù‚Ø© ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹ Ø¥Ø°Ø§ ØªÙ… Ø­ÙØ¸Ù‡Ø§ Ù‚Ø¨Ù„ ØªØ«Ø¨ÙŠØª ØªØ­Ø¯ÙŠØ«
   void _restoreAutoSavedCart() {
     try {
       final savedData = HiveDatabase.settingsBox.get('auto_saved_cart_before_update');
@@ -154,7 +154,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           SoundService.playSaveSuccess();
           SnackbarHelper.showSuccess(
             context,
-            '✅ تمت استعادة سلة المبيعات (${heldCart.items.length} سلع) تلقائياً بعد التحديث!',
+            'âœ… ØªÙ…Øª Ø§Ø³ØªØ¹Ø§Ø¯Ø© Ø³Ù„Ø© Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª (${heldCart.items.length} Ø³Ù„Ø¹) ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹ Ø¨Ø¹Ø¯ Ø§Ù„ØªØ­Ø¯ÙŠØ«!',
           );
         }
       }
@@ -189,7 +189,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           SoundService.playRestockSound();
           SnackbarHelper.showSuccess(
             context,
-            '🔔 ${context.tr('pos_incoming_carts')}: ${cart.senderName} (${cart.token}) - ${cart.totalAmount.toStringAsFixed(2)} DA',
+            'ðŸ”” ${context.tr('pos_incoming_carts')}: ${cart.senderName} (${cart.token}) - ${cart.totalAmount.toStringAsFixed(2)} DA',
           );
         }
       });
@@ -217,14 +217,14 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '⚠️ كشك الزبائن: زبون مسح سلعة غير مسجلة ($barcode) • مسحت $count مرات',
+                      'âš ï¸ ÙƒØ´Ùƒ Ø§Ù„Ø²Ø¨Ø§Ø¦Ù†: Ø²Ø¨ÙˆÙ† Ù…Ø³Ø­ Ø³Ù„Ø¹Ø© ØºÙŠØ± Ù…Ø³Ø¬Ù„Ø© ($barcode) â€¢ Ù…Ø³Ø­Øª $count Ù…Ø±Ø§Øª',
                       style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
                 ],
               ),
               action: SnackBarAction(
-                label: 'أضف للمخزون ➕',
+                label: 'Ø£Ø¶Ù Ù„Ù„Ù…Ø®Ø²ÙˆÙ† âž•',
                 textColor: Colors.amberAccent,
                 onPressed: () => context.push('/add-product?barcode=$barcode'),
               ),
@@ -268,9 +268,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         .toLowerCase()
         .trim()
         .replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '') // Remove Arabic tashkeel
-        .replaceAll(RegExp(r'[أإآٱ]'), 'ا') // Unify Alef
-        .replaceAll('ة', 'ه') // Unify Taa Marbuta
-        .replaceAll('ى', 'ي') // Unify Yaa / Alef Maqsura
+        .replaceAll(RegExp(r'[Ø£Ø¥Ø¢Ù±]'), 'Ø§') // Unify Alef
+        .replaceAll('Ø©', 'Ù‡') // Unify Taa Marbuta
+        .replaceAll('Ù‰', 'ÙŠ') // Unify Yaa / Alef Maqsura
         .replaceAll(RegExp(r'[\s\-_]+'), ' ');
   }
 
@@ -302,18 +302,18 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         final n = p.name.toLowerCase();
         final c = p.category.toLowerCase();
         // Strictly exclude packaged beverages, water bottles, and juices from coffee supplies
-        if (p.isBeverage || n.contains('ماء') || n.contains('eau') || n.contains('عصير') || n.contains('قارورة') || n.contains('كوكا')) {
+        if (p.isBeverage || n.contains('Ù…Ø§Ø¡') || n.contains('eau') || n.contains('Ø¹ØµÙŠØ±') || n.contains('Ù‚Ø§Ø±ÙˆØ±Ø©') || n.contains('ÙƒÙˆÙƒØ§')) {
           return false;
         }
-        return c.contains('مستلزم') || n.contains('سكر') || n.contains('غوبلي') || n.contains('gobelet') || n.contains('مغرف') || n.contains('ملعق') || n.contains('cuill');
+        return c.contains('Ù…Ø³ØªÙ„Ø²Ù…') || n.contains('Ø³ÙƒØ±') || n.contains('ØºÙˆØ¨Ù„ÙŠ') || n.contains('gobelet') || n.contains('Ù…ØºØ±Ù') || n.contains('Ù…Ù„Ø¹Ù‚') || n.contains('cuill');
       }).toList();
 
       // Auto-select standard accessories if they exist
       for (var acc in availableAccessories) {
         final n = acc.name.toLowerCase();
-        if (n.contains('غوبلي') || n.contains('gobelet') || 
-            n.contains('سكر') || n.contains('sucre') || 
-            n.contains('مغرف') || n.contains('ملعق') || n.contains('cuill')) {
+        if (n.contains('ØºÙˆØ¨Ù„ÙŠ') || n.contains('gobelet') || 
+            n.contains('Ø³ÙƒØ±') || n.contains('sucre') || 
+            n.contains('Ù…ØºØ±Ù') || n.contains('Ù…Ù„Ø¹Ù‚') || n.contains('cuill')) {
           selectedAccessoryIds.add(acc.id);
         }
       }
@@ -343,7 +343,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                 children: [
                   Icon(Icons.coffee_maker, color: Colors.brown),
                   SizedBox(width: 8),
-                  Expanded(child: Text('${context.tr("بيع / تحضير:")} ${product.name}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+                  Expanded(child: Text('${context.tr("Ø¨ÙŠØ¹ / ØªØ­Ø¶ÙŠØ±:")} ${product.name}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
                 ],
               ),
               content: SingleChildScrollView(
@@ -357,7 +357,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(context.tr('المخزون الحالي:'), style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(context.tr('Ø§Ù„Ù…Ø®Ø²ÙˆÙ† Ø§Ù„Ø­Ø§Ù„ÙŠ:'), style: TextStyle(fontWeight: FontWeight.bold)),
                           Text(
                             isFullPack 
                               ? '${product.stock} ${product.resolvedPackName}'
@@ -368,11 +368,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       ),
                     ),
                     SizedBox(height: 16),
-                    Text(context.tr('نوع المبيعة:'), style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(context.tr('Ù†ÙˆØ¹ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø©:'), style: TextStyle(fontWeight: FontWeight.bold)),
                     Column(
                       children: [
                         RadioListTile<String>(
-                          title: Text('${context.tr("تحضير وبيع بالأكواب")} (${product.resolvedSubUnitName})', style: TextStyle(fontSize: 13)),
+                          title: Text('${context.tr("ØªØ­Ø¶ÙŠØ± ÙˆØ¨ÙŠØ¹ Ø¨Ø§Ù„Ø£ÙƒÙˆØ§Ø¨")} (${product.resolvedSubUnitName})', style: TextStyle(fontSize: 13)),
                           value: 'cup',
                           groupValue: deductType,
                           contentPadding: EdgeInsets.zero,
@@ -384,7 +384,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           },
                         ),
                         RadioListTile<String>(
-                          title: Text('${context.tr("بيع العلبة بالكامل")} (${product.resolvedPackName})', style: TextStyle(fontSize: 13)),
+                          title: Text('${context.tr("Ø¨ÙŠØ¹ Ø§Ù„Ø¹Ù„Ø¨Ø© Ø¨Ø§Ù„ÙƒØ§Ù…Ù„")} (${product.resolvedPackName})', style: TextStyle(fontSize: 13)),
                           value: 'full_pack',
                           groupValue: deductType,
                           contentPadding: EdgeInsets.zero,
@@ -402,7 +402,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Text(context.tr('عدد الكؤوس:'), style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(context.tr('Ø¹Ø¯Ø¯ Ø§Ù„ÙƒØ¤ÙˆØ³:'), style: TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(width: 8),
                           IconButton(
                             icon: const Icon(Icons.remove_circle_outline, color: Colors.brown),
@@ -458,7 +458,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     
                     if (!isFullPack && availableAccessories.isNotEmpty) ...[
                       SizedBox(height: 14),
-                      Text(context.tr('مستلزمات الطلب (تخصم تلقائياً من المخزون وتُحسب تكلفتها):'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text(context.tr('Ù…Ø³ØªÙ„Ø²Ù…Ø§Øª Ø§Ù„Ø·Ù„Ø¨ (ØªØ®ØµÙ… ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹ Ù…Ù† Ø§Ù„Ù…Ø®Ø²ÙˆÙ† ÙˆØªÙØ­Ø³Ø¨ ØªÙƒÙ„ÙØªÙ‡Ø§):'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -466,7 +466,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         children: availableAccessories.map((acc) {
                           final isSelected = selectedAccessoryIds.contains(acc.id);
                           return FilterChip(
-                            label: Text('${acc.name} (${acc.resolvedPieceCost.toStringAsFixed(2)} دج)'),
+                            label: Text('${acc.name} (${acc.resolvedPieceCost.toStringAsFixed(2)} Ø¯Ø¬)'),
                             selected: isSelected,
                             onSelected: (selected) {
                               setDialogState(() {
@@ -491,8 +491,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(isFullPack ? context.tr('التكلفة الإجمالية:') : '${context.tr("التكلفة الإجمالية")} ($cupQty):', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-                          Text('${totalCost.toStringAsFixed(2)} دج', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade700, fontSize: 16)),
+                          Text(isFullPack ? context.tr('Ø§Ù„ØªÙƒÙ„ÙØ© Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠØ©:') : '${context.tr("Ø§Ù„ØªÙƒÙ„ÙØ© Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠØ©")} ($cupQty):', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text('${totalCost.toStringAsFixed(2)} Ø¯Ø¬', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade700, fontSize: 16)),
                         ],
                       ),
                     ),
@@ -502,7 +502,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       controller: priceCtrl,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        labelText: isFullPack ? context.tr('سعر بيع العلبة') : context.tr('سعر بيع الكأس الواحد للزبون'),
+                        labelText: isFullPack ? context.tr('Ø³Ø¹Ø± Ø¨ÙŠØ¹ Ø§Ù„Ø¹Ù„Ø¨Ø©') : context.tr('Ø³Ø¹Ø± Ø¨ÙŠØ¹ Ø§Ù„ÙƒØ£Ø³ Ø§Ù„ÙˆØ§Ø­Ø¯ Ù„Ù„Ø²Ø¨ÙˆÙ†'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         suffixText: context.tr('currency_symbol'),
                       ),
@@ -513,7 +513,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: Text(context.tr('إلغاء'), style: TextStyle(color: Colors.grey.shade700)),
+                  child: Text(context.tr('Ø¥Ù„ØºØ§Ø¡'), style: TextStyle(color: Colors.grey.shade700)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.brown, foregroundColor: Colors.white),
@@ -541,15 +541,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       for (var accId in selectedAccessoryIds) {
                         final acc = availableAccessories.firstWhere((p) => p.id == accId);
                         context.read<BillingBloc>().add(AddProductToCartEvent(
-                          acc, unitLevel: 'piece', quantity: finalQty.toDouble(), customPrice: 0.0, customUnitName: 'مستلزمات',
+                          acc, unitLevel: 'piece', quantity: finalQty.toDouble(), customPrice: 0.0, customUnitName: 'Ù…Ø³ØªÙ„Ø²Ù…Ø§Øª',
                         ));
                       }
                     }
                     
                     Navigator.pop(ctx);
-                    SnackbarHelper.showSuccess(context, 'تمت إضافة $finalQty بنجاح!');
+                    SnackbarHelper.showSuccess(context, 'ØªÙ…Øª Ø¥Ø¶Ø§ÙØ© $finalQty Ø¨Ù†Ø¬Ø§Ø­!');
                   },
-                  child: Text(context.tr('تأكيد وإضافة')),
+                  child: Text(context.tr('ØªØ£ÙƒÙŠØ¯ ÙˆØ¥Ø¶Ø§ÙØ©')),
                 ),
               ],
             );
@@ -602,7 +602,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     if (rawQuery.trim().isEmpty) return [];
     final query = rawQuery.trim();
     final normQuery = _normalizeSearchText(query);
-    final products = context.read<ProductBloc>().state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
+    final products = context.read<ProductBloc>().state.products.where((p) => p.category != 'Ù…Ù‚Ù‡Ù‰ - Ù…ÙˆØ§Ø¯ Ø®Ø§Ù…').toList();
 
     // 1. Check exact barcode match first
     final exactBarcode = products.where((p) => BarcodeNormalizer.matches(p.barcode, query)).toList();
@@ -719,11 +719,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'نتائج البحث: "$query"',
+                            'Ù†ØªØ§Ø¦Ø¬ Ø§Ù„Ø¨Ø­Ø«: "$query"',
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            'اختر السلعة المطلوبة لإضافتها إلى السلة (${matches.length} نتائج)',
+                            'Ø§Ø®ØªØ± Ø§Ù„Ø³Ù„Ø¹Ø© Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø© Ù„Ø¥Ø¶Ø§ÙØªÙ‡Ø§ Ø¥Ù„Ù‰ Ø§Ù„Ø³Ù„Ø© (${matches.length} Ù†ØªØ§Ø¦Ø¬)',
                             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                           ),
                         ],
@@ -833,7 +833,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                             borderRadius: BorderRadius.circular(4),
                                           ),
                                           child: Text(
-                                            'المخزون: ${product.stock}',
+                                            'Ø§Ù„Ù…Ø®Ø²ÙˆÙ†: ${product.stock}',
                                             style: TextStyle(
                                               fontSize: 10,
                                               color: isOutOfStock ? Colors.red.shade700 : Colors.green.shade700,
@@ -875,7 +875,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                       );
                                     },
                                     icon: const Icon(Icons.add_shopping_cart, size: 16),
-                                    label: Text(multiplier > 1 ? 'إضافة (x$multiplier)' : 'إضافة', style: const TextStyle(fontSize: 12)),
+                                    label: Text(multiplier > 1 ? 'Ø¥Ø¶Ø§ÙØ© (x$multiplier)' : 'Ø¥Ø¶Ø§ÙØ©', style: const TextStyle(fontSize: 12)),
                                   ),
                                 ],
                               ),
@@ -925,11 +925,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'دليل واقتراحات السلع والباركود',
+                            'Ø¯Ù„ÙŠÙ„ ÙˆØ§Ù‚ØªØ±Ø§Ø­Ø§Øª Ø§Ù„Ø³Ù„Ø¹ ÙˆØ§Ù„Ø¨Ø§Ø±ÙƒÙˆØ¯',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            'غير مسجل بمحلك بعد. اختر لإضافته إلى المخزون وبيعه فوراً:',
+                            'ØºÙŠØ± Ù…Ø³Ø¬Ù„ Ø¨Ù…Ø­Ù„Ùƒ Ø¨Ø¹Ø¯. Ø§Ø®ØªØ± Ù„Ø¥Ø¶Ø§ÙØªÙ‡ Ø¥Ù„Ù‰ Ø§Ù„Ù…Ø®Ø²ÙˆÙ† ÙˆØ¨ÙŠØ¹Ù‡ ÙÙˆØ±Ø§Ù‹:',
                             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                           ),
                         ],
@@ -1036,11 +1036,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                     _addProductToCartWithPricing(newProduct, quantity: multiplier.toDouble());
                                     SnackbarHelper.showSuccess(
                                       context,
-                                      'تمت إضافة "${item.name}" إلى مخزون المحل والسلة بنجاح',
+                                      'ØªÙ…Øª Ø¥Ø¶Ø§ÙØ© "${item.name}" Ø¥Ù„Ù‰ Ù…Ø®Ø²ÙˆÙ† Ø§Ù„Ù…Ø­Ù„ ÙˆØ§Ù„Ø³Ù„Ø© Ø¨Ù†Ø¬Ø§Ø­',
                                     );
                                   },
                                   icon: const Icon(Icons.add, size: 16),
-                                  label: Text(context.tr('إضافة وبيع'), style: const TextStyle(fontSize: 11)),
+                                  label: Text(context.tr('Ø¥Ø¶Ø§ÙØ© ÙˆØ¨ÙŠØ¹'), style: const TextStyle(fontSize: 11)),
                                 ),
                               ],
                             ),
@@ -1103,11 +1103,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   }) {
     final double? totalVal = double.tryParse(totalStr);
     final String displayTotal = totalVal != null
-        ? '${totalVal.toStringAsFixed(2)} دج'
-        : (totalStr.isNotEmpty ? '$totalStr دج' : 'غير محدد');
+        ? '${totalVal.toStringAsFixed(2)} Ø¯Ø¬'
+        : (totalStr.isNotEmpty ? '$totalStr Ø¯Ø¬' : 'ØºÙŠØ± Ù…Ø­Ø¯Ø¯');
     final String dateDisplay = date != null
         ? DateFormat('yyyy/MM/dd - HH:mm').format(date)
-        : 'تاريخ مسجل بالوصل';
+        : 'ØªØ§Ø±ÙŠØ® Ù…Ø³Ø¬Ù„ Ø¨Ø§Ù„ÙˆØµÙ„';
     final List items = (invoiceData != null && invoiceData['items'] is List)
         ? invoiceData['items'] as List
         : [];
@@ -1132,9 +1132,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('وصل معتمد ومؤكد رسمياً ✅',
+                  Text('ÙˆØµÙ„ Ù…Ø¹ØªÙ…Ø¯ ÙˆÙ…Ø¤ÙƒØ¯ Ø±Ø³Ù…ÙŠØ§Ù‹ âœ…',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text('تم التعرف على كود التحقق الذكي بنجاح',
+                  Text('ØªÙ… Ø§Ù„ØªØ¹Ø±Ù Ø¹Ù„Ù‰ ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„Ø°ÙƒÙŠ Ø¨Ù†Ø¬Ø§Ø­',
                       style: TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
@@ -1159,7 +1159,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('رقم الفاتورة / الوصل:',
+                        const Text('Ø±Ù‚Ù… Ø§Ù„ÙØ§ØªÙˆØ±Ø© / Ø§Ù„ÙˆØµÙ„:',
                             style: TextStyle(fontSize: 12.5, color: Colors.black54)),
                         Text('#$invoiceNumber',
                             style: const TextStyle(
@@ -1170,7 +1170,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('المبلغ الإجمالي:',
+                        const Text('Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ:',
                             style: TextStyle(fontSize: 12.5, color: Colors.black54)),
                         Text(displayTotal,
                             style: const TextStyle(
@@ -1181,7 +1181,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('توقيت الإصدار:',
+                        const Text('ØªÙˆÙ‚ÙŠØª Ø§Ù„Ø¥ØµØ¯Ø§Ø±:',
                             style: TextStyle(fontSize: 11.5, color: Colors.black54)),
                         Text(dateDisplay,
                             style: const TextStyle(fontSize: 11.5, color: Colors.grey)),
@@ -1192,9 +1192,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('أرشيف المبيعات:',
+                          const Text('Ø£Ø±Ø´ÙŠÙ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª:',
                               style: TextStyle(fontSize: 11.5, color: Colors.black54)),
-                          Text('مسجل (${items.length} سلع)',
+                          Text('Ù…Ø³Ø¬Ù„ (${items.length} Ø³Ù„Ø¹)',
                               style: const TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.bold,
@@ -1214,7 +1214,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 icon: const Icon(Icons.assignment_return_rounded, size: 20),
-                label: const Text('تفعيل وضع إرجاع السلع لهذا الوصل 🔄',
+                label: const Text('ØªÙØ¹ÙŠÙ„ ÙˆØ¶Ø¹ Ø¥Ø±Ø¬Ø§Ø¹ Ø§Ù„Ø³Ù„Ø¹ Ù„Ù‡Ø°Ø§ Ø§Ù„ÙˆØµÙ„ ðŸ”„',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -1224,7 +1224,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   SoundService.playWarningSound();
                   SnackbarHelper.showWarning(
                     context,
-                    'تم تفعيل وضع الإرجاع للوصل رقم #$invoiceNumber. يمكنك الآن مسح السلع المسترجعة لإضافتها بالسالب.',
+                    'ØªÙ… ØªÙØ¹ÙŠÙ„ ÙˆØ¶Ø¹ Ø§Ù„Ø¥Ø±Ø¬Ø§Ø¹ Ù„Ù„ÙˆØµÙ„ Ø±Ù‚Ù… #$invoiceNumber. ÙŠÙ…ÙƒÙ†Ùƒ Ø§Ù„Ø¢Ù† Ù…Ø³Ø­ Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ù…Ø³ØªØ±Ø¬Ø¹Ø© Ù„Ø¥Ø¶Ø§ÙØªÙ‡Ø§ Ø¨Ø§Ù„Ø³Ø§Ù„Ø¨.',
                   );
                 },
               ),
@@ -1239,7 +1239,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   ),
                   icon: const Icon(Icons.undo_rounded, size: 20),
                   label: const Text(
-                    'إلغاء الوصل بالكامل واسترجاع السلع للمخزون فوراً ↩️',
+                    'Ø¥Ù„ØºØ§Ø¡ Ø§Ù„ÙˆØµÙ„ Ø¨Ø§Ù„ÙƒØ§Ù…Ù„ ÙˆØ§Ø³ØªØ±Ø¬Ø§Ø¹ Ø§Ù„Ø³Ù„Ø¹ Ù„Ù„Ù…Ø®Ø²ÙˆÙ† ÙÙˆØ±Ø§Ù‹ â†©ï¸',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   onPressed: () async {
@@ -1258,7 +1258,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   icon: const Icon(Icons.print_rounded, size: 18),
-                  label: const Text('إعادة طباعة هذا الوصل 🖨️', style: TextStyle(fontSize: 12.5)),
+                  label: const Text('Ø¥Ø¹Ø§Ø¯Ø© Ø·Ø¨Ø§Ø¹Ø© Ù‡Ø°Ø§ Ø§Ù„ÙˆØµÙ„ ðŸ–¨ï¸', style: TextStyle(fontSize: 12.5)),
                   onPressed: () async {
                     Navigator.pop(ctx);
                     final shop = HiveDatabase.shopBox.isNotEmpty
@@ -1288,7 +1288,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق', style: TextStyle(color: Colors.grey)),
+            child: const Text('Ø¥ØºÙ„Ø§Ù‚', style: TextStyle(color: Colors.grey)),
           ),
         ],
       ),
@@ -1305,22 +1305,22 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.deepOrange, size: 28),
             SizedBox(width: 8),
-            Text('تأكيد إلغاء الوصل وإرجاع السلع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text('ØªØ£ÙƒÙŠØ¯ Ø¥Ù„ØºØ§Ø¡ Ø§Ù„ÙˆØµÙ„ ÙˆØ¥Ø±Ø¬Ø§Ø¹ Ø§Ù„Ø³Ù„Ø¹', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         content: Text(
-          'هل أنت متأكد من إلغاء هذا الوصل (#$invId) بالكامل؟\nسيتم فوراً إعادة جميع السلع المباعة فيه إلى المخزون وتعديل الحسابات.',
+          'Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø¥Ù„ØºØ§Ø¡ Ù‡Ø°Ø§ Ø§Ù„ÙˆØµÙ„ (#$invId) Ø¨Ø§Ù„ÙƒØ§Ù…Ù„ØŸ\nØ³ÙŠØªÙ… ÙÙˆØ±Ø§Ù‹ Ø¥Ø¹Ø§Ø¯Ø© Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø³Ù„Ø¹ Ø§Ù„Ù…Ø¨Ø§Ø¹Ø© ÙÙŠÙ‡ Ø¥Ù„Ù‰ Ø§Ù„Ù…Ø®Ø²ÙˆÙ† ÙˆØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ø­Ø³Ø§Ø¨Ø§Øª.',
           style: const TextStyle(fontSize: 13, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('تراجع'),
+            child: const Text('ØªØ±Ø§Ø¬Ø¹'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('تأكيد الإلغاء والإرجاع'),
+            child: const Text('ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø¥Ù„ØºØ§Ø¡ ÙˆØ§Ù„Ø¥Ø±Ø¬Ø§Ø¹'),
           ),
         ],
       ),
@@ -1419,7 +1419,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
 
     // Open drawer if cash payment to give money back
-    if (invoiceData['paymentMethod'] == 'Espèces' || invoiceData['paymentMethod'] == 'كاش') {
+    if (invoiceData['paymentMethod'] == 'EspÃ¨ces' || invoiceData['paymentMethod'] == 'ÙƒØ§Ø´') {
       try {
         await PrinterHelper.openCashDrawer();
       } catch (_) {}
@@ -1429,7 +1429,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     if (mounted) {
       SnackbarHelper.showSuccess(
         context,
-        '✅ تم إلغاء الوصل #$invId بنجاح وإعادة جميع السلع إلى المخزون! 🔄',
+        'âœ… ØªÙ… Ø¥Ù„ØºØ§Ø¡ Ø§Ù„ÙˆØµÙ„ #$invId Ø¨Ù†Ø¬Ø§Ø­ ÙˆØ¥Ø¹Ø§Ø¯Ø© Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø³Ù„Ø¹ Ø¥Ù„Ù‰ Ø§Ù„Ù…Ø®Ø²ÙˆÙ†! ðŸ”„',
       );
     }
   }
@@ -1453,7 +1453,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     });
     _barcodeFocusNode.requestFocus();
 
-    // Check for quantity multiplier syntax (e.g., "5*6130140001019" or "3*حليب")
+    // Check for quantity multiplier syntax (e.g., "5*6130140001019" or "3*Ø­Ù„ÙŠØ¨")
     int multiplier = 1;
     String barcodeToScan = input;
     if (input.contains('*')) {
@@ -1514,7 +1514,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       );
       if (scaleResult != null) {
         final productBloc = context.read<ProductBloc>();
-        final products = productBloc.state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
+        final products = productBloc.state.products.where((p) => p.category != 'Ù…Ù‚Ù‡Ù‰ - Ù…ÙˆØ§Ø¯ Ø®Ø§Ù…').toList();
         final scaleProduct = BarcodeNormalizer.findScaleProduct(products, scaleResult);
         if (scaleProduct != null) {
           double effectiveUnitPrice = scaleProduct.price;
@@ -1553,7 +1553,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     // 3. Find product in local inventory by barcode (exact or normalized)
     final productBloc = context.read<ProductBloc>();
-    final products = productBloc.state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
+    final products = productBloc.state.products.where((p) => p.category != 'Ù…Ù‚Ù‡Ù‰ - Ù…ÙˆØ§Ø¯ Ø®Ø§Ù…').toList();
     final barcodeProduct = BarcodeNormalizer.findProduct(products, barcodeToScan);
 
     if (barcodeProduct != null) {
@@ -1694,7 +1694,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     billingBloc.add(RemoveProductFromCartEvent(lastItem.product.id));
     SoundService.playDeleteSound();
-    SnackbarHelper.showInfo(context, '✅ ${lastItem.product.name} ' + context.tr('item_deleted_msg'));
+    SnackbarHelper.showInfo(context, 'âœ… ${lastItem.product.name} ' + context.tr('item_deleted_msg'));
   }
 
   void _adjustLastItemQuantity(int delta) {
@@ -1979,7 +1979,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                                       ),
                                       child: Text(rc.token, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                                     ),
-                                    Text('${rc.senderName} • ${DateFormat('HH:mm').format(rc.timestamp)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                    Text('${rc.senderName} â€¢ ${DateFormat('HH:mm').format(rc.timestamp)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                     Text('${rc.totalAmount.toStringAsFixed(2)} DA', style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.w900, fontSize: 16)),
                                   ],
                                 ),
@@ -2062,7 +2062,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           children: [
             const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.orange, size: 30),
             const SizedBox(width: 8),
-            Text('${context.tr("transferred_cart_from")} (${cart.senderName}) 🔀',
+            Text('${context.tr("transferred_cart_from")} (${cart.senderName}) ðŸ”€',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
@@ -2070,7 +2070,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${context.tr("ticket")}: ${cart.token}  •  ${context.tr("amount")}: ${cart.totalAmount.toStringAsFixed(2)} DA',
+            Text('${context.tr("ticket")}: ${cart.token}  â€¢  ${context.tr("amount")}: ${cart.totalAmount.toStringAsFixed(2)} DA',
                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.teal)),
             const SizedBox(height: 8),
             Text('${context.tr("contains_items")} (${cart.items.length}): ${cart.items.map((i) => i.name).join(", ")}',
@@ -2138,7 +2138,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       _pendingRemoteCartsCount = LocalSyncServer.pendingRemoteCarts.length;
     });
     SoundService.playCheckoutSuccess();
-    SnackbarHelper.showSuccess(context, '✅ ${cart.token} ' + context.tr('cart_received_success'));
+    SnackbarHelper.showSuccess(context, 'âœ… ${cart.token} ' + context.tr('cart_received_success'));
     _barcodeFocusNode.requestFocus();
   }
 
@@ -2167,7 +2167,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${context.tr("current_cart")}: ${state.cartItems.length} ${context.tr("items")} • ${context.tr("total")}: ${state.totalAmount.toStringAsFixed(2)} DA',
+            Text('${context.tr("current_cart")}: ${state.cartItems.length} ${context.tr("items")} â€¢ ${context.tr("total")}: ${state.totalAmount.toStringAsFixed(2)} DA',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.teal)),
             const SizedBox(height: 12),
             Text(context.tr('enter_peer_ip_hint'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -2238,10 +2238,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   _cartDiscountValue = 0.0;
                 });
                 SoundService.playCheckoutSuccess();
-                SnackbarHelper.showSuccess(context, '✅ ' + context.tr('cart_transferred_success') + ' ($targetIp)');
+                SnackbarHelper.showSuccess(context, 'âœ… ' + context.tr('cart_transferred_success') + ' ($targetIp)');
                 _barcodeFocusNode.requestFocus();
               } else {
-                SnackbarHelper.showError(context, '❌ ' + context.tr('cart_transfer_failed') + ' ($targetIp)');
+                SnackbarHelper.showError(context, 'âŒ ' + context.tr('cart_transfer_failed') + ' ($targetIp)');
               }
             },
           ),
@@ -2276,7 +2276,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${context.tr("customer")}: $_selectedCustomerName  •  ${context.tr("amount")}: ${total.toStringAsFixed(2)} DA',
+            Text('${context.tr("customer")}: $_selectedCustomerName  â€¢  ${context.tr("amount")}: ${total.toStringAsFixed(2)} DA',
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
             const SizedBox(height: 12),
             TextField(
@@ -2321,20 +2321,20 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     final invoiceNumber = '#${DateTime.now().millisecondsSinceEpoch % 90000 + 10000}';
     final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
 
-    final itemsSummary = state.cartItems.map((ci) => '• ${ci.product.name} (x${ci.quantity}) = ${(ci.product.price * ci.quantity).toStringAsFixed(0)} DA').join('\n');
+    final itemsSummary = state.cartItems.map((ci) => 'â€¢ ${ci.product.name} (x${ci.quantity}) = ${(ci.product.price * ci.quantity).toStringAsFixed(0)} DA').join('\n');
 
     final message = '''
-🧾 *وصل مشتريات رقمي - $shopName*
-رقم الوصل: $invoiceNumber
-التاريخ: $dateStr
-الزبون: $_selectedCustomerName
+ðŸ§¾ *ÙˆØµÙ„ Ù…Ø´ØªØ±ÙŠØ§Øª Ø±Ù‚Ù…ÙŠ - $shopName*
+Ø±Ù‚Ù… Ø§Ù„ÙˆØµÙ„: $invoiceNumber
+Ø§Ù„ØªØ§Ø±ÙŠØ®: $dateStr
+Ø§Ù„Ø²Ø¨ÙˆÙ†: $_selectedCustomerName
 --------------------------------
 $itemsSummary
 --------------------------------
-💰 *المجموع الصافي: ${total.toStringAsFixed(2)} DA*
-رصيد الديون المتبقي: ${_customerCreditBalance.toStringAsFixed(2)} DA
+ðŸ’° *Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹ Ø§Ù„ØµØ§ÙÙŠ: ${total.toStringAsFixed(2)} DA*
+Ø±ØµÙŠØ¯ Ø§Ù„Ø¯ÙŠÙˆÙ† Ø§Ù„Ù…ØªØ¨Ù‚ÙŠ: ${_customerCreditBalance.toStringAsFixed(2)} DA
 
-شكراً لتعاملكم معنا! • Merci de votre visite!
+Ø´ÙƒØ±Ø§Ù‹ Ù„ØªØ¹Ø§Ù…Ù„ÙƒÙ… Ù…Ø¹Ù†Ø§! â€¢ Merci de votre visite!
 ''';
 
     final success = await WhatsAppReceiptHelper.sendDirectWhatsAppMessage(
@@ -2451,7 +2451,7 @@ $itemsSummary
             final allProducts = context.read<ProductBloc>().state.products;
             final query = searchController.text.trim().toLowerCase();
 
-            final productsInCat = allProducts.where((p) { if (p.category == 'مقهى - مواد خام') return false;
+            final productsInCat = allProducts.where((p) { if (p.category == 'Ù…Ù‚Ù‡Ù‰ - Ù…ÙˆØ§Ø¯ Ø®Ø§Ù…') return false;
                 final catL = p.category.toLowerCase();
                 final nameL = p.name.toLowerCase();
 
@@ -2459,89 +2459,89 @@ $itemsSummary
                   // pass
                 } else if (catKey == 'tobacco') {
                   final isTob = p.isTobacco ||
-                      catL.contains('تبغ') || catL.contains('سجائر') || catL.contains('شمة') || catL.contains('معسل') ||
-                      nameL.contains('مارلبورو') || nameL.contains('ريم') || nameL.contains('سجائر') || nameL.contains('دخان');
+                      catL.contains('ØªØ¨Øº') || catL.contains('Ø³Ø¬Ø§Ø¦Ø±') || catL.contains('Ø´Ù…Ø©') || catL.contains('Ù…Ø¹Ø³Ù„') ||
+                      nameL.contains('Ù…Ø§Ø±Ù„Ø¨ÙˆØ±Ùˆ') || nameL.contains('Ø±ÙŠÙ…') || nameL.contains('Ø³Ø¬Ø§Ø¦Ø±') || nameL.contains('Ø¯Ø®Ø§Ù†');
                   if (!isTob) return false;
                 } else if (catKey == 'cold_drinks' || catKey == 'beverages') {
-                  final isCD = catL.contains('مشروب') || catL.contains('ماء') || catL.contains('عصير') || catL.contains('غازي') ||
-                               nameL.contains('مشروب') || nameL.contains('ماء') || nameL.contains('عصير') || nameL.contains('كوكا') || nameL.contains('حمود');
+                  final isCD = catL.contains('Ù…Ø´Ø±ÙˆØ¨') || catL.contains('Ù…Ø§Ø¡') || catL.contains('Ø¹ØµÙŠØ±') || catL.contains('ØºØ§Ø²ÙŠ') ||
+                               nameL.contains('Ù…Ø´Ø±ÙˆØ¨') || nameL.contains('Ù…Ø§Ø¡') || nameL.contains('Ø¹ØµÙŠØ±') || nameL.contains('ÙƒÙˆÙƒØ§') || nameL.contains('Ø­Ù…ÙˆØ¯');
                   if (!isCD) return false;
                 } else if (catKey == 'dairy') {
-                  final isDairy = catL.contains('حليب') || catL.contains('لبن') || catL.contains('جبن') || catL.contains('ألبان') || catL.contains('زبادي') ||
-                                  nameL.contains('حليب') || nameL.contains('جبن') || nameL.contains('ياغورت');
+                  final isDairy = catL.contains('Ø­Ù„ÙŠØ¨') || catL.contains('Ù„Ø¨Ù†') || catL.contains('Ø¬Ø¨Ù†') || catL.contains('Ø£Ù„Ø¨Ø§Ù†') || catL.contains('Ø²Ø¨Ø§Ø¯ÙŠ') ||
+                                  nameL.contains('Ø­Ù„ÙŠØ¨') || nameL.contains('Ø¬Ø¨Ù†') || nameL.contains('ÙŠØ§ØºÙˆØ±Øª');
                   if (!isDairy) return false;
-                } else if (catKey == 'coffee_tea' || catKey.contains('قهوة') || catKey.contains('شاي')) {
-                  if (p.isBeverage && !catL.contains('قهوة') && !catL.contains('شاي') && !nameL.contains('قهوة') && !nameL.contains('شاي')) return false;
-                  if (nameL.contains('ماء معدني') || nameL.contains('قارورة ماء') || nameL.contains('ماء 0.5') || nameL.contains('ماء 1.5') || nameL.contains('جافيل')) return false;
+                } else if (catKey == 'coffee_tea' || catKey.contains('Ù‚Ù‡ÙˆØ©') || catKey.contains('Ø´Ø§ÙŠ')) {
+                  if (p.isBeverage && !catL.contains('Ù‚Ù‡ÙˆØ©') && !catL.contains('Ø´Ø§ÙŠ') && !nameL.contains('Ù‚Ù‡ÙˆØ©') && !nameL.contains('Ø´Ø§ÙŠ')) return false;
+                  if (nameL.contains('Ù…Ø§Ø¡ Ù…Ø¹Ø¯Ù†ÙŠ') || nameL.contains('Ù‚Ø§Ø±ÙˆØ±Ø© Ù…Ø§Ø¡') || nameL.contains('Ù…Ø§Ø¡ 0.5') || nameL.contains('Ù…Ø§Ø¡ 1.5') || nameL.contains('Ø¬Ø§ÙÙŠÙ„')) return false;
                   final isCT = p.isCoffeeMachineProduct ||
-                               catL.contains('قهوة') || catL.contains('شاي') ||
-                               nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('نسكافيه') || nameL.contains('كبسول');
+                               catL.contains('Ù‚Ù‡ÙˆØ©') || catL.contains('Ø´Ø§ÙŠ') ||
+                               nameL.contains('Ù‚Ù‡ÙˆØ©') || nameL.contains('Ø´Ø§ÙŠ') || nameL.contains('Ù†Ø³ÙƒØ§ÙÙŠÙ‡') || nameL.contains('ÙƒØ¨Ø³ÙˆÙ„');
                   if (!isCT) return false;
                 } else if (catKey == 'sweets') {
-                  final isSweets = catL.contains('حلو') || catL.contains('شوكولا') || catL.contains('بسكويت') || catL.contains('علك') ||
-                                   nameL.contains('شوكولا') || nameL.contains('بسكويت') || nameL.contains('قوفريط') || nameL.contains('حلوى');
+                  final isSweets = catL.contains('Ø­Ù„Ùˆ') || catL.contains('Ø´ÙˆÙƒÙˆÙ„Ø§') || catL.contains('Ø¨Ø³ÙƒÙˆÙŠØª') || catL.contains('Ø¹Ù„Ùƒ') ||
+                                   nameL.contains('Ø´ÙˆÙƒÙˆÙ„Ø§') || nameL.contains('Ø¨Ø³ÙƒÙˆÙŠØª') || nameL.contains('Ù‚ÙˆÙØ±ÙŠØ·') || nameL.contains('Ø­Ù„ÙˆÙ‰');
                   if (!isSweets) return false;
                 } else if (catKey == 'scale') {
-                  if (!p.isWeighted && !catL.contains('ميزان') && !nameL.contains('ميزان')) return false;
+                  if (!p.isWeighted && !catL.contains('Ù…ÙŠØ²Ø§Ù†') && !nameL.contains('Ù…ÙŠØ²Ø§Ù†')) return false;
                 } else if (catKey == 'pulses') {
-                  final isPulse = catL.contains('عدس') || catL.contains('حمص') || catL.contains('لوبيا') || catL.contains('أرز') || catL.contains('بقول') ||
-                                  nameL.contains('عدس') || nameL.contains('حمص') || nameL.contains('لوبيا') || nameL.contains('أرز');
+                  final isPulse = catL.contains('Ø¹Ø¯Ø³') || catL.contains('Ø­Ù…Øµ') || catL.contains('Ù„ÙˆØ¨ÙŠØ§') || catL.contains('Ø£Ø±Ø²') || catL.contains('Ø¨Ù‚ÙˆÙ„') ||
+                                  nameL.contains('Ø¹Ø¯Ø³') || nameL.contains('Ø­Ù…Øµ') || nameL.contains('Ù„ÙˆØ¨ÙŠØ§') || nameL.contains('Ø£Ø±Ø²');
                   if (!isPulse) return false;
                 } else if (catKey == 'canned') {
-                  final isCanned = catL.contains('طماطم') || catL.contains('زيت') || catL.contains('تونة') || catL.contains('سردين') || catL.contains('معلب') ||
-                                   nameL.contains('طماطم') || nameL.contains('زيت') || nameL.contains('تونة');
+                  final isCanned = catL.contains('Ø·Ù…Ø§Ø·Ù…') || catL.contains('Ø²ÙŠØª') || catL.contains('ØªÙˆÙ†Ø©') || catL.contains('Ø³Ø±Ø¯ÙŠÙ†') || catL.contains('Ù…Ø¹Ù„Ø¨') ||
+                                   nameL.contains('Ø·Ù…Ø§Ø·Ù…') || nameL.contains('Ø²ÙŠØª') || nameL.contains('ØªÙˆÙ†Ø©');
                   if (!isCanned) return false;
                 } else if (catKey == 'bakery') {
-                  final isBakery = catL.contains('خبز') || catL.contains('عجين') || catL.contains('مقرونة') || catL.contains('كسكسي') || catL.contains('سميد') || catL.contains('فرينة') ||
-                                   nameL.contains('خبز') || nameL.contains('مقرونة') || nameL.contains('كسكسي');
+                  final isBakery = catL.contains('Ø®Ø¨Ø²') || catL.contains('Ø¹Ø¬ÙŠÙ†') || catL.contains('Ù…Ù‚Ø±ÙˆÙ†Ø©') || catL.contains('ÙƒØ³ÙƒØ³ÙŠ') || catL.contains('Ø³Ù…ÙŠØ¯') || catL.contains('ÙØ±ÙŠÙ†Ø©') ||
+                                   nameL.contains('Ø®Ø¨Ø²') || nameL.contains('Ù…Ù‚Ø±ÙˆÙ†Ø©') || nameL.contains('ÙƒØ³ÙƒØ³ÙŠ');
                   if (!isBakery) return false;
                 } else if (catKey == 'cleaning') {
-                  final isClean = catL.contains('منظف') || catL.contains('جافيل') || catL.contains('غسيل') || catL.contains('أواني') ||
-                                  nameL.contains('جافيل') || nameL.contains('إيزيس') || nameL.contains('أومو');
+                  final isClean = catL.contains('Ù…Ù†Ø¸Ù') || catL.contains('Ø¬Ø§ÙÙŠÙ„') || catL.contains('ØºØ³ÙŠÙ„') || catL.contains('Ø£ÙˆØ§Ù†ÙŠ') ||
+                                  nameL.contains('Ø¬Ø§ÙÙŠÙ„') || nameL.contains('Ø¥ÙŠØ²ÙŠØ³') || nameL.contains('Ø£ÙˆÙ…Ùˆ');
                   if (!isClean) return false;
                 } else if (catKey == 'hygiene') {
-                  final isHyg = catL.contains('صابون') || catL.contains('شامبو') || catL.contains('معجون') || catL.contains('عناية') ||
-                                nameL.contains('صابون') || nameL.contains('شامبو') || nameL.contains('معجون');
+                  final isHyg = catL.contains('ØµØ§Ø¨ÙˆÙ†') || catL.contains('Ø´Ø§Ù…Ø¨Ùˆ') || catL.contains('Ù…Ø¹Ø¬ÙˆÙ†') || catL.contains('Ø¹Ù†Ø§ÙŠØ©') ||
+                                nameL.contains('ØµØ§Ø¨ÙˆÙ†') || nameL.contains('Ø´Ø§Ù…Ø¨Ùˆ') || nameL.contains('Ù…Ø¹Ø¬ÙˆÙ†');
                   if (!isHyg) return false;
                 } else if (catKey == 'phone_accessories') {
-                  final isPhone = catL.contains('هاتف') || catL.contains('شاحن') || catL.contains('كابل') ||
-                                  catL.contains('سماع') || catL.contains('إلكترون') || catL.contains('phone') ||
-                                  nameL.contains('شاحن') || nameL.contains('كابل') || nameL.contains('سماعة') ||
+                  final isPhone = catL.contains('Ù‡Ø§ØªÙ') || catL.contains('Ø´Ø§Ø­Ù†') || catL.contains('ÙƒØ§Ø¨Ù„') ||
+                                  catL.contains('Ø³Ù…Ø§Ø¹') || catL.contains('Ø¥Ù„ÙƒØªØ±ÙˆÙ†') || catL.contains('phone') ||
+                                  nameL.contains('Ø´Ø§Ø­Ù†') || nameL.contains('ÙƒØ§Ø¨Ù„') || nameL.contains('Ø³Ù…Ø§Ø¹Ø©') ||
                                   nameL.contains('ecouteur') || nameL.contains('chargeur') || nameL.contains('cable') ||
-                                  nameL.contains('بوشات') || nameL.contains('انكاسابل');
+                                  nameL.contains('Ø¨ÙˆØ´Ø§Øª') || nameL.contains('Ø§Ù†ÙƒØ§Ø³Ø§Ø¨Ù„');
                   if (!isPhone) return false;
                 } else if (catKey == 'batteries') {
-                  final isBat = catL.contains('بطار') || catL.contains('حجر') || catL.contains('بيل') ||
+                  final isBat = catL.contains('Ø¨Ø·Ø§Ø±') || catL.contains('Ø­Ø¬Ø±') || catL.contains('Ø¨ÙŠÙ„') ||
                                 catL.contains('pile') || catL.contains('battery') ||
-                                nameL.contains('بطارية') || nameL.contains('حجرة') || nameL.contains('pile');
+                                nameL.contains('Ø¨Ø·Ø§Ø±ÙŠØ©') || nameL.contains('Ø­Ø¬Ø±Ø©') || nameL.contains('pile');
                   if (!isBat) return false;
                 } else if (catKey == 'cosmetics') {
-                  final isCosm = catL.contains('كوسميتيك') || catL.contains('تجميل') || catL.contains('مكياج') ||
-                                 catL.contains('عطر') || catL.contains('ريحة') || catL.contains('parfum') ||
-                                 nameL.contains('عطر') || nameL.contains('شامبو') || nameL.contains('كريم') ||
-                                 nameL.contains('ماسك') || nameL.contains('كحل');
+                  final isCosm = catL.contains('ÙƒÙˆØ³Ù…ÙŠØªÙŠÙƒ') || catL.contains('ØªØ¬Ù…ÙŠÙ„') || catL.contains('Ù…ÙƒÙŠØ§Ø¬') ||
+                                 catL.contains('Ø¹Ø·Ø±') || catL.contains('Ø±ÙŠØ­Ø©') || catL.contains('parfum') ||
+                                 nameL.contains('Ø¹Ø·Ø±') || nameL.contains('Ø´Ø§Ù…Ø¨Ùˆ') || nameL.contains('ÙƒØ±ÙŠÙ…') ||
+                                 nameL.contains('Ù…Ø§Ø³Ùƒ') || nameL.contains('ÙƒØ­Ù„');
                   if (!isCosm) return false;
                 } else if (catKey == 'toys') {
-                  final isToy = catL.contains('لعب') || catL.contains('jouet') || catL.contains('toy') ||
-                                catL.contains('بالون') || catL.contains('هدية') ||
-                                nameL.contains('لعبة') || nameL.contains('سيارة لعبة') || nameL.contains('بالون') ||
-                                nameL.contains('مفاجأة');
+                  final isToy = catL.contains('Ù„Ø¹Ø¨') || catL.contains('jouet') || catL.contains('toy') ||
+                                catL.contains('Ø¨Ø§Ù„ÙˆÙ†') || catL.contains('Ù‡Ø¯ÙŠØ©') ||
+                                nameL.contains('Ù„Ø¹Ø¨Ø©') || nameL.contains('Ø³ÙŠØ§Ø±Ø© Ù„Ø¹Ø¨Ø©') || nameL.contains('Ø¨Ø§Ù„ÙˆÙ†') ||
+                                nameL.contains('Ù…ÙØ§Ø¬Ø£Ø©');
                   if (!isToy) return false;
                 } else if (catKey == 'stationery') {
-                  final isStat = catL.contains('كراس') || catL.contains('قلم') || catL.contains('دفتر') || catL.contains('مدرس') || catL.contains('مكتب') ||
-                                 nameL.contains('كراس') || nameL.contains('قلم') || nameL.contains('دفتر');
+                  final isStat = catL.contains('ÙƒØ±Ø§Ø³') || catL.contains('Ù‚Ù„Ù…') || catL.contains('Ø¯ÙØªØ±') || catL.contains('Ù…Ø¯Ø±Ø³') || catL.contains('Ù…ÙƒØªØ¨') ||
+                                 nameL.contains('ÙƒØ±Ø§Ø³') || nameL.contains('Ù‚Ù„Ù…') || nameL.contains('Ø¯ÙØªØ±');
                   if (!isStat) return false;
                 } else if (catKey == 'produce') {
-                  final isProd = catL.contains('خضر') || catL.contains('فواكه') || catL.contains('لحم') || catL.contains('دجاج') || catL.contains('بيض') ||
-                                 nameL.contains('تفاح') || nameL.contains('بطاطا') || nameL.contains('بيض');
+                  final isProd = catL.contains('Ø®Ø¶Ø±') || catL.contains('ÙÙˆØ§ÙƒÙ‡') || catL.contains('Ù„Ø­Ù…') || catL.contains('Ø¯Ø¬Ø§Ø¬') || catL.contains('Ø¨ÙŠØ¶') ||
+                                 nameL.contains('ØªÙØ§Ø­') || nameL.contains('Ø¨Ø·Ø§Ø·Ø§') || nameL.contains('Ø¨ÙŠØ¶');
                   if (!isProd) return false;
                 } else if (catKey == 'general_news') {
-                  final isGN = catL.contains('عام') || catL.contains('جريد') || catL.contains('مجل') || catL.contains('كشك') ||
-                               nameL.contains('عام') || nameL.contains('جريد') || nameL.contains('مجل');
+                  final isGN = catL.contains('Ø¹Ø§Ù…') || catL.contains('Ø¬Ø±ÙŠØ¯') || catL.contains('Ù…Ø¬Ù„') || catL.contains('ÙƒØ´Ùƒ') ||
+                               nameL.contains('Ø¹Ø§Ù…') || nameL.contains('Ø¬Ø±ÙŠØ¯') || nameL.contains('Ù…Ø¬Ù„');
                   if (!isGN) return false;
                 } else if (catKey == 'spices') {
-                  final isSpices = catL.contains('توابل') || catL.contains('بهارات') || catL.contains('ملح') ||
-                                   nameL.contains('توابل') || nameL.contains('بهارات') || nameL.contains('فلفل أسود');
+                  final isSpices = catL.contains('ØªÙˆØ§Ø¨Ù„') || catL.contains('Ø¨Ù‡Ø§Ø±Ø§Øª') || catL.contains('Ù…Ù„Ø­') ||
+                                   nameL.contains('ØªÙˆØ§Ø¨Ù„') || nameL.contains('Ø¨Ù‡Ø§Ø±Ø§Øª') || nameL.contains('ÙÙ„ÙÙ„ Ø£Ø³ÙˆØ¯');
                   if (!isSpices) return false;
                 } else {
                   if (p.category != catName && p.category != catKey) return false;
@@ -2723,7 +2723,7 @@ $itemsSummary
                     ),
                     onSubmitted: (code) {
                       final productBloc = context.read<ProductBloc>();
-                      final products = productBloc.state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
+                      final products = productBloc.state.products.where((p) => p.category != 'Ù…Ù‚Ù‡Ù‰ - Ù…ÙˆØ§Ø¯ Ø®Ø§Ù…').toList();
                       final match = products.where((p) => p.barcode == code.trim()).firstOrNull;
                       setModalState(() {
                         foundProduct = match;
@@ -2760,7 +2760,7 @@ $itemsSummary
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text('${context.tr('in_stock')}: ${foundProduct!.stock} • ${foundProduct!.category}',
+                          Text('${context.tr('in_stock')}: ${foundProduct!.stock} â€¢ ${foundProduct!.category}',
                               style: const TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
@@ -2800,12 +2800,12 @@ $itemsSummary
                 children: [
                   ListTile(
                     leading: const CircleAvatar(backgroundColor: Colors.grey, child: Icon(Icons.person_outline, color: Colors.white)),
-                    title: Text(context.tr('زبون عابر (صندوق المبيعات)'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(context.tr('بدون ديون أو وفاء')),
+                    title: Text(context.tr('Ø²Ø¨ÙˆÙ† Ø¹Ø§Ø¨Ø± (ØµÙ†Ø¯ÙˆÙ‚ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª)'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(context.tr('Ø¨Ø¯ÙˆÙ† Ø¯ÙŠÙˆÙ† Ø£Ùˆ ÙˆÙØ§Ø¡')),
                     onTap: () {
                       setState(() {
                         _selectedCustomerId = null;
-                        _selectedCustomerName = 'زبون عابر';
+                        _selectedCustomerName = 'Ø²Ø¨ÙˆÙ† Ø¹Ø§Ø¨Ø±';
                         _customerCreditBalance = 0.0;
                       });
                       Navigator.pop(ctx);
@@ -2893,7 +2893,7 @@ $itemsSummary
       footer: '',
       customerName: _selectedCustomerName,
       isCredit: isCredit,
-      paymentMethod: method == PosPaymentMethod.tpeCard ? 'TPE / Carte' : (isCredit ? 'Crédit' : 'Espèces'),
+      paymentMethod: method == PosPaymentMethod.tpeCard ? 'TPE / Carte' : (isCredit ? 'CrÃ©dit' : 'EspÃ¨ces'),
       paidAmount: isCredit ? 0.0 : (receivedAmount ?? total),
       previousDebt: _customerCreditBalance,
       newDebtTotal: isCredit ? (_customerCreditBalance + total) : _customerCreditBalance,
@@ -2933,7 +2933,7 @@ $itemsSummary
       if (wasReturn) {
         SnackbarHelper.showSuccess(
           context,
-          '✅ تم تأكيد عملية الإرجاع وإعادة السلع إلى المخزون بنجاح! 🔄',
+          'âœ… ØªÙ… ØªØ£ÙƒÙŠØ¯ Ø¹Ù…Ù„ÙŠØ© Ø§Ù„Ø¥Ø±Ø¬Ø§Ø¹ ÙˆØ¥Ø¹Ø§Ø¯Ø© Ø§Ù„Ø³Ù„Ø¹ Ø¥Ù„Ù‰ Ø§Ù„Ù…Ø®Ø²ÙˆÙ† Ø¨Ù†Ø¬Ø§Ø­! ðŸ”„',
         );
       } else {
         SnackbarHelper.showSuccess(context, context.tr('printed_success'));
@@ -2951,16 +2951,16 @@ $itemsSummary
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
             const SizedBox(width: 8),
-            Text('تنبيه نفاد المخزون', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('ØªÙ†Ø¨ÙŠÙ‡ Ù†ÙØ§Ø¯ Ø§Ù„Ù…Ø®Ø²ÙˆÙ†', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
-        content: Text('الكمية المطلوبة من المنتج ($productName) تتجاوز المخزون المتوفر حالياً.'),
+        content: Text('Ø§Ù„ÙƒÙ…ÙŠØ© Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø© Ù…Ù† Ø§Ù„Ù…Ù†ØªØ¬ ($productName) ØªØªØ¬Ø§ÙˆØ² Ø§Ù„Ù…Ø®Ø²ÙˆÙ† Ø§Ù„Ù…ØªÙˆÙØ± Ø­Ø§Ù„ÙŠØ§Ù‹.'),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
             },
-            child: Text('تجاهل', style: const TextStyle(color: Colors.grey)),
+            child: Text('ØªØ¬Ø§Ù‡Ù„', style: const TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
@@ -2969,7 +2969,7 @@ $itemsSummary
               // Navigate to manage stock or edit product
               // Usually we might open EditProductPage or stock quick adjust
             },
-            child: Text('إدارة المخزون', style: const TextStyle(color: Colors.white)),
+            child: Text('Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø®Ø²ÙˆÙ†', style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -3046,7 +3046,7 @@ $itemsSummary
               Text(
                 isReturn
                     ? context.tr('return_mode_active')
-                    : '⚡ ${_activePriceTier == PosPriceTier.gros ? context.tr("tier_gros") : context.tr("tier_demi_gros")}',
+                    : 'âš¡ ${_activePriceTier == PosPriceTier.gros ? context.tr("tier_gros") : context.tr("tier_demi_gros")}',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ],
@@ -3088,16 +3088,16 @@ $itemsSummary
           children: [
             Icon(Icons.swap_horiz, color: Colors.blueAccent),
             SizedBox(width: 8),
-            Text('تبديل المناوبة / إغلاق الحساب', style: TextStyle(color: Colors.white, fontSize: 18)),
+            Text('ØªØ¨Ø¯ÙŠÙ„ Ø§Ù„Ù…Ù†Ø§ÙˆØ¨Ø© / Ø¥ØºÙ„Ø§Ù‚ Ø§Ù„Ø­Ø³Ø§Ø¨', style: TextStyle(color: Colors.white, fontSize: 18)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('سيتم إنهاء مناوبة الكاشير: ${_activeShift!.workerName}', style: const TextStyle(color: Colors.white70)),
+            Text('Ø³ÙŠØªÙ… Ø¥Ù†Ù‡Ø§Ø¡ Ù…Ù†Ø§ÙˆØ¨Ø© Ø§Ù„ÙƒØ§Ø´ÙŠØ±: ${_activeShift!.workerName}', style: const TextStyle(color: Colors.white70)),
             const SizedBox(height: 16),
-            const Text('شحال كاين دراهم في لاكيس حالياً (الفعلي)؟', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const Text('Ø´Ø­Ø§Ù„ ÙƒØ§ÙŠÙ† Ø¯Ø±Ø§Ù‡Ù… ÙÙŠ Ù„Ø§ÙƒÙŠØ³ Ø­Ø§Ù„ÙŠØ§Ù‹ (Ø§Ù„ÙØ¹Ù„ÙŠ)ØŸ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             TextField(
               controller: actualCashCtrl,
@@ -3109,7 +3109,7 @@ $itemsSummary
                 fillColor: const Color(0xFF0F172A),
                 hintText: '0.0',
                 hintStyle: const TextStyle(color: Colors.white38),
-                suffixText: 'دج',
+                suffixText: 'Ø¯Ø¬',
                 suffixStyle: const TextStyle(color: Colors.white),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -3119,7 +3119,7 @@ $itemsSummary
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('تراجع', style: TextStyle(color: Colors.grey)),
+            child: const Text('ØªØ±Ø§Ø¬Ø¹', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
@@ -3137,7 +3137,7 @@ $itemsSummary
                 context.go('/login');
               }
             },
-            child: const Text('إنهاء وتبديل 🚀', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Ø¥Ù†Ù‡Ø§Ø¡ ÙˆØªØ¨Ø¯ÙŠÙ„ ðŸš€', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -3738,7 +3738,7 @@ $itemsSummary
                 const Icon(Icons.flash_on_rounded, color: Colors.teal, size: 16),
                 const SizedBox(width: 6),
                 Text(
-                  'مقترحات سريعة (${_searchSuggestions.length})',
+                  'Ù…Ù‚ØªØ±Ø­Ø§Øª Ø³Ø±ÙŠØ¹Ø© (${_searchSuggestions.length})',
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal),
                 ),
                 if (multiplier > 1) ...[
@@ -3750,7 +3750,7 @@ $itemsSummary
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'الكمية: x$multiplier',
+                      'Ø§Ù„ÙƒÙ…ÙŠØ©: x$multiplier',
                       style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -3848,7 +3848,7 @@ $itemsSummary
                                       borderRadius: BorderRadius.circular(3),
                                     ),
                                     child: Text(
-                                      'المخزون: ${product.stock}',
+                                      'Ø§Ù„Ù…Ø®Ø²ÙˆÙ†: ${product.stock}',
                                       style: TextStyle(
                                         fontSize: 9,
                                         color: isOutOfStock ? Colors.red.shade700 : Colors.green.shade700,
@@ -3995,7 +3995,7 @@ $itemsSummary
           ),
           const SizedBox(height: 12),
 
-          // 2. Main Area: Large Quick Sale Items Grid (مع إمكانية إضافة منتج جديد)
+          // 2. Main Area: Large Quick Sale Items Grid (Ù…Ø¹ Ø¥Ù…ÙƒØ§Ù†ÙŠØ© Ø¥Ø¶Ø§ÙØ© Ù…Ù†ØªØ¬ Ø¬Ø¯ÙŠØ¯)
           Expanded(
             child: _buildQuickItemsGrid(),
           ),
@@ -4041,6 +4041,12 @@ $itemsSummary
       if ((matched.imageUrl == null || matched.imageUrl!.trim().isEmpty) && itemImg != null && itemImg.isNotEmpty) {
         matched = matched.copyWith(imageUrl: itemImg);
       }
+      
+      // FIX: Use the price defined in the Quick Item if it differs, because it might be a piece price or customized
+      if (price > 0 && matched.price != price) {
+         matched = matched.copyWith(price: price);
+      }
+      
       if (_isReturnMode) {
         return matched.copyWith(
           name: '[${context.tr("return_mode")}] ${matched.name}',
@@ -4055,30 +4061,30 @@ $itemsSummary
     final nameL = name.toLowerCase();
     final isTob = detectedSub.domainId == 'tobacco' ||
         detectedSub.id == 'cigarettes' ||
-        nameL.contains('مارلبورو') ||
+        nameL.contains('Ù…Ø§Ø±Ù„Ø¨ÙˆØ±Ùˆ') ||
         nameL.contains('marlboro') ||
-        nameL.contains('ريم') ||
+        nameL.contains('Ø±ÙŠÙ…') ||
         nameL.contains('rym') ||
-        nameL.contains('جولواز') ||
+        nameL.contains('Ø¬ÙˆÙ„ÙˆØ§Ø²') ||
         nameL.contains('gauloises') ||
-        nameL.contains('سجائر') ||
-        nameL.contains('دخان') ||
-        nameL.contains('شمة');
+        nameL.contains('Ø³Ø¬Ø§Ø¦Ø±') ||
+        nameL.contains('Ø¯Ø®Ø§Ù†') ||
+        nameL.contains('Ø´Ù…Ø©');
     final isBev = detectedSub.id == 'beverages' ||
-        nameL.contains('ماء') ||
-        nameL.contains('مشروب') ||
-        nameL.contains('كوكا') ||
-        nameL.contains('عصير') ||
-        nameL.contains('حمود') ||
-        nameL.contains('رويبة') ||
-        nameL.contains('إفري') ||
-        nameL.contains('رامي');
-    final isCoffee = nameL.contains('قهوة') ||
-        nameL.contains('شاي') ||
-        nameL.contains('كبسول') ||
-        nameL.contains('إكسبريسو') ||
-        nameL.contains('إسبريسو') ||
-        nameL.contains('اسبريسو') ||
+        nameL.contains('Ù…Ø§Ø¡') ||
+        nameL.contains('Ù…Ø´Ø±ÙˆØ¨') ||
+        nameL.contains('ÙƒÙˆÙƒØ§') ||
+        nameL.contains('Ø¹ØµÙŠØ±') ||
+        nameL.contains('Ø­Ù…ÙˆØ¯') ||
+        nameL.contains('Ø±ÙˆÙŠØ¨Ø©') ||
+        nameL.contains('Ø¥ÙØ±ÙŠ') ||
+        nameL.contains('Ø±Ø§Ù…ÙŠ');
+    final isCoffee = nameL.contains('Ù‚Ù‡ÙˆØ©') ||
+        nameL.contains('Ø´Ø§ÙŠ') ||
+        nameL.contains('ÙƒØ¨Ø³ÙˆÙ„') ||
+        nameL.contains('Ø¥ÙƒØ³Ø¨Ø±ÙŠØ³Ùˆ') ||
+        nameL.contains('Ø¥Ø³Ø¨Ø±ÙŠØ³Ùˆ') ||
+        nameL.contains('Ø§Ø³Ø¨Ø±ÙŠØ³Ùˆ') ||
         nameL.contains('express') ||
         nameL.contains('coffee') ||
         nameL.contains('tea');
@@ -4096,7 +4102,7 @@ $itemsSummary
       price: _isReturnMode ? -price.abs() : price,
       costPrice: cost,
       stock: stock,
-      category: isTob ? 'المواد التبغية' : (isCoffee ? 'القهوة الجاهزة' : (isBev ? 'المشروبات والعصائر' : detectedSub.titleAr)),
+      category: isTob ? 'Ø§Ù„Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ¨ØºÙŠØ©' : (isCoffee ? 'Ø§Ù„Ù‚Ù‡ÙˆØ© Ø§Ù„Ø¬Ø§Ù‡Ø²Ø©' : (isBev ? 'Ø§Ù„Ù…Ø´Ø±ÙˆØ¨Ø§Øª ÙˆØ§Ù„Ø¹ØµØ§Ø¦Ø±' : detectedSub.titleAr)),
       imageUrl: item['imageUrl']?.toString() ?? item['image']?.toString(),
     );
   }
@@ -4161,7 +4167,7 @@ $itemsSummary
         final item = quickList[index - 1];
         final name = item['name']?.toString() ?? '';
         final price = (item['price'] as num?)?.toDouble() ?? 0.0;
-        final icon = item['icon']?.toString() ?? '🏷️';
+        final icon = item['icon']?.toString() ?? 'ðŸ·ï¸';
         final barcode = item['barcode']?.toString() ?? '';
         final id = item['id']?.toString() ?? barcode;
         final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
@@ -4304,9 +4310,10 @@ $itemsSummary
         children: [
           Text(context.tr('hotkeys_hint'),
               style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-          const Text('Nayli POS Engine ⚡', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text('Nayli POS Engine âš¡', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 }
+

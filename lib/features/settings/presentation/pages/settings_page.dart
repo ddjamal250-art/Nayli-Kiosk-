@@ -21,6 +21,7 @@ import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/language_cubit.dart';
+import '../../../../core/services/github_update_service.dart';
 
 import '../bloc/printer_bloc.dart';
 import '../bloc/printer_event.dart';
@@ -747,9 +748,21 @@ SizedBox(height: 20),
       _buildDivider(),
       _buildTile(
         icon: Icons.info_outline_rounded,
-        iconColor: Colors.blueGrey,
+        iconColor: Colors.teal,
         title: 'عن التطبيق والإصدار',
-        subtitle: 'Nayli Kiosk Pro V1.4.0 • أحدث إصدار',
+        subtitle: 'Nayli Kiosk Pro v${GitHubUpdateService.cachedAppVersion} • أحدث إصدار مثبت',
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.teal.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.teal.withOpacity(0.3)),
+          ),
+          child: Text(
+            'v${GitHubUpdateService.cachedAppVersion} ✅',
+            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.teal),
+          ),
+        ),
         onTap: () => _showAboutModal(context),
       ),
     ]);
@@ -816,6 +829,20 @@ SizedBox(height: 20),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/shifts');
+              },
+            ),
+            Divider(height: 8),
+            _buildHubActionTile(
+              icon: Icons.badge_rounded,
+              iconColor: Colors.teal[700]!,
+              title: 'إدارة الموظفين والعمال وصلاحياتهم 👥',
+              subtitle: 'إضافة العمال، تحديد الصلاحيات، الرموز السرية، والرواتب',
+              onTap: () async {
+                Navigator.pop(ctx);
+                final auth = await SecurityPinHelper.authenticate(context, title: 'إدارة الموظفين');
+                if (auth && context.mounted) {
+                  context.push('/staff-management');
+                }
               },
             ),
             Divider(height: 8),
@@ -1624,10 +1651,15 @@ SizedBox(height: 20),
   void _showAboutModal(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF0F172A) : Colors.grey.shade50;
+    final borderColor = isDark ? Colors.grey.shade800 : Colors.grey.shade200;
+    final isActivated = LicenseService.isActivated();
+    final machineId = LicenseService.getCleanMachineId();
+    final releases = GitHubUpdateService.getAppReleaseHistory();
 
     AdaptiveModalHelper.showAdaptiveModal(
       context: context,
-      desktopMaxWidth: 460,
+      desktopMaxWidth: 560,
       backgroundColor: bgColor,
       builder: (ctx) => Material(
         color: bgColor,
@@ -1635,54 +1667,290 @@ SizedBox(height: 20),
         clipBehavior: Clip.antiAlias,
         child: Container(
           color: bgColor,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 26),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 40),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'نايل كشك لإدارة نقاط البيع',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'نظام الكاشير وإدارة السوبرماركت والمخزون الذكي',
-                style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600, fontSize: 12.5),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
-                ),
-                child: Text(
-                  'الإصدار: 1.4.0',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-                ),
-              ),
-              const SizedBox(height: 22),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  minimumSize: const Size(double.infinity, 44),
-                ),
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(context.tr('إغلاق'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              ),
-            ],
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+          child: FutureBuilder<String>(
+            future: GitHubUpdateService.getAppVersion(),
+            initialData: GitHubUpdateService.cachedAppVersion,
+            builder: (context, snapshot) {
+              final activeVersion = snapshot.data ?? GitHubUpdateService.cachedAppVersion;
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. ترويسة التطبيق والشعار
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.point_of_sale_rounded, color: AppTheme.primaryColor, size: 36),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'نايل كشك لإدارة نقاط البيع والسوبرماركت',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'نظام الكاشير وإدارة المبيعات والمخزون والورديات الذكي',
+                              style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600, fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 2. شارات الإصدار وحالة الترخيص
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.teal.withOpacity(0.35)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.verified_rounded, size: 14, color: Colors.teal),
+                            const SizedBox(width: 6),
+                            Text(
+                              'الإصدار المثبت: v$activeVersion',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.check_circle_outline_rounded, size: 14, color: Colors.blue),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'أحدث نسخة رسمية مستقرة',
+                              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.blue),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isActivated ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: isActivated ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          isActivated ? 'الترخيص نشط ومفعل 🛡️' : 'تفعيل تجريبي ⏳',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: isActivated ? Colors.green.shade800 : Colors.orange.shade900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 3. شريط فحص التحديثات المباشر
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cloud_sync_rounded, color: Colors.teal, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'برنامجك يتعرف تلقائياً على التحديثات والإصلاحات السحابية فور توفرها.',
+                            style: TextStyle(fontSize: 11.5, color: isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            elevation: 0,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            GitHubUpdateService.checkForUpdates(context, silent: false);
+                          },
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text('فحص التحديثات', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 4. عنوان سجل التحديثات والإصلاحات والتعديلات
+                  Row(
+                    children: [
+                      const Icon(Icons.history_edu_rounded, size: 18, color: Colors.teal),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'سجل التحديثات والإصلاحات والتعديلات المضافة',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 5. قائمة الإصدارات والتغييرات (Scrollable)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 260),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.all(12),
+                        itemCount: releases.length,
+                        separatorBuilder: (_, __) => Divider(height: 16, color: borderColor),
+                        itemBuilder: (c, idx) {
+                          final rel = releases[idx];
+                          final isCurrent = rel['version'] == activeVersion || rel['isCurrent'] == true;
+                          final changes = (rel['changes'] as List<String>?) ?? [];
+                          final badgeColor = Color(rel['badgeColor'] as int? ?? 0xFF00897B);
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: badgeColor.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: badgeColor.withOpacity(0.4)),
+                                    ),
+                                    child: Text(
+                                      'v${rel['version']}',
+                                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: badgeColor),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      rel['title']?.toString() ?? '',
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (isCurrent)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade600,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'النسخة الحالية ✅',
+                                        style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              ...changes.map((ch) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 4, right: 4),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('• ', style: TextStyle(color: badgeColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                                        Expanded(
+                                          child: Text(
+                                            ch,
+                                            style: TextStyle(fontSize: 11.5, height: 1.35, color: isDark ? Colors.grey.shade300 : Colors.grey.shade800),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 6. كود الجهاز ومعلومات النظام
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'كود الجهاز: $machineId',
+                          style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: Colors.grey.shade600),
+                        ),
+                        Text(
+                          Platform.isWindows ? 'Windows Desktop (x64)' : 'Android System',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 7. زر الإغلاق
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      minimumSize: const Size(double.infinity, 42),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(context.tr('إغلاق'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

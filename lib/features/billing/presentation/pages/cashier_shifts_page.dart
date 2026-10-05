@@ -146,7 +146,22 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
       }
     }
 
-    final expectedCash = initialCash + cashSales - shiftExpenses;
+    double shiftDeposits = 0.0;
+    final debtsBox = HiveDatabase.customerDebtsBox;
+    for (final key in debtsBox.keys) {
+      final val = debtsBox.get(key);
+      if (val is Map) {
+        final ts = val['timestamp'] as String?;
+        final type = val['type'] as String?;
+        if (ts != null && type == 'payment') {
+          final d = DateTime.tryParse(ts);
+          if (d != null && d.isAfter(openedAt)) {
+            shiftDeposits += (val['amount'] as num?)?.toDouble() ?? 0.0;
+          }
+        }
+      }
+    }
+    final expectedCash = initialCash + cashSales + shiftDeposits - shiftExpenses;
     final actualCtrl = TextEditingController(text: expectedCash.toStringAsFixed(0));
 
     showDialog(
@@ -244,6 +259,7 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
 
     double shiftCashSales = 0.0;
     double shiftExpenses = 0.0;
+    double shiftDeposits = 0.0;
     if (_activeShift != null) {
       final openedAtStr = _activeShift!['openedAt'] as String? ?? '';
       final openedAt = DateTime.tryParse(openedAtStr) ?? DateTime.now();
@@ -256,9 +272,12 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
           final isCredit = val['isCredit'] == true;
           if (ts != null) {
             final invDate = DateTime.tryParse(ts);
-            if (invDate != null && invDate.isAfter(openedAt) && !isCredit) {
-              final paid = (val['paidAmount'] as num?)?.toDouble() ?? (val['totalAmount'] as num?)?.toDouble() ?? 0.0;
-              shiftCashSales += paid;
+            if (invDate != null && invDate.isAfter(openedAt)) {
+              if (!isCredit) {
+                shiftCashSales += (val['paidAmount'] as num?)?.toDouble() ?? (val['totalAmount'] as num?)?.toDouble() ?? 0.0;
+              } else {
+                shiftCashSales += (val['paidAmount'] as num?)?.toDouble() ?? 0.0;
+              }
             }
           }
         }
@@ -277,9 +296,24 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
           }
         }
       }
+
+      final debtsBox = HiveDatabase.customerDebtsBox;
+      for (final key in debtsBox.keys) {
+        final val = debtsBox.get(key);
+        if (val is Map) {
+          final ts = val['timestamp'] as String?;
+          final type = val['type'] as String?;
+          if (ts != null && type == 'payment') {
+            final d = DateTime.tryParse(ts);
+            if (d != null && d.isAfter(openedAt)) {
+              shiftDeposits += (val['amount'] as num?)?.toDouble() ?? 0.0;
+            }
+          }
+        }
+      }
     }
     final initialCash = ((_activeShift?['initialCash'] as num?)?.toDouble() ?? 0.0);
-    final totalExpectedInDrawer = initialCash + shiftCashSales - shiftExpenses;
+    final totalExpectedInDrawer = initialCash + shiftCashSales + shiftDeposits - shiftExpenses;
 
     return Scaffold(
       appBar: AppBar(
@@ -336,6 +370,80 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
                     ],
                   ),
                   if (_activeShift != null) ...[
+                    const SizedBox(height: 14),
+                    // Live Real-time Drawer Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF14B8A6).withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.point_of_sale_rounded, color: Colors.white, size: 22),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'الصندوق الحالي (الرصيد الفعلي المتوقع):',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${totalExpectedInDrawer.toStringAsFixed(2)} دج',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 28, color: Colors.white),
+                              ),
+                              if (shiftDeposits > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    'يتضمن مقبوضات ديون: +${shiftDeposits.toStringAsFixed(0)} دج',
+                                    style: const TextStyle(fontSize: 11, color: Colors.white70),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 26),
+                              onPressed: () {
+                                setState(() {
+                                  _loadShifts();
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('تم تحديث رصيد الصندوق بنجاح!'),
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                              },
+                              tooltip: 'تحديث فوري',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 14),
                     // Live PreonCom Inspired 3-Card Caisse View
                     Row(

@@ -56,21 +56,142 @@ class GitHubUpdateService {
   static const String repoName = 'Nayli-Kiosk-';
 
   /// رقم الإصدار الحالي المضمن في التطبيق لضمان دقة الفحص على الويندوز
-  static const String currentAppVersion = '2.4.2';
+  static const String currentAppVersion = '2.4.3';
 
   static bool _isChecking = false;
   static bool _hasAutoChecked = false;
 
-  /// الحصول على رقم الإصدار الحالي للتطبيق بدقة مع بديل مضمون
+  /// الحصول الفوري (Synchronous) على رقم الإصدار الحالي لعرضه المباشر في الواجهات
+  static String get cachedAppVersion {
+    String best = currentAppVersion;
+    try {
+      final hiveVersion = HiveDatabase.settingsBox.get('last_installed_version') as String?;
+      final hiveTag = HiveDatabase.settingsBox.get('last_installed_update_tag') as String?;
+      final target = hiveVersion ?? hiveTag;
+      if (target != null && target.isNotEmpty) {
+        final clean = target.replaceFirst(RegExp(r'^[vV]'), '').trim();
+        if (clean.isNotEmpty && isNewerVersion(best, clean)) {
+          best = clean;
+        }
+      }
+    } catch (_) {}
+    return best;
+  }
+
+  /// الحصول على رقم الإصدار الحالي للتطبيق بدقة مع بديل مضمون ومقارنة أحدث نسخة مثبتة
   static Future<String> getAppVersion() async {
+    String best = cachedAppVersion;
     try {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       final ver = packageInfo.version.trim();
       if (ver.isNotEmpty && ver != '1.0.0' && ver != '0.0.0') {
-        return ver;
+        if (isNewerVersion(best, ver)) {
+          best = ver;
+        }
       }
     } catch (_) {}
-    return currentAppVersion;
+
+    try {
+      final hiveVer = HiveDatabase.settingsBox.get('last_installed_version') as String?;
+      final hiveTag = HiveDatabase.settingsBox.get('last_installed_update_tag') as String?;
+      final candidate = hiveVer ?? hiveTag;
+      if (candidate != null && candidate.isNotEmpty) {
+        final clean = candidate.replaceFirst(RegExp(r'^[vV]'), '').trim();
+        if (clean.isNotEmpty && isNewerVersion(best, clean)) {
+          best = clean;
+        }
+      }
+    } catch (_) {}
+
+    return best;
+  }
+
+  /// قائمة التحديثات والاصلاحات والتعديلات المضافة (سجل الإصدارات المضمن)
+  static List<Map<String, dynamic>> getAppReleaseHistory() {
+    return [
+      {
+        'version': '2.4.3',
+        'title': 'إصلاح الميزان الذكي، شريط البيع السريع، ورصيد الصندوق الفوري',
+        'isCurrent': true,
+        'date': 'أكتوبر 2026',
+        'badge': 'أحدث إصدار رسمي',
+        'badgeColor': 0xFF00897B, // Teal 600
+        'changes': [
+          'حذف المنتجات الافتراضية والوهمية من قسم الميزان الذكي وربطه الحقيقي بمخزون التاجر وخصم الوزن الدقيق.',
+          'إصلاح شريط البيع السريع ومنع تقسيم أو تغيير سعر السلعة عند إضافتها للشريط، مع الحفاظ على تفاصيل العلب والوحدات.',
+          'تصحيح معادلة حساب الصندوق وإضافة بطاقة الرصيد الفعلي المتوقع لحظياً في أعلى قسم المناوبات مع زر التحديث الفوري.',
+          'الدعم الكامل للأرقام والأسعار العشرية بالفاصلة في شريط البيع السريع والمخزون دون تقريب للأعداد الصحيحة.',
+          'تعزيز حماية عمليات الكاشير (طلب رمز المدير عند إلغاء السلع أو التخفيضات) والربط الكامل مع قاعدة بيانات الموظفين.'
+        ]
+      },
+      {
+        'version': '2.4.2',
+        'title': 'حفظ فوري في قواعد بيانات Hive وتثبيت مسارات التوجيه',
+        'isCurrent': false,
+        'date': 'أكتوبر 2026',
+        'badge': 'إصدار استقرار',
+        'badgeColor': 0xFF1E88E5, // Blue 600
+        'changes': [
+          'الحفظ المباشر والفوري لبيانات السلع في Hive لمنع أي تعارض أثناء التعديل.',
+          'تثبيت مسارات التوجيه ومنع تعليق الشاشات السابقة.'
+        ]
+      },
+      {
+        'version': '2.4.1',
+        'title': 'إصلاح دقة الكسور العشرية وتوافق الفواصل ورأس المال',
+        'isCurrent': false,
+        'date': 'أكتوبر 2026',
+        'badge': 'إصلاحات محاسبية',
+        'badgeColor': 0xFF5E35B1, // Deep Purple 600
+        'changes': [
+          'إصلاح دقة الكسور العشرية لأسعار الشراء وسعر التكلفة (Full Precision Decimals) لمنع أي تقريب أو ضياع للسنتيمات.',
+          'دعم الفاصلة العشرية والفاصلة العادية (Comma & Dot Parsing) في كل شاشات الإدخال والتعديل وتلقي السلع.',
+          'حساب دقيق 100% لرأس مال المتجر الإجمالي وأرباح المنتجات بدقة متناهية بناءً على التكلفة الحقيقية.',
+          'تحديث وتصحيح واجهة التعديل الجماعي الذكي لأسعار المنتجات والأقسام (Smart Bulk Pricing).',
+          'تحسينات عامة في سرعة واستقرار النظام وتنسيق شاشات الإعدادات.'
+        ]
+      },
+      {
+        'version': '2.4.0',
+        'title': 'نظام الورديات المتكامل وكاشير الدخول والخروج',
+        'isCurrent': false,
+        'date': 'أكتوبر 2026',
+        'badge': 'إصدار رئيسي',
+        'badgeColor': 0xFF3949AB, // Indigo 600
+        'changes': [
+          'نظام الورديات المتكامل (Smart Shifts): فتح وإغلاق وردية الكاشير وحساب مبيعات النقد والديون بدقة.',
+          'تدقيق العجز والفائض في درج النقود مع تقارير وإحصائيات لكل وردية وموظف.',
+          'كاشير تسجيل الدخول والخروج مع تتبع المبيعات برقم الـ PIN الخاص بكل كاشير.',
+          'أداة التعديل الجماعي الذكي لأسعار السلع والأقسام دفعة واحدة.',
+        ]
+      },
+      {
+        'version': '2.3.0',
+        'title': 'تكامل موازين الباركود والعروض الترويجية الذكية',
+        'isCurrent': false,
+        'date': 'سبتمبر 2026',
+        'badge': 'ميزات تجارية',
+        'badgeColor': 0xFFD81B60, // Pink 600
+        'changes': [
+          'دعم متكامل لموازين الباركود الإلكترونية (Dibal, CAS, Bizerba, Aclas) واستخراج الوزن والسعر تلقائياً.',
+          'نظام العروض الترويجية التلقائي (اشتري X واحصل على Y أو خصومات متعددة).',
+          'تسريع استجابة ماسح الباركود الصوتي والضوئي مع نظام الإشعارات الذكي.'
+        ]
+      },
+      {
+        'version': '2.2.0',
+        'title': 'محرك التحديث السحابي التلقائي الآمن',
+        'isCurrent': false,
+        'date': 'سبتمبر 2026',
+        'badge': 'بنية تحتية',
+        'badgeColor': 0xFFFB8C00, // Orange 600
+        'changes': [
+          'محرك التحديث السحابي التلقائي مع استئناف التحميل المتقطع وحفظ السلة النشطة.',
+          'الحفظ التلقائي للسلة المفتوحة قبل التحديث واستعادتها بنجاح فور الإقلاع.',
+          'حماية مضاعفة للبيانات المحلية والنسخ الاحتياطي السحابي الفوري.'
+        ]
+      },
+    ];
   }
 
   /// مقارنة ذكية ودقيقة لأرقام الإصدارات بحسب نظام Semantic Versioning
@@ -526,8 +647,12 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       _statusText = 'اكتمل التحميل بنجاح! جاري تشغيل برنامج التثبيت...';
     });
 
-    // تسجيل أن هذا الإصدار تم تثبيته لمنع تكرار الإشعار
+    // تسجيل أن هذا الإصدار تم تثبيته لمنع تكرار الإشعار وحفظ تفاصيل التحديث
     await HiveDatabase.settingsBox.put('last_installed_update_tag', widget.releaseInfo.tagName);
+    await HiveDatabase.settingsBox.put('last_installed_version', widget.releaseInfo.cleanVersion);
+    await HiveDatabase.settingsBox.put('last_installed_changelog', widget.releaseInfo.changelog);
+    await HiveDatabase.settingsBox.put('last_installed_title', widget.releaseInfo.title);
+    await HiveDatabase.settingsBox.put('last_installed_date', DateTime.now().toIso8601String());
 
     // تشغيل برنامج التثبيت
     await Future.delayed(const Duration(milliseconds: 600));
@@ -723,8 +848,12 @@ class _UpdateDialogState extends State<_UpdateDialog> {
                 if (!_isDownloading) ...[
                   TextButton(
                     onPressed: () async {
-                      // تحديد هذا الإصدار كأنه "مثبت" لكي لا يظهر مجددا أبدا
+                      // تحديد هذا الإصدار كأنه "مثبت" لكي لا يظهر مجددا وحفظ بياناته
                       await HiveDatabase.settingsBox.put('last_installed_update_tag', widget.releaseInfo.tagName);
+                      await HiveDatabase.settingsBox.put('last_installed_version', widget.releaseInfo.cleanVersion);
+                      await HiveDatabase.settingsBox.put('last_installed_changelog', widget.releaseInfo.changelog);
+                      await HiveDatabase.settingsBox.put('last_installed_title', widget.releaseInfo.title);
+                      await HiveDatabase.settingsBox.put('last_installed_date', DateTime.now().toIso8601String());
                       if (context.mounted) Navigator.pop(context);
                     },
                     child: const Text('مُحدَّث بالفعل', style: TextStyle(color: Colors.grey)),

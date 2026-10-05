@@ -29,7 +29,7 @@ class CrashReport {
     required this.contextName,
     required this.machineId,
     required this.storeName,
-    this.appVersion = '1.4.0',
+    this.appVersion = '2.4.3',
     this.isFatal = false,
   });
 
@@ -53,7 +53,7 @@ class CrashReport {
     contextName: map['contextName']?.toString() ?? '',
     machineId: map['machineId']?.toString() ?? '',
     storeName: map['storeName']?.toString() ?? '',
-    appVersion: map['appVersion']?.toString() ?? '1.4.0',
+    appVersion: map['appVersion']?.toString() ?? '2.4.3',
     isFatal: map['isFatal'] == true,
   );
 

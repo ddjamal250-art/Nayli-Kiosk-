@@ -368,10 +368,11 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         const SizedBox(height: 2),
-                        FutureBuilder<PackageInfo>(
-                          future: PackageInfo.fromPlatform(),
+                        FutureBuilder<String>(
+                          future: GitHubUpdateService.getAppVersion(),
+                          initialData: GitHubUpdateService.cachedAppVersion,
                           builder: (ctx, snapshot) {
-                            final ver = snapshot.hasData ? snapshot.data!.version : '1.4.0';
+                            final ver = snapshot.data ?? GitHubUpdateService.cachedAppVersion;
                             return Text(
                               'الإصدار المثبت حالياً: v$ver',
                               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
