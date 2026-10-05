@@ -34,114 +34,18 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
   List<Map<String, dynamic>> _scaleProducts = [];
   List<Map<String, dynamic>> _filteredProducts = [];
 
-  static const List<String> _categories = [
-    'الكل',
-    '🌾 بقوليات وحبوب',
-    '🫒 زيتون ومخللات',
-    '🧀 أجبان وكاشير',
-    '🌶️ توابل وعطارة',
-    '🥜 مكسرات وفواكه جافة',
-    '🥔 خضر وفواكه',
-    '🍗 لحوم ودواجن',
-  ];
-
-  static const List<Map<String, dynamic>> _defaultPresets = [
-    // 🌾 بقوليات وحبوب
-    {'name': 'عدس كندا بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 260.0, 'costPerKg': 210.0, 'stockKg': 50.0, 'barcode': 'SCALE_LENTIL'},
-    {'name': 'حمص خشن بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 280.0, 'costPerKg': 230.0, 'stockKg': 40.0, 'barcode': 'SCALE_CHICKPEA'},
-    {'name': 'لوبيا بيضاء بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 340.0, 'costPerKg': 290.0, 'stockKg': 30.0, 'barcode': 'SCALE_BEAN'},
-    {'name': 'لوبيا حمراء بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 320.0, 'costPerKg': 270.0, 'stockKg': 20.0, 'barcode': 'SCALE_RED_BEAN'},
-    {'name': 'فريك شوربة قمح صلب', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 450.0, 'costPerKg': 370.0, 'stockKg': 25.0, 'barcode': 'SCALE_FRIK'},
-    {'name': 'مرموز شوربة بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 380.0, 'costPerKg': 310.0, 'stockKg': 20.0, 'barcode': 'SCALE_MERMEZ'},
-    {'name': 'جلبانة يابسة مقسومة', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 240.0, 'costPerKg': 190.0, 'stockKg': 25.0, 'barcode': 'SCALE_POIS_CASSE'},
-    {'name': 'أرز أبيض مفور بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 160.0, 'costPerKg': 130.0, 'stockKg': 60.0, 'barcode': 'SCALE_RICE_ETUVE'},
-    {'name': 'أرز بسمتي هندي بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 320.0, 'costPerKg': 260.0, 'stockKg': 30.0, 'barcode': 'SCALE_RICE_BASMATI'},
-    {'name': 'سميد سيم/ماما بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 95.0, 'costPerKg': 80.0, 'stockKg': 100.0, 'barcode': 'SCALE_SEMOLINA'},
-    {'name': 'فرينة بيضاء بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 50.0, 'costPerKg': 40.0, 'stockKg': 100.0, 'barcode': 'SCALE_FLOUR'},
-    {'name': 'سكر أبيض بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 95.0, 'costPerKg': 82.0, 'stockKg': 150.0, 'barcode': 'SCALE_SUGAR'},
-    {'name': 'ملح طعام بحري بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 35.0, 'costPerKg': 20.0, 'stockKg': 50.0, 'barcode': 'SCALE_SALT'},
-    {'name': 'شوفان حبة كاملة بالميزان', 'category': '🌾 بقوليات وحبوب', 'pricePerKg': 420.0, 'costPerKg': 340.0, 'stockKg': 15.0, 'barcode': 'SCALE_OATS'},
-
-    // 🫒 زيتون ومخللات
-    {'name': 'زيتون أخضر مقطع رونديل', 'category': '🫒 زيتون ومخللات', 'pricePerKg': 360.0, 'costPerKg': 280.0, 'stockKg': 20.0, 'barcode': 'SCALE_OLIVE_G'},
-    {'name': 'زيتون أخضر مفرغ بدون نواة', 'category': '🫒 زيتون ومخللات', 'pricePerKg': 420.0, 'costPerKg': 330.0, 'stockKg': 20.0, 'barcode': 'SCALE_OLIVE_DENOY'},
-    {'name': 'زيتون أخضر مشمل حار', 'category': '🫒 زيتون ومخللات', 'pricePerKg': 400.0, 'costPerKg': 310.0, 'stockKg': 20.0, 'barcode': 'SCALE_OLIVE_SPICY'},
-    {'name': 'زيتون أسود مجعد بالميزان', 'category': '🫒 زيتون ومخللات', 'pricePerKg': 460.0, 'costPerKg': 360.0, 'stockKg': 20.0, 'barcode': 'SCALE_OLIVE_B'},
-    {'name': 'زيتون أسود مخلل يوناني', 'category': '🫒 زيتون ومخللات', 'pricePerKg': 550.0, 'costPerKg': 440.0, 'stockKg': 15.0, 'barcode': 'SCALE_OLIVE_KALAMATA'},
-    {'name': 'مخللات مشكلة كورنيشون', 'category': '🫒 زيتون ومخللات', 'pricePerKg': 380.0, 'costPerKg': 290.0, 'stockKg': 20.0, 'barcode': 'SCALE_PICKLES'},
-
-    // 🧀 أجبان وكاشير
-    {'name': 'كاشير أحمر بالميزان', 'category': '🧀 أجبان وكاشير', 'pricePerKg': 380.0, 'costPerKg': 290.0, 'stockKg': 15.0, 'barcode': 'SCALE_CACHIR_RED'},
-    {'name': 'باتي دجاج وزيتون بالميزان', 'category': '🧀 أجبان وكاشير', 'pricePerKg': 450.0, 'costPerKg': 350.0, 'stockKg': 15.0, 'barcode': 'SCALE_PATE_OLIVE'},
-    {'name': 'سلامي مدخن بالميزان', 'category': '🧀 أجبان وكاشير', 'pricePerKg': 850.0, 'costPerKg': 680.0, 'stockKg': 10.0, 'barcode': 'SCALE_SALAMI'},
-    {'name': 'جبن أحمر غودا / كودة', 'category': '🧀 أجبان وكاشير', 'pricePerKg': 1250.0, 'costPerKg': 1020.0, 'stockKg': 10.0, 'barcode': 'SCALE_CHEESE_GOUDA'},
-    {'name': 'جبن موزاريلا قوالب بالميزان', 'category': '🧀 أجبان وكاشير', 'pricePerKg': 950.0, 'costPerKg': 760.0, 'stockKg': 15.0, 'barcode': 'SCALE_MOZZARELLA'},
-    {'name': 'جبن إيدام هولندي بالميزان', 'category': '🧀 أجبان وكاشير', 'pricePerKg': 1350.0, 'costPerKg': 1100.0, 'stockKg': 10.0, 'barcode': 'SCALE_EDAM'},
-    {'name': 'جبن طري أبيض بالميزان', 'category': '🧀 أجبان وكاشير', 'pricePerKg': 420.0, 'costPerKg': 330.0, 'stockKg': 20.0, 'barcode': 'SCALE_FROMAGE_BLANC'},
-    {'name': 'زبدة عرب طبيعية بالميزان', 'category': '🧀 أجبان وكاشير', 'pricePerKg': 1600.0, 'costPerKg': 1350.0, 'stockKg': 10.0, 'barcode': 'SCALE_BEURRE_ARAB'},
-
-    // 🌶️ توابل وعطارة
-    {'name': 'فلفل أسود حب / مطحون', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1800.0, 'costPerKg': 1450.0, 'stockKg': 10.0, 'barcode': 'SCALE_BLACK_PEPPER'},
-    {'name': 'فلفل عكري أحمر حلو', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 950.0, 'costPerKg': 750.0, 'stockKg': 15.0, 'barcode': 'SCALE_PAPRIKA'},
-    {'name': 'فلفل أحمر حار سودانية', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1100.0, 'costPerKg': 880.0, 'stockKg': 10.0, 'barcode': 'SCALE_PIMENT_FORT'},
-    {'name': 'كمون عريض هندي مرحي', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1400.0, 'costPerKg': 1100.0, 'stockKg': 10.0, 'barcode': 'SCALE_CUMIN'},
-    {'name': 'رأس الحانوت أصلي مشكل', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1200.0, 'costPerKg': 950.0, 'stockKg': 15.0, 'barcode': 'SCALE_RAS_HANOUT'},
-    {'name': 'كروية مرحية', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1100.0, 'costPerKg': 850.0, 'stockKg': 10.0, 'barcode': 'SCALE_CARVI'},
-    {'name': 'قرفة عود / مرحية', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 2200.0, 'costPerKg': 1750.0, 'stockKg': 8.0, 'barcode': 'SCALE_CINNAMON'},
-    {'name': 'زنجبيل مرحي', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1300.0, 'costPerKg': 1000.0, 'stockKg': 10.0, 'barcode': 'SCALE_GINGEMBRE'},
-    {'name': 'كركم أصفر مرحي', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 950.0, 'costPerKg': 750.0, 'stockKg': 15.0, 'barcode': 'SCALE_CURCUMA'},
-    {'name': 'كزبرة يابسة مطحونة', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 800.0, 'costPerKg': 620.0, 'stockKg': 12.0, 'barcode': 'SCALE_KOSBOR'},
-    {'name': 'ثوم غبرة مرحي', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1100.0, 'costPerKg': 850.0, 'stockKg': 10.0, 'barcode': 'SCALE_AIL_POUDRE'},
-    {'name': 'سانوج حبة البركة', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1200.0, 'costPerKg': 920.0, 'stockKg': 10.0, 'barcode': 'SCALE_SANOUJ'},
-    {'name': 'جلجلان سمسم محمص', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 950.0, 'costPerKg': 750.0, 'stockKg': 15.0, 'barcode': 'SCALE_SESAME'},
-    {'name': 'قرنفل أعواد بالميزان', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 3200.0, 'costPerKg': 2600.0, 'stockKg': 5.0, 'barcode': 'SCALE_GIROFLE'},
-    {'name': 'قهوة حب مطحونة فريش', 'category': '🌶️ توابل وعطارة', 'pricePerKg': 1400.0, 'costPerKg': 1150.0, 'stockKg': 20.0, 'barcode': 'SCALE_COFFEE_BULK'},
-
-    // 🥜 مكسرات وفواكه جافة
-    {'name': 'حلوة الترك الغزالة بالميزان', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 600.0, 'costPerKg': 480.0, 'stockKg': 15.0, 'barcode': 'SCALE_HALWA'},
-    {'name': 'كاوكاو مقلي مالح بالقشور', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 650.0, 'costPerKg': 520.0, 'stockKg': 25.0, 'barcode': 'SCALE_PEANUTS_SALT'},
-    {'name': 'كاوكاو نيء أبيض للحلويات', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 520.0, 'costPerKg': 410.0, 'stockKg': 30.0, 'barcode': 'SCALE_PEANUTS_RAW'},
-    {'name': 'لوز حلو كامل نيء', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 2200.0, 'costPerKg': 1850.0, 'stockKg': 15.0, 'barcode': 'SCALE_ALMONDS'},
-    {'name': 'لوز مقشر أبيض إيفيلي', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 2500.0, 'costPerKg': 2100.0, 'stockKg': 10.0, 'barcode': 'SCALE_ALMONDS_WHITE'},
-    {'name': 'جوز مقشر حبة كاملة', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 2400.0, 'costPerKg': 2000.0, 'stockKg': 10.0, 'barcode': 'SCALE_WALNUTS'},
-    {'name': 'بندق مقشر بالميزان', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 2600.0, 'costPerKg': 2150.0, 'stockKg': 8.0, 'barcode': 'SCALE_NOISETTES'},
-    {'name': 'كاجو محمص مالح', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 2800.0, 'costPerKg': 2300.0, 'stockKg': 8.0, 'barcode': 'SCALE_CAJOU'},
-    {'name': 'بيستاش فستق محمص مالح', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 3200.0, 'costPerKg': 2650.0, 'stockKg': 8.0, 'barcode': 'SCALE_PISTACHE'},
-    {'name': 'زبيب أسود / أشقر بالميزان', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 850.0, 'costPerKg': 680.0, 'stockKg': 20.0, 'barcode': 'SCALE_RAISINS'},
-    {'name': 'مشمش جاف تورت بالميزان', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 1800.0, 'costPerKg': 1450.0, 'stockKg': 10.0, 'barcode': 'SCALE_ABRICOTS'},
-    {'name': 'عين بقرة برقوق مجفف', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 1400.0, 'costPerKg': 1100.0, 'stockKg': 15.0, 'barcode': 'SCALE_PRUNEAUX'},
-    {'name': 'تمر دقلة نور بسكرة', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 550.0, 'costPerKg': 420.0, 'stockKg': 30.0, 'barcode': 'SCALE_DATES'},
-    {'name': 'جوز الهند مبشور نوادكوكو', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 850.0, 'costPerKg': 680.0, 'stockKg': 15.0, 'barcode': 'SCALE_COCO'},
-    {'name': 'غرس تمر معجون بالميزان', 'category': '🥜 مكسرات وفواكه جافة', 'pricePerKg': 350.0, 'costPerKg': 260.0, 'stockKg': 25.0, 'barcode': 'SCALE_GHARS'},
-
-    // 🥔 خضر وفواكه
-    {'name': 'بطاطا استهلاك بالميزان', 'category': '🥔 خضر وفواكه', 'pricePerKg': 85.0, 'costPerKg': 65.0, 'stockKg': 100.0, 'barcode': 'SCALE_POTATO'},
-    {'name': 'طماطم طازجة حمراء', 'category': '🥔 خضر وفواكه', 'pricePerKg': 120.0, 'costPerKg': 90.0, 'stockKg': 40.0, 'barcode': 'SCALE_TOMATO'},
-    {'name': 'بصل أحمر يابس بالميزان', 'category': '🥔 خضر وفواكه', 'pricePerKg': 70.0, 'costPerKg': 50.0, 'stockKg': 60.0, 'barcode': 'SCALE_ONION'},
-    {'name': 'ثوم يابس بالميزان', 'category': '🥔 خضر وفواكه', 'pricePerKg': 450.0, 'costPerKg': 350.0, 'stockKg': 20.0, 'barcode': 'SCALE_AIL'},
-    {'name': 'جزر زرودية طازجة', 'category': '🥔 خضر وفواكه', 'pricePerKg': 80.0, 'costPerKg': 55.0, 'stockKg': 40.0, 'barcode': 'SCALE_CARROT'},
-    {'name': 'كوسة قرعة طازجة', 'category': '🥔 خضر وفواكه', 'pricePerKg': 110.0, 'costPerKg': 80.0, 'stockKg': 25.0, 'barcode': 'SCALE_COURGETTE'},
-    {'name': 'فلفل حلو طرشي', 'category': '🥔 خضر وفواكه', 'pricePerKg': 130.0, 'costPerKg': 95.0, 'stockKg': 25.0, 'barcode': 'SCALE_POIVRON'},
-    {'name': 'فلفل حار فريش', 'category': '🥔 خضر وفواكه', 'pricePerKg': 160.0, 'costPerKg': 120.0, 'stockKg': 20.0, 'barcode': 'SCALE_PIMENT'},
-    {'name': 'خيار طازج بالميزان', 'category': '🥔 خضر وفواكه', 'pricePerKg': 120.0, 'costPerKg': 85.0, 'stockKg': 30.0, 'barcode': 'SCALE_CONCOMBRE'},
-    {'name': 'سلطة خس فريش', 'category': '🥔 خضر وفواكه', 'pricePerKg': 140.0, 'costPerKg': 95.0, 'stockKg': 20.0, 'barcode': 'SCALE_SALADE'},
-    {'name': 'موز مستورد (بنان)', 'category': '🥔 خضر وفواكه', 'pricePerKg': 380.0, 'costPerKg': 320.0, 'stockKg': 35.0, 'barcode': 'SCALE_BANANA'},
-    {'name': 'تفاح محلي ممتاز', 'category': '🥔 خضر وفواكه', 'pricePerKg': 280.0, 'costPerKg': 210.0, 'stockKg': 30.0, 'barcode': 'SCALE_APPLE'},
-    {'name': 'برتقال طومسون فريش', 'category': '🥔 خضر وفواكه', 'pricePerKg': 160.0, 'costPerKg': 115.0, 'stockKg': 40.0, 'barcode': 'SCALE_ORANGE'},
-    {'name': 'يوسفي مندارين بالميزان', 'category': '🥔 خضر وفواكه', 'pricePerKg': 180.0, 'costPerKg': 130.0, 'stockKg': 30.0, 'barcode': 'SCALE_MANDARINE'},
-    {'name': 'ليمون حامض فريش', 'category': '🥔 خضر وفواكه', 'pricePerKg': 220.0, 'costPerKg': 160.0, 'stockKg': 20.0, 'barcode': 'SCALE_LEMON'},
-    {'name': 'دلاع بطيخ أحمر بالميزان', 'category': '🥔 خضر وفواكه', 'pricePerKg': 60.0, 'costPerKg': 40.0, 'stockKg': 100.0, 'barcode': 'SCALE_WATERMELON'},
-
-    // 🍗 لحوم ودواجن
-    {'name': 'دجاج طازج بالميزان', 'category': '🍗 لحوم ودواجن', 'pricePerKg': 480.0, 'costPerKg': 420.0, 'stockKg': 50.0, 'barcode': 'SCALE_CHICKEN'},
-    {'name': 'إسكالوب دجاج/داند بدون عظم', 'category': '🍗 لحوم ودواجن', 'pricePerKg': 950.0, 'costPerKg': 820.0, 'stockKg': 30.0, 'barcode': 'SCALE_ESCALOPE'},
-    {'name': 'فخذ دجاج كامل فريش', 'category': '🍗 لحوم ودواجن', 'pricePerKg': 450.0, 'costPerKg': 380.0, 'stockKg': 30.0, 'barcode': 'SCALE_CUISSES'},
-    {'name': 'لحم مفروم فاشي طازج', 'category': '🍗 لحوم ودواجن', 'pricePerKg': 2200.0, 'costPerKg': 1900.0, 'stockKg': 15.0, 'barcode': 'SCALE_MEAT_MINCED'},
-    {'name': 'لحم خروف غنمي محلي', 'category': '🍗 لحوم ودواجن', 'pricePerKg': 2400.0, 'costPerKg': 2100.0, 'stockKg': 20.0, 'barcode': 'SCALE_MEAT_LAMB'},
-    {'name': 'لحم بقري هبرة بدون عظم', 'category': '🍗 لحوم ودواجن', 'pricePerKg': 2200.0, 'costPerKg': 1900.0, 'stockKg': 20.0, 'barcode': 'SCALE_MEAT_BEEF'},
-    {'name': 'مرقاز بلدي طازج بالميزان', 'category': '🍗 لحوم ودواجن', 'pricePerKg': 1400.0, 'costPerKg': 1150.0, 'stockKg': 15.0, 'barcode': 'SCALE_MERGUEZ'},
-    {'name': 'سردين طازج بالميزان', 'category': '🍗 لحوم ودواجن', 'pricePerKg': 600.0, 'costPerKg': 480.0, 'stockKg': 20.0, 'barcode': 'SCALE_SARDINE'},
-  ];
+  List<String> get _categories {
+    final cats = <String>['الكل'];
+    final seen = <String>{'الكل'};
+    for (final p in _scaleProducts) {
+      final c = p['category']?.toString().trim();
+      if (c != null && c.isNotEmpty && !seen.contains(c)) {
+        seen.add(c);
+        cats.add(c);
+      }
+    }
+    return cats;
+  }
 
   @override
   void initState() {
@@ -181,6 +85,9 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
 
     setState(() {
       _scaleProducts = list;
+      if (!_categories.contains(_selectedCategory)) {
+        _selectedCategory = 'الكل';
+      }
       _filteredProducts = List.from(list);
     });
   }
@@ -238,7 +145,16 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
     final bagWeightCtrl = TextEditingController(text: '25');
     final supplierCtrl = TextEditingController();
     bool isBagsMode = false;
-    String selectedCat = '🌾 بقوليات وحبوب';
+    final availableCats = <String>{};
+    for (final p in HiveDatabase.productBox.values) {
+      final c = p.category.trim();
+      if (c.isNotEmpty && c != 'الكل') availableCats.add(c);
+    }
+    if (availableCats.isEmpty) {
+      availableCats.addAll(['ميزان', 'مواد غذائية', 'خضر وفواكه', 'بقوليات', 'توابل']);
+    }
+    final catList = availableCats.toList()..sort();
+    String selectedCat = catList.contains('ميزان') ? 'ميزان' : catList.first;
 
     showDialog(
       context: context,
@@ -276,7 +192,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
-                  items: _categories.where((c) => c != 'الكل').map((cat) {
+                  items: catList.map((cat) {
                     return DropdownMenuItem(value: cat, child: Text(cat, style: const TextStyle(fontSize: 12)));
                   }).toList(),
                   onChanged: (val) {
@@ -435,9 +351,12 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   id: newProdId,
                   name: name,
                   barcode: rawBarcode,
+                  category: selectedCat,
                   price: price,
                   costPrice: cost,
                   stock: totalStock.toDouble(),
+                  isWeighted: true,
+                  unit: 'كغ',
                 );
 
                 context.read<ProductBloc>().add(AddProduct(newProd));
@@ -621,26 +540,28 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
             ),
             const SizedBox(height: 10),
 
-            // Category Filter Chips
-            SizedBox(
-              height: 36,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 6),
-                itemBuilder: (context, index) {
-                  final cat = _categories[index];
-                  final isSelected = _selectedCategory == cat;
-                  return ChoiceChip(
-                    label: Text(cat, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                    selected: isSelected,
-                    selectedColor: AppTheme.primaryColor.withOpacity(0.15),
-                    onSelected: (_) => _onCategorySelected(cat),
-                  );
-                },
+            // Category Filter Chips (Only shown when products exist in multiple categories)
+            if (_scaleProducts.isNotEmpty && _categories.length > 2) ...[
+              SizedBox(
+                height: 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  itemBuilder: (context, index) {
+                    final cat = _categories[index];
+                    final isSelected = _selectedCategory == cat;
+                    return ChoiceChip(
+                      label: Text(cat, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                      selected: isSelected,
+                      selectedColor: AppTheme.primaryColor.withOpacity(0.15),
+                      onSelected: (_) => _onCategorySelected(cat),
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
+            ],
 
             // SCALE PRODUCTS HORIZONTAL LIST / GRID
             if (_scaleProducts.isEmpty)

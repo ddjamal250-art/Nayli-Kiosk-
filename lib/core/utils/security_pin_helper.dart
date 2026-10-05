@@ -62,11 +62,11 @@ class SecurityPinHelper {
 
   /// Verify entered PIN against stored cryptographic hash (Zero Hardcoded PINs)
   static bool verifyPin(String enteredPin) {
-    if (!isPinEnabled()) return true;
+    if (!isPinEnabled()) return false;
 
     final box = HiveDatabase.settingsBox;
     final savedHash = box.get(_pinHashKey) as String?;
-    if (savedHash == null || savedHash.isEmpty) return true;
+    if (savedHash == null || savedHash.isEmpty) return false;
 
     return savedHash == _hashPin(enteredPin);
   }

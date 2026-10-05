@@ -93,8 +93,14 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
   Future<void> _verifyPin() async {
     if (_selectedStaff == null) return;
     
-    // التحقق من الـ PIN (للعامل أو المدير العام)
-    if (_pin == _selectedStaff!.pin || SecurityPinHelper.verifyPin(_pin)) {
+    // التحقق من الـ PIN (للعامل أو المشرف العام)
+    final enteredPinClean = _pin.trim();
+    final staffPinClean = _selectedStaff!.pin.trim();
+    
+    final bool isStaffMatch = staffPinClean.isNotEmpty && enteredPinClean == staffPinClean;
+    final bool isManagerOverride = SecurityPinHelper.isPinEnabled() && SecurityPinHelper.verifyPin(enteredPinClean);
+    
+    if (isStaffMatch || isManagerOverride) {
       SoundService.playSaveSuccess();
       _promptForFloatAmount();
     } else {
@@ -313,79 +319,111 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
       backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.point_of_sale_rounded, size: 64, color: Color(0xFF818CF8)),
-                const SizedBox(height: 16),
-                const Text(
-                  'مرحباً بك في نقطة البيع',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  'الرجاء اختيار اسمك لفتح المناوبة وبدء العمل',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 40),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 200,
-                      childAspectRatio: 1.1,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: _staffList.length,
-                    itemBuilder: (context, index) {
-                      final staff = _staffList[index];
-                      return InkWell(
-                        onTap: () {
-                          SoundService.playTabSwitch();
-                          setState(() {
-                            _selectedStaff = staff;
-                            _pin = '';
-                            _errorMsg = null;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E293B),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFF334155)),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircleAvatar(
-                                radius: 30,
-                                backgroundColor: staff.isAdmin ? Colors.indigo : Colors.teal,
-                                child: Text(
-                                  staff.name.isNotEmpty ? staff.name[0].toUpperCase() : '?',
-                                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                staff.name,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                staff.role == 'admin' ? 'مدير النظام' : 'كاشير',
-                                style: TextStyle(color: staff.isAdmin ? Colors.indigoAccent : Colors.tealAccent, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.point_of_sale_rounded, size: 68, color: Color(0xFF818CF8)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'مرحباً بك في نقطة البيع',
+                    style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  const Text(
+                    'الرجاء اختيار حسابك لفتح المناوبة وبدء العمل',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 36),
+                  Center(
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      runAlignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 20,
+                      runSpacing: 20,
+                      children: _staffList.map((staff) {
+                        return SizedBox(
+                          width: 180,
+                          height: 190,
+                          child: InkWell(
+                            onTap: () {
+                              SoundService.playTabSwitch();
+                              setState(() {
+                                _selectedStaff = staff;
+                                _pin = '';
+                                _errorMsg = null;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E293B),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF334155), width: 1.5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.25),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 34,
+                                    backgroundColor: staff.isAdmin ? Colors.indigo : Colors.teal,
+                                    child: Text(
+                                      staff.name.isNotEmpty ? staff.name[0].toUpperCase() : '?',
+                                      style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    child: Text(
+                                      staff.name,
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: staff.isAdmin ? Colors.indigo.withOpacity(0.2) : Colors.teal.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      staff.role == 'admin' ? 'مدير النظام' : 'كاشير',
+                                      style: TextStyle(
+                                        color: staff.isAdmin ? Colors.indigoAccent : Colors.tealAccent,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
