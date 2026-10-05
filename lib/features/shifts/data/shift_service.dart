@@ -330,10 +330,10 @@ class ShiftService {
       OnlineLicenseService.sendDailyReportToMerchant(
         totalSales: closedShift.totalSales,
         cashInDrawer: actualCashInDrawer,
-        tpeSales: tpe,
-        creditSales: credit,
-        invoiceCount: shiftInvoiceCount,
-        estimatedNetProfit: shiftRealProfit > 0 ? shiftRealProfit : (closedShift.totalSales * 0.22),
+        tpeSales: closedShift.tpeSales,
+        creditSales: closedShift.creditSales,
+        invoiceCount: closedShift.invoiceCount,
+        estimatedNetProfit: closedShift.totalSales * 0.22,
       );
     } catch (_) {}
 
