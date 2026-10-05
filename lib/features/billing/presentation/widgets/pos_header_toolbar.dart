@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,6 +31,7 @@ class PosHeaderToolbar extends StatelessWidget {
   final VoidCallback onShowRemoteCartsQueue;
   final VoidCallback? onOpenSmartScale;
   final VoidCallback? onSwitchShift;
+  final VoidCallback? onShiftUpdated;
 
   const PosHeaderToolbar({
     super.key,
@@ -41,6 +43,7 @@ class PosHeaderToolbar extends StatelessWidget {
     required this.onShowRemoteCartsQueue,
     this.onOpenSmartScale,
     this.onSwitchShift,
+    this.onShiftUpdated,
   });
 
   @override
@@ -241,66 +244,47 @@ class PosHeaderToolbar extends StatelessWidget {
               IconButton(
                 tooltip: context.tr('حركة الصندوق - إيداع / سحب كاش'),
                 icon: const Icon(Icons.payments_rounded, color: Colors.tealAccent, size: 22),
-                onPressed: () => CashDrawerActionDialog.show(context),
+                onPressed: () => CashDrawerActionDialog.show(context, onDone: onShiftUpdated),
               ),
               
-              // 1.2 Check Drawer Status (حالة الصندوق)
+              // 1.2 Check Drawer Status (حالة الصندوق اللحظية)
               if (activeShift != null)
                 Tooltip(
-                  message: 'حالة الصندوق (شحال كاين دراهم)',
+                  message: 'حالة الصندوق اللحظية ومراقبة حركات الدرج',
                   child: InkWell(
                     onTap: () {
-                      final exp = activeShift!.expectedTotalCashInDrawer;
-                      showDialog(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          backgroundColor: const Color(0xFF1E293B),
-                          title: const Row(
-                            children: [
-                              Icon(Icons.monetization_on, color: Colors.green),
-                              SizedBox(width: 8),
-                              Text('حالة الصندوق الحالية', style: TextStyle(color: Colors.white)),
-                            ],
-                          ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('الصرف الابتدائي: ${activeShift!.floatAmount.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.white70)),
-                              const SizedBox(height: 8),
-                              Text('المبيعات النقدية: ${activeShift!.cashSales.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.white70)),
-                              const SizedBox(height: 8),
-                              Text('إيداعات نقدية: ${activeShift!.cashIn.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.white70)),
-                              const SizedBox(height: 8),
-                              Text('سحوبات ومصاريف: ${activeShift!.cashOut.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.white70)),
-                              const Divider(color: Colors.white24, height: 24),
-                              const Text('المبلغ المتوقع في الدرج الآن:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              Text('${exp.toStringAsFixed(2)} دج', style: const TextStyle(color: Colors.greenAccent, fontSize: 24, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق', style: TextStyle(color: Colors.grey))),
-                          ],
-                        ),
+                      LiveCashDrawerStatusDialog.show(
+                        context,
+                        initialShift: activeShift!,
+                        onShiftUpdated: onShiftUpdated,
                       );
                     },
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.shade600, width: 1),
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.green.shade900.withOpacity(0.45),
+                            Colors.teal.shade900.withOpacity(0.45),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.greenAccent.shade400, width: 1.2),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.greenAccent, size: 18),
-                          SizedBox(width: 4),
+                          const Icon(Icons.account_balance_wallet_rounded, color: Colors.greenAccent, size: 18),
+                          const SizedBox(width: 5),
                           Text(
-                            'حالة الصندوق',
-                            style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                            '${activeShift!.expectedTotalCashInDrawer.toStringAsFixed(0)} دج | حالة الصندوق',
+                            style: const TextStyle(
+                              color: Colors.greenAccent,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -625,3 +609,289 @@ class PosHeaderToolbar extends StatelessWidget {
   }
 }
 
+
+
+// ============================================================================
+// الحوار المتقدم لمراقبة حركة الصندوق اللحظية (Real-Time Live Cash Drawer Dialog)
+// ============================================================================
+class LiveCashDrawerStatusDialog extends StatefulWidget {
+  final CashierShift initialShift;
+  final VoidCallback? onShiftUpdated;
+
+  const LiveCashDrawerStatusDialog({
+    super.key,
+    required this.initialShift,
+    this.onShiftUpdated,
+  });
+
+  static Future<void> show(
+    BuildContext context, {
+    required CashierShift initialShift,
+    VoidCallback? onShiftUpdated,
+  }) {
+    SoundService.playTabSwitch();
+    return showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => LiveCashDrawerStatusDialog(
+        initialShift: initialShift,
+        onShiftUpdated: onShiftUpdated,
+      ),
+    );
+  }
+
+  @override
+  State<LiveCashDrawerStatusDialog> createState() => _LiveCashDrawerStatusDialogState();
+}
+
+class _LiveCashDrawerStatusDialogState extends State<LiveCashDrawerStatusDialog> {
+  late CashierShift _shift;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _shift = widget.initialShift;
+    _refreshData();
+  }
+
+  Future<void> _refreshData() async {
+    setState(() => _isLoading = true);
+    try {
+      final updated = await ShiftService.getActiveShift(computeLive: true);
+      if (mounted && updated != null) {
+        setState(() {
+          _shift = updated;
+          _isLoading = false;
+        });
+        widget.onShiftUpdated?.call();
+      }
+    } catch (e) {
+      debugPrint('Error refreshing live drawer status: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final exp = _shift.expectedTotalCashInDrawer;
+    final timeStr = DateFormat('HH:mm').format(_shift.openedAt);
+
+    return AlertDialog(
+      backgroundColor: const Color(0xFF0F172A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.teal.shade700, width: 1.5),
+      ),
+      titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.teal.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.tealAccent.shade400, width: 1),
+            ),
+            child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.tealAccent, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'مراقبة حركة الصندوق اللحظية 💼',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                Text(
+                  'المناوبة: ${_shift.workerName} | فتح الصندوق: $timeStr',
+                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'تحديث فوري للحسابات',
+            icon: _isLoading
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.tealAccent, strokeWidth: 2))
+                : const Icon(Icons.refresh_rounded, color: Colors.tealAccent),
+            onPressed: _isLoading ? null : () {
+              SoundService.playKeyTap();
+              _refreshData();
+            },
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 440,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. المستطيل البارز اللحظي (The Prominent Real-time Rectangle)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.teal.shade900.withOpacity(0.85),
+                      const Color(0xFF064E3B),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.tealAccent.shade400, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.tealAccent.withOpacity(0.12),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.monetization_on_rounded, color: Colors.amberAccent, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'المبلغ الفعلي المتوقع في الدرج الآن',
+                          style: TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${exp.toStringAsFixed(2)} دج',
+                      style: const TextStyle(
+                        color: Colors.greenAccent,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'محدّث لحظة بلحظة مع كل عملية (${_shift.invoiceCount} فاتورة منجزة)',
+                      style: const TextStyle(color: Colors.white60, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 2. بطاقة تفاصيل الحركة النقدية
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Column(
+                  children: [
+                    _buildRowItem('صرف البداية (Fond initial)', _shift.floatAmount, Colors.white, isPositive: true),
+                    const Divider(color: Colors.white12, height: 16),
+                    _buildRowItem('مبيعات نقدية مقبوضة (${_shift.invoiceCount} فاتورة)', _shift.cashSales, Colors.greenAccent, isPositive: true),
+                    const Divider(color: Colors.white12, height: 16),
+                    _buildRowItem('إيداعات نقدية إضافية بالدرج', _shift.cashIn, Colors.tealAccent, isPositive: true),
+                    const Divider(color: Colors.white12, height: 16),
+                    _buildRowItem('تحصيلات ديون الزبائن نقداً', _shift.debtCollections, Colors.cyanAccent, isPositive: true),
+                    const Divider(color: Colors.white12, height: 16),
+                    _buildRowItem('سحوبات نقدية مباشرة من الدرج', _shift.cashOut, Colors.orangeAccent, isNegative: true),
+                    const Divider(color: Colors.white12, height: 16),
+                    _buildRowItem('مصاريف المحل النقدية المسجلة', _shift.expenses, Colors.redAccent, isNegative: true),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // 3. ملخص المبيعات الإلكترونية والآجلة (للعلم والإحاطة)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B).withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.credit_card_rounded, color: Colors.blueAccent, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'TPE / بنك: ${_shift.tpeSales.toStringAsFixed(0)} دج',
+                          style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.receipt_long_rounded, color: Colors.amberAccent, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'كريدي (آجل): ${_shift.creditSales.toStringAsFixed(0)} دج',
+                          style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
+      actions: [
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal.shade800,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          icon: const Icon(Icons.payments_rounded, size: 18),
+          label: const Text('حركة إيداع / سحب كاش', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          onPressed: () async {
+            await CashDrawerActionDialog.show(
+              context,
+              onDone: () async {
+                await _refreshData();
+              },
+            );
+          },
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إغلاق', style: TextStyle(color: Colors.white70, fontSize: 13)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRowItem(String label, double amount, Color color, {bool isPositive = false, bool isNegative = false}) {
+    final prefix = isPositive && amount > 0 ? '+' : (isNegative && amount > 0 ? '-' : '');
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(
+          '$prefix${amount.toStringAsFixed(2)} دج',
+          style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+      ],
+    );
+  }
+}

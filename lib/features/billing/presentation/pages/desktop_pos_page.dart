@@ -2939,6 +2939,7 @@ $itemsSummary
         SnackbarHelper.showSuccess(context, context.tr('printed_success'));
       }
       _barcodeFocusNode.requestFocus();
+      _loadActiveShift();
     }
   }
 
@@ -3070,6 +3071,7 @@ $itemsSummary
       onShowRemoteCartsQueue: _showRemoteCartsQueueModal,
       onOpenSmartScale: _openSmartScaleModal,
       onSwitchShift: _activeShift == null ? null : _showSwitchShiftDialog,
+      onShiftUpdated: _loadActiveShift,
     );
   }
 

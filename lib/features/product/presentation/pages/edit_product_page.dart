@@ -93,23 +93,7 @@ class _EditProductPageState extends State<EditProductPage> {
     _selectedCategory = _availableCategories.contains(p.category) ? p.category : 'عام';
     _coffeeRecipeJson = p.coffeeRecipeJson;
 
-    // تحميل إعدادات الكرتونة إن وجدت
-    final cartonUnit = p.units.where((u) => u.tier == UnitTier.large || u.name.contains('كرتون')).firstOrNull;
-    if (cartonUnit != null) {
-      _hasCarton = cartonUnit.isEnabled;
-      _cartonBarcodeCtrl = TextEditingController(text: cartonUnit.barcode ?? '');
-      _cartonCapacityCtrl = TextEditingController(text: _formatDouble(cartonUnit.multiplier));
-      _cartonCostCtrl = TextEditingController(text: cartonUnit.cost > 0 ? _formatDouble(cartonUnit.cost) : '');
-      _cartonPriceCtrl = TextEditingController(text: cartonUnit.price > 0 ? _formatDouble(cartonUnit.price) : '');
-    } else {
-      _hasCarton = false;
-      _cartonBarcodeCtrl = TextEditingController();
-      _cartonCapacityCtrl = TextEditingController(text: '24');
-      _cartonCostCtrl = TextEditingController();
-      _cartonPriceCtrl = TextEditingController();
-    }
-
-    // تحميل إعدادات العلبة إن وجدت
+    // 1. تحميل إعدادات العلبة أولاً لتحديد مضاعف العلبة
     final packUnit = p.units.where((u) => u.tier == UnitTier.medium || u.name.contains('علب')).firstOrNull;
     if (packUnit != null) {
       _hasPack = packUnit.isEnabled;
@@ -123,6 +107,27 @@ class _EditProductPageState extends State<EditProductPage> {
       _packCapacityCtrl = TextEditingController(text: '6');
       _packCostCtrl = TextEditingController();
       _packPriceCtrl = TextEditingController();
+    }
+
+    // 2. تحميل إعدادات الكرتونة (حساب السعة بالنسبة للواجهة بدون مضاعفة متكررة)
+    final cartonUnit = p.units.where((u) => u.tier == UnitTier.large || u.name.contains('كرتون')).firstOrNull;
+    if (cartonUnit != null) {
+      _hasCarton = cartonUnit.isEnabled;
+      _cartonBarcodeCtrl = TextEditingController(text: cartonUnit.barcode ?? '');
+      // إذا كانت العلبة مفعلة، فإن الحقل في الواجهة يطلب (كم علبة في الكرتونة؟)، لذا نقسم على سعة العلبة
+      final packMultiplier = (_hasPack && packUnit != null && packUnit.multiplier > 0) ? packUnit.multiplier : 1.0;
+      final double cartonUIVal = (_hasPack && packMultiplier > 1.0 && cartonUnit.multiplier >= packMultiplier)
+          ? (cartonUnit.multiplier / packMultiplier)
+          : cartonUnit.multiplier;
+      _cartonCapacityCtrl = TextEditingController(text: _formatDouble(cartonUIVal));
+      _cartonCostCtrl = TextEditingController(text: cartonUnit.cost > 0 ? _formatDouble(cartonUnit.cost) : '');
+      _cartonPriceCtrl = TextEditingController(text: cartonUnit.price > 0 ? _formatDouble(cartonUnit.price) : '');
+    } else {
+      _hasCarton = false;
+      _cartonBarcodeCtrl = TextEditingController();
+      _cartonCapacityCtrl = TextEditingController(text: '24');
+      _cartonCostCtrl = TextEditingController();
+      _cartonPriceCtrl = TextEditingController();
     }
 
     // تحميل العروض الخاصة والتخفيضات إن وجدت
@@ -305,6 +310,9 @@ class _EditProductPageState extends State<EditProductPage> {
       pluCode: plu.isNotEmpty ? plu : null,
       coffeeRecipeJson: _coffeeRecipeJson,
       isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
+      packMultiplier: _hasPack && packCapUI > 0 ? packCapUI.toInt() : 1,
+      packsPerCarton: cartonCapUI > 0 ? cartonCapUI.toInt() : 10,
+      hasMultiUnit: _hasCarton || _hasPack,
     );
 
     // الحفظ المباشر والفوري في قاعدة بيانات Hive لمنع أي تأخير أو تزامن غير مكتمل
@@ -588,7 +596,25 @@ class _EditProductPageState extends State<EditProductPage> {
               cartonPriceCtrl: _cartonPriceCtrl,
 
               hasPack: _hasPack,
-              onHasPackChange: (v) => setState(() => _hasPack = v),
+              onHasPackChange: (v) {
+                setState(() {
+                  if (_hasCarton && _cartonCapacityCtrl.text.isNotEmpty) {
+                    final currentCartonCap = _parsePrice(_cartonCapacityCtrl.text);
+                    final currentPackCap = _parsePrice(_packCapacityCtrl.text);
+                    final packCap = currentPackCap > 0 ? currentPackCap : 6.0;
+                    if (v == true && !_hasPack) {
+                      if (currentCartonCap >= packCap && packCap > 1.0) {
+                        _cartonCapacityCtrl.text = _formatDouble(currentCartonCap / packCap);
+                      }
+                    } else if (v == false && _hasPack) {
+                      if (currentCartonCap > 0 && packCap > 1.0) {
+                        _cartonCapacityCtrl.text = _formatDouble(currentCartonCap * packCap);
+                      }
+                    }
+                  }
+                  _hasPack = v;
+                });
+              },
               packBarcodeCtrl: _packBarcodeCtrl,
               packCapacityCtrl: _packCapacityCtrl,
               packCostCtrl: _packCostCtrl,

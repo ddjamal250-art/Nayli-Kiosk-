@@ -237,6 +237,9 @@ class _AddProductPageState extends State<AddProductPage> {
       specialOffers: resolvedOffers,
       pluCode: plu.isNotEmpty ? plu : null,
       unitSystemType: _unitSystemType,
+      packMultiplier: _hasPack && packCapUI > 0 ? packCapUI.toInt() : 1,
+      packsPerCarton: cartonCapUI > 0 ? cartonCapUI.toInt() : 10,
+      hasMultiUnit: _hasCarton || _hasPack,
     );
 
     // الحفظ المباشر والفوري في قاعدة بيانات Hive لمنع أي تأخير
@@ -364,7 +367,25 @@ class _AddProductPageState extends State<AddProductPage> {
               cartonPriceCtrl: _cartonPriceCtrl,
 
               hasPack: _hasPack,
-              onHasPackChange: (v) => setState(() => _hasPack = v),
+              onHasPackChange: (v) {
+                setState(() {
+                  if (_hasCarton && _cartonCapacityCtrl.text.isNotEmpty) {
+                    final currentCartonCap = _parsePrice(_cartonCapacityCtrl.text);
+                    final currentPackCap = _parsePrice(_packCapacityCtrl.text);
+                    final packCap = currentPackCap > 0 ? currentPackCap : 6.0;
+                    if (v == true && !_hasPack) {
+                      if (currentCartonCap >= packCap && packCap > 1.0) {
+                        _cartonCapacityCtrl.text = _formatDouble(currentCartonCap / packCap);
+                      }
+                    } else if (v == false && _hasPack) {
+                      if (currentCartonCap > 0 && packCap > 1.0) {
+                        _cartonCapacityCtrl.text = _formatDouble(currentCartonCap * packCap);
+                      }
+                    }
+                  }
+                  _hasPack = v;
+                });
+              },
               packBarcodeCtrl: _packBarcodeCtrl,
               packCapacityCtrl: _packCapacityCtrl,
               packCostCtrl: _packCostCtrl,

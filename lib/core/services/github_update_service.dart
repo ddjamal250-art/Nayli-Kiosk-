@@ -56,7 +56,7 @@ class GitHubUpdateService {
   static const String repoName = 'Nayli-Kiosk-';
 
   /// رقم الإصدار الحالي المضمن في التطبيق لضمان دقة الفحص على الويندوز
-  static const String currentAppVersion = '2.4.4';
+  static const String currentAppVersion = '2.4.5';
 
   static bool _isChecking = false;
   static bool _hasAutoChecked = false;
@@ -110,7 +110,7 @@ class GitHubUpdateService {
   static List<Map<String, dynamic>> getAppReleaseHistory() {
     return [
       {
-        'version': '2.4.4',
+        'version': '2.4.5',
         'title': 'إصلاح فئات الميزان، توسيط شاشة الدخول، تعريب المناوبات، وحماية رمز الدخول PIN',
         'isCurrent': true,
         'date': 'أكتوبر 2026',

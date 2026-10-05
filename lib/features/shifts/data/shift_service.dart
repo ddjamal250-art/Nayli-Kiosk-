@@ -49,15 +49,18 @@ class CashierShift {
   final String workerName;
   final DateTime openedAt;
   final DateTime? closedAt;
-  final double floatAmount; // Fond de caisse initial
-  final double cashSales;
-  final double tpeSales;
-  final double creditSales;
+  final double floatAmount; // Fond de caisse initial (صرف البداية)
+  final double cashSales; // مبيعات نقدية صافية
+  final double tpeSales; // مبيعات TPE وبطاقة بنكية
+  final double creditSales; // مبيعات كريدي (آجل)
   final double actualCashAtClose;
   final bool isClosed;
   final String? notes;
-  final double cashIn;
-  final double cashOut;
+  final double cashIn; // إيداعات إضافية مباشرة في الدرج
+  final double cashOut; // سحوبات مباشرة من الدرج
+  final double debtCollections; // تحصيلات ديون الزبائن نقداً
+  final double expenses; // مصاريف نقدية مسجلة من الدرج
+  final int invoiceCount; // عدد الفواتير المنجزة في المناوبة
 
   CashierShift({
     required this.id,
@@ -73,10 +76,18 @@ class CashierShift {
     this.notes,
     this.cashIn = 0.0,
     this.cashOut = 0.0,
+    this.debtCollections = 0.0,
+    this.expenses = 0.0,
+    this.invoiceCount = 0,
   });
 
   double get totalSales => cashSales + tpeSales + creditSales;
-  double get expectedTotalCashInDrawer => floatAmount + cashSales + cashIn - cashOut;
+  
+  /// المبلغ المتوقع في الدرج الآن بدقة متناهية:
+  /// صرف البداية + المبيعات النقدية + إيداعات الدرج + تحصيلات الديون - سحوبات الدرج - مصاريف المحل
+  double get expectedTotalCashInDrawer =>
+      floatAmount + cashSales + cashIn + debtCollections - cashOut - expenses;
+      
   double get cashDifference => actualCashAtClose - expectedTotalCashInDrawer;
 
   Map<String, dynamic> toMap() => {
@@ -93,10 +104,13 @@ class CashierShift {
     'notes': notes,
     'cashIn': cashIn,
     'cashOut': cashOut,
+    'debtCollections': debtCollections,
+    'expenses': expenses,
+    'invoiceCount': invoiceCount,
   };
 
   factory CashierShift.fromMap(Map<dynamic, dynamic> map) => CashierShift(
-    id: map['id']?.toString() ?? 'shift_${DateTime.now().millisecondsSinceEpoch}',
+    id: map['id']?.toString() ?? 'shift_',
     workerName: map['workerName']?.toString() ?? 'الكاشير',
     openedAt: DateTime.tryParse(map['openedAt']?.toString() ?? '') ?? DateTime.now(),
     closedAt: map['closedAt'] != null ? DateTime.tryParse(map['closedAt'].toString()) : null,
@@ -109,6 +123,9 @@ class CashierShift {
     notes: map['notes']?.toString(),
     cashIn: (map['cashIn'] as num?)?.toDouble() ?? 0.0,
     cashOut: (map['cashOut'] as num?)?.toDouble() ?? 0.0,
+    debtCollections: (map['debtCollections'] as num?)?.toDouble() ?? 0.0,
+    expenses: (map['expenses'] as num?)?.toDouble() ?? 0.0,
+    invoiceCount: (map['invoiceCount'] as num?)?.toInt() ?? 0,
   );
 }
 
@@ -122,13 +139,139 @@ class ShiftService {
     return _box!;
   }
 
-  /// Get current active open shift
-  static Future<CashierShift?> getActiveShift() async {
+  /// حساب حالة الصندوق المباشرة واللحظية للمناوبة بدقة متناهية
+  static Future<CashierShift> computeLiveShift(CashierShift shift) async {
+    double cashSales = 0.0;
+    double tpeSales = 0.0;
+    double creditSales = 0.0;
+    int invoiceCount = 0;
+
+    // 1. مبيعات الفواتير الخاصة بهذه المناوبة
+    try {
+      final invBox = HiveDatabase.invoicesBox;
+      for (final key in invBox.keys) {
+        final inv = invBox.get(key);
+        if (inv is Map) {
+          final invTime = DateTime.tryParse(inv['timestamp']?.toString() ?? '');
+          final shiftId = inv['shiftId']?.toString();
+          final isThisShift = (shiftId != null && shiftId == shift.id) ||
+              (invTime != null && (invTime.isAfter(shift.openedAt) || invTime.isAtSameMomentAs(shift.openedAt)));
+
+          if (isThisShift) {
+            invoiceCount++;
+            final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            final paid = (inv['paidAmount'] as num?)?.toDouble() ?? 0.0;
+            final method = inv['paymentMethod']?.toString() ?? 'Espèces';
+            final isCredit = inv['isCredit'] == true;
+
+            if (isCredit) {
+              creditSales += total;
+              if (paid > 0) {
+                cashSales += paid; // التسبيق النقدي في مبيعات الكريدي
+              }
+            } else if (method.contains('TPE') || method.contains('Card') || method.contains('Carte')) {
+              tpeSales += total;
+            } else {
+              // مبيعات نقدية عادية أو إرجاع نقدي بالسالب
+              if (paid != 0) {
+                cashSales += paid;
+              } else {
+                cashSales += total;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error computing shift invoices: $e');
+    }
+
+    // 2. حركات الدرج النقدية (إيداع وسحب)
+    double shiftCashIn = 0.0;
+    double shiftCashOut = 0.0;
+    try {
+      final movements = await getDrawerMovements();
+      for (var m in movements) {
+        if (m.timestamp.isAfter(shift.openedAt) || m.timestamp.isAtSameMomentAs(shift.openedAt)) {
+          if (m.type == 'in') {
+            shiftCashIn += m.amount;
+          } else {
+            shiftCashOut += m.amount;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error computing drawer movements: $e');
+    }
+
+    // 3. تحصيلات ديون الزبائن نقداً في الصندوق
+    double shiftDebtCollections = 0.0;
+    try {
+      final debtsBox = HiveDatabase.customerDebtsBox;
+      for (final key in debtsBox.keys) {
+        final val = debtsBox.get(key);
+        if (val is Map) {
+          final type = val['type']?.toString().toUpperCase();
+          if (type == 'PAYMENT') {
+            final ts = DateTime.tryParse(val['timestamp']?.toString() ?? '');
+            if (ts != null && (ts.isAfter(shift.openedAt) || ts.isAtSameMomentAs(shift.openedAt))) {
+              shiftDebtCollections += (val['amount'] as num?)?.toDouble() ?? 0.0;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error computing debt payments: $e');
+    }
+
+    // 4. مصاريف المحل النقدية المسجلة من الصندوق
+    double shiftExpenses = 0.0;
+    try {
+      final expBox = HiveDatabase.expensesBox;
+      for (final key in expBox.keys) {
+        final exp = expBox.get(key);
+        if (exp is Map) {
+          final d = DateTime.tryParse(exp['date']?.toString() ?? '');
+          if (d != null && (d.isAfter(shift.openedAt) || d.isAtSameMomentAs(shift.openedAt))) {
+            shiftExpenses += (exp['amount'] as num?)?.toDouble() ?? 0.0;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error computing expenses: $e');
+    }
+
+    return CashierShift(
+      id: shift.id,
+      workerName: shift.workerName,
+      openedAt: shift.openedAt,
+      closedAt: shift.closedAt,
+      floatAmount: shift.floatAmount,
+      cashSales: cashSales,
+      tpeSales: tpeSales,
+      creditSales: creditSales,
+      actualCashAtClose: shift.actualCashAtClose,
+      isClosed: shift.isClosed,
+      notes: shift.notes,
+      cashIn: shiftCashIn,
+      cashOut: shiftCashOut,
+      debtCollections: shiftDebtCollections,
+      expenses: shiftExpenses,
+      invoiceCount: invoiceCount,
+    );
+  }
+
+  /// Get current active open shift (with live recalculated cash status)
+  static Future<CashierShift?> getActiveShift({bool computeLive = true}) async {
     final b = await box;
     for (var key in b.keys) {
       final map = b.get(key);
       if (map is Map && (map['isClosed'] == false || map['isClosed'] == null)) {
-        return CashierShift.fromMap(map);
+        final rawShift = CashierShift.fromMap(map);
+        if (computeLive) {
+          return await computeLiveShift(rawShift);
+        }
+        return rawShift;
       }
     }
     return null;
@@ -159,64 +302,25 @@ class ShiftService {
     String? notes,
   }) async {
     final b = await box;
-
-    // Calculate sales during this shift from invoicesBox
-    final invoices = HiveDatabase.invoicesBox.values.toList();
-    double cash = 0.0;
-    double tpe = 0.0;
-    double credit = 0.0;
-    double shiftRealProfit = 0.0;
-    int shiftInvoiceCount = 0;
-
-    for (var inv in invoices) {
-      if (inv is Map) {
-        final invTime = DateTime.tryParse(inv['timestamp']?.toString() ?? '');
-        if (invTime != null && invTime.isAfter(activeShift.openedAt)) {
-          shiftInvoiceCount++;
-          final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
-          final method = inv['paymentMethod']?.toString() ?? 'Espèces';
-          final invProfit = (inv['netProfit'] as num?)?.toDouble() ??
-              (total - ((inv['totalCost'] as num?)?.toDouble() ?? 0.0));
-          shiftRealProfit += invProfit;
-          if (inv['isCredit'] == true) {
-            credit += total;
-          } else if (method.contains('TPE') || method.contains('Card')) {
-            tpe += total;
-          } else {
-            cash += total;
-          }
-        }
-      }
-    }
-
-    // Calculate cash movements during this shift
-    final movements = await getDrawerMovements();
-    double shiftCashIn = 0.0;
-    double shiftCashOut = 0.0;
-    for (var m in movements) {
-      if (m.timestamp.isAfter(activeShift.openedAt)) {
-        if (m.type == 'in') {
-          shiftCashIn += m.amount;
-        } else {
-          shiftCashOut += m.amount;
-        }
-      }
-    }
+    final live = await computeLiveShift(activeShift);
 
     final closedShift = CashierShift(
-      id: activeShift.id,
-      workerName: activeShift.workerName,
-      openedAt: activeShift.openedAt,
+      id: live.id,
+      workerName: live.workerName,
+      openedAt: live.openedAt,
       closedAt: DateTime.now(),
-      floatAmount: activeShift.floatAmount,
-      cashSales: cash,
-      tpeSales: tpe,
-      creditSales: credit,
+      floatAmount: live.floatAmount,
+      cashSales: live.cashSales,
+      tpeSales: live.tpeSales,
+      creditSales: live.creditSales,
       actualCashAtClose: actualCashInDrawer,
       isClosed: true,
       notes: notes,
-      cashIn: shiftCashIn,
-      cashOut: shiftCashOut,
+      cashIn: live.cashIn,
+      cashOut: live.cashOut,
+      debtCollections: live.debtCollections,
+      expenses: live.expenses,
+      invoiceCount: live.invoiceCount,
     );
 
     await b.put(closedShift.id, closedShift.toMap());

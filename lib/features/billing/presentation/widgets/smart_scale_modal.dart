@@ -356,7 +356,6 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
                   costPrice: cost,
                   stock: totalStock.toDouble(),
                   isWeighted: true,
-                  unit: 'كغ',
                 );
 
                 context.read<ProductBloc>().add(AddProduct(newProd));
