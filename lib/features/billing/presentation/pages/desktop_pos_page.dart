@@ -3155,6 +3155,7 @@ $itemsSummary
   Widget _buildLeftCartPane() {
     return BlocBuilder<BillingBloc, BillingState>(
       builder: (context, state) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         double currentTotal = state.totalAmount;
         if (_cartDiscountValue > 0) {
           if (_isDiscountPercentage) {
