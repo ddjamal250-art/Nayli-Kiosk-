@@ -63,7 +63,6 @@ jobs:
 
       - name: Analyze Project Code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
-        continue-on-error: true
 
       - name: Build Windows Executable Release
         shell: cmd
