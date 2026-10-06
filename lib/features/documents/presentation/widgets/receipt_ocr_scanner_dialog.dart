@@ -11,6 +11,7 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/utils/invoice_gemini_service.dart';
 import '../../domain/entities/commercial_document.dart';
+import '../../../product/domain/entities/product.dart';
 
 class ReceiptOcrScannerDialog extends StatefulWidget {
   const ReceiptOcrScannerDialog({super.key});
@@ -649,18 +650,39 @@ class _ReceiptOcrScannerDialogState extends State<ReceiptOcrScannerDialog> with 
                     // Item Designation
                     Expanded(
                       flex: 4,
-                      child: TextFormField(
-                        initialValue: item.designation,
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                          hintText: 'اسم السلعة',
-                        ),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                        onChanged: (v) {
-                          _parsedItems[index] = item.copyWith(designation: v);
-                          setState(() {});
+                      child: Autocomplete<Product>(
+                        initialValue: TextEditingValue(text: item.designation),
+                        displayStringForOption: (Product option) => option.name,
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          final query = textEditingValue.text.toLowerCase();
+                          if (query.isEmpty) return const Iterable<Product>.empty();
+                          return HiveDatabase.productBox.values.cast<Product>().where((product) {
+                            return product.name.toLowerCase().contains(query) || product.barcode.contains(query);
+                          });
+                        },
+                        onSelected: (Product selection) {
+                          setState(() {
+                            _parsedItems[index] = item.copyWith(
+                              designation: selection.name,
+                              productId: selection.barcode,
+                            );
+                          });
+                        },
+                        fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                          return TextFormField(
+                            controller: textEditingController,
+                            focusNode: focusNode,
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                              hintText: 'اسم السلعة أو الباركود',
+                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                            onChanged: (v) {
+                              _parsedItems[index] = item.copyWith(designation: v);
+                            },
+                          );
                         },
                       ),
                     ),
