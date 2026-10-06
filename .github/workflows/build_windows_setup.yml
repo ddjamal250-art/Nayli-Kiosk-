@@ -134,24 +134,31 @@ jobs:
           path: build/installer/
           retention-days: 1
 
+      - name: Determine Tag Name
+        id: tag_info
+        shell: bash
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | head -n1 | cut -d' ' -f2 | cut -d'+' -f1)
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+
       - name: Publish Direct Download GitHub Release
         uses: softprops/action-gh-release@v2.0.9
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v2.4.6
-          name: "Nayli Kiosk Desktop POS v2.4.6 (Official Release)"
+          tag_name: ${{ steps.tag_info.outputs.tag }}
+          name: "Nayli Kiosk Desktop POS ${{ steps.tag_info.outputs.tag }} (Official Release)"
           draft: false
           prerelease: false
           generate_release_notes: false
           body: |
-            ## 🚀 Nayli Kiosk Desktop POS v2.4.6 - التحديث الرسمي الشامل
+            ## 🚀 Nayli Kiosk Desktop POS ${{ steps.tag_info.outputs.tag }} - التحديث الرسمي الشامل
 
             ### 📥 روابط التحميل المباشرة بنقرة واحدة (Direct 1-Click Downloads):
-            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/v2.4.6/Nayli-Kiosk-Desktop-Setup.exe)**
-            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/v2.4.6/Nayli-Kiosk-Desktop-Portable.zip)**
+            - **[تحميل مثبت البرنامج التلقائي (Nayli-Kiosk-Desktop-Setup.exe)](https://github.com/${{ github.repository }}/releases/download/${{ steps.tag_info.outputs.tag }}/Nayli-Kiosk-Desktop-Setup.exe)**
+            - **[تحميل النسخة المحمولة بدون تثبيت (Nayli-Kiosk-Desktop-Portable.zip)](https://github.com/${{ github.repository }}/releases/download/${{ steps.tag_info.outputs.tag }}/Nayli-Kiosk-Desktop-Portable.zip)**
 
             ---
-            ✅ **المميزات والإصلاحات الكبرى في هذا التحديث (v2.4.6):**
+            ✅ **المميزات والإصلاحات الكبرى في هذا التحديث (${{ steps.tag_info.outputs.tag }}):**
             1. **الذكاء الاصطناعي للفواتير (Gemini AI):** دمج الذكاء الاصطناعي بشكل ثابت لجميع التجار لقراءة الفواتير وتفريغ المنتجات آلياً إلى المخزون (بدون الحاجة لضبط API معقد) مع إمكانية التعديل للمحترفين.
             2. **مسح المنتجات وإدخالها فورياً:** ترقية خانة البحث في المخزون لتقبل المسح بالباركود وتعبئة البيانات تلقائياً بلمح البصر دون أي بحث مرئي بطيء.
             3. **تنظيف الشفرة واستقرار النظام:** حل شامل لجميع تحذيرات وأخطاء الترجمة المخفية ليصبح النظام خالياً تماماً من الأخطاء البرمجية ويعمل بكفاءة مطلقة.

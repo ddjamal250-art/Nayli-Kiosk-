@@ -523,9 +523,10 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     File? targetFile;
     try {
       final tempDir = await getTemporaryDirectory();
+      final String cleanVer = widget.releaseInfo.cleanVersion;
       final fileName = widget.releaseInfo.assetName.isNotEmpty
-          ? widget.releaseInfo.assetName
-          : 'nayli-kiosk-update.exe';
+          ? '${cleanVer}-${widget.releaseInfo.assetName}'
+          : 'nayli-kiosk-update-${cleanVer}.exe';
       targetFile = File('${tempDir.path}/$fileName');
 
       // إذا كان الملف محملاً بالكامل ومطابقاً للحجم المطلوب مسبقاً، لا داعي لإعادة تحميله
