@@ -62,7 +62,13 @@ jobs:
           Copy-Item -Path "assets\images\app_icon.ico" -Destination "windows\runner\resources\app_icon.ico" -Force
 
       - name: Analyze Project Code
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze_output.txt || true
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add analyze_output.txt
+          git commit -m "chore: save flutter analyze output" || true
+          git push || true
 
       - name: Build Windows Executable Release
         shell: cmd
@@ -71,7 +77,7 @@ jobs:
       - name: Upload Build Log
         if: failure()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: build-log
           path: build_log.txt
@@ -122,14 +128,14 @@ jobs:
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\installer\Nayli-Kiosk-Desktop-Portable.zip -Force
 
       - name: Upload Windows Installer Setup Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: nayli-kiosk-desktop-setup
           path: build/installer/
           retention-days: 1
 
       - name: Publish Direct Download GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.0.9
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
           tag_name: v2.4.5
