@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
-import '../../features/documents/data/commercial_doc_model.dart';
+import '../../features/documents/domain/entities/commercial_document.dart';
 import 'receipt_ocr_parser.dart';
 
 class InvoiceGeminiService {
