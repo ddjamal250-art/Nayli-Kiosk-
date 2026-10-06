@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../../../core/data/hive_database.dart';
-import '../../../core/utils/printer_helper.dart';
 import '../../../core/utils/security_pin_helper.dart';
 import '../../../core/utils/sound_service.dart';
 import '../../../core/utils/online_license_service.dart';

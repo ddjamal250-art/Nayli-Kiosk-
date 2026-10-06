@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/license_service.dart';
 import '../../../../core/utils/sound_service.dart';
 

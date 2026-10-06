@@ -10,7 +10,6 @@ import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_client.dart';
 import '../../../../core/data/local_sync_server.dart';
 import '../../../../core/data/cloud_sync_service.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/license_service.dart';

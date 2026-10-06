@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/staff_permissions_service.dart';
 import '../../../../core/utils/expiry_tracker_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
-import '../../../../core/utils/sound_service.dart';
-import '../../../../core/data/local_sync_server.dart';
 import '../../../../core/services/github_update_service.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 
 class AdvancedPosSettingsPage extends StatefulWidget {

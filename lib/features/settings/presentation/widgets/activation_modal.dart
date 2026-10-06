@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,7 +32,6 @@ class _ActivationModalState extends State<ActivationModal> {
   final TextEditingController _cityController = TextEditingController();
 
   String? _errorMessage;
-  bool _isSuccess = false;
   bool _isCheckingOnline = false;
 
   @override
@@ -114,7 +112,6 @@ class _ActivationModalState extends State<ActivationModal> {
       setState(() => _isCheckingOnline = false);
 
       if (res.isSuccess) {
-        setState(() => _isSuccess = true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(res.message),
@@ -280,7 +277,6 @@ class _ActivationModalState extends State<ActivationModal> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceId = LicenseService.getDeviceId();
     final isActivated = LicenseService.isActivated();
     final remainingDays = LicenseService.getRemainingDays();
     final isDark = Theme.of(context).brightness == Brightness.dark;

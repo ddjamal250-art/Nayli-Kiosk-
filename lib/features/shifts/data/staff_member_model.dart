@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 /// Enterprise Staff Member Model for Nayli Kiosk
 /// Supports job departments, salaries, unique PINs, and granular security toggles

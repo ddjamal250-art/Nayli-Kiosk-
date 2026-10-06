@@ -552,7 +552,7 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
 
       // Step 2: Automatic Dual-Mode Cloud Fallback (Works on 4G, Firewall, or AP Isolation)
       if (ip.isNotEmpty || merchantId.isNotEmpty) {
-        final result = await CloudSyncService.pairDeviceViaCloud(
+        await CloudSyncService.pairDeviceViaCloud(
           merchantId: merchantId.isNotEmpty ? merchantId : MerchantContextService.getMerchantId(),
           masterDeviceId: masterDeviceId,
           storeName: shopName,
@@ -652,14 +652,6 @@ class _ActivationPageState extends State<ActivationPage> with SingleTickerProvid
   Widget build(BuildContext context) {
     final deviceId = LicenseService.getDeviceId();
     final isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
-    final merchantId = MerchantContextService.getMerchantId();
-
-    final qrPayload = jsonEncode(
-      MerchantContextService.generatePairingPayload(
-        localIp: _localIp,
-        port: LocalSyncServer.port,
-      ),
-    );
 
     return PopScope(
       canPop: false,

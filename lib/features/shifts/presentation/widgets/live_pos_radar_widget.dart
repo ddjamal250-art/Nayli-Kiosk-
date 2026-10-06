@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/utils/sound_service.dart';
 
 class StationInfo {
   final String id;

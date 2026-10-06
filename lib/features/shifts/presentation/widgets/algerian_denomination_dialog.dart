@@ -64,7 +64,6 @@ class _AlgerianDenominationDialogState extends State<AlgerianDenominationDialog>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

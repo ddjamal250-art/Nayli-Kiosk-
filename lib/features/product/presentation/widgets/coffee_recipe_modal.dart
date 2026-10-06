@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:convert';
-import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/product.dart';
-import '../../domain/entities/product_unit.dart';
 import '../bloc/product_bloc.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 

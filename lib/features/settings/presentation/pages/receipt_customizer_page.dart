@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
-import 'package:pdf/pdf.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -607,7 +605,6 @@ class _ReceiptCustomizerPageState extends State<ReceiptCustomizerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final separator = _getSeparatorLine();
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 900 || Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 

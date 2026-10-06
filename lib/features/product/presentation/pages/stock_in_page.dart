@@ -12,17 +12,12 @@ import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/product_unit.dart';
 import '../../domain/entities/special_offer.dart';
-import '../../../../core/utils/app_constants.dart';
-import '../../../../core/utils/app_validators.dart';
 import '../../../../core/utils/barcode_generator_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/catalog_crowdsource_helper.dart';
-import '../../../../core/widgets/primary_button.dart';
-import '../../../../core/data/master_catalog_seed.dart';
 import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/utils/category_taxonomy.dart';
-import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/product_bloc.dart';
 import '../../../documents/domain/entities/commercial_document.dart';
@@ -49,7 +44,7 @@ class _StockInPageState extends State<StockInPage> {
   );
 
   bool _isCameraOn = false;
-  bool _isFlashOn = false;
+
   String _activeBarcode = '';
   double _currentStock = 0.0;
   bool _isExistingInShop = false;
@@ -475,7 +470,6 @@ class _StockInPageState extends State<StockInPage> {
       _generateGreyProductBarcode();
     }
 
-    final isWeighted = _unitMode == ArrivageUnitMode.vracSacs;
     double effectiveQty = qty;
     double effectiveCost = costPrice;
 

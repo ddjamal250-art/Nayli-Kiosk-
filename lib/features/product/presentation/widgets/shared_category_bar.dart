@@ -32,11 +32,9 @@ class SharedCategoryBarState extends State<SharedCategoryBar> {
     final box = HiveDatabase.productBox;
     _dynamicCategories.clear();
     for (final product in box.values) {
-      if (product is Product) {
-        final cat = product.category.trim();
-        if (cat.isNotEmpty && cat != 'عام') {
-          _dynamicCategories.add(cat);
-        }
+      final cat = product.category.trim();
+      if (cat.isNotEmpty && cat != 'عام') {
+        _dynamicCategories.add(cat);
       }
     }
     setState(() {});
