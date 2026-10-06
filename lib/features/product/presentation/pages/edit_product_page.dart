@@ -115,10 +115,7 @@ class _EditProductPageState extends State<EditProductPage> {
       _hasCarton = cartonUnit.isEnabled;
       _cartonBarcodeCtrl = TextEditingController(text: cartonUnit.barcode ?? '');
       // إذا كانت العلبة مفعلة، فإن الحقل في الواجهة يطلب (كم علبة في الكرتونة؟)، لذا نقسم على سعة العلبة
-      final packMultiplier = (_hasPack && packUnit != null && packUnit.multiplier > 0) ? packUnit.multiplier : 1.0;
-      final double cartonUIVal = (_hasPack && packMultiplier > 1.0 && cartonUnit.multiplier >= packMultiplier)
-          ? (cartonUnit.multiplier / packMultiplier)
-          : cartonUnit.multiplier;
+      final double cartonUIVal = cartonUnit.multiplier;
       _cartonCapacityCtrl = TextEditingController(text: _formatDouble(cartonUIVal));
       _cartonCostCtrl = TextEditingController(text: cartonUnit.cost > 0 ? _formatDouble(cartonUnit.cost) : '');
       _cartonPriceCtrl = TextEditingController(text: cartonUnit.price > 0 ? _formatDouble(cartonUnit.price) : '');
@@ -215,7 +212,7 @@ class _EditProductPageState extends State<EditProductPage> {
 
     final cartonCapUI = _parsePrice(_cartonCapacityCtrl.text);
     final packCapUI = _parsePrice(_packCapacityCtrl.text);
-    final cartonMultiplier = _hasPack ? (cartonCapUI * packCapUI) : (cartonCapUI > 0 ? cartonCapUI : 24.0);
+    final cartonMultiplier = cartonCapUI > 0 ? cartonCapUI : 24.0;
 
     // بناء وحدات البيع (كرتونة، علبة، حبة)
     final List<ProductUnit> units = [];
@@ -598,20 +595,6 @@ class _EditProductPageState extends State<EditProductPage> {
               hasPack: _hasPack,
               onHasPackChange: (v) {
                 setState(() {
-                  if (_hasCarton && _cartonCapacityCtrl.text.isNotEmpty) {
-                    final currentCartonCap = _parsePrice(_cartonCapacityCtrl.text);
-                    final currentPackCap = _parsePrice(_packCapacityCtrl.text);
-                    final packCap = currentPackCap > 0 ? currentPackCap : 6.0;
-                    if (v == true && !_hasPack) {
-                      if (currentCartonCap >= packCap && packCap > 1.0) {
-                        _cartonCapacityCtrl.text = _formatDouble(currentCartonCap / packCap);
-                      }
-                    } else if (v == false && _hasPack) {
-                      if (currentCartonCap > 0 && packCap > 1.0) {
-                        _cartonCapacityCtrl.text = _formatDouble(currentCartonCap * packCap);
-                      }
-                    }
-                  }
                   _hasPack = v;
                 });
               },

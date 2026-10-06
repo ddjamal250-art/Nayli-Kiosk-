@@ -157,29 +157,47 @@ class ShiftService {
           final isThisShift = (shiftId != null && shiftId == shift.id) ||
               (invTime != null && (invTime.isAfter(shift.openedAt) || invTime.isAtSameMomentAs(shift.openedAt)));
 
+          final isReturned = inv['isReturned'] == true;
+          final returnDate = DateTime.tryParse(inv['returnDate']?.toString() ?? '');
+          final isReturnedInThisShift = isReturned && returnDate != null && (returnDate.isAfter(shift.openedAt) || returnDate.isAtSameMomentAs(shift.openedAt));
+
+          final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          final paid = (inv['paidAmount'] as num?)?.toDouble() ?? 0.0;
+          final method = inv['paymentMethod']?.toString() ?? 'Espèces';
+          final isCredit = inv['isCredit'] == true;
+
+          double saleCash = 0.0;
+          double saleTpe = 0.0;
+          double saleCredit = 0.0;
+
           if (isThisShift) {
             invoiceCount++;
-            final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
-            final paid = (inv['paidAmount'] as num?)?.toDouble() ?? 0.0;
-            final method = inv['paymentMethod']?.toString() ?? 'Espèces';
-            final isCredit = inv['isCredit'] == true;
-
             if (isCredit) {
-              creditSales += total;
-              if (paid > 0) {
-                cashSales += paid; // التسبيق النقدي في مبيعات الكريدي
-              }
+              saleCredit += total;
+              if (paid > 0) saleCash += paid;
             } else if (method.contains('TPE') || method.contains('Card') || method.contains('Carte')) {
-              tpeSales += total;
+              saleTpe += total;
             } else {
-              // مبيعات نقدية عادية أو إرجاع نقدي بالسالب
-              if (paid != 0) {
-                cashSales += paid;
-              } else {
-                cashSales += total;
-              }
+              if (paid != 0) saleCash += paid;
+              else saleCash += total;
             }
           }
+
+          if (isReturnedInThisShift) {
+            if (isCredit) {
+              saleCredit -= total;
+              if (paid > 0) saleCash -= paid;
+            } else if (method.contains('TPE') || method.contains('Card') || method.contains('Carte')) {
+              saleTpe -= total;
+            } else {
+              if (paid != 0) saleCash -= paid;
+              else saleCash -= total;
+            }
+          }
+
+          cashSales += saleCash;
+          tpeSales += saleTpe;
+          creditSales += saleCredit;
         }
       }
     } catch (e) {

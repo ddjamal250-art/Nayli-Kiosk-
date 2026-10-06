@@ -311,31 +311,57 @@ class PosHeaderToolbar extends StatelessWidget {
 
 
 
-              // 4. Custom Header Palette Button
-              IconButton(
-                tooltip: context.tr('color_palette_tooltip'),
-                icon: Icon(
-                  Icons.palette_rounded,
-                  color: headerState.accentColor,
-                  size: 22,
-                ),
-                onPressed: () => HeaderColorDialog.show(context),
-              ),
-
-              // 5. Language Switcher (AR / FR / EN)
+              // 4. Combined Display & Language Settings
               PopupMenuButton<String>(
-                tooltip: context.tr('language'),
+                tooltip: Localizations.localeOf(context).languageCode == 'ar' ? 'إعدادات العرض واللغة' : 'Display & Language Settings',
                 icon: Icon(
-                  Icons.language_rounded,
+                  Icons.display_settings_rounded,
                   color: isDarkHeader ? Colors.white : const Color(0xFF0F172A),
-                  size: 22,
+                  size: 23,
                 ),
                 offset: const Offset(0, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                onSelected: (code) => context.read<LanguageCubit>().setLanguage(code),
+                onSelected: (action) {
+                  if (action == 'palette') {
+                    HeaderColorDialog.show(context);
+                  } else if (action == 'fullscreen') {
+                    final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
+                    if (isFull) {
+                      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                      HiveDatabase.settingsBox.put('is_app_fullscreen', false);
+                    } else {
+                      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                      HiveDatabase.settingsBox.put('is_app_fullscreen', true);
+                    }
+                    SoundService.playKeyTap();
+                  } else if (action.startsWith('lang_')) {
+                    context.read<LanguageCubit>().setLanguage(action.split('_')[1]);
+                  }
+                },
                 itemBuilder: (ctx) => [
                   PopupMenuItem(
-                    value: 'ar',
+                    value: 'fullscreen',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.fullscreen_rounded, color: Colors.indigo, size: 20),
+                        const SizedBox(width: 8),
+                        Text(context.tr('ملء الشاشة (F11)'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'palette',
+                    child: Row(
+                      children: [
+                        Icon(Icons.palette_rounded, color: headerState.accentColor, size: 20),
+                        const SizedBox(width: 8),
+                        Text(context.tr('color_palette_tooltip'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'lang_ar',
                     child: Row(
                       children: [
                         const Text('🇩🇿', style: TextStyle(fontSize: 16)),
@@ -345,7 +371,7 @@ class PosHeaderToolbar extends StatelessWidget {
                     ),
                   ),
                   PopupMenuItem(
-                    value: 'fr',
+                    value: 'lang_fr',
                     child: Row(
                       children: [
                         const Text('🇫🇷', style: TextStyle(fontSize: 16)),
@@ -355,7 +381,7 @@ class PosHeaderToolbar extends StatelessWidget {
                     ),
                   ),
                   PopupMenuItem(
-                    value: 'en',
+                    value: 'lang_en',
                     child: Row(
                       children: [
                         const Text('🇬🇧', style: TextStyle(fontSize: 16)),
@@ -365,23 +391,6 @@ class PosHeaderToolbar extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-
-              // 6. Direct Fullscreen Toggle (F11)
-              IconButton(
-                tooltip: context.tr('ملء الشاشة (F11)'),
-                icon: Icon(Icons.fullscreen_rounded, color: isDarkHeader ? Colors.white70 : Colors.indigo, size: 23),
-                onPressed: () {
-                  final isFull = HiveDatabase.settingsBox.get('is_app_fullscreen', defaultValue: false) == true;
-                  if (isFull) {
-                    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                    HiveDatabase.settingsBox.put('is_app_fullscreen', false);
-                  } else {
-                    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-                    HiveDatabase.settingsBox.put('is_app_fullscreen', true);
-                  }
-                  SoundService.playKeyTap();
-                },
               ),
 
               const SizedBox(width: 4),

@@ -144,9 +144,24 @@ class _SessionLockOverlayState extends State<SessionLockOverlay> {
       }
     }
 
-    // 3. Fallback: if PIN protection is completely disabled in settings
+    // 3. Fallback: if PIN protection is completely disabled in settings AND no staff have passwords
     if (!authorized && !SecurityPinHelper.isPinEnabled()) {
-      authorized = true;
+      bool anyStaffHasPin = false;
+      final staffBox = HiveDatabase.staffBox;
+      for (var key in staffBox.keys) {
+        final staff = staffBox.get(key);
+        if (staff is Map) {
+          final sPin = staff['pin']?.toString() ?? '';
+          final sPass = staff['password']?.toString() ?? '';
+          if (sPin.isNotEmpty || sPass.isNotEmpty) {
+            anyStaffHasPin = true;
+            break;
+          }
+        }
+      }
+      if (!anyStaffHasPin) {
+        authorized = true;
+      }
     }
 
     if (authorized) {

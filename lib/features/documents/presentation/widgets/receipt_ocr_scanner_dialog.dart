@@ -8,6 +8,8 @@ import '../../../../core/utils/invoice_file_reader.dart';
 import '../../../../core/utils/receipt_ocr_parser.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../../core/data/hive_database.dart';
+import '../../../../core/utils/invoice_gemini_service.dart';
 import '../../domain/entities/commercial_document.dart';
 
 class ReceiptOcrScannerDialog extends StatefulWidget {
@@ -98,26 +100,56 @@ class _ReceiptOcrScannerDialogState extends State<ReceiptOcrScannerDialog> with 
     SoundService.playScanBeep();
 
     try {
-      final res = await InvoiceFileReader.instance.processFile(file);
-      if (res != null) {
-        _selectedFileFormat = res.formatName;
-        _rawTextCtrl.text = res.rawText;
+      final apiKey = HiveDatabase.settingsBox.get('gemini_api_key', defaultValue: '') as String;
+      final pathLower = file.path.toLowerCase();
+      final isImageOrPdf = pathLower.endsWith('.png') || pathLower.endsWith('.jpg') || pathLower.endsWith('.jpeg') || pathLower.endsWith('.pdf');
+      
+      ParsedReceiptResult? geminiResult;
+      if (isImageOrPdf) { // Changed this to try Gemini always, fallback will handle empty keys
+        setState(() => _processingStatus = 'جاري تحليل الفاتورة باستخدام الذكاء الاصطناعي (Gemini) 🤖...');
+        geminiResult = await InvoiceGeminiService.processImage(file, apiKey);
+      }
+
+      if (geminiResult != null) {
+        _selectedFileFormat = isImageOrPdf ? (pathLower.endsWith('.pdf') ? 'PDF (AI)' : 'صورة (AI)') : 'ملف (AI)';
+        _rawTextCtrl.text = geminiResult.rawExtractedText;
         setState(() {
           _parsedItems.clear();
-          _parsedItems.addAll(res.parsedResult.items);
-          _entityName = res.parsedResult.entityName;
-          _detectedTotal = res.parsedResult.totalAmount;
+          _parsedItems.addAll(geminiResult!.items);
+          _entityName = geminiResult.entityName;
+          _detectedTotal = geminiResult.totalAmount;
         });
 
         if (mounted) {
           if (_parsedItems.isNotEmpty) {
-            SnackbarHelper.showSuccess(context, '✅ تم استخراج ${_parsedItems.length} سلع بنجاح! يرجى المعاينة والتأكيد.');
+            SnackbarHelper.showSuccess(context, '✅ تم استخراج ${_parsedItems.length} سلع بنجاح باستخدام الذكاء الاصطناعي!');
           } else {
-            SnackbarHelper.showWarning(context, 'تمت قراءة الملف لكن لم نكتشف سلعاً تلقائياً. يمكنك إضافة السلع أو تعديل النص.');
+            SnackbarHelper.showWarning(context, 'لم يعثر الذكاء الاصطناعي على سلع في هذه الفاتورة.');
           }
         }
       } else {
-        if (mounted) SnackbarHelper.showError(context, 'تعذر استخراج بيانات من هذا الملف.');
+        // Fallback to traditional parser
+        final res = await InvoiceFileReader.instance.processFile(file);
+        if (res != null) {
+          _selectedFileFormat = res.formatName;
+          _rawTextCtrl.text = res.rawText;
+          setState(() {
+            _parsedItems.clear();
+            _parsedItems.addAll(res.parsedResult.items);
+            _entityName = res.parsedResult.entityName;
+            _detectedTotal = res.parsedResult.totalAmount;
+          });
+
+          if (mounted) {
+            if (_parsedItems.isNotEmpty) {
+              SnackbarHelper.showSuccess(context, '✅ تم استخراج ${_parsedItems.length} سلع بنجاح! يرجى المعاينة والتأكيد.');
+            } else {
+              SnackbarHelper.showWarning(context, 'تمت قراءة الملف لكن لم نكتشف سلعاً تلقائياً. يمكنك إضافة السلع أو تعديل النص.');
+            }
+          }
+        } else {
+          if (mounted) SnackbarHelper.showError(context, 'تعذر استخراج بيانات من هذا الملف.');
+        }
       }
     } catch (e) {
       if (mounted) SnackbarHelper.showError(context, 'خطأ أثناء معالجة الملف: $e');
@@ -136,6 +168,60 @@ class _ReceiptOcrScannerDialogState extends State<ReceiptOcrScannerDialog> with 
     });
     SoundService.playCheckoutSuccess();
     SnackbarHelper.showSuccess(context, 'تم إعادة التحليل! تم العثور على ${_parsedItems.length} سلع.');
+  }
+
+  void _showAiSetupDialog(BuildContext context) {
+    final ctrl = TextEditingController(text: HiveDatabase.settingsBox.get('gemini_api_key', defaultValue: '') as String);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.purple),
+            SizedBox(width: 8),
+            Text('إعداد الذكاء الاصطناعي (Gemini)'),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'استخدم الذكاء الاصطناعي من جوجل لقراءة الفواتير بدقة فائقة جداً ومجاناً! '
+                'احصل على مفتاح مجاني من:',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              const SelectableText(
+                'https://aistudio.google.com/app/apikey',
+                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: ctrl,
+                decoration: const InputDecoration(
+                  labelText: 'Gemini API Key',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.vpn_key),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton(
+            onPressed: () {
+              HiveDatabase.settingsBox.put('gemini_api_key', ctrl.text.trim());
+              Navigator.pop(ctx);
+              SnackbarHelper.showSuccess(context, 'تم حفظ إعدادات الذكاء الاصطناعي بنجاح!');
+            },
+            child: const Text('حفظ'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _addItemManually() {
@@ -228,6 +314,12 @@ class _ReceiptOcrScannerDialogState extends State<ReceiptOcrScannerDialog> with 
                     ],
                   ),
                 ),
+                IconButton(
+                  tooltip: 'إعداد الذكاء الاصطناعي',
+                  icon: const Icon(Icons.auto_awesome, color: Colors.purple),
+                  onPressed: () => _showAiSetupDialog(context),
+                ),
+                const SizedBox(width: 8),
                 IconButton(
                   tooltip: 'إغلاق',
                   icon: const Icon(Icons.close),

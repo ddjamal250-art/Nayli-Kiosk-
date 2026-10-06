@@ -644,8 +644,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     return matched;
   }
 
+  Timer? _searchDebounce;
+
   void _onSearchTextChanged(String text) {
-    final raw = text.trim();
+    if (_searchDebounce?.isActive ?? false) _searchDebounce!.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 150), () {
+      if (!mounted) return;
+      final raw = text.trim();
     if (raw.isEmpty || raw.length < 2) {
       if (_searchSuggestions.isNotEmpty) {
         setState(() {
@@ -685,6 +690,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     final matches = _findProductsByNameOrBarcode(query);
     setState(() {
       _searchSuggestions = matches.take(8).toList();
+    });
     });
   }
 
@@ -1334,17 +1340,6 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     for (final item in rawItems) {
       if (item is! Map) continue;
       String originalId = item['id']?.toString() ?? '';
-      if (originalId.contains('_carton_')) {
-        originalId = originalId.split('_carton_').first;
-      } else if (originalId.contains('_piece_')) {
-        originalId = originalId.split('_piece_').first;
-      } else if (originalId.contains('_meter_')) {
-        originalId = originalId.split('_meter_').first;
-      } else if (originalId.contains('_ml_')) {
-        originalId = originalId.split('_ml_').first;
-      } else if (originalId.endsWith('_pack')) {
-        originalId = originalId.replaceAll('_pack', '');
-      }
 
       final productModel = productBox.get(originalId);
       if (productModel != null) {
@@ -1374,11 +1369,20 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         // Regular or weighable item
         final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
         final weightKg = (item['weightKg'] as num?)?.toDouble();
+        final unitLevel = (item['unitLevel'] as num?)?.toInt();
         final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled) || weightKg != null;
+
+        double unitMultiplier = 1.0;
+        if (unitLevel != null) {
+          final u = productModel.units.where((x) => x.tierIndex == unitLevel).firstOrNull;
+          if (u != null && u.multiplier > 0) {
+            unitMultiplier = u.multiplier;
+          }
+        }
 
         final double stockToAdd = hasWeighable && weightKg != null
             ? (weightKg * 1000).toDouble()
-            : qty;
+            : (qty * unitMultiplier);
         final double newStock = (productModel.stock + stockToAdd).toDouble();
         final updatedProd = productModel.copyWith(stock: newStock);
         productBox.put(originalId, updatedProd);
@@ -1446,6 +1450,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   void _handleBarcodeSubmit(String rawInput) {
     if (rawInput.trim().isEmpty) return;
+    if (_searchDebounce?.isActive ?? false) _searchDebounce!.cancel();
+
     final input = rawInput.trim();
     _barcodeController.clear();
     setState(() {
@@ -3285,11 +3291,18 @@ $itemsSummary
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey.shade300),
-                            const SizedBox(height: 12),
-                            Text(context.tr('cart_empty'), style: TextStyle(fontSize: 16, color: Colors.grey.shade400, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(context.tr('cart_empty_hint'), style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1E293B) : Colors.teal.shade50,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.document_scanner_outlined, size: 56, color: isDark ? Colors.teal.shade300 : Colors.teal.shade400),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(context.tr('cart_empty'), style: TextStyle(fontSize: 18, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Text('امسح الباركود أو ابحث لإضافة منتجات', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
                           ],
                         ),
                       )
@@ -3301,6 +3314,7 @@ $itemsSummary
                           final item = state.cartItems[index];
                           final hasMulti = item.product.units.isNotEmpty;
                           return ListTile(
+                            tileColor: index.isEven ? Colors.transparent : (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02)),
                             dense: true,
                             onTap: hasMulti ? () => UniversalUnitSelectorDialog.showForCartItem(context, item) : null,
                             leading: ProductImageDisplay(
@@ -4044,11 +4058,6 @@ $itemsSummary
         matched = matched.copyWith(imageUrl: itemImg);
       }
       
-      // FIX: Use the price defined in the Quick Item if it differs, because it might be a piece price or customized
-      if (price > 0 && matched.price != price) {
-         matched = matched.copyWith(price: price);
-      }
-      
       if (_isReturnMode) {
         return matched.copyWith(
           name: '[${context.tr("return_mode")}] ${matched.name}',
@@ -4213,7 +4222,7 @@ $itemsSummary
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
@@ -4222,17 +4231,20 @@ $itemsSummary
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: hasValidImage
-                        ? (resolvedImg!.startsWith('http')
-                            ? Image.network(
-                                resolvedImg,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _buildQuickItemDefaultFrame(icon, isDark),
-                              )
-                            : Image.file(
-                                File(resolvedImg),
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _buildQuickItemDefaultFrame(icon, isDark),
-                              ))
+                        ? Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: (resolvedImg!.startsWith('http')
+                                ? Image.network(
+                                    resolvedImg,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => _buildQuickItemDefaultFrame(icon, isDark),
+                                  )
+                                : Image.file(
+                                    File(resolvedImg),
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => _buildQuickItemDefaultFrame(icon, isDark),
+                                  )),
+                          )
                         : _buildQuickItemDefaultFrame(icon, isDark),
                   ),
                 ),
@@ -4303,6 +4315,9 @@ $itemsSummary
   }
 
   Widget _buildBottomHotkeysBar() {
+    final hint = context.tr('hotkeys_hint');
+    final parts = hint.split('   ');
+
     return Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -4310,8 +4325,43 @@ $itemsSummary
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(context.tr('hotkeys_hint'),
-              style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: parts.map((part) {
+                  final text = part.replaceAll('[', '').replaceAll(']', '').trim();
+                  if (text.isEmpty) return const SizedBox();
+                  
+                  Color bgColor = Colors.blueGrey.shade800;
+                  Color fgColor = Colors.white70;
+                  
+                  if (text.startsWith('F12') || text.startsWith('F11')) {
+                    bgColor = Colors.teal.shade700;
+                    fgColor = Colors.white;
+                  } else if (text.startsWith('F1:') || text.startsWith('F3:') || text.startsWith('F7:') || text.startsWith('F8:')) {
+                    bgColor = Colors.blue.shade800;
+                    fgColor = Colors.white;
+                  } else if (text.startsWith('F2:') || text.startsWith('F4:') || text.startsWith('F6:')) {
+                    bgColor = Colors.deepOrange.shade700;
+                    fgColor = Colors.white;
+                  }
+
+                  return Container(
+                    margin: const EdgeInsets.only(right: 6, left: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Text(text, style: TextStyle(color: fgColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
           const Text('Nayli POS Engine ⚡', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),

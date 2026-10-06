@@ -447,8 +447,8 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => _onInputsChanged(),
                     decoration: InputDecoration(
-                      labelText: hasPack ? 'سعة الكرتونة (كم علبة؟) *' : 'سعة الكرتونة (كم حبة؟) *',
-                      suffixText: hasPack ? 'علبة/كرتونة' : 'حبة/كرتونة',
+                      labelText: 'سعة الكرتونة (كم حبة؟) *',
+                      suffixText: 'حبة/كرتونة',
                       border: const OutlineInputBorder(),
                       isDense: true,
                     ),

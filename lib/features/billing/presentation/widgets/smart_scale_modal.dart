@@ -151,7 +151,7 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
       if (c.isNotEmpty && c != 'الكل') availableCats.add(c);
     }
     if (availableCats.isEmpty) {
-      availableCats.addAll(['ميزان', 'مواد غذائية', 'خضر وفواكه', 'بقوليات', 'توابل']);
+      availableCats.addAll(['ميزان']);
     }
     final catList = availableCats.toList()..sort();
     String selectedCat = catList.contains('ميزان') ? 'ميزان' : catList.first;
@@ -438,13 +438,11 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
         customPrice: finalTotal,
       ));
     } else {
-      context.read<BillingBloc>().add(AddCustomItemEvent(
-        name: customItemName,
-        price: finalTotal,
-        costPrice: (costPerKg * weightKg).roundToDouble(),
-        quantity: 1,
-        barcode: rawBarcode,
-      ));
+      context.showAppSnackBar(
+        'خطأ: المادة "$name" غير مسجلة في المخزون! يرجى إضافتها أولاً لضمان صحة الحسابات.',
+        backgroundColor: Colors.red[800]!,
+      );
+      return;
     }
 
     Navigator.pop(context);

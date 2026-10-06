@@ -140,8 +140,19 @@ class _StockInPageState extends State<StockInPage> {
   void initState() {
     super.initState();
     _nameController.addListener(() {
-      if (!_isCategoryUserSelected && _nameController.text.trim().isNotEmpty) {
-        final detected = CategoryTaxonomy.smartDetect(_nameController.text.trim());
+      final text = _nameController.text.trim();
+      if (text.isEmpty) return;
+
+      // Intercept if the user typed or scanned a barcode into the name field
+      final isBarcode = RegExp(r'^\d{8,14}$').hasMatch(text);
+      if (isBarcode) {
+        // Prevent infinite loop by unfocusing slightly or let _processScannedBarcode handle it
+        _processScannedBarcode(text);
+        return;
+      }
+
+      if (!_isCategoryUserSelected) {
+        final detected = CategoryTaxonomy.smartDetect(text);
         if (mounted && _selectedCategory != detected.titleAr) {
           setState(() {
             _selectedCategory = detected.titleAr;
@@ -1235,24 +1246,75 @@ class _StockInPageState extends State<StockInPage> {
                   const SizedBox(height: 14),
 
                   // Item Name
-                  TextField(
-                    controller: _nameController,
+                  RawAutocomplete<Product>(
+                    textEditingController: _nameController,
                     focusNode: _nameFocusNode,
-                    textInputAction: TextInputAction.next,
-                    onSubmitted: (_) => _priceFocusNode.requestFocus(),
-                    decoration: InputDecoration(
-                      labelText: 'اسم السلعة (مثلاً: زيت عافية 5L / شكارة قهوة 25kg) *',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.shopping_bag_outlined),
-                      suffixIcon: _isExistingInShop
-                          ? Container(
-                              margin: const EdgeInsets.all(8),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(6)),
-                              child: Text('بالمخزون: $_currentStock', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.green)),
-                            )
-                          : null,
-                    ),
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      final text = textEditingValue.text.trim();
+                      if (text.isEmpty || text.length < 2) return const Iterable<Product>.empty();
+                      // Don't show dropdown for pure barcodes, the listener will intercept it and auto-fill
+                      if (RegExp(r'^\d{8,14}$').hasMatch(text)) return const Iterable<Product>.empty();
+                      
+                      final query = text.toLowerCase();
+                      final products = context.read<ProductBloc>().state.products;
+                      return products.where((p) => p.name.toLowerCase().contains(query)).take(8);
+                    },
+                    displayStringForOption: (Product p) => p.name,
+                    onSelected: (Product p) {
+                       _processScannedBarcode(p.barcode);
+                    },
+                    fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                      return TextField(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                        textInputAction: TextInputAction.next,
+                        onSubmitted: (_) {
+                          onFieldSubmitted();
+                          _priceFocusNode.requestFocus();
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'ابحث باسم السلعة أو مرر الباركود هنا *',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          suffixIcon: _isExistingInShop
+                              ? Container(
+                                  margin: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(6)),
+                                  child: Text('بالمخزون: $_currentStock', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.green)),
+                                )
+                              : null,
+                        ),
+                      );
+                    },
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topRight, // RTL alignment
+                        child: Material(
+                          elevation: 8,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: MediaQuery.of(context).size.width - 32, // Match padding
+                            constraints: const BoxConstraints(maxHeight: 250, maxWidth: 600),
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (context, index) {
+                                final p = options.elementAt(index);
+                                return ListTile(
+                                  dense: true,
+                                  leading: const Icon(Icons.inventory_2_outlined, color: Colors.teal),
+                                  title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text('الباركود: ${p.barcode} | المخزون الحالي: ${p.stock}', style: const TextStyle(fontSize: 11)),
+                                  onTap: () => onSelected(p),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
 

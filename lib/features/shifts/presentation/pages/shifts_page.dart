@@ -363,16 +363,25 @@ class _ShiftsPageState extends State<ShiftsPage> {
                                     ),
                                   ],
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green)),
-                                  child: const Row(
-                                    children: [
-                                      Icon(Icons.fiber_manual_record, color: Colors.green, size: 14),
-                                      SizedBox(width: 6),
-                                      Text('الوردية نشطة ومفتوحة', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
-                                    ],
-                                  ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.refresh_rounded, color: Colors.teal),
+                                      tooltip: 'تحديث حالة الصندوق والمبيعات',
+                                      onPressed: _loadShifts,
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green)),
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.fiber_manual_record, color: Colors.green, size: 14),
+                                          SizedBox(width: 6),
+                                          Text('الوردية نشطة ومفتوحة', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -381,11 +390,31 @@ class _ShiftsPageState extends State<ShiftsPage> {
                               children: [
                                 _buildShiftStat('رصيد البداية (العهدة)', '${_activeShift!.floatAmount.toStringAsFixed(2)} د.ج', Colors.grey),
                                 const SizedBox(width: 12),
-                                _buildShiftStat('مبيعات الكاش', 'مباشرة في الصندوق', Colors.green),
+                                _buildShiftStat('مبيعات الكاش', '${_activeShift!.cashSales.toStringAsFixed(2)} د.ج', Colors.green),
                                 const SizedBox(width: 12),
-                                _buildShiftStat('مبيعات TPE', 'مسجلة إلكترونياً', Colors.blue),
+                                _buildShiftStat('مبيعات TPE', '${_activeShift!.tpeSales.toStringAsFixed(2)} د.ج', Colors.blue),
                                 const SizedBox(width: 12),
-                                _buildShiftStat('مبيعات الكريدي', 'مسجلة بالدفتر', Colors.amber),
+                                _buildShiftStat('مبيعات الكريدي', '${_activeShift!.creditSales.toStringAsFixed(2)} د.ج', Colors.amber),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.teal.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.teal.shade300, width: 2),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Text('حالة الصندوق الآن (متوقع)', textAlign: TextAlign.center, style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 13)),
+                                        const SizedBox(height: 4),
+                                        Text('${_activeShift!.expectedTotalCashInDrawer.toStringAsFixed(2)} د.ج', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.teal)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -518,11 +547,12 @@ class _ShiftsPageState extends State<ShiftsPage> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: color.shade50, borderRadius: BorderRadius.circular(8), border: Border.all(color: color.shade200)),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(title, style: TextStyle(fontSize: 11, color: color.shade800, fontWeight: FontWeight.bold)),
+            Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: color.shade800, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(val, style: TextStyle(fontSize: 14, color: color.shade900, fontWeight: FontWeight.w900)),
+            Text(val, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: color.shade900, fontWeight: FontWeight.w900)),
           ],
         ),
       ),
