@@ -710,6 +710,8 @@ warning - Two keys in a map literal shouldn't be equal - lib\core\localization\a
 warning - Two keys in a map literal shouldn't be equal - lib\core\localization\app_localizations.dart:2349:7 - equal_keys_in_map
 warning - Two keys in a map literal shouldn't be equal - lib\core\localization\app_localizations.dart:2368:7 - equal_keys_in_map
    info - Unnecessary 'late' modifier - lib\core\localization\app_localizations.dart:2451:10 - unnecessary_late
+   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:528:14 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:529:33 - unnecessary_brace_in_string_interps
 warning - Unused import: 'package:google_fonts/google_fonts.dart' - lib\core\theme\app_theme.dart:2:8 - unused_import
    info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:5:31 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:53:25 - prefer_const_constructors
