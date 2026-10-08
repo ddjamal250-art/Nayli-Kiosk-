@@ -166,6 +166,8 @@ class PrintReceiptEvent extends BillingEvent {
   final String? specificPrinterName;
   final double? explicitTotal;
   final double? explicitDiscount;
+  final double? receivedAmount;
+  final double? changeAmount;
 
   const PrintReceiptEvent({
     required this.shopName,
@@ -177,6 +179,8 @@ class PrintReceiptEvent extends BillingEvent {
     this.isCredit = false,
     this.paymentMethod = 'Espèces',
     this.paidAmount = 0.0,
+    this.receivedAmount,
+    this.changeAmount,
     this.previousDebt = 0.0,
     this.newDebtTotal = 0.0,
     this.skipPhysicalPrint = false,
@@ -196,6 +200,8 @@ class PrintReceiptEvent extends BillingEvent {
         isCredit,
         paymentMethod,
         paidAmount,
+        receivedAmount ?? 0.0,
+        changeAmount ?? 0.0,
         previousDebt,
         newDebtTotal,
         skipPhysicalPrint,

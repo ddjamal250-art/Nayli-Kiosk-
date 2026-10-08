@@ -21,6 +21,7 @@ import 'cash_drawer_action_dialog.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../shifts/data/shift_service.dart';
 import '../../../../core/services/github_update_service.dart';
+import '../../../../core/utils/snackbar_helper.dart';
 
 class PosHeaderToolbar extends StatelessWidget {
   final bool isServerRunning;
@@ -664,9 +665,10 @@ class _LiveCashDrawerStatusDialogState extends State<LiveCashDrawerStatusDialog>
     _refreshData();
   }
 
-  Future<void> _refreshData() async {
+  Future<void> _refreshData({bool showSuccessMessage = false}) async {
     setState(() => _isLoading = true);
     try {
+      final res = await ShiftService.repairHistoricalData();
       final updated = await ShiftService.getActiveShift(computeLive: true);
       if (mounted && updated != null) {
         setState(() {
@@ -674,6 +676,12 @@ class _LiveCashDrawerStatusDialogState extends State<LiveCashDrawerStatusDialog>
           _isLoading = false;
         });
         widget.onShiftUpdated?.call();
+        if (showSuccessMessage && mounted) {
+          SnackbarHelper.showSuccess(
+            context,
+            '✅ تم تدقيق وتصحيح الحسابات بأثر رجعي بنجاح (${res['repairedInvoices']} فاتورة و ${res['repairedShifts']} وردية)!',
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error refreshing live drawer status: $e');
@@ -721,6 +729,14 @@ class _LiveCashDrawerStatusDialogState extends State<LiveCashDrawerStatusDialog>
                 ),
               ],
             ),
+          ),
+          IconButton(
+            tooltip: 'تدقيق وتصحيح الحسابات بأثر رجعي',
+            icon: const Icon(Icons.auto_fix_high_rounded, color: Colors.tealAccent, size: 20),
+            onPressed: _isLoading ? null : () {
+              SoundService.playSaveSuccess();
+              _refreshData(showSuccessMessage: true);
+            },
           ),
           IconButton(
             tooltip: 'تحديث فوري للحسابات',
@@ -864,23 +880,43 @@ class _LiveCashDrawerStatusDialogState extends State<LiveCashDrawerStatusDialog>
       ),
       actionsAlignment: MainAxisAlignment.spaceBetween,
       actions: [
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal.shade800,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          icon: const Icon(Icons.payments_rounded, size: 18),
-          label: const Text('حركة إيداع / سحب كاش', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          onPressed: () async {
-            await CashDrawerActionDialog.show(
-              context,
-              onDone: () async {
-                await _refreshData();
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal.shade800,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.payments_rounded, size: 18),
+              label: const Text('حركة إيداع / سحب كاش', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              onPressed: () async {
+                await CashDrawerActionDialog.show(
+                  context,
+                  onDone: () async {
+                    await _refreshData();
+                  },
+                );
               },
-            );
-          },
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.tealAccent,
+                side: BorderSide(color: Colors.teal.shade600),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.auto_fix_high_rounded, size: 16),
+              label: const Text('تصحيح بأثر رجعي 🔄', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              onPressed: _isLoading ? null : () {
+                SoundService.playSaveSuccess();
+                _refreshData(showSuccessMessage: true);
+              },
+            ),
+          ],
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),

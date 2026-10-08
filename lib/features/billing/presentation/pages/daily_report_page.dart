@@ -487,8 +487,26 @@ class _DailyReportPageState extends State<DailyReportPage> {
     final totalItemsCount = invoices.fold<int>(0, (sum, inv) => sum + ((inv['itemCount'] as num?)?.toInt() ?? 1));
     final averageBasket = invoices.isNotEmpty ? (totalRevenue / invoices.length) : 0.0;
 
-    final cashSales = invoices.where((i) => i['isCredit'] != true).fold<double>(0.0, (sum, i) => sum + ((i['paidAmount'] as num?)?.toDouble() ?? (i['totalAmount'] as num?)?.toDouble() ?? 0.0));
-    final creditSales = invoices.where((i) => i['isCredit'] == true).fold<double>(0.0, (sum, i) => sum + (((i['totalAmount'] as num?)?.toDouble() ?? 0.0) - ((i['paidAmount'] as num?)?.toDouble() ?? 0.0)));
+    final cashSales = invoices.where((i) {
+      final method = i['paymentMethod']?.toString() ?? 'Espèces';
+      final isCard = method.contains('TPE') || method.contains('Card') || method.contains('Carte') || method.contains('Baridi');
+      return i['isCredit'] != true && !isCard;
+    }).fold<double>(0.0, (sum, i) {
+      final isReturned = i['isReturned'] == true;
+      final tot = (i['totalAmount'] as num?)?.toDouble() ?? 0.0;
+      final p = (i['paidAmount'] as num?)?.toDouble() ?? 0.0;
+      final effective = (p > 0 && p < tot) ? p : tot;
+      return isReturned ? (sum - effective) : (sum + effective);
+    });
+
+    final creditSales = invoices.where((i) => i['isCredit'] == true).fold<double>(0.0, (sum, i) {
+      final isReturned = i['isReturned'] == true;
+      final tot = (i['totalAmount'] as num?)?.toDouble() ?? 0.0;
+      final p = (i['paidAmount'] as num?)?.toDouble() ?? 0.0;
+      final cashPart = (p > 0) ? (p > tot ? tot : p) : 0.0;
+      final creditPart = (tot - cashPart).clamp(0.0, double.infinity);
+      return isReturned ? (sum - creditPart) : (sum + creditPart);
+    });
 
     final supplierCashOut = _getSupplierPayments();
 

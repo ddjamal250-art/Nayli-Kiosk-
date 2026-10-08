@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../utils/product_image_helper.dart';
 
 class ProductImageDisplay extends StatelessWidget {
   final String? imageUrl;
@@ -23,13 +24,15 @@ class ProductImageDisplay extends StatelessWidget {
       return _buildPlaceholder();
     }
 
-    final isNetwork = imageUrl!.startsWith('http');
+    final resolved = ProductImageHelper.resolveImagePathSync(imageUrl);
+    final targetPath = (resolved != null && resolved.isNotEmpty) ? resolved : imageUrl!.trim();
+    final isNetwork = targetPath.startsWith('http://') || targetPath.startsWith('https://');
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: isNetwork
           ? Image.network(
-              imageUrl!,
+              targetPath,
               width: width,
               height: height,
               fit: BoxFit.cover,
@@ -51,7 +54,7 @@ class ProductImageDisplay extends StatelessWidget {
               },
             )
           : Image.file(
-              File(imageUrl!),
+              File(targetPath),
               width: width,
               height: height,
               fit: BoxFit.cover,

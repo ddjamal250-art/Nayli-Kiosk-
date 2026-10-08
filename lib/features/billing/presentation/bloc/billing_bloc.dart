@@ -652,6 +652,12 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final double finalTotalCost = isReturn ? -totalCost : totalCost;
       final double finalNetProfit = isReturn ? -netProfit : netProfit;
       
+      final double tenderedCash = event.receivedAmount ?? (event.paidAmount > 0 ? event.paidAmount : positiveTotal);
+      final double changeBack = event.changeAmount ?? ((tenderedCash > positiveTotal && !event.isCredit) ? (tenderedCash - positiveTotal) : 0.0);
+      final double effectiveCashPaid = event.isCredit
+          ? (event.paidAmount > positiveTotal ? positiveTotal : event.paidAmount)
+          : positiveTotal;
+
       final activeShift = await ShiftService.getActiveShift();
 
       await invoicesBox.put(invoiceId, {
@@ -678,7 +684,9 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'isCredit': event.isCredit,
         'paymentMethod': event.paymentMethod,
         'customerName': event.customerName,
-        'paidAmount': isReturn ? -event.paidAmount : event.paidAmount,
+        'paidAmount': isReturn ? -effectiveCashPaid : effectiveCashPaid,
+        'receivedAmount': isReturn ? -tenderedCash : tenderedCash,
+        'changeAmount': changeBack,
       });
 
       // 3. Print physical receipt (unless skipped)
@@ -694,7 +702,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           footer: event.footer,
           customerName: event.customerName,
           isCredit: event.isCredit,
-          paidAmount: event.paidAmount,
+          paidAmount: tenderedCash,
           previousDebt: event.previousDebt,
           newDebtTotal: event.newDebtTotal,
           specificPrinterName: event.specificPrinterName,

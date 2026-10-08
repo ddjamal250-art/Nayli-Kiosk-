@@ -604,7 +604,12 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     final normQuery = _normalizeSearchText(query);
     final products = context.read<ProductBloc>().state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
 
-    // 1. Check exact barcode match first
+    // 1. Check exact barcode or QR match first (including GS1 and candidates)
+    final directMatch = BarcodeNormalizer.findProduct(products, query);
+    if (directMatch != null) {
+      return [directMatch];
+    }
+
     final exactBarcode = products.where((p) => BarcodeNormalizer.matches(p.barcode, query)).toList();
     if (exactBarcode.isNotEmpty) {
       return exactBarcode;
@@ -677,9 +682,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       return;
     }
 
-    // If query is pure digits and >= 8 digits, likely hardware wedge barcode scan
-    final isBarcodeOnly = RegExp(r'^\d+$').hasMatch(query);
-    if (isBarcodeOnly && query.length >= 8) {
+    // If query is a hardware wedge barcode or QR code scan
+    final isBarcodeOrQr = BarcodeNormalizer.isBarcodeOrQrCode(query);
+    if (isBarcodeOrQr) {
       final matches = _findProductsByNameOrBarcode(query);
       setState(() {
         _searchSuggestions = matches.take(6).toList();
@@ -2891,6 +2896,15 @@ $itemsSummary
     final shopName = shop?.name ?? 'Nayli Kiosk';
     final shopPhone = shop?.phoneNumber ?? '';
 
+    final String paymentMethodStr = method == PosPaymentMethod.tpeCard
+        ? 'TPE / Carte'
+        : (method == PosPaymentMethod.baridiPayQr
+            ? 'BaridiPay QR'
+            : (isCredit ? 'Crédit' : 'Espèces'));
+
+    final double tendered = receivedAmount ?? total;
+    final double change = (method == PosPaymentMethod.cash && tendered > total) ? (tendered - total) : 0.0;
+
     billingBloc.add(PrintReceiptEvent(
       shopName: shopName,
       address1: '',
@@ -2899,8 +2913,10 @@ $itemsSummary
       footer: '',
       customerName: _selectedCustomerName,
       isCredit: isCredit,
-      paymentMethod: method == PosPaymentMethod.tpeCard ? 'TPE / Carte' : (isCredit ? 'Crédit' : 'Espèces'),
-      paidAmount: isCredit ? 0.0 : (receivedAmount ?? total),
+      paymentMethod: paymentMethodStr,
+      paidAmount: tendered,
+      receivedAmount: tendered,
+      changeAmount: change,
       previousDebt: _customerCreditBalance,
       newDebtTotal: isCredit ? (_customerCreditBalance + total) : _customerCreditBalance,
       skipPhysicalPrint: !printReceipt,

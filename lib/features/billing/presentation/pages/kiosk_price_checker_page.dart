@@ -31,7 +31,7 @@ class _KioskPriceCheckerPageState extends State<KioskPriceCheckerPage>
   int _displayDuration = 10;
   String _arrowDirection = 'down';
   String _greetingTitle = 'مرحباً بكم في متجرنا';
-  String _greetingSubtitle = 'مرر باركود السلعة تحت الماسح لمعرفة السعر';
+  String _greetingSubtitle = 'مرر باركود أو رمز QR السلعة تحت الماسح لمعرفة السعر';
 
   // تجميع نقرات الباركود العتادية (Hardware Buffer) دون فقدان التركيز
   String _buffer = '';
@@ -82,7 +82,7 @@ class _KioskPriceCheckerPageState extends State<KioskPriceCheckerPage>
       _arrowDirection = cfg['arrowDirection'] as String? ?? 'down';
       _greetingTitle = cfg['greetingTitle'] as String? ?? 'مرحباً بكم في متجرنا';
       _greetingSubtitle = cfg['greetingSubtitle'] as String? ??
-          'مرر باركود السلعة تحت الماسح لمعرفة السعر';
+          'مرر باركود أو رمز QR السلعة تحت الماسح لمعرفة السعر';
     });
   }
 

@@ -178,10 +178,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
         'total': item.total,
       }).toList();
 
-      final paidAmount = _paymentMode == PaymentMode.cash
+      final enteredCash = _paymentMode == PaymentMode.cash
           ? (double.tryParse(_paidController.text.trim()) ?? billingState.totalAmount)
           : (_paymentMode == PaymentMode.acompteCredit
               ? (double.tryParse(_acompteController.text.trim()) ?? 0.0)
+              : 0.0);
+
+      final changeAmount = (_paymentMode == PaymentMode.cash && enteredCash > billingState.totalAmount)
+          ? (enteredCash - billingState.totalAmount)
+          : 0.0;
+
+      final paidAmount = _paymentMode == PaymentMode.cash
+          ? billingState.totalAmount
+          : (_paymentMode == PaymentMode.acompteCredit
+              ? enteredCash.clamp(0.0, billingState.totalAmount)
               : 0.0);
 
       final activeShift = await ShiftService.getActiveShift();
@@ -197,6 +207,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
         'isCredit': _paymentMode != PaymentMode.cash,
         'customerName': _selectedCustomer?.name ?? '',
         'paidAmount': paidAmount,
+        'receivedAmount': enteredCash,
+        'changeAmount': changeAmount,
         'paymentMode': _paymentMode.name,
         'shiftId': activeShift?.id,
         'workerName': activeShift?.workerName ?? 'Unknown',

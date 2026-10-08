@@ -161,42 +161,57 @@ class ShiftService {
           final isReturnedInThisShift = isReturned && returnDate != null && (returnDate.isAfter(shift.openedAt) || returnDate.isAtSameMomentAs(shift.openedAt));
 
           final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
-          final paid = (inv['paidAmount'] as num?)?.toDouble() ?? 0.0;
+          final rawPaid = (inv['paidAmount'] as num?)?.toDouble();
           final method = inv['paymentMethod']?.toString() ?? 'Espèces';
           final isCredit = inv['isCredit'] == true;
+          final isCardOrDigital = method.contains('TPE') ||
+              method.contains('Card') ||
+              method.contains('Carte') ||
+              method.contains('BaridiPay') ||
+              method.contains('Baridi');
 
           double saleCash = 0.0;
           double saleTpe = 0.0;
           double saleCredit = 0.0;
 
+          if (isCardOrDigital) {
+            saleTpe = total;
+          } else if (isCredit) {
+            // الدفع بالكريدي (آجل) مع إمكانية تسبيق نقدي (Acompte)
+            final paid = rawPaid ?? 0.0;
+            final cashPart = (paid > 0) ? (paid > total ? total : paid) : 0.0;
+            final creditPart = (total - cashPart).clamp(0.0, double.infinity);
+            saleCash = cashPart;
+            saleCredit = creditPart;
+          } else {
+            // الدفع نقداً (كاش):
+            // تصحيح جذري: إذا أدخل التاجر ورقة نقدية كبيرة (مثل 2000 دج) لفاتورة قيمتها 400 دج لحساب الصرف،
+            // فإن ما يستقر في الدرج فعلياً هو قيمة الفاتورة فقط (400 دج)، لأن الباقي (1600 دج) أُرجع للزبون من الدرج.
+            final paid = rawPaid ?? total;
+            if (total >= 0) {
+              final effectiveCash = (paid > 0 && paid < total) ? paid : total;
+              saleCash = effectiveCash;
+            } else {
+              // وصل إرجاع مباشر سالب (total < 0)
+              final absTotal = total.abs();
+              final absPaid = paid.abs();
+              final effectiveRefund = (absPaid > 0 && absPaid < absTotal) ? absPaid : absTotal;
+              saleCash = -effectiveRefund;
+            }
+          }
+
           if (isThisShift) {
             invoiceCount++;
-            if (isCredit) {
-              saleCredit += total;
-              if (paid > 0) saleCash += paid;
-            } else if (method.contains('TPE') || method.contains('Card') || method.contains('Carte')) {
-              saleTpe += total;
-            } else {
-              if (paid != 0) saleCash += paid;
-              else saleCash += total;
-            }
+            cashSales += saleCash;
+            tpeSales += saleTpe;
+            creditSales += saleCredit;
           }
 
           if (isReturnedInThisShift) {
-            if (isCredit) {
-              saleCredit -= total;
-              if (paid > 0) saleCash -= paid;
-            } else if (method.contains('TPE') || method.contains('Card') || method.contains('Carte')) {
-              saleTpe -= total;
-            } else {
-              if (paid != 0) saleCash -= paid;
-              else saleCash -= total;
-            }
+            cashSales -= saleCash;
+            tpeSales -= saleTpe;
+            creditSales -= saleCredit;
           }
-
-          cashSales += saleCash;
-          tpeSales += saleTpe;
-          creditSales += saleCredit;
         }
       }
     } catch (e) {
@@ -276,6 +291,116 @@ class ShiftService {
       expenses: shiftExpenses,
       invoiceCount: invoiceCount,
     );
+  }
+
+  /// إصلاح وتدقيق الحسابات والمبيعات السابقة بأثر رجعي لجميع التجار
+  /// يصحح أخطاء الأوراق النقدية والفرّاطة (الصرف) في الفواتير والورديات القديمة
+  static Future<Map<String, dynamic>> repairHistoricalData() async {
+    int repairedInvoicesCount = 0;
+    int repairedShiftsCount = 0;
+
+    try {
+      final invBox = HiveDatabase.invoicesBox;
+      final shiftsB = await box;
+
+      // 1. تصحيح وتدقيق الفواتير السابقة في invoicesBox
+      for (final key in invBox.keys) {
+        final inv = invBox.get(key);
+        if (inv is Map) {
+          final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          final rawPaid = (inv['paidAmount'] as num?)?.toDouble();
+          final rawReceived = (inv['receivedAmount'] as num?)?.toDouble();
+          final rawChange = (inv['changeAmount'] as num?)?.toDouble();
+          final isCredit = inv['isCredit'] == true;
+          final method = inv['paymentMethod']?.toString() ?? 'Espèces';
+          final isCardOrDigital = method.contains('TPE') ||
+              method.contains('Card') ||
+              method.contains('Carte') ||
+              method.contains('BaridiPay') ||
+              method.contains('Baridi');
+
+          bool changed = false;
+          final updated = Map<String, dynamic>.from(inv);
+
+          if (!isCredit && !isCardOrDigital) {
+            // فاتورة كاش نقدية
+            if (rawPaid != null && rawPaid > total.abs() && total.abs() > 0) {
+              // تم تسجيل الورقة النقدية المدخلة لحساب الصرف (مثل 2000 دج) بدلاً من صافي الفاتورة (400 دج)
+              final received = rawPaid;
+              final change = (rawPaid - total.abs()).clamp(0.0, double.infinity);
+              updated['receivedAmount'] = received;
+              updated['changeAmount'] = change;
+              updated['paidAmount'] = total; // تصحيح المبلغ المدفوع ليكون صافي قيمة الفاتورة المقبوضة
+              changed = true;
+            } else {
+              if (rawReceived == null && rawPaid != null) {
+                updated['receivedAmount'] = rawPaid;
+                changed = true;
+              }
+              if (rawChange == null) {
+                updated['changeAmount'] = 0.0;
+                changed = true;
+              }
+            }
+          } else if (isCredit) {
+            // فاتورة كريدي
+            if (rawPaid != null && rawPaid > total.abs() && total.abs() > 0) {
+              final received = rawPaid;
+              final change = (rawPaid - total.abs()).clamp(0.0, double.infinity);
+              updated['receivedAmount'] = received;
+              updated['changeAmount'] = change;
+              updated['paidAmount'] = total;
+              changed = true;
+            }
+          }
+
+          if (changed) {
+            await invBox.put(key, updated);
+            repairedInvoicesCount++;
+          }
+        }
+      }
+
+      // 2. إعادة احتساب وتحديث جميع الورديات المسجلة (المفتوحة والسابقة) في cashier_shifts_box
+      for (final key in shiftsB.keys) {
+        final sMap = shiftsB.get(key);
+        if (sMap is Map) {
+          final rawShift = CashierShift.fromMap(sMap);
+          final recalculated = await computeLiveShift(rawShift);
+
+          final updatedShift = CashierShift(
+            id: rawShift.id,
+            workerName: rawShift.workerName,
+            openedAt: rawShift.openedAt,
+            closedAt: rawShift.closedAt,
+            floatAmount: rawShift.floatAmount,
+            cashSales: recalculated.cashSales,
+            tpeSales: recalculated.tpeSales,
+            creditSales: recalculated.creditSales,
+            actualCashAtClose: rawShift.actualCashAtClose,
+            isClosed: rawShift.isClosed,
+            notes: rawShift.notes,
+            cashIn: recalculated.cashIn,
+            cashOut: recalculated.cashOut,
+            debtCollections: recalculated.debtCollections,
+            expenses: recalculated.expenses,
+            invoiceCount: recalculated.invoiceCount,
+          );
+
+          await shiftsB.put(key, updatedShift.toMap());
+          repairedShiftsCount++;
+        }
+      }
+
+      debugPrint('✅ تم بنجاح تدقيق وإصلاح $repairedInvoicesCount فاتورة و $repairedShiftsCount وردية بأثر رجعي!');
+    } catch (e) {
+      debugPrint('❌ خطأ أثناء التدقيق والإصلاح بأثر رجعي: $e');
+    }
+
+    return {
+      'repairedInvoices': repairedInvoicesCount,
+      'repairedShifts': repairedShiftsCount,
+    };
   }
 
   /// Get current active open shift (with live recalculated cash status)

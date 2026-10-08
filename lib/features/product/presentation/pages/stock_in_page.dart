@@ -23,6 +23,7 @@ import '../bloc/product_bloc.dart';
 import '../../../documents/domain/entities/commercial_document.dart';
 import '../../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
 import '../../../../core/utils/receipt_ocr_parser.dart';
+import '../../../../core/utils/product_image_search_service.dart';
 import '../widgets/product_image_picker_field.dart';
 import '../widgets/ready_coffee_calculator_card.dart';
 import '../widgets/product_units_editor_widget.dart';
@@ -41,6 +42,7 @@ class StockInPage extends StatefulWidget {
 class _StockInPageState extends State<StockInPage> {
   final MobileScannerController _scannerController = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
+    formats: const [BarcodeFormat.all],
   );
 
   bool _isCameraOn = false;
@@ -138,9 +140,9 @@ class _StockInPageState extends State<StockInPage> {
       final text = _nameController.text.trim();
       if (text.isEmpty) return;
 
-      // Intercept if the user typed or scanned a barcode into the name field
-      final isBarcode = RegExp(r'^\d{8,14}$').hasMatch(text);
-      if (isBarcode) {
+      // Intercept if the user typed or scanned a barcode or QR code into the name field
+      final isBarcodeOrQr = BarcodeNormalizer.isBarcodeOrQrCode(text);
+      if (isBarcodeOrQr) {
         // Prevent infinite loop by unfocusing slightly or let _processScannedBarcode handle it
         _processScannedBarcode(text);
         return;
@@ -325,7 +327,7 @@ class _StockInPageState extends State<StockInPage> {
 
     final productBloc = context.read<ProductBloc>();
     final products = productBloc.state.products;
-    final existing = products.where((p) => p.barcode == barcode).firstOrNull;
+    final existing = BarcodeNormalizer.findProduct(products, barcode);
 
     if (existing != null) {
       setState(() {
@@ -433,6 +435,12 @@ class _StockInPageState extends State<StockInPage> {
       _offerPriceController.clear();
     });
     SoundService.playScanBeep();
+    // Try auto-fetching image from Open Food Facts / Web in background if new item
+    ProductImageSearchService.instance.autoFetchProductImage(barcode: barcode).then((img) {
+      if (img != null && mounted && _activeBarcode == barcode && (_itemImageUrl == null || _itemImageUrl!.isEmpty)) {
+        setState(() => _itemImageUrl = img);
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _nameFocusNode.requestFocus();
     });
@@ -1174,10 +1182,25 @@ class _StockInPageState extends State<StockInPage> {
                         : MobileScanner(controller: _scannerController, onDetect: _onDetect),
                     Container(
                       width: 220,
-                      height: 100,
+                      height: 200,
                       decoration: BoxDecoration(
                         border: Border.all(color: AppTheme.primaryColor, width: 2),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'باركود / رمز QR ⚡',
+                            style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1201,15 +1224,15 @@ class _StockInPageState extends State<StockInPage> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.barcode_reader, color: Colors.teal, size: 26),
+                        const Icon(Icons.qr_code_scanner_rounded, color: Colors.teal, size: 26),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('الباركود المسجل أو المولد:', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              const Text('الباركود أو رمز QR المسجل:', style: TextStyle(fontSize: 11, color: Colors.grey)),
                               Text(
-                                _activeBarcode.isEmpty ? 'امسح الباركود أو اضغط لتوليد باركود محلي' : _activeBarcode,
+                                _activeBarcode.isEmpty ? 'امسح الباركود / رمز QR أو اضغط للتوليد' : _activeBarcode,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
@@ -1246,8 +1269,8 @@ class _StockInPageState extends State<StockInPage> {
                     optionsBuilder: (TextEditingValue textEditingValue) {
                       final text = textEditingValue.text.trim();
                       if (text.isEmpty || text.length < 2) return const Iterable<Product>.empty();
-                      // Don't show dropdown for pure barcodes, the listener will intercept it and auto-fill
-                      if (RegExp(r'^\d{8,14}$').hasMatch(text)) return const Iterable<Product>.empty();
+                      // Don't show dropdown for barcodes or QR codes, the listener will intercept it and auto-fill
+                      if (BarcodeNormalizer.isBarcodeOrQrCode(text)) return const Iterable<Product>.empty();
                       
                       final query = text.toLowerCase();
                       final products = context.read<ProductBloc>().state.products;
@@ -1267,7 +1290,7 @@ class _StockInPageState extends State<StockInPage> {
                           _priceFocusNode.requestFocus();
                         },
                         decoration: InputDecoration(
-                          labelText: 'ابحث باسم السلعة أو مرر الباركود هنا *',
+                          labelText: 'ابحث باسم السلعة أو مرر الباركود / رمز QR هنا *',
                           border: const OutlineInputBorder(),
                           prefixIcon: const Icon(Icons.search_rounded),
                           suffixIcon: _isExistingInShop

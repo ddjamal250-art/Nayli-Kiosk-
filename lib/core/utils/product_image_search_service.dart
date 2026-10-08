@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import '../data/master_catalog_service.dart';
+import 'product_image_helper.dart';
 
 class ProductImageSearchResult {
   final String url;
@@ -27,19 +27,19 @@ class ProductImageSearchService {
   /// Search images across:
   /// 1. Master Catalog (Algerian local products catalog - instant & offline)
   /// 2. Open Food Facts by Barcode
-  /// 3. Open Food Facts by Keywords
-  /// 4. Web & Bing Images Search
+  /// 3. Bing Image Search by Barcode and Query (fast, unblocked, high-resolution)
+  /// 4. Open Food Facts by Keywords
   /// 5. Wikimedia Commons & Wikipedia
   Future<List<ProductImageSearchResult>> searchImages({
     String? barcode,
     String? query,
-    int maxResults = 12,
+    int maxResults = 16,
   }) async {
     final List<ProductImageSearchResult> results = [];
     final cleanBarcode = barcode?.trim() ?? '';
     final cleanQuery = query?.trim() ?? '';
 
-    // 1. Master Catalog (instant match from verified Algerian goods)
+    // 1. Master Catalog (instant match from verified Algerian goods - offline)
     try {
       if (cleanBarcode.isNotEmpty) {
         final m = MasterCatalogService.searchByBarcode(cleanBarcode);
@@ -47,7 +47,7 @@ class ProductImageSearchService {
           results.add(ProductImageSearchResult(
             url: m.imageUrl!,
             title: m.name,
-            source: 'دليل السلع',
+            source: 'دليل السلع الجزائري (فوري)',
           ));
         }
       }
@@ -60,7 +60,7 @@ class ProductImageSearchService {
             results.add(ProductImageSearchResult(
               url: m.imageUrl!,
               title: m.name,
-              source: 'دليل السلع',
+              source: 'دليل السلع الجزائري (فوري)',
             ));
             if (results.length >= 4) break;
           }
@@ -74,13 +74,47 @@ class ProductImageSearchService {
     if (results.length < maxResults && cleanBarcode.isNotEmpty) {
       try {
         final barcodeResults = await _searchOpenFoodFactsByBarcode(cleanBarcode);
-        results.addAll(barcodeResults);
+        for (final r in barcodeResults) {
+          if (!results.any((existing) => existing.url == r.url)) {
+            results.add(r);
+          }
+        }
       } catch (e) {
         debugPrint('⚠️ OpenFoodFacts barcode search error: $e');
       }
     }
 
-    // 3. Open Food Facts (Text)
+    // 3. Bing Image Search by Barcode
+    if (results.length < maxResults && cleanBarcode.isNotEmpty) {
+      try {
+        final bingBarcodeResults = await _searchBingImages(cleanBarcode);
+        for (final r in bingBarcodeResults) {
+          if (!results.any((existing) => existing.url == r.url)) {
+            results.add(r);
+          }
+          if (results.length >= maxResults) break;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Bing barcode search error: $e');
+      }
+    }
+
+    // 4. Bing Image Search by Query (Name / Brand / Keywords)
+    if (results.length < maxResults && cleanQuery.isNotEmpty) {
+      try {
+        final bingQueryResults = await _searchBingImages(cleanQuery);
+        for (final r in bingQueryResults) {
+          if (!results.any((existing) => existing.url == r.url)) {
+            results.add(r);
+          }
+          if (results.length >= maxResults) break;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Bing query search error: $e');
+      }
+    }
+
+    // 5. Open Food Facts (Text search)
     if (results.length < maxResults && (cleanQuery.isNotEmpty || cleanBarcode.isNotEmpty)) {
       final term = cleanQuery.isNotEmpty ? cleanQuery : cleanBarcode;
       try {
@@ -96,22 +130,7 @@ class ProductImageSearchService {
       }
     }
 
-    // 4. Web & Google Image Search (Real web images)
-    if (results.length < maxResults && cleanQuery.isNotEmpty) {
-      try {
-        final googleResults = await _searchGoogleImages(cleanQuery);
-        for (final r in googleResults) {
-          if (!results.any((existing) => existing.url == r.url)) {
-            results.add(r);
-          }
-          if (results.length >= maxResults) break;
-        }
-      } catch (e) {
-        debugPrint('⚠️ Google search error: $e');
-      }
-    }
-
-    // 5. Wikimedia Commons Image search
+    // 6. Wikimedia Commons Image search
     if (results.length < maxResults && cleanQuery.isNotEmpty) {
       try {
         final commonsResults = await _searchWikimediaCommonsImages(cleanQuery);
@@ -126,7 +145,7 @@ class ProductImageSearchService {
       }
     }
 
-    // 6. Wikipedia Fallback
+    // 7. Wikipedia Fallback
     if (results.length < maxResults && cleanQuery.isNotEmpty) {
       try {
         final wikiResults = await _searchWikimediaImages(cleanQuery);
@@ -144,12 +163,63 @@ class ProductImageSearchService {
     return results;
   }
 
+  /// Automatically and swiftly searches for a product image by barcode and/or name,
+  /// downloads it to the permanent local store, and returns the local file path.
+  Future<String?> autoFetchProductImage({
+    required String barcode,
+    String? name,
+  }) async {
+    final cleanBarcode = barcode.trim();
+    final cleanName = name?.trim() ?? '';
+    if (cleanBarcode.isEmpty && cleanName.isEmpty) return null;
+
+    // 1. Instant local Algerian Master Catalog
+    if (cleanBarcode.isNotEmpty) {
+      final master = MasterCatalogService.searchByBarcode(cleanBarcode);
+      if (master != null && master.imageUrl != null && master.imageUrl!.isNotEmpty) {
+        if (!master.imageUrl!.startsWith('http')) {
+          return master.imageUrl;
+        }
+        return await downloadAndSaveImageLocally(master.imageUrl!, barcode: cleanBarcode);
+      }
+    }
+
+    // 2. Open Food Facts by Barcode
+    if (cleanBarcode.isNotEmpty) {
+      final offList = await _searchOpenFoodFactsByBarcode(cleanBarcode);
+      if (offList.isNotEmpty) {
+        final localPath = await downloadAndSaveImageLocally(offList.first.url, barcode: cleanBarcode);
+        if (localPath != null) return localPath;
+      }
+    }
+
+    // 3. Bing Image Search by Barcode
+    if (cleanBarcode.isNotEmpty) {
+      final bingBarcodeList = await _searchBingImages(cleanBarcode);
+      if (bingBarcodeList.isNotEmpty) {
+        final localPath = await downloadAndSaveImageLocally(bingBarcodeList.first.url, barcode: cleanBarcode);
+        if (localPath != null) return localPath;
+      }
+    }
+
+    // 4. Bing Image Search by Name / Brand
+    if (cleanName.isNotEmpty) {
+      final bingNameList = await _searchBingImages(cleanName);
+      if (bingNameList.isNotEmpty) {
+        final localPath = await downloadAndSaveImageLocally(bingNameList.first.url, barcode: cleanBarcode.isNotEmpty ? cleanBarcode : 'name');
+        if (localPath != null) return localPath;
+      }
+    }
+
+    return null;
+  }
+
   Future<List<ProductImageSearchResult>> _searchOpenFoodFactsByBarcode(String barcode) async {
     final List<ProductImageSearchResult> results = [];
     try {
       final uri = Uri.parse('https://world.openfoodfacts.org/api/v2/product/$barcode.json?fields=product_name,image_url,image_front_url,image_front_small_url,brands');
       final request = await _httpClient.getUrl(uri);
-      request.headers.set('User-Agent', 'NayliPOS-Algeria-Kiosk/1.4 (admin@naylipos.dz)');
+      request.headers.set('User-Agent', 'NayliPOS-Algeria-Kiosk/2.0 (admin@naylipos.dz)');
       final response = await request.close().timeout(const Duration(seconds: 4));
 
       if (response.statusCode == 200) {
@@ -192,8 +262,8 @@ class ProductImageSearchService {
         'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(term)}&search_simple=1&action=process&json=1&page_size=10',
       );
       final request = await _httpClient.getUrl(uri);
-      request.headers.set('User-Agent', 'NayliPOS-Algeria-Kiosk/1.4 (admin@naylipos.dz)');
-      final response = await request.close().timeout(const Duration(seconds: 5));
+      request.headers.set('User-Agent', 'NayliPOS-Algeria-Kiosk/2.0 (admin@naylipos.dz)');
+      final response = await request.close().timeout(const Duration(seconds: 4));
 
       if (response.statusCode == 200) {
         final body = await response.transform(utf8.decoder).join();
@@ -221,34 +291,49 @@ class ProductImageSearchService {
     return results;
   }
 
-  Future<List<ProductImageSearchResult>> _searchGoogleImages(String query) async {
+  /// Fast Bing async image search engine (Returns high-res web images without blocking)
+  Future<List<ProductImageSearchResult>> _searchBingImages(String query) async {
     final List<ProductImageSearchResult> results = [];
     try {
       final uri = Uri.parse(
-        'https://www.google.com/search?tbm=isch&q=${Uri.encodeComponent(query)}',
+        'https://www.bing.com/images/async?q=${Uri.encodeComponent(query)}&first=0&count=16&mmasync=1',
       );
       final request = await _httpClient.getUrl(uri);
-      request.headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+      request.headers.set(
+        'User-Agent',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      );
       request.headers.set('Accept-Language', 'fr-FR,fr;q=0.9,ar;q=0.8,en;q=0.7');
+      request.headers.set('Referer', 'https://www.bing.com/');
       final response = await request.close().timeout(const Duration(seconds: 5));
+
       if (response.statusCode == 200) {
         final body = await response.transform(utf8.decoder).join();
-        
-        final matches = RegExp(r'<img[^>]+src="([^">]+)"').allMatches(body);
+        final matches = RegExp(r'm="({[^"]+})"').allMatches(body);
         for (final m in matches) {
-          final url = m.group(1);
-          if (url != null && url.startsWith('http') && !url.contains('branding/googlelogo')) {
-            results.add(ProductImageSearchResult(
-              url: url.replaceAll('&amp;', '&'),
-              title: query,
-              source: 'محرك بحث الصور (Google)',
-            ));
-            if (results.length >= 12) break;
+          final raw = m.group(1)?.replaceAll('&quot;', '"');
+          if (raw != null) {
+            try {
+              final data = jsonDecode(raw);
+              if (data is Map) {
+                final imgUrl = data['murl']?.toString();
+                final title = data['t']?.toString() ?? query;
+                if (imgUrl != null &&
+                    imgUrl.startsWith('http') &&
+                    !imgUrl.contains('data:image')) {
+                  results.add(ProductImageSearchResult(
+                    url: imgUrl,
+                    title: title,
+                    source: 'محرك الصور العالمي (Bing)',
+                  ));
+                }
+              }
+            } catch (_) {}
           }
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Google search error: $e');
+      debugPrint('⚠️ Bing search error: $e');
     }
     return results;
   }
@@ -261,7 +346,7 @@ class ProductImageSearchService {
       );
       final request = await _httpClient.getUrl(uri);
       request.headers.set('User-Agent', 'NayliPOS/2.0 (contact@naylipos.dz)');
-      final response = await request.close().timeout(const Duration(seconds: 5));
+      final response = await request.close().timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final body = await response.transform(utf8.decoder).join();
         final data = jsonDecode(body);
@@ -339,12 +424,7 @@ class ProductImageSearchService {
 
       if (pickedFile == null) return null;
 
-      final appDir = await getApplicationDocumentsDirectory();
-      final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
-      if (!await imagesDir.exists()) {
-        await imagesDir.create(recursive: true);
-      }
-
+      final imagesDir = await ProductImageHelper.getImagesDirectory();
       final fileName = 'prod_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final savedFile = File('${imagesDir.path}/$fileName');
       await File(pickedFile.path).copy(savedFile.path);
@@ -357,21 +437,33 @@ class ProductImageSearchService {
   }
 
   /// Download a selected web image and store it locally for persistent offline access
-  Future<String?> downloadAndSaveImageLocally(String webUrl) async {
+  Future<String?> downloadAndSaveImageLocally(String webUrl, {String? barcode}) async {
     try {
+      if (!webUrl.startsWith('http://') && !webUrl.startsWith('https://')) {
+        return webUrl; // Already a local path
+      }
+
       final uri = Uri.parse(webUrl);
       final request = await _httpClient.getUrl(uri);
-      final response = await request.close().timeout(const Duration(seconds: 6));
+      request.headers.set(
+        'User-Agent',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      );
+      final response = await request.close().timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final bytes = await consolidateHttpClientResponseBytes(response);
-        final appDir = await getApplicationDocumentsDirectory();
-        final imagesDir = Directory('${appDir.path}/nayli_kiosk_images');
-        if (!await imagesDir.exists()) {
-          await imagesDir.create(recursive: true);
-        }
+        final imagesDir = await ProductImageHelper.getImagesDirectory();
 
-        final ext = webUrl.contains('.png') ? 'png' : 'jpg';
-        final fileName = 'web_${DateTime.now().millisecondsSinceEpoch}.$ext';
+        final ext = (webUrl.toLowerCase().contains('.png'))
+            ? 'png'
+            : (webUrl.toLowerCase().contains('.webp'))
+                ? 'webp'
+                : 'jpg';
+
+        final cleanBc = barcode != null && barcode.trim().isNotEmpty
+            ? barcode.trim().replaceAll(RegExp(r'[^\w-]'), '_')
+            : 'web';
+        final fileName = 'prod_${cleanBc}_${DateTime.now().millisecondsSinceEpoch}.$ext';
         final localFile = File('${imagesDir.path}/$fileName');
         await localFile.writeAsBytes(bytes);
         return localFile.path;

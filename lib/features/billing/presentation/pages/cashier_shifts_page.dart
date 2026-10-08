@@ -127,8 +127,25 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
       if (inv is Map) {
         final ts = DateTime.tryParse(inv['timestamp'] as String? ?? '');
         if (ts != null && ts.isAfter(openedAt)) {
-          if (inv['isCredit'] != true) {
-            cashSales += (inv['paidAmount'] as num?)?.toDouble() ?? (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          final isReturned = inv['isReturned'] == true;
+          final method = inv['paymentMethod']?.toString() ?? 'Espèces';
+          final isCard = method.contains('TPE') || method.contains('Card') || method.contains('Carte') || method.contains('Baridi');
+          final isCredit = inv['isCredit'] == true;
+          final tot = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          final p = (inv['paidAmount'] as num?)?.toDouble() ?? 0.0;
+
+          double net = 0.0;
+          if (isCard) {
+            net = 0.0;
+          } else if (isCredit) {
+            net = (p > 0) ? (p > tot ? tot : p) : 0.0;
+          } else {
+            net = (p > 0 && p < tot) ? p : tot;
+          }
+          if (isReturned) {
+            cashSales -= net;
+          } else {
+            cashSales += net;
           }
         }
       }
@@ -273,10 +290,24 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
           if (ts != null) {
             final invDate = DateTime.tryParse(ts);
             if (invDate != null && invDate.isAfter(openedAt)) {
-              if (!isCredit) {
-                shiftCashSales += (val['paidAmount'] as num?)?.toDouble() ?? (val['totalAmount'] as num?)?.toDouble() ?? 0.0;
+              final isReturned = val['isReturned'] == true;
+              final method = val['paymentMethod']?.toString() ?? 'Espèces';
+              final isCard = method.contains('TPE') || method.contains('Card') || method.contains('Carte') || method.contains('Baridi');
+              final tot = (val['totalAmount'] as num?)?.toDouble() ?? 0.0;
+              final p = (val['paidAmount'] as num?)?.toDouble() ?? 0.0;
+
+              double net = 0.0;
+              if (isCard) {
+                net = 0.0;
+              } else if (isCredit) {
+                net = (p > 0) ? (p > tot ? tot : p) : 0.0;
               } else {
-                shiftCashSales += (val['paidAmount'] as num?)?.toDouble() ?? 0.0;
+                net = (p > 0 && p < tot) ? p : tot;
+              }
+              if (isReturned) {
+                shiftCashSales -= net;
+              } else {
+                shiftCashSales += net;
               }
             }
           }

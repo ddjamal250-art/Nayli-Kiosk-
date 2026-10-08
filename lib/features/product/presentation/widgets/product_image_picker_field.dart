@@ -4,6 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/product_image_search_service.dart';
+import '../../../../core/utils/product_image_helper.dart';
+
+enum ProductImageSearchMode { combined, barcodeOnly, nameOnly }
 
 class ProductImagePickerField extends StatefulWidget {
   final String? initialImageUrl;
@@ -28,6 +31,7 @@ class ProductImagePickerField extends StatefulWidget {
 class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
   String? _currentImageUrl;
   bool _isLoading = false;
+  bool _isAutoFetching = false;
 
   @override
   void initState() {
@@ -62,10 +66,91 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
     }
   }
 
+  /// Fast one-click auto-fetch from Master Catalog, Open Food Facts, or Web by Barcode/Name
+  Future<void> _autoFetchImage() async {
+    final bc = widget.barcode.trim();
+    final nm = widget.productName.trim();
+    if (bc.isEmpty && nm.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى كتابة أو مسح الباركود أو اسم المنتج أولاً لجلب الصورة تلقائياً ⚠️'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isAutoFetching = true);
+    try {
+      final localPath = await ProductImageSearchService.instance.autoFetchProductImage(
+        barcode: bc,
+        name: nm,
+      );
+
+      if (!mounted) return;
+
+      if (localPath != null && localPath.isNotEmpty) {
+        _setImage(localPath);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.bolt, color: Colors.amber),
+                SizedBox(width: 8),
+                Expanded(child: Text('تم جلب صورة المنتج وحفظها محلياً بنجاح! ⚡ (يمكنك تعديلها بأي وقت)')),
+              ],
+            ),
+            backgroundColor: Color(0xFF1B5E20),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('لم نجد صورة مطابقة تلقائياً. يمكنك الضغط على "بحث في الإنترنت" لاختيار صورة يدوياً.'),
+            action: SnackBarAction(
+              label: 'بحث الآن',
+              textColor: Colors.amber,
+              onPressed: _openWebImageSearch,
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ أثناء الجلب التلقائي: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAutoFetching = false);
+    }
+  }
+
   void _openWebImageSearch() {
-    final queryCtrl = TextEditingController(
-      text: '${widget.productName} ${widget.barcode}'.trim(),
-    );
+    final initialBarcode = widget.barcode.trim();
+    final initialName = widget.productName.trim();
+
+    ProductImageSearchMode currentMode = ProductImageSearchMode.combined;
+    if (initialBarcode.isNotEmpty && initialName.isEmpty) {
+      currentMode = ProductImageSearchMode.barcodeOnly;
+    } else if (initialName.isNotEmpty && initialBarcode.isEmpty) {
+      currentMode = ProductImageSearchMode.nameOnly;
+    }
+
+    String computeQuery(ProductImageSearchMode mode) {
+      switch (mode) {
+        case ProductImageSearchMode.combined:
+          return '$initialName $initialBarcode'.trim();
+        case ProductImageSearchMode.barcodeOnly:
+          return initialBarcode;
+        case ProductImageSearchMode.nameOnly:
+          return initialName;
+      }
+    }
+
+    final queryCtrl = TextEditingController(text: computeQuery(currentMode));
 
     showModalBottomSheet(
       context: context,
@@ -73,16 +158,22 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
+          final activeQuery = queryCtrl.text.trim();
+          final searchBarcode = (currentMode == ProductImageSearchMode.barcodeOnly || currentMode == ProductImageSearchMode.combined)
+              ? initialBarcode
+              : null;
+
           return Container(
-            height: MediaQuery.of(context).size.height * 0.85,
+            height: MediaQuery.of(context).size.height * 0.88,
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
+                // Handle bar
                 Container(
-                  width: 40,
+                  width: 44,
                   height: 4,
                   margin: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
@@ -90,16 +181,33 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
+                // Header
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      Icon(Icons.cloud_download_outlined, color: AppTheme.primaryColor),
-                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.image_search_rounded, color: AppTheme.primaryColor, size: 22),
+                      ),
+                      const SizedBox(width: 10),
                       const Expanded(
-                        child: Text(
-                          'البحث عن صورة السلعة في الإنترنت 🌐',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'البحث عن صورة السلعة في الإنترنت 🌐',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'جلب من دليل السلع الجزائري، Open Food Facts، ومحركات الصور العالمية',
+                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
                         ),
                       ),
                       IconButton(
@@ -109,6 +217,55 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 6),
+                // Quick Mode Selector Chips
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        FilterChip(
+                          selected: currentMode == ProductImageSearchMode.combined,
+                          label: const Text('⚡ بحث مدمج (الاسم + الباركود)', style: TextStyle(fontSize: 11)),
+                          onSelected: (_) {
+                            setModalState(() {
+                              currentMode = ProductImageSearchMode.combined;
+                              queryCtrl.text = computeQuery(ProductImageSearchMode.combined);
+                            });
+                          },
+                        ),
+                        const SizedBox(width: 6),
+                        if (initialBarcode.isNotEmpty)
+                          FilterChip(
+                            selected: currentMode == ProductImageSearchMode.barcodeOnly,
+                            avatar: const Icon(Icons.qr_code, size: 14),
+                            label: Text('بحث بالباركود ($initialBarcode)', style: const TextStyle(fontSize: 11)),
+                            onSelected: (_) {
+                              setModalState(() {
+                                currentMode = ProductImageSearchMode.barcodeOnly;
+                                queryCtrl.text = computeQuery(ProductImageSearchMode.barcodeOnly);
+                              });
+                            },
+                          ),
+                        const SizedBox(width: 6),
+                        if (initialName.isNotEmpty)
+                          FilterChip(
+                            selected: currentMode == ProductImageSearchMode.nameOnly,
+                            avatar: const Icon(Icons.title, size: 14),
+                            label: Text('بحث بالاسم ($initialName)', style: const TextStyle(fontSize: 11)),
+                            onSelected: (_) {
+                              setModalState(() {
+                                currentMode = ProductImageSearchMode.nameOnly;
+                                queryCtrl.text = computeQuery(ProductImageSearchMode.nameOnly);
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Search Input Field
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
@@ -119,6 +276,15 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                           decoration: InputDecoration(
                             hintText: 'ابحث بالاسم، الماركة، أو الباركود...',
                             prefixIcon: const Icon(Icons.search, size: 20),
+                            suffixIcon: queryCtrl.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 16),
+                                    onPressed: () {
+                                      queryCtrl.clear();
+                                      setModalState(() {});
+                                    },
+                                  )
+                                : null,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           ),
@@ -126,30 +292,34 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      ElevatedButton(
+                      ElevatedButton.icon(
                         onPressed: () => setModalState(() {}),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryColor,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('بحث'),
+                        icon: const Icon(Icons.search, size: 18),
+                        label: const Text('بحث'),
                       ),
                     ],
                   ),
                 ),
+                // Action Chips: Google Image tab & Paste Link
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
                         ActionChip(
-                          avatar: const Icon(Icons.open_in_browser, size: 16, color: Colors.blue),
+                          avatar: const Icon(Icons.open_in_browser, size: 15, color: Colors.blue),
                           label: const Text('فتح بحث صور Google 🌐', style: TextStyle(fontSize: 11)),
                           onPressed: () {
-                            final q = queryCtrl.text.trim().isNotEmpty ? queryCtrl.text.trim() : widget.barcode;
+                            final q = queryCtrl.text.trim().isNotEmpty
+                                ? queryCtrl.text.trim()
+                                : (initialName.isNotEmpty ? initialName : initialBarcode);
                             if (q.isNotEmpty) {
                               final uri = Uri.parse('https://www.google.com/search?tbm=isch&q=${Uri.encodeComponent(q)}');
                               launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -158,7 +328,7 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                         ),
                         const SizedBox(width: 8),
                         ActionChip(
-                          avatar: const Icon(Icons.link, size: 16, color: Colors.teal),
+                          avatar: const Icon(Icons.link, size: 15, color: Colors.teal),
                           label: const Text('لصق رابط صورة 🔗', style: TextStyle(fontSize: 11)),
                           onPressed: () async {
                             final urlCtrl = TextEditingController();
@@ -187,7 +357,7 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                               setState(() => _isLoading = true);
                               try {
                                 final localPath = await ProductImageSearchService.instance
-                                    .downloadAndSaveImageLocally(pasted);
+                                    .downloadAndSaveImageLocally(pasted, barcode: widget.barcode);
                                 _setImage(localPath ?? pasted);
                               } finally {
                                 if (mounted) setState(() => _isLoading = false);
@@ -195,16 +365,26 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                             }
                           },
                         ),
+                        const SizedBox(width: 8),
+                        ActionChip(
+                          avatar: const Icon(Icons.photo_library, size: 15, color: Colors.indigo),
+                          label: const Text('اختيار من الجهاز 🖼️', style: TextStyle(fontSize: 11)),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _pickImage(ImageSource.gallery);
+                          },
+                        ),
                       ],
                     ),
                   ),
                 ),
-                const Divider(height: 1),
+                const Divider(height: 12),
+                // Search Results Grid
                 Expanded(
                   child: FutureBuilder<List<ProductImageSearchResult>>(
                     future: ProductImageSearchService.instance.searchImages(
-                      barcode: widget.barcode,
-                      query: queryCtrl.text.trim(),
+                      barcode: searchBarcode,
+                      query: activeQuery,
                     ),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -214,7 +394,7 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                             children: [
                               CircularProgressIndicator(),
                               SizedBox(height: 12),
-                              Text('جاري جلب الصور من قواعد البيانات المفتوحة... 🔎'),
+                              Text('جاري البحث السريع في قواعد البيانات ومحركات الصور... 🔎'),
                             ],
                           ),
                         );
@@ -231,12 +411,12 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                                 Icon(Icons.image_not_supported_outlined, size: 54, color: Colors.grey[400]),
                                 const SizedBox(height: 12),
                                 const Text(
-                                  'لم نجد صوراً مطابقة مباشرة في الإنترنت',
+                                  'لم نجد صوراً مطابقة مباشرة بالعبارة الحالية',
                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
                                 const SizedBox(height: 6),
                                 const Text(
-                                  'يمكنك تغيير كلمات البحث أعلاه أو اختيار صورة من جهازك 🖼️',
+                                  'جرب البحث باسم المنتج بالفرنسية أو العربية أو لصق رابط صورة مباشرة 🖼️',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
@@ -252,7 +432,7 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                           crossAxisCount: 2,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          childAspectRatio: 0.85,
+                          childAspectRatio: 0.82,
                         ),
                         itemCount: results.length,
                         itemBuilder: (context, index) {
@@ -263,8 +443,17 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                               setState(() => _isLoading = true);
                               try {
                                 final localPath = await ProductImageSearchService.instance
-                                    .downloadAndSaveImageLocally(item.url);
+                                    .downloadAndSaveImageLocally(item.url, barcode: widget.barcode);
                                 _setImage(localPath ?? item.url);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('تم حفظ الصورة بنجاح في قاعدة البيانات المحلية! ⚡'),
+                                      duration: Duration(seconds: 2),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
                               } finally {
                                 if (mounted) setState(() => _isLoading = false);
                               }
@@ -288,14 +477,24 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                                         errorBuilder: (_, __, ___) => const Center(
                                           child: Icon(Icons.broken_image, color: Colors.grey),
                                         ),
+                                        loadingBuilder: (context, child, progress) {
+                                          if (progress == null) return child;
+                                          return const Center(
+                                            child: SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
                                   Container(
                                     padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
+                                    decoration: const BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,9 +505,20 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                                         ),
-                                        Text(
-                                          item.source,
-                                          style: TextStyle(fontSize: 9.5, color: Colors.grey[600]),
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.verified, size: 11, color: AppTheme.primaryColor),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                item.source,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(fontSize: 9.5, color: Colors.grey[600]),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -331,47 +541,61 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
   }
 
   Widget _buildImagePreview() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+    if (_isLoading || _isAutoFetching) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(strokeWidth: 2.5),
+            SizedBox(height: 6),
+            Text('جاري الحفظ...', style: TextStyle(fontSize: 10, color: Colors.grey)),
+          ],
+        ),
+      );
     }
 
     if (_currentImageUrl == null || _currentImageUrl!.isEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.add_photo_alternate_outlined, size: 42, color: Colors.grey[400]),
-          const SizedBox(height: 6),
+          Icon(Icons.add_photo_alternate_outlined, size: 38, color: Colors.grey[400]),
+          const SizedBox(height: 4),
           Text(
-            'لا توجد صورة للمنتج',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            'لا توجد صورة',
+            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
           ),
         ],
       );
     }
 
-    final isLocal = !_currentImageUrl!.startsWith('http');
+    final resolved = ProductImageHelper.resolveImagePathSync(_currentImageUrl);
+    final targetPath = (resolved != null && resolved.isNotEmpty) ? resolved : _currentImageUrl!;
+    final isNetwork = targetPath.startsWith('http://') || targetPath.startsWith('https://');
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
-      child: isLocal
-          ? Image.file(
-              File(_currentImageUrl!),
+      child: isNetwork
+          ? Image.network(
+              targetPath,
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
-              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 36, color: Colors.grey),
             )
-          : Image.network(
-              _currentImageUrl!,
+          : Image.file(
+              File(targetPath),
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
-              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 36, color: Colors.grey),
             ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasImage = _currentImageUrl != null && _currentImageUrl!.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -394,8 +618,8 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
             children: [
               // Image container
               Container(
-                width: 90,
-                height: 90,
+                width: 95,
+                height: 95,
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(14),
@@ -403,63 +627,105 @@ class _ProductImagePickerFieldState extends State<ProductImagePickerField> {
                 ),
                 child: _buildImagePreview(),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               // Buttons
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    FilledButton.tonalIcon(
-                      onPressed: _openWebImageSearch,
-                      icon: const Icon(Icons.travel_explore, size: 18),
-                      label: const Text('بحث صورة بالإنترنت 🌐', style: TextStyle(fontSize: 12)),
+                    // Auto-fetch button (Fast 1-touch lookup)
+                    FilledButton.icon(
+                      onPressed: (_isAutoFetching || _isLoading) ? null : _autoFetchImage,
+                      icon: _isAutoFetching
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.bolt_rounded, size: 18, color: Colors.amber),
+                      label: Text(
+                        _isAutoFetching ? 'جاري الجلب التلقائي...' : '⚡ جلب تلقائي للصورة',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
                       style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F5B46),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       ),
                     ),
                     const SizedBox(height: 6),
+                    // Web Image Search modal
                     OutlinedButton.icon(
-                      onPressed: () => _pickImage(ImageSource.gallery),
-                      icon: const Icon(Icons.photo_library_outlined, size: 16),
-                      label: const Text('اختيار ملف صورة من الحاسوب 🖼️', style: TextStyle(fontSize: 11)),
+                      onPressed: _openWebImageSearch,
+                      icon: const Icon(Icons.travel_explore, size: 16),
+                      label: const Text('بحث صور بالإنترنت 🌐', style: TextStyle(fontSize: 11)),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
                       ),
                     ),
-                    if (_currentImageUrl != null && _currentImageUrl!.isNotEmpty)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: () => _setImage(null),
-                          icon: const Icon(Icons.delete_outline, size: 15, color: Colors.red),
-                          label: const Text('إزالة الصورة', style: TextStyle(color: Colors.red, fontSize: 11)),
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: const Size(50, 26),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    const SizedBox(height: 4),
+                    // Gallery pick
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton.icon(
+                            onPressed: () => _pickImage(ImageSource.gallery),
+                            icon: const Icon(Icons.photo_library_outlined, size: 15),
+                            label: const Text('من الحاسوب 🖼️', style: TextStyle(fontSize: 11)),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              minimumSize: const Size(40, 28),
+                            ),
                           ),
                         ),
-                      ),
+                        if (hasImage) ...[
+                          const SizedBox(width: 4),
+                          TextButton.icon(
+                            onPressed: () => _setImage(null),
+                            icon: const Icon(Icons.delete_outline, size: 15, color: Colors.red),
+                            label: const Text('حذف', style: TextStyle(color: Colors.red, fontSize: 11)),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              minimumSize: const Size(40, 28),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
+          // Status indicator info
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(6),
+              color: hasImage ? Colors.green.withOpacity(0.08) : Colors.blue.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: hasImage ? Colors.green.withOpacity(0.2) : Colors.blue.withOpacity(0.15),
+              ),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.info_outline, size: 13, color: Colors.blue),
-                SizedBox(width: 6),
+                Icon(
+                  hasImage ? Icons.check_circle_rounded : Icons.info_outline,
+                  size: 14,
+                  color: hasImage ? Colors.green[700] : Colors.blue[700],
+                ),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'الصور تظهر في الشاشة وكتالوج المحل فقط، ولا تُطبع نهائياً على إيصال الزبون الورقي.',
-                    style: TextStyle(fontSize: 10, color: Colors.blueGrey, fontWeight: FontWeight.w500),
+                    hasImage
+                        ? 'الصورة محفوظة محلياً في قاعدة البيانات بشكل دائم ولا تُفقد أبداً حتى بدون إنترنت 🔒'
+                        : 'يمكنك جلب صورة المنتج تلقائياً بالضغط على زر ⚡ أو كتابة الباركود والاسم.',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: hasImage ? Colors.green[800] : Colors.blueGrey,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],

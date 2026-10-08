@@ -5,6 +5,7 @@ import '../../features/product/data/models/product_unit_model.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../features/product/data/models/product_model.dart';
 import '../../features/shop/data/models/shop_model.dart';
+import '../../features/shifts/data/shift_service.dart';
 
 class HiveDatabase {
   static const String productBoxName = 'products';
@@ -81,6 +82,13 @@ class HiveDatabase {
     await Hive.openBox(shoppingListBoxName); // Smart shopping list
     await Hive.openBox(loosePiecesBoxName); // Break-case loose piece inventory
     await Hive.openBox(suppliersBoxName); // Suppliers (separate from customers)
+
+    // التدقيق والإصلاح التلقائي الشامل لبيانات الصندوق والورديات بأثر رجعي
+    try {
+      await ShiftService.repairHistoricalData();
+    } catch (e) {
+      debugPrint('Retroactive shift repair failed: $e');
+    }
   }
 
   static Box<ProductModel> get productBox =>

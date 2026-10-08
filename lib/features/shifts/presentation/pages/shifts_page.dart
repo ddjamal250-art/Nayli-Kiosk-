@@ -449,11 +449,27 @@ class _ShiftsPageState extends State<ShiftsPage> {
                   const SizedBox(height: 24),
 
                   // Shift History (Z-Reports)
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.history_edu_rounded, color: Colors.teal),
-                      SizedBox(width: 8),
-                      Text('سجل الورديات السابقة والتقارير المالية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const Icon(Icons.history_edu_rounded, color: Colors.teal),
+                      const SizedBox(width: 8),
+                      const Text('سجل الورديات السابقة والتقارير المالية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const Spacer(),
+                      TextButton.icon(
+                        icon: const Icon(Icons.auto_fix_high_rounded, color: Colors.teal, size: 18),
+                        label: const Text('تصحيح وتدقيق الحسابات بأثر رجعي', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 12)),
+                        onPressed: () async {
+                          final res = await ShiftService.repairHistoricalData();
+                          await _loadShifts();
+                          SoundService.playSaveSuccess();
+                          if (context.mounted) {
+                            SnackbarHelper.showSuccess(
+                              context,
+                              '✅ تم تدقيق وتصحيح الحسابات بأثر رجعي (${res['repairedInvoices']} فاتورة و ${res['repairedShifts']} وردية)!',
+                            );
+                          }
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),

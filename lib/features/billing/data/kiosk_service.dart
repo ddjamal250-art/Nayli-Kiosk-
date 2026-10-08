@@ -186,7 +186,21 @@ class KioskService {
       }
     }
 
-    // 2. Direct search
+    // 2. Direct search via Barcode & QR Code Normalizer
+    final matchedByNormalizer = BarcodeNormalizer.findProduct(allProducts, cleanCode);
+    if (matchedByNormalizer != null) {
+      return KioskProductResult(
+        found: true,
+        barcode: matchedByNormalizer.barcode,
+        name: matchedByNormalizer.name,
+        price: matchedByNormalizer.price,
+        category: matchedByNormalizer.category,
+        isUnit: false,
+        singlePrice: matchedByNormalizer.price,
+        savings: 0.0,
+      );
+    }
+
     for (final p in allProducts) {
       if (BarcodeNormalizer.matches(p.barcode, cleanCode)) {
         return KioskProductResult(

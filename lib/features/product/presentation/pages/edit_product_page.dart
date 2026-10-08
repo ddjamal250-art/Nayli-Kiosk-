@@ -11,6 +11,8 @@ import '../../../../core/utils/barcode_generator_helper.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/widgets/input_label.dart';
 import '../../../../core/data/hive_database.dart';
+import '../../../../core/data/master_catalog_service.dart';
+import '../../../../core/utils/product_image_search_service.dart';
 import '../../data/models/product_model.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
@@ -166,6 +168,66 @@ class _EditProductPageState extends State<EditProductPage> {
     _offerQtyCtrl.dispose();
     _offerPriceCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _tryAutoFetchProductInfo(String barcode) async {
+    final cleanBarcode = barcode.trim();
+    if (cleanBarcode.isEmpty) return;
+
+    // 1. Instant check in Algerian Master Catalog
+    final masterMatch = MasterCatalogService.searchByBarcode(cleanBarcode);
+    if (masterMatch != null) {
+      if (_nameCtrl.text.trim().isEmpty) {
+        _nameCtrl.text = masterMatch.name;
+      }
+      if (masterMatch.category != null && masterMatch.category!.isNotEmpty) {
+        if (_availableCategories.contains(masterMatch.category!)) {
+          _selectedCategory = masterMatch.category!;
+        }
+      }
+      if ((_imageUrl == null || _imageUrl!.isEmpty) &&
+          masterMatch.imageUrl != null &&
+          masterMatch.imageUrl!.isNotEmpty) {
+        setState(() => _imageUrl = masterMatch.imageUrl);
+        return;
+      }
+    }
+
+    // 2. Auto-fetch image if empty
+    if (_imageUrl == null || _imageUrl!.isEmpty) {
+      try {
+        final localPath = await ProductImageSearchService.instance.autoFetchProductImage(
+          barcode: cleanBarcode,
+          name: _nameCtrl.text.trim(),
+        );
+        if (localPath != null && mounted) {
+          setState(() => _imageUrl = localPath);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.bolt, color: Colors.amber),
+                  SizedBox(width: 8),
+                  Text('تم جلب صورة المنتج تلقائياً وحفظها محلياً ⚡'),
+                ],
+              ),
+              backgroundColor: Color(0xFF1B5E20),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (_) {}
+    }
+  }
+
+  void _scanBarcode() async {
+    final result = await context.push<String>('/scanner');
+    if (result != null && result.isNotEmpty) {
+      setState(() => _barcodeCtrl.text = result);
+      SoundService.playScanBeep();
+      _tryAutoFetchProductInfo(result);
+    }
   }
 
   void _addCustomCategoryDialog() {
@@ -347,6 +409,8 @@ class _EditProductPageState extends State<EditProductPage> {
               children: [
                 ProductImagePickerField(
                   initialImagePath: _imageUrl,
+                  barcode: _barcodeCtrl.text,
+                  productName: _nameCtrl.text,
                   onImageChanged: (path) => setState(() => _imageUrl = path),
                 ),
                 const SizedBox(height: 16),
@@ -354,19 +418,27 @@ class _EditProductPageState extends State<EditProductPage> {
                 TextFormField(
                   controller: _nameCtrl,
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
+                  onChanged: (_) => setState(() {}),
                 ),
-                const InputLabel(text: 'الباركود'),
+                const InputLabel(text: 'الباركود أو رمز QR'),
                 Row(
                   children: [
                     Expanded(
                       child: TextFormField(
                         controller: _barcodeCtrl,
                         decoration: const InputDecoration(
-                          hintText: 'امسح الباركود أو اضغط للتوليد التلقائي',
+                          hintText: 'امسح الباركود أو رمز QR أو اضغط للتوليد التلقائي',
                         ),
+                        onChanged: (_) => setState(() {}),
+                        onFieldSubmitted: (v) => _tryAutoFetchProductInfo(v),
                       ),
                     ),
                     const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.bolt_rounded, color: Colors.amber),
+                      tooltip: 'جلب صورة ومعلومات السلعة تلقائياً ⚡',
+                      onPressed: () => _tryAutoFetchProductInfo(_barcodeCtrl.text),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.auto_fix_high_rounded, color: Colors.teal),
                       tooltip: 'توليد باركود محلي EAN-13 حقيقي للمنتج',
@@ -376,6 +448,11 @@ class _EditProductPageState extends State<EditProductPage> {
                         });
                         SoundService.playScanBeep();
                       },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
+                      tooltip: 'مسح الباركود أو رمز QR بالكاميرا',
+                      onPressed: _scanBarcode,
                     ),
                   ],
                 ),

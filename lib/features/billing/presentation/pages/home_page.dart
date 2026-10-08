@@ -114,6 +114,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
       facing: CameraFacing.back,
       torchEnabled: false,
       returnImage: false,
+      formats: const [BarcodeFormat.all],
     );
     _laserAnimationController = AnimationController(
       vsync: this,
@@ -301,7 +302,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
             });
           }
 
-          _handleScannedBarcode(cleanCode);
+          final isQr = barcode.format == BarcodeFormat.qrCode ||
+              cleanCode.startsWith('http://') ||
+              cleanCode.startsWith('https://') ||
+              cleanCode.startsWith('NAYLI:');
+          _handleScannedBarcode(cleanCode, isQr: isQr);
           break;
         }
       }
@@ -469,7 +474,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     }
   }
 
-  void _handleScannedBarcode(String code) {
+  void _handleScannedBarcode(String code, {bool isQr = false}) {
     if (_isLanPairingCode(code)) {
       _handleLanPairingQr(code);
       return;
@@ -502,7 +507,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
         if (matchedProduct != null) {
           _lastScannedToast = '✅ ${matchedProduct.name} (${matchedProduct.price.toStringAsFixed(0)} ${AppConstants.currencySymbol})';
         } else {
-          _lastScannedToast = '⚡ تم مسح باركود: $code';
+          _lastScannedToast = isQr ? '⚡ تم مسح رمز QR: $code' : '⚡ تم مسح باركود: $code';
         }
       });
 
@@ -566,7 +571,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'باركود: $barcode',
+                'الباركود أو رمز QR: $barcode',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
               ),
             ),
@@ -1617,15 +1622,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
               ),
             ),
 
-          // Centered High-Tech Scanner Viewfinder Reticle
+          // Centered High-Tech Scanner Viewfinder Reticle (Supports both 1D Barcode & 2D QR Code)
           if (_isCameraOn)
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.16,
+              top: MediaQuery.of(context).size.height * 0.15,
               left: (MediaQuery.of(context).size.width - 270) / 2,
               child: AnimatedContainer(
-                duration: Duration(milliseconds: 150),
+                duration: const Duration(milliseconds: 150),
                 width: 270,
-                height: 160,
+                height: 220,
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: _isScanFlash
@@ -1651,7 +1656,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                       animation: _laserAnimationController,
                       builder: (context, child) {
                         return Positioned(
-                          top: 10 + (_laserAnimationController.value * 135),
+                          top: 10 + (_laserAnimationController.value * 195),
                           left: 14,
                           right: 14,
                           child: Container(
@@ -1741,6 +1746,33 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
                           border: Border(
                             bottom: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
                             right: BorderSide(color: _isScanFlash ? Colors.greenAccent : Colors.white, width: 3),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Barcode & QR Code Indicator Badge
+                    Positioned(
+                      bottom: 10,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.65),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white24, width: 0.8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.qr_code_scanner_rounded, size: 13, color: Colors.greenAccent),
+                              SizedBox(width: 5),
+                              Text(
+                                'Barcode + QR Code',
+                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ],
                           ),
                         ),
                       ),
