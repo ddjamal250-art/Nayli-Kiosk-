@@ -13,6 +13,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/product_unit.dart';
 import '../../domain/entities/special_offer.dart';
 import '../../../../core/utils/barcode_generator_helper.dart';
+import '../../../../core/utils/barcode_normalizer.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/catalog_crowdsource_helper.dart';
