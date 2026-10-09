@@ -710,8 +710,8 @@ warning - Two keys in a map literal shouldn't be equal - lib\core\localization\a
 warning - Two keys in a map literal shouldn't be equal - lib\core\localization\app_localizations.dart:2349:7 - equal_keys_in_map
 warning - Two keys in a map literal shouldn't be equal - lib\core\localization\app_localizations.dart:2368:7 - equal_keys_in_map
    info - Unnecessary 'late' modifier - lib\core\localization\app_localizations.dart:2451:10 - unnecessary_late
-   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:558:14 - unnecessary_brace_in_string_interps
-   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:559:33 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:572:14 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:573:33 - unnecessary_brace_in_string_interps
 warning - Unused import: 'package:google_fonts/google_fonts.dart' - lib\core\theme\app_theme.dart:2:8 - unused_import
    info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:5:31 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:53:25 - prefer_const_constructors
@@ -1504,7 +1504,8 @@ warning - The value of the field '_currentStockKg' isn't used - lib\features\bil
 warning - The value of the local variable 'costPerKg' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:417:11 - unused_local_variable
 warning - The value of the local variable 'rawBarcode' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:429:11 - unused_local_variable
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:1:8 - depend_on_referenced_packages
-warning - The operand can't be null, so the condition is always 'false' - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:279:28 - unnecessary_null_comparison
+warning - The operand can't be null, so the condition is always 'false' - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:312:28 - unnecessary_null_comparison
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:526:36 - prefer_interpolation_to_compose_strings
 warning - Unused import: '../../domain/entities/debt_record.dart' - lib\features\customer\presentation\cubit\customer_state.dart:3:8 - unused_import
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\customer\presentation\pages\customers_page.dart:147:48 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\customer\presentation\pages\customers_page.dart:247:33 - use_build_context_synchronously
