@@ -710,8 +710,8 @@ warning - Two keys in a map literal shouldn't be equal - lib\core\localization\a
 warning - Two keys in a map literal shouldn't be equal - lib\core\localization\app_localizations.dart:2349:7 - equal_keys_in_map
 warning - Two keys in a map literal shouldn't be equal - lib\core\localization\app_localizations.dart:2368:7 - equal_keys_in_map
    info - Unnecessary 'late' modifier - lib\core\localization\app_localizations.dart:2451:10 - unnecessary_late
-   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:543:14 - unnecessary_brace_in_string_interps
-   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:544:33 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:558:14 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:559:33 - unnecessary_brace_in_string_interps
 warning - Unused import: 'package:google_fonts/google_fonts.dart' - lib\core\theme\app_theme.dart:2:8 - unused_import
    info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:5:31 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:53:25 - prefer_const_constructors
@@ -767,30 +767,34 @@ warning - The value of the local variable 'isVerifying' isn't used - lib\core\ut
 warning - Unused import: 'dart:io' - lib\core\utils\shelf_label_generator.dart:1:8 - unused_import
    info - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/services.dart' - lib\core\utils\shelf_label_generator.dart:2:8 - unnecessary_import
 warning - Unused import: 'package:printing/printing.dart' - lib\core\utils\shelf_label_generator.dart:7:8 - unused_import
-   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:48:29 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:78:18 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:99:29 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:112:18 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:120:17 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:72:29 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:138:18 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:146:29 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:179:29 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:192:18 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\core\utils\telegram_service.dart:201:17 - prefer_interpolation_to_compose_strings
 warning - The value of the field '_terminalIpKey' isn't used - lib\core\utils\tpe_payment_service.dart:122:23 - unused_field
    info - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart' - lib\features\backup\data\backup_service.dart:3:8 - unnecessary_import
 warning - Unused import: '../../../core/data/local_sync_server.dart' - lib\features\backup\data\backup_service.dart:11:8 - unused_import
-warning - Unused import: '../../documents/data/commercial_document_service.dart' - lib\features\backup\data\backup_service.dart:15:8 - unused_import
-warning - The value of the local variable 'unit' isn't used - lib\features\backup\data\backup_service.dart:847:14 - unused_local_variable
+warning - Unused import: '../../documents/data/commercial_document_service.dart' - lib\features\backup\data\backup_service.dart:16:8 - unused_import
+warning - The value of the local variable 'unit' isn't used - lib\features\backup\data\backup_service.dart:859:14 - unused_local_variable
 warning - Unused import: '../../../../core/localization/app_localizations.dart' - lib\features\backup\presentation\pages\backup_page.dart:9:8 - unused_import
-   info - Don't use 'BuildContext's across async gaps - lib\features\backup\presentation\pages\backup_page.dart:101:11 - use_build_context_synchronously
-   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:102:11 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:126:13 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:153:27 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps - lib\features\backup\presentation\pages\backup_page.dart:229:42 - use_build_context_synchronously
-   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:240:43 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps - lib\features\backup\presentation\pages\backup_page.dart:516:7 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\backup\presentation\pages\backup_page.dart:760:43 - prefer_const_constructors
-   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:1173:27 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\backup\presentation\pages\backup_page.dart:1209:37 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\backup\presentation\pages\backup_page.dart:1209:69 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps - lib\features\backup\presentation\pages\backup_page.dart:1212:64 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\backup\presentation\pages\backup_page.dart:1215:62 - use_build_context_synchronously
+   info - Use 'const' for final variables initialized to a constant value - lib\features\backup\presentation\pages\backup_page.dart:55:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\features\backup\presentation\pages\backup_page.dart:81:5 - prefer_const_declarations
+   info - Don't use 'BuildContext's across async gaps - lib\features\backup\presentation\pages\backup_page.dart:141:11 - use_build_context_synchronously
+   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:142:11 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:164:13 - prefer_interpolation_to_compose_strings
+  error - The named parameter 'customToken' isn't defined - lib\features\backup\presentation\pages\backup_page.dart:194:49 - undefined_named_parameter
+   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:279:27 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - lib\features\backup\presentation\pages\backup_page.dart:355:42 - use_build_context_synchronously
+   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:366:43 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - lib\features\backup\presentation\pages\backup_page.dart:642:7 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\backup\presentation\pages\backup_page.dart:886:43 - prefer_const_constructors
+   info - Use interpolation to compose strings and values - lib\features\backup\presentation\pages\backup_page.dart:1440:27 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\backup\presentation\pages\backup_page.dart:1476:37 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\backup\presentation\pages\backup_page.dart:1476:69 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\backup\presentation\pages\backup_page.dart:1479:64 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\backup\presentation\pages\backup_page.dart:1482:62 - use_build_context_synchronously
    info - Use interpolation to compose strings and values - lib\features\billing\data\kiosk_service.dart:81:70 - prefer_interpolation_to_compose_strings
    info - Use interpolation to compose strings and values - lib\features\billing\data\kiosk_service.dart:82:86 - prefer_interpolation_to_compose_strings
 warning - The operand can't be null, so the condition is always 'true' - lib\features\billing\data\kiosk_service.dart:159:18 - unnecessary_null_comparison
