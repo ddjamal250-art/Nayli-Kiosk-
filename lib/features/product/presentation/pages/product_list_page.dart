@@ -935,10 +935,8 @@ class _ProductListPageState extends State<ProductListPage> {
                   itemCount: _categoryTabs.length,
                   separatorBuilder: (_, __) => SizedBox(width: 8),
                   itemBuilder: (ctx, idx) {
-                    final catDef = _categoryTabsDef[idx];
-                    final isSelected = _selectedCategoryIndex == idx;
-                    final langCode = Localizations.localeOf(context).languageCode;
-                    final label = catDef[langCode] ?? catDef['ar'] ?? '';
+                    final label = _categoryTabs[idx];
+                      final isSelected = _selectedCategoryIndex == idx;
 
                     // Calculate count for this tab
                     final count = state.products.where((p) => _productMatchesTab(p, idx)).length;
