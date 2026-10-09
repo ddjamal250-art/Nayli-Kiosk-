@@ -80,8 +80,10 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     super.initState();
     _selectedUnit = widget.initialUnit;
     
-    if (_selectedUnit != 'base' && _selectedUnit != 'custom') {
-      final exists = p.units.any((u) => u.name == _selectedUnit);
+    if (_selectedUnit == p.baseUnitName || _selectedUnit == 'piece' || _selectedUnit == 'unit') {
+      _selectedUnit = 'base';
+    } else if (_selectedUnit != 'base' && _selectedUnit != 'custom') {
+      final exists = p.units.any((u) => u.name == _selectedUnit && u.isEnabled);
       if (!exists) _selectedUnit = 'base';
     }
 
@@ -128,6 +130,21 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   }
 
   Product get p => widget.product;
+
+  /// الوحدات الإضافية الفرعية (علبة -> كرتونة) مع استبعاد الوحدة الأساسية منعاً للتكرار
+  List<ProductUnit> get _filteredSecondaryUnits {
+    final list = p.units.where((u) =>
+      u.isEnabled &&
+      u.multiplier > 1.0 &&
+      u.tier != UnitTier.small &&
+      u.name.trim().toLowerCase() != p.baseUnitName.trim().toLowerCase()
+    ).toList();
+    list.sort((a, b) {
+      final c = a.tier.index.compareTo(b.tier.index);
+      return c != 0 ? c : a.multiplier.compareTo(b.multiplier);
+    });
+    return list;
+  }
 
   ProductUnit? get _activeProductUnit {
     if (_selectedUnit == 'base' || _selectedUnit == 'custom') return null;
@@ -192,16 +209,32 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
 
-    // Fast Numeric Shortcuts (1: Base, 2: Unit1, 3: Unit2, 4: Custom Deal)
+    final secondary = _filteredSecondaryUnits;
+    final customShortcut = secondary.length + 2;
+
+    int? digit;
     if (event.logicalKey == LogicalKeyboardKey.digit1 || event.logicalKey == LogicalKeyboardKey.numpad1) {
-      _selectUnit('base');
+      digit = 1;
     } else if (event.logicalKey == LogicalKeyboardKey.digit2 || event.logicalKey == LogicalKeyboardKey.numpad2) {
-      if (p.units.isNotEmpty) _selectUnit(p.units[0].name);
+      digit = 2;
     } else if (event.logicalKey == LogicalKeyboardKey.digit3 || event.logicalKey == LogicalKeyboardKey.numpad3) {
-      if (p.units.length > 1) _selectUnit(p.units[1].name);
-    } else if (event.logicalKey == LogicalKeyboardKey.digit4 ||
-        event.logicalKey == LogicalKeyboardKey.numpad4 ||
-        event.logicalKey == LogicalKeyboardKey.keyB) {
+      digit = 3;
+    } else if (event.logicalKey == LogicalKeyboardKey.digit4 || event.logicalKey == LogicalKeyboardKey.numpad4) {
+      digit = 4;
+    } else if (event.logicalKey == LogicalKeyboardKey.digit5 || event.logicalKey == LogicalKeyboardKey.numpad5) {
+      digit = 5;
+    }
+
+    if (digit == 1) {
+      _selectUnit('base');
+    } else if (digit != null && digit >= 2 && digit < customShortcut) {
+      final unitIdx = digit - 2;
+      if (unitIdx < secondary.length) {
+        _selectUnit(secondary[unitIdx].name);
+      }
+    } else if (digit == customShortcut ||
+        event.logicalKey == LogicalKeyboardKey.keyB ||
+        (digit != null && digit >= customShortcut)) {
       _selectUnit('custom');
     } else if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
       _applySelection();
@@ -340,9 +373,10 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       ),
     );
 
-    // 2. Additional Units — فلتر الوحدات المعطَّلة (isEnabled = false لا تظهر)
+    // 2. Additional Units — الوحدات الإضافية فقط (علبة -> كرتونة) بدون تكرار الوحدة الأساسية
     int shortcut = 2;
-    for (final unit in p.units.where((u) => u.isEnabled)) {
+    final secondaryUnits = _filteredSecondaryUnits;
+    for (final unit in secondaryUnits) {
       if (shortcut > 4) break;
       final isScale = unit.isWeighable;
       unitCards.add(
@@ -357,7 +391,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
             iconData: isScale ? Icons.scale : Icons.inventory_2_rounded,
             accentColor: isScale
                 ? Colors.teal
-                : (shortcut == 2 ? Colors.amber : Colors.purple),
+                : (unit.tier == UnitTier.large ? Colors.brown : Colors.indigo),
             shortcutKey: shortcut.toString(),
             isDark: isDark,
           ),
@@ -366,7 +400,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       shortcut++;
     }
 
-    // 3. Custom Quantity Deal / Promotional Offer Card
+    // 3. Custom Quantity Deal / Promotional Offer Card (يأخذ دائماً رقم الاختصار التالي)
     final validOffers = p.specialOffers.where((o) => o.isValid).toList();
     unitCards.add(
       Expanded(
@@ -374,12 +408,12 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
           unitKey: 'custom',
           title: 'عرض ترويجي',
           subtitle: validOffers.isNotEmpty
-              ? (validOffers.length == 1 ? '1 عرض متوفر' : '${validOffers.length} عروض متوفرة')
+              ? (validOffers.length == 1 ? validOffers.first.label : '${validOffers.length} عروض ترويجية')
               : 'تحديد كمية بسعر',
           price: validOffers.isNotEmpty ? validOffers.first.offerPrice : p.price * 3,
           iconData: Icons.local_offer_rounded,
           accentColor: Colors.deepOrange,
-          shortcutKey: '4',
+          shortcutKey: shortcut.toString(),
           isDark: isDark,
         ),
       ),
@@ -482,7 +516,15 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'اختصارات الكيبورد: [1] حبة | [2] علبة | [3] كرتونة | [4] سعر كمية | [Enter] تأكيد',
+                          () {
+                            final shortcutsList = <String>['[1] ${p.baseUnitName}'];
+                            for (int i = 0; i < secondaryUnits.length; i++) {
+                              shortcutsList.add('[${i + 2}] ${secondaryUnits[i].name}');
+                            }
+                            shortcutsList.add('[${secondaryUnits.length + 2}] عرض ترويجي');
+                            shortcutsList.add('[Enter] تأكيد');
+                            return 'اختصارات الكيبورد: ' + shortcutsList.join(' | ');
+                          }(),
                           style: TextStyle(
                             color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534),
                             fontSize: 11.5,
