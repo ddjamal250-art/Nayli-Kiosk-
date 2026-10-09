@@ -7,6 +7,8 @@ import 'package:file_selector/file_selector.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/utils/license_service.dart';
+import '../../../../core/utils/online_license_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/telegram_service.dart';
@@ -31,6 +33,7 @@ class _BackupPageState extends State<BackupPage> {
   final TextEditingController _whatsAppPhoneController = TextEditingController();
   bool _autoBackupOnShiftClose = true;
   bool _isDiscoveringChatId = false;
+  bool _isSendingTestBackup = false;
 
   @override
   void initState() {
@@ -49,20 +52,52 @@ class _BackupPageState extends State<BackupPage> {
 
   void _loadSettings() {
     final box = HiveDatabase.settingsBox;
+    final devId = '5115465267';
+    final defaultDevId = OnlineLicenseService.defaultChatId;
+
     _telegramTokenController.text = box.get('telegram_bot_token', defaultValue: '')?.toString() ?? '';
-    _telegramChatIdController.text = box.get('telegram_chat_id', defaultValue: '')?.toString() ?? '';
+
+    var savedChatId = box.get('telegram_chat_id', defaultValue: '')?.toString() ?? '';
+    if (savedChatId.isEmpty) {
+      savedChatId = box.get('merchant_telegram_chat_id', defaultValue: '')?.toString() ?? '';
+    }
+
+    // تنظيف صارم لأي أثر لمعرف المطور من قاعدة بيانات التاجر
+    if (savedChatId == devId || (defaultDevId.isNotEmpty && savedChatId == defaultDevId)) {
+      savedChatId = '';
+      box.delete('telegram_chat_id');
+      box.delete('merchant_telegram_chat_id');
+    }
+
+    _telegramChatIdController.text = savedChatId;
     _whatsAppPhoneController.text = box.get('merchant_whatsapp_phone', defaultValue: '')?.toString() ?? '';
     _autoBackupOnShiftClose = box.get('auto_backup_on_shift_close', defaultValue: true) == true;
   }
 
-  Future<void> _saveSettings() async {
+  Future<void> _saveSettings({bool showToast = true}) async {
     final box = HiveDatabase.settingsBox;
-    await box.put('telegram_bot_token', _telegramTokenController.text.trim());
-    await box.put('telegram_chat_id', _telegramChatIdController.text.trim());
+    final token = _telegramTokenController.text.trim();
+    final chatId = _telegramChatIdController.text.trim();
+    final devId = '5115465267';
+    final defaultDevId = OnlineLicenseService.defaultChatId;
+
+    // حماية أمنية لمنع إدخال أو تخزين معرف المطور
+    if (chatId == devId || (defaultDevId.isNotEmpty && chatId == defaultDevId)) {
+      if (mounted) {
+        SnackbarHelper.showError(context, '⛔ عذراً، هذا المعرف محجوز لمطور النظام ولا يمكن ربطه كحساب تاجر');
+      }
+      _telegramChatIdController.clear();
+      return;
+    }
+
+    await box.put('telegram_bot_token', token);
+    await box.put('telegram_chat_id', chatId);
+    await box.put('merchant_telegram_chat_id', chatId);
     await box.put('merchant_whatsapp_phone', _whatsAppPhoneController.text.trim());
     await box.put('auto_backup_on_shift_close', _autoBackupOnShiftClose);
+    
     SoundService.playSaveSuccess();
-    if (mounted) {
+    if (mounted && showToast) {
       SnackbarHelper.showSuccess(context, '✅ تم حفظ إعدادات التيليجرام والواتساب بنجاح');
     }
   }
@@ -71,22 +106,26 @@ class _BackupPageState extends State<BackupPage> {
     setState(() => _isDiscoveringChatId = true);
     SoundService.playTabSwitch();
 
-    // 1. فتح رابط البوت للتاجر
-    await TelegramService.launchBotChat();
+    final deviceId = LicenseService.getDeviceId().replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+    final payload = 'pair_$deviceId';
+
+    // 1. فتح رابط البوت للتاجر مع رمز الربط الفريد
+    await TelegramService.launchBotChat(payload: payload);
 
     if (mounted) {
       SnackbarHelper.showInfo(
         context,
-        '⏳ جاري كشف معرفك... يرجى الضغط على Start أو إرسال أي رسالة للبوت في التلغرام الآن',
+        '⏳ جاري كشف معرفك... اضغط Start أو أرسل أي رسالة للبوت في تليجرام الآن',
       );
     }
 
     // 2. محاولة جلب التحديثات لعدة ثوانٍ
     Map<String, dynamic>? discovered;
-    for (int attempt = 0; attempt < 5; attempt++) {
+    for (int attempt = 0; attempt < 6; attempt++) {
       await Future.delayed(const Duration(seconds: 2));
       discovered = await TelegramService.autoDiscoverChatId(
         customToken: _telegramTokenController.text.trim(),
+        expectedPayload: payload,
       );
       if (discovered != null) break;
     }
@@ -94,22 +133,21 @@ class _BackupPageState extends State<BackupPage> {
     if (mounted) {
       setState(() => _isDiscoveringChatId = false);
       if (discovered != null) {
-        _telegramChatIdController.text = discovered['chatId']?.toString() ?? '';
-        await _saveSettings();
+        final id = discovered['chatId']?.toString() ?? '';
+        _telegramChatIdController.text = id;
+        await _saveSettings(showToast: false);
         SoundService.playCheckoutSuccess();
         SnackbarHelper.showSuccess(
           context,
           '🎉 رائع! تم كشف وربط التيليجرام بنجاح: ' +
               (discovered['name']?.toString() ?? '') +
-              ' (ID: ' +
-              (discovered['chatId']?.toString() ?? '') +
-              ')',
+              ' (ID: $id)',
         );
       } else {
         SoundService.playWarning();
         SnackbarHelper.showWarning(
           context,
-          '⚠️ لم نتمكن من كشف الرسالة بعد. تأكد من فتح البوت والضغط على Start ثم حاول مجدداً',
+          '⚠️ لم نتمكن من كشف الرسالة بعد. تأكد من فتح البوت والضغط على Start ثم حاول مجدداً، أو أدخل معرفك يدوياً.',
         );
       }
     }
@@ -137,9 +175,97 @@ class _BackupPageState extends State<BackupPage> {
         SnackbarHelper.showSuccess(context, '✅ تم إرسال الرسالة التجريبية إلى تلغرامك بنجاح!');
       } else {
         SoundService.playVoidWarning();
-        SnackbarHelper.showError(context, '❌ تعذر الإرسال. تأكد من اتصال الإنترنت وصحة المعرف');
+        SnackbarHelper.showError(context, '❌ تعذر الإرسال. تأكد من اتصال الإنترنت وصحة المعرف والضغط على Start في البوت');
       }
     }
+  }
+
+  Future<void> _sendTestTelegramBackupFile() async {
+    final chatId = _telegramChatIdController.text.trim();
+    if (chatId.isEmpty) {
+      SnackbarHelper.showWarning(context, 'يرجى تحديد أو كشف Chat ID أولاً');
+      return;
+    }
+
+    setState(() => _isSendingTestBackup = true);
+    SoundService.playTabSwitch();
+
+    try {
+      final token = TelegramService.getBotToken(customToken: _telegramTokenController.text.trim());
+      final file = await BackupService.createFullBackupZip();
+
+      final sent = await BackupService.sendToTelegramBot(
+        backupFile: file,
+        botToken: token,
+        chatId: chatId,
+        captionSuffix: '📦 [نسخة تجريبية لاختبار استلام الملف]',
+      );
+
+      if (mounted) {
+        if (sent) {
+          SoundService.playCheckoutSuccess();
+          SnackbarHelper.showSuccess(
+            context,
+            '✅ تم إرسال ملف النسخة الاحتياطية بنجاح إلى حسابك في تليجرام! تفقد هاتفك الآن 📱',
+          );
+        } else {
+          SoundService.playVoidWarning();
+          SnackbarHelper.showError(
+            context,
+            '❌ تعذر إرسال الملف. تأكد من فتح البوت والضغط على Start وصحة المعرف.',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showError(context, 'فشل الإرسال: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isSendingTestBackup = false);
+    }
+  }
+
+  void _showHowToGetChatIdDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.help_outline_rounded, color: Colors.blueAccent),
+            SizedBox(width: 8),
+            Text('كيفية معرفة معرّف تليجرام (Chat ID)'),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'معرف تليجرام (Chat ID) هو رقم فريد خاص بحسابك (مثال: 123456789).',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              SizedBox(height: 12),
+              Text('✨ الطريقة الأولى (تلقائياً بنقرة واحدة - مستحسنة):', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+              Text('اضغط زر «كشف معرفي تلقائياً 🔍» ثم اضغط Start في محادثة البوت، وسيقوم البرنامج بجلب معرفك وربطه تلقائياً.'),
+              SizedBox(height: 12),
+              Text('✨ الطريقة الثانية (يدوياً وبدقة):', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+              Text('1. افتح تطبيق تليجرام وابحث عن البوت: @userinfobot'),
+              Text('2. اضغط Start أو أرسل أي رسالة للبوت.'),
+              Text('3. سيرد عليك ببياناتك ومنها رقماً يسمى Id (مثال: 789456123).'),
+              Text('4. انسخ هذا الرقم وألصقه هنا في خانة Chat ID واضغط زر «حفظ الإعدادات 💾».'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('حسناً، فهمت'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _sendTestWhatsAppMessage() async {
@@ -882,95 +1008,68 @@ class _BackupPageState extends State<BackupPage> {
 
                 const SizedBox(height: 20),
 
-                // بطاقة ربط التلغرام الذكية بكشف تلقائي بنقرة واحدة
+                // بطاقة ربط التلغرام الذكية مع إدخال يدوي وكشف تلقائي وفحص فوري
                 Card(
-                  elevation: 1,
+                  elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
                     padding: const EdgeInsets.all(18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (isWide)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Row(
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.send_rounded, color: Colors.blueAccent, size: 24),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.send_rounded, color: Colors.blueAccent, size: 24),
-                                  SizedBox(width: 8),
-                                  Text('1. النسخ السحابي والتقارير عبر Telegram 🤖',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                  Text(
+                                    '1. النسخ السحابي والتقارير عبر Telegram 🤖',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
+                                  Text(
+                                    'استلام النسخ الاحتياطية لقاعدة البيانات وتقارير المبيعات اليومية على هاتفك مباشرة 🔒',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
                                 ],
                               ),
-                              OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
-                                icon: _isDiscoveringChatId
-                                    ? const SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.auto_awesome, size: 16),
-                                label: Text(
-                                  _isDiscoveringChatId ? 'جاري الكشف...' : 'كشف معرفي تلقائياً 🔍',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                ),
-                                onPressed: _isDiscoveringChatId ? null : _autoDiscoverTelegramChatId,
-                              ),
-                            ],
-                          )
-                        else
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.send_rounded, color: Colors.blueAccent, size: 22),
-                                  SizedBox(width: 8),
-                                  Text('1. النسخ عبر Telegram 🤖',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
-                                icon: _isDiscoveringChatId
-                                    ? const SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.auto_awesome, size: 16),
-                                label: Text(
-                                  _isDiscoveringChatId ? 'جاري الكشف...' : 'كشف معرفي تلقائياً 🔍',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                ),
-                                onPressed: _isDiscoveringChatId ? null : _autoDiscoverTelegramChatId,
-                              ),
-                            ],
-                          ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          '💡 لا تحتاج لإنشاء بوت بنفسك! فقط اضغط زر (كشف معرفي تلقائياً) وافتح البوت واضغط Start ليرتبط البرنامج بهاتفك في ثانية واحدة:',
-                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
 
-                        // Simplified UI for Telegram Status
+                        // شريط حالة الربط
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: _telegramChatIdController.text.isNotEmpty ? Colors.green.shade50 : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(10),
+                            color: _telegramChatIdController.text.trim().isNotEmpty
+                                ? Colors.green.shade50
+                                : Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: _telegramChatIdController.text.isNotEmpty ? Colors.green.shade200 : Colors.grey.shade300),
+                              color: _telegramChatIdController.text.trim().isNotEmpty
+                                  ? Colors.green.shade300
+                                  : Colors.amber.shade300,
+                            ),
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                _telegramChatIdController.text.isNotEmpty ? Icons.check_circle_rounded : Icons.info_outline_rounded,
-                                color: _telegramChatIdController.text.isNotEmpty ? Colors.green : Colors.grey,
+                                _telegramChatIdController.text.trim().isNotEmpty
+                                    ? Icons.check_circle_rounded
+                                    : Icons.warning_amber_rounded,
+                                color: _telegramChatIdController.text.trim().isNotEmpty
+                                    ? Colors.green.shade700
+                                    : Colors.amber.shade800,
                                 size: 28,
                               ),
                               const SizedBox(width: 12),
@@ -979,30 +1078,32 @@ class _BackupPageState extends State<BackupPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'حالة الربط بحسابك في تليجرام:',
-                                      style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                                      _telegramChatIdController.text.trim().isNotEmpty
+                                          ? '✅ تليجرام متصل وجاهز للاستلام (معرف حسابك: ${_telegramChatIdController.text.trim()})'
+                                          : '⚠️ لم يتم ربط حساب تليجرام بعد',
+                                      style: TextStyle(
+                                        color: _telegramChatIdController.text.trim().isNotEmpty
+                                            ? Colors.green.shade900
+                                            : Colors.amber.shade900,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                     Text(
-                                      _telegramChatIdController.text.isNotEmpty
-                                          ? '✅ متصل وجاهز للعمل (ID: ${_telegramChatIdController.text})'
-                                          : '❌ غير متصل بعد',
+                                      _telegramChatIdController.text.trim().isNotEmpty
+                                          ? 'ستصلك ملفات النسخ الاحتياطي وتقارير الأرباح إلى حسابك الشخصي هذا حصراً.'
+                                          : 'قم بكشف معرفك تلقائياً أو أدخله يدوياً أدناه لتصلك النسخ الاحتياطية على هاتفك.',
                                       style: TextStyle(
-                                        color: _telegramChatIdController.text.isNotEmpty ? Colors.green.shade800 : Colors.red.shade700,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
+                                        color: _telegramChatIdController.text.trim().isNotEmpty
+                                            ? Colors.green.shade800
+                                            : Colors.brown.shade700,
+                                        fontSize: 11.5,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              if (_telegramChatIdController.text.isNotEmpty)
-                                TextButton.icon(
-                                  onPressed: _sendTestTelegramMessage,
-                                  icon: const Icon(Icons.mark_email_read_rounded, size: 18),
-                                  label: const Text('فحص الاتصال'),
-                                  style: TextButton.styleFrom(foregroundColor: Colors.teal),
-                                ),
-                              if (_telegramChatIdController.text.isNotEmpty)
+                              if (_telegramChatIdController.text.trim().isNotEmpty)
                                 TextButton.icon(
                                   onPressed: () {
                                     setState(() {
@@ -1010,10 +1111,176 @@ class _BackupPageState extends State<BackupPage> {
                                     });
                                     _saveSettings();
                                   },
-                                  icon: const Icon(Icons.link_off_rounded, size: 18),
-                                  label: const Text('إلغاء الربط'),
+                                  icon: const Icon(Icons.link_off_rounded, size: 16),
+                                  label: const Text('إلغاء الربط', style: TextStyle(fontSize: 12)),
                                   style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
                                 ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // خانة إدخال معرّف التليجرام يدوياً
+                        TextField(
+                          controller: _telegramChatIdController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'معرّف حساب تليجرام الخاص بك (Chat ID)',
+                            hintText: 'مثال: 123456789',
+                            prefixIcon: const Icon(Icons.badge_outlined, color: Colors.blueAccent),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            suffixIcon: _telegramChatIdController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 18),
+                                    onPressed: () {
+                                      setState(() {
+                                        _telegramChatIdController.clear();
+                                      });
+                                    },
+                                    tooltip: 'مسح',
+                                  )
+                                : null,
+                            helperText: 'يمكنك كتابة معرفك مباشرة، أو الضغط على «كشف معرفي تلقائياً» ليجلبه البرنامج فوراً',
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // أزرار المساعدة والكشف والحفظ
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: _isDiscoveringChatId
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Icon(Icons.auto_awesome, size: 18),
+                              label: Text(
+                                _isDiscoveringChatId ? 'جاري الكشف...' : 'كشف معرفي تلقائياً 🔍',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: _isDiscoveringChatId ? null : _autoDiscoverTelegramChatId,
+                            ),
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.blueAccent,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.help_outline_rounded, size: 18),
+                              label: const Text('كيف أعرف معرفي؟ ❓'),
+                              onPressed: _showHowToGetChatIdDialog,
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0F766E),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.save_rounded, size: 18),
+                              label: const Text('حفظ المعرّف 💾', style: TextStyle(fontWeight: FontWeight.bold)),
+                              onPressed: () => _saveSettings(),
+                            ),
+                          ],
+                        ),
+
+                        if (_telegramChatIdController.text.trim().isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          const SizedBox(height: 10),
+                          const Text(
+                            '🧪 فحص واختبار وصول البيانات إلى هاتفك الآن:',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.teal.shade800,
+                                  side: BorderSide(color: Colors.teal.shade300),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                icon: const Icon(Icons.notifications_active_rounded, size: 18),
+                                label: const Text('فحص رسالة تجريبية 🔔', style: TextStyle(fontWeight: FontWeight.bold)),
+                                onPressed: _sendTestTelegramMessage,
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.teal.shade700,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                icon: _isSendingTestBackup
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : const Icon(Icons.cloud_upload_rounded, size: 18),
+                                label: Text(
+                                  _isSendingTestBackup
+                                      ? 'جاري إرسال الملف...'
+                                      : 'إرسال نسخة احتياطية تجريبية الآن 📦',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: _isSendingTestBackup ? null : _sendTestTelegramBackupFile,
+                              ),
+                            ],
+                          ),
+                        ],
+
+                        const SizedBox(height: 14),
+
+                        // إعدادات البوت المتقدمة (اختياري)
+                        Theme(
+                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.settings_outlined, size: 20, color: Colors.grey),
+                            title: const Text(
+                              'إعدادات متقدمة (استخدام بوت تليجرام خاص بك)',
+                              style: TextStyle(fontSize: 12.5, color: Colors.grey),
+                            ),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                                child: TextField(
+                                  controller: _telegramTokenController,
+                                  decoration: InputDecoration(
+                                    labelText: 'رمز البوت المخصص (Bot Token) - اختياري',
+                                    hintText: 'اتركه فارغاً لاستخدام بوت النظام المعتمد (@nayli_pos_dz_bot)',
+                                    prefixIcon: const Icon(Icons.key_rounded, size: 20),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                    isDense: true,
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
+                              const Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  'ملاحظة: لا حاجة لتغيير هذا الحقل إلا إذا قمت بإنشاء بوت مخصص لك عبر @BotFather.',
+                                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                                ),
+                              ),
                             ],
                           ),
                         ),

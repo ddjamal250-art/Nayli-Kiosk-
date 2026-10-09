@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../core/data/hive_database.dart';
 import '../../../core/data/local_sync_server.dart';
 import '../../../core/utils/telegram_service.dart';
+import '../../../core/utils/online_license_service.dart';
 import '../../../core/utils/product_image_helper.dart';
 import '../../../core/utils/category_taxonomy.dart';
 import '../../documents/data/commercial_document_service.dart';
@@ -262,12 +263,23 @@ class BackupService {
     required File backupFile,
     required String botToken,
     required String chatId,
+    String? captionSuffix,
   }) async {
+    final cleanChatId = chatId.trim();
+    final devId = OnlineLicenseService.defaultChatId;
+
+    // 🛡️ صمام أمان حاسم: منع إرسال النسخ الاحتياطية الخاصة بالتجار إلى حساب المطور إطلاقاً
+    if (cleanChatId.isEmpty || cleanChatId == devId || cleanChatId == '5115465267') {
+      debugPrint('⛔ Refusing to send merchant backup file: Invalid or Developer Chat ID: $cleanChatId');
+      return false;
+    }
+
     try {
       final uri = Uri.parse('https://api.telegram.org/bot$botToken/sendDocument');
+      final extraText = (captionSuffix != null && captionSuffix.isNotEmpty) ? '\n$captionSuffix' : '';
       final request = http.MultipartRequest('POST', uri)
-        ..fields['chat_id'] = chatId
-        ..fields['caption'] = '📦 نسخة احتياطية نايل ماركت: ${backupFile.uri.pathSegments.last}\n📅 ${DateFormat('yyyy/MM/dd HH:mm').format(DateTime.now())}'
+        ..fields['chat_id'] = cleanChatId
+        ..fields['caption'] = '📦 نسخة احتياطية نايل ماركت: ${backupFile.uri.pathSegments.last}\n📅 ${DateFormat('yyyy/MM/dd HH:mm').format(DateTime.now())}$extraText\n🔒 مشفرة ومؤمنة في خزنتك السحابية الخاصة.'
         ..files.add(await http.MultipartFile.fromPath('document', backupFile.path));
 
       final response = await request.send();

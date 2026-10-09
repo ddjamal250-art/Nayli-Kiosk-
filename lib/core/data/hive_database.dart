@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../features/product/data/models/product_model.dart';
 import '../../features/shop/data/models/shop_model.dart';
 import '../../features/shifts/data/shift_service.dart';
+import '../utils/online_license_service.dart';
 
 class HiveDatabase {
   static const String productBoxName = 'products';
@@ -82,6 +83,19 @@ class HiveDatabase {
     await Hive.openBox(shoppingListBoxName); // Smart shopping list
     await Hive.openBox(loosePiecesBoxName); // Break-case loose piece inventory
     await Hive.openBox(suppliersBoxName); // Suppliers (separate from customers)
+
+    // تنظيف وتطهير أي معرف تيليجرام سابق تم تعيينه بحساب المطور عن طريق الخطأ
+    try {
+      final devId = OnlineLicenseService.defaultChatId;
+      final savedChatId = settingsBox.get('telegram_chat_id')?.toString().trim();
+      final savedMerchantChatId = settingsBox.get('merchant_telegram_chat_id')?.toString().trim();
+      if (savedChatId == devId || savedChatId == '5115465267') {
+        await settingsBox.delete('telegram_chat_id');
+      }
+      if (savedMerchantChatId == devId || savedMerchantChatId == '5115465267') {
+        await settingsBox.delete('merchant_telegram_chat_id');
+      }
+    } catch (_) {}
 
     // التدقيق والإصلاح التلقائي الشامل لبيانات الصندوق والورديات بأثر رجعي
     try {

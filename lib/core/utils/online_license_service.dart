@@ -302,10 +302,17 @@ class OnlineLicenseService {
     required double estimatedNetProfit,
   }) async {
     try {
-      final token = HiveDatabase.settingsBox.get('telegram_bot_token', defaultValue: defaultBotToken) as String;
-      final merchantChatId = HiveDatabase.settingsBox.get('merchant_telegram_chat_id', defaultValue: defaultChatId) as String;
+      final token = (HiveDatabase.settingsBox.get('telegram_bot_token', defaultValue: '') as String).trim();
+      final effectiveToken = token.isNotEmpty ? token : defaultBotToken;
 
-      if (token.isEmpty || merchantChatId.isEmpty) return false;
+      final chatId1 = (HiveDatabase.settingsBox.get('telegram_chat_id', defaultValue: '') as String).trim();
+      final chatId2 = (HiveDatabase.settingsBox.get('merchant_telegram_chat_id', defaultValue: '') as String).trim();
+      final merchantChatId = chatId1.isNotEmpty ? chatId1 : chatId2;
+
+      // 🛡️ صمام أمان حاسم: لا ترسل تقارير المبيعات الخاصة بالتاجر إلى حساب المطور إطلاقاً
+      if (effectiveToken.isEmpty || merchantChatId.isEmpty || merchantChatId == defaultChatId || merchantChatId == '5115465267') {
+        return false;
+      }
 
       final storeName = HiveDatabase.settingsBox.get('licensed_store_name', defaultValue: 'سوبرماركت البركة') as String;
       final dateStr = DateTime.now().toString().substring(0, 16);
