@@ -9,10 +9,13 @@ import 'whatsapp_helper.dart';
 class TelegramService {
   static const String defaultBotUsername = 'nayli_pos_dz_bot';
 
-  static String getBotToken() {
-    final customToken = HiveDatabase.settingsBox.get('telegram_bot_token', defaultValue: '') as String;
-    if (customToken.trim().isNotEmpty) {
+  static String getBotToken({String? customToken}) {
+    if (customToken != null && customToken.trim().isNotEmpty) {
       return customToken.trim();
+    }
+    final savedToken = HiveDatabase.settingsBox.get('telegram_bot_token', defaultValue: '')?.toString() ?? '';
+    if (savedToken.trim().isNotEmpty) {
+      return savedToken.trim();
     }
     return OnlineLicenseService.defaultBotToken;
   }
