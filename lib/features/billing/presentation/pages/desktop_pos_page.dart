@@ -102,31 +102,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     }
   }
 
-  static const List<Map<String, String>> _categoriesDef = [
-    {'key': 'all', 'tr': 'cat_all', 'ar': 'الكل', 'icon': '🛒'},
-    {'key': 'tobacco', 'tr': 'tobacco_btn', 'ar': 'المواد التبغية', 'icon': '🚬'},
-    {'key': 'cold_drinks', 'tr': 'cat_beverages', 'ar': 'المشروبات والعصائر', 'icon': '🥤'},
-    {'key': 'dairy', 'tr': 'cat_dairy', 'ar': 'الألبان والأجبان', 'icon': '🥛'},
-    {'key': 'coffee_tea', 'tr': 'cat_coffee_tea', 'ar': 'القهوة الجاهزة', 'icon': '☕'},
-    {'key': 'sweets', 'tr': 'cat_sweets', 'ar': 'الحلويات والسكاكر', 'icon': '🍫'},
-    {'key': 'scale', 'tr': 'cat_scale', 'ar': 'سلع الميزان', 'icon': '⚖️'},
-    {'key': 'pulses', 'tr': 'cat_pulses', 'ar': 'البقوليات والحبوب', 'icon': '🌾'},
-    {'key': 'canned', 'tr': 'cat_canned', 'ar': 'المعلبات والزيوت', 'icon': '🥫'},
-    {'key': 'bakery', 'tr': 'cat_bakery', 'ar': 'المخبوزات والعجائن', 'icon': '🥖'},
-    {'key': 'cleaning', 'tr': 'cat_cleaning', 'ar': 'المنظفات والتطهير', 'icon': '🧽'},
-    {'key': 'hygiene', 'tr': 'cat_hygiene', 'ar': 'العناية الشخصية', 'icon': '🧴'},
-    {'key': 'stationery', 'tr': 'cat_stationery', 'ar': 'الأدوات المدرسية والمكتبية', 'icon': '📚'},
-    {'key': 'phone_accessories', 'tr': 'cat_phone_acc', 'ar': 'لواحق هواتف وإلكترونيات', 'icon': '📱'},
-    {'key': 'batteries', 'tr': 'cat_batteries', 'ar': 'بطاريات وكهربائيات', 'icon': '🔋'},
-    {'key': 'cosmetics', 'tr': 'cat_cosmetics', 'ar': 'كوسميتيك وعطور', 'icon': '💄'},
-    {'key': 'toys', 'tr': 'cat_toys', 'ar': 'ألعاب وهدايا', 'icon': '🧸'},
-    {'key': 'produce', 'tr': 'cat_produce', 'ar': 'الخضر والفواكه واللحوم', 'icon': '🍏'},
-    {'key': 'general_news', 'tr': 'cat_general', 'ar': 'منتجات عامة وجرائد', 'icon': '📰'},
-    {'key': 'spices', 'tr': 'cat_spices', 'ar': 'التوابل والبهارات', 'icon': '🧂'},
-  ];
+  List<String> _categoryTabs = [];
 
   @override
   void initState() {
+    _categoryTabs = ['الكل'] + CategoryTaxonomy.getVisibleHomeScreenCategories();
     super.initState();
     HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
     _initLocalServer();

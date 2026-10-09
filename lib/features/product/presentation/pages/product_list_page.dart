@@ -22,6 +22,7 @@ import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../../core/widgets/product_image_display.dart';
 import '../../../shop/data/models/shop_model.dart';
 import '../../domain/entities/product.dart';
+import '../../../../core/utils/category_taxonomy.dart';
 import '../bloc/product_bloc.dart';
 import '../widgets/quick_receive_modal.dart';
 import '../widgets/coffee_recipe_modal.dart';
@@ -42,82 +43,18 @@ class _ProductListPageState extends State<ProductListPage> {
   bool _isMultiSelectMode = false;
   final Set<String> _selectedProductIds = {};
 
-  static const List<Map<String, String>> _categoryTabsDef = [
-    {'key': 'all', 'ar': 'الكل', 'fr': 'Tous', 'en': 'All'},
-    {'key': 'coffee_ready', 'ar': '☕ القهوة الجاهزة', 'fr': '☕ Café Prêt', 'en': '☕ Ready Coffee'},
-    {'key': 'scale', 'ar': '⚖️ مواد الميزان', 'fr': '⚖️ Vrac & Balance', 'en': '⚖️ Scale & Bulk'},
-    {'key': 'stationery', 'ar': '📚 أدوات مدرسية', 'fr': '📚 Papeterie', 'en': '📚 Stationery'},
-    {'key': 'tobacco', 'ar': '🚬 تبغ وسجائر', 'fr': '🚬 Tabac', 'en': '🚬 Tobacco'},
-    {'key': 'food', 'ar': 'مواد غذائية', 'fr': 'Alimentation', 'en': 'Groceries'},
-    {'key': 'dairy', 'ar': 'حليب ومشتقاته', 'fr': 'Produits Laitiers', 'en': 'Dairy'},
-    {'key': 'bakery', 'ar': 'مخبوزات وعجائن', 'fr': 'Boulangerie & Pâtes', 'en': 'Bakery & Pasta'},
-    {'key': 'beverages', 'ar': 'مشروبات ومياه', 'fr': 'Boissons & Eaux', 'en': 'Beverages & Water'},
-    {'key': 'cleaning', 'ar': 'نظافة وتجميل', 'fr': 'Entretien & Hygiène', 'en': 'Cleaning & Hygiene'},
-    {'key': 'sweets', 'ar': 'حلويات وسكاكر', 'fr': 'Confiserie & Biscuits', 'en': 'Sweets & Biscuits'},
-    {'key': 'fruits', 'ar': 'خضر وفواكه', 'fr': 'Fruits & Légumes', 'en': 'Fruits & Veg'},
-    {'key': 'other', 'ar': 'أخرى', 'fr': 'Autres', 'en': 'Other'},
-  ];
+  List<String> _categoryTabs = [];
+  
 
-  List<String> get _categoryTabs => _categoryTabsDef.map((c) => c['ar']!).toList();
+
   String get _selectedCategoryFilter =>
-      _selectedCategoryIndex < _categoryTabsDef.length ? _categoryTabsDef[_selectedCategoryIndex]['ar']! : 'الكل';
+      _selectedCategoryIndex < _categoryTabs.length ? _categoryTabs[_selectedCategoryIndex] : 'الكل';
 
   bool _productMatchesTab(Product p, int tabIdx) {
     if (tabIdx == 0) return true;
-    if (tabIdx >= _categoryTabsDef.length) return false;
-    final catDef = _categoryTabsDef[tabIdx];
-    final key = catDef['key'];
-    final pCat = p.category.toLowerCase();
-    final pName = p.name.toLowerCase();
-
-    if (key == 'coffee_ready') {
-      return p.isCoffeeMachineProduct || pCat.contains('قهوة') || pCat.contains('شاي') || pCat.contains('كافيتيريا');
-    }
-    if (key == 'scale') {
-      return p.isWeighted || p.barcode.startsWith('SCALE_') || pName.contains('ميزان') || pName.contains('كغ');
-    }
-    if (key == 'stationery') {
-      return pCat.contains('مدرس') || pCat.contains('مكتب') || pCat.contains('ورق') || pCat.contains('كراس') || pCat.contains('قلم') || pCat.contains('papeterie');
-    }
-    if (key == 'tobacco') {
-      return p.isTobacco || pCat.contains('تبغ') || pCat.contains('سجائر') || pCat.contains('شمة') || pCat.contains('معسل') || pCat.contains('دخان');
-    }
-    if (key == 'beverages') {
-      final isDrink = p.isBeverage || pCat.contains('مشروب') || pCat.contains('ماء') || pCat.contains('عصير') || pCat.contains('غازي') || pCat.contains('فريقو') || pCat.contains('سودا');
-      return isDrink && !p.isCoffeeMachineProduct && !pCat.contains('قهوة') && !pCat.contains('شاي');
-    }
-    if (key == 'dairy') {
-      return pCat.contains('حليب') || pCat.contains('لبن') || pCat.contains('جبن') || pCat.contains('ألبان') || pCat.contains('زبادي') || pCat.contains('yaourt') || pCat.contains('مشتقات');
-    }
-    if (key == 'sweets') {
-      return pCat.contains('حلو') || pCat.contains('سكاكر') || pCat.contains('شيبس') || pCat.contains('شوكولا') || pCat.contains('بسكويت') || pCat.contains('قوفريط') || pCat.contains('confiserie');
-    }
-    if (key == 'cleaning') {
-      return pCat.contains('نظافة') || pCat.contains('تجميل') || pCat.contains('كوسميتيك') || pCat.contains('عطر') || pCat.contains('parfum') || pCat.contains('منظف') || pCat.contains('عناية');
-    }
-    if (key == 'food') {
-      return pCat.contains('غذائ') || pCat.contains('تموين') || pCat.contains('معلب') || pCat.contains('زيت') || pCat.contains('توابل') || pCat.contains('epicerie');
-    }
-    if (key == 'bakery') {
-      return pCat.contains('مخبوز') || pCat.contains('عجائن') || pCat.contains('حبوب') || pCat.contains('خبز') || pCat.contains('boulangerie');
-    }
-    if (key == 'fruits') {
-      return pCat.contains('خضر') || pCat.contains('فواكه') || pCat.contains('لحوم') || pCat.contains('طازج');
-    }
-    if (key == 'other') {
-      return !_productMatchesAnyKnownCategory(p);
-    }
-
-    final arName = (catDef['ar'] ?? '').toLowerCase();
-    final frName = (catDef['fr'] ?? '').toLowerCase();
-    return pCat.contains(arName) || arName.contains(pCat) || pCat.contains(frName) || frName.contains(pCat);
-  }
-
-  bool _productMatchesAnyKnownCategory(Product p) {
-    for (int i = 1; i < _categoryTabsDef.length - 1; i++) {
-      if (_productMatchesTab(p, i)) return true;
-    }
-    return false;
+    if (tabIdx >= _categoryTabs.length) return false;
+    final catName = _categoryTabs[tabIdx];
+    return p.category.trim() == catName.trim();
   }
 
   void _toggleProductSelection(String id) {
@@ -365,6 +302,7 @@ class _ProductListPageState extends State<ProductListPage> {
   @override
   void initState() {
     super.initState();
+    _categoryTabs = ['الكل'] + CategoryTaxonomy.getVisibleHomeScreenCategories();
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -994,7 +932,7 @@ class _ProductListPageState extends State<ProductListPage> {
                   physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                   scrollDirection: Axis.horizontal,
                   padding: EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _categoryTabsDef.length,
+                  itemCount: _categoryTabs.length,
                   separatorBuilder: (_, __) => SizedBox(width: 8),
                   itemBuilder: (ctx, idx) {
                     final catDef = _categoryTabsDef[idx];

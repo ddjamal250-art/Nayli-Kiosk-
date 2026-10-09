@@ -10,6 +10,7 @@ import 'package:pdf/pdf.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/utils/category_taxonomy.dart';
 import '../../../../core/utils/shelf_label_generator.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
@@ -65,6 +66,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
 
   @override
   void initState() {
+    _categoryTabs = ['الكل'] + CategoryTaxonomy.getVisibleHomeScreenCategories();
     super.initState();
     final box = HiveDatabase.settingsBox;
     _customWidthMm = (box.get('shelf_label_custom_width', defaultValue: 50.0) as num).toDouble();
@@ -141,20 +143,7 @@ class _ShelfLabelsPageState extends State<ShelfLabelsPage> {
     context.showAppSnackBar('تمت استعادة ترتيب ومحاذاة عناصر الملصق الافتراضية!');
   }
 
-  static const List<String> _categoryTabs = [
-    'الكل',
-    '⚖️ مواد الميزان',
-    '📚 أدوات مدرسية ومكتبية',
-    '🚬 تبغ وسجائر',
-    'مواد غذائية ومعلبات',
-    'حليب ومشتقاته',
-    'مخبوزات وعجائن',
-    'مشروبات ومياه',
-    'نظافة وتجميل',
-    'حلويات وسكاكر',
-    'خضر وفواكه',
-    'أخرى',
-  ];
+  List<String> _categoryTabs = [];
 
   @override
   void dispose() {
