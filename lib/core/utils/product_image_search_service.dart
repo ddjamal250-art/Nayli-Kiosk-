@@ -84,22 +84,7 @@ class ProductImageSearchService {
       }
     }
 
-    // 3. Bing Image Search by Barcode
-    if (results.length < maxResults && cleanBarcode.isNotEmpty) {
-      try {
-        final bingBarcodeResults = await _searchBingImages(cleanBarcode);
-        for (final r in bingBarcodeResults) {
-          if (!results.any((existing) => existing.url == r.url)) {
-            results.add(r);
-          }
-          if (results.length >= maxResults) break;
-        }
-      } catch (e) {
-        debugPrint('⚠️ Bing barcode search error: $e');
-      }
-    }
-
-    // 4. Bing Image Search by Query (Name / Brand / Keywords)
+    // 3. Bing Image Search by Query (Name / Brand / Keywords)
     if (results.length < maxResults && cleanQuery.isNotEmpty) {
       try {
         final bingQueryResults = await _searchBingImages(cleanQuery);
@@ -114,7 +99,22 @@ class ProductImageSearchService {
       }
     }
 
-    // 5. Open Food Facts (Text search)
+    // 4. Bing Image Search by Barcode (Fallback if Name search is empty, or as an extra fallback)
+    if (results.length < maxResults && cleanBarcode.isNotEmpty) {
+      try {
+        final bingBarcodeResults = await _searchBingImages(cleanBarcode);
+        for (final r in bingBarcodeResults) {
+          if (!results.any((existing) => existing.url == r.url)) {
+            results.add(r);
+          }
+          if (results.length >= maxResults) break;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Bing barcode search error: $e');
+      }
+    }
+
+    // 6. Open Food Facts (Text search)
     if (results.length < maxResults && (cleanQuery.isNotEmpty || cleanBarcode.isNotEmpty)) {
       final term = cleanQuery.isNotEmpty ? cleanQuery : cleanBarcode;
       try {
@@ -130,7 +130,7 @@ class ProductImageSearchService {
       }
     }
 
-    // 6. Wikimedia Commons Image search
+    // 7. Wikimedia Commons Image search
     if (results.length < maxResults && cleanQuery.isNotEmpty) {
       try {
         final commonsResults = await _searchWikimediaCommonsImages(cleanQuery);
@@ -145,7 +145,7 @@ class ProductImageSearchService {
       }
     }
 
-    // 7. Wikipedia Fallback
+    // 8. Wikipedia Fallback
     if (results.length < maxResults && cleanQuery.isNotEmpty) {
       try {
         final wikiResults = await _searchWikimediaImages(cleanQuery);
@@ -173,7 +173,42 @@ class ProductImageSearchService {
     final cleanName = name?.trim() ?? '';
     if (cleanBarcode.isEmpty && cleanName.isEmpty) return null;
 
-    // 1. Instant local Algerian Master Catalog
+    // 0. Search in Local Offline Folder (Hidden Database 500MB)
+    if (cleanBarcode.isNotEmpty) {
+      final possibleExts = ['.jpg', '.png', '.jpeg', '.webp'];
+      
+      // Hidden folder 1: C:\ProgramData\NayliMarket\OfflineImages
+      final programData = Platform.environment['PROGRAMDATA'];
+      if (programData != null) {
+        for (final ext in possibleExts) {
+          final file = File('$programData\\NayliMarket\\OfflineImages\\$cleanBarcode$ext');
+          if (file.existsSync()) {
+            return file.path;
+          }
+        }
+      }
+
+      // Hidden folder 2: Documents/nayli_kiosk_images (Fallback)
+      final userProfile = Platform.environment['USERPROFILE'];
+      if (userProfile != null) {
+        for (final ext in possibleExts) {
+          final file = File('$userProfile\\Documents\\nayli_kiosk_images\\$cleanBarcode$ext');
+          if (file.existsSync()) {
+            return file.path;
+          }
+        }
+        
+        // Developer fallback: Desktop/Nayli Big Catalog/images
+        for (final ext in possibleExts) {
+          final file = File('$userProfile\\Desktop\\Nayli Big Catalog\\images\\$cleanBarcode$ext');
+          if (file.existsSync()) {
+            return file.path;
+          }
+        }
+      }
+    }
+
+    // 1. Instant local Algerian Master Catalog (Database)
     if (cleanBarcode.isNotEmpty) {
       final master = MasterCatalogService.searchByBarcode(cleanBarcode);
       if (master != null && master.imageUrl != null && master.imageUrl!.isNotEmpty) {
@@ -193,20 +228,20 @@ class ProductImageSearchService {
       }
     }
 
-    // 3. Bing Image Search by Barcode
-    if (cleanBarcode.isNotEmpty) {
-      final bingBarcodeList = await _searchBingImages(cleanBarcode);
-      if (bingBarcodeList.isNotEmpty) {
-        final localPath = await downloadAndSaveImageLocally(bingBarcodeList.first.url, barcode: cleanBarcode);
-        if (localPath != null) return localPath;
-      }
-    }
-
-    // 4. Bing Image Search by Name / Brand
+    // 3. Bing Image Search by Name / Brand (Highly Accurate)
     if (cleanName.isNotEmpty) {
       final bingNameList = await _searchBingImages(cleanName);
       if (bingNameList.isNotEmpty) {
         final localPath = await downloadAndSaveImageLocally(bingNameList.first.url, barcode: cleanBarcode.isNotEmpty ? cleanBarcode : 'name');
+        if (localPath != null) return localPath;
+      }
+    }
+
+    // 4. Bing Image Search by Barcode (Fallback for items without a name)
+    if (cleanBarcode.isNotEmpty && cleanName.isEmpty) {
+      final bingBarcodeList = await _searchBingImages(cleanBarcode);
+      if (bingBarcodeList.isNotEmpty) {
+        final localPath = await downloadAndSaveImageLocally(bingBarcodeList.first.url, barcode: cleanBarcode);
         if (localPath != null) return localPath;
       }
     }

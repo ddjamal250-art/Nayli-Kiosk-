@@ -103,7 +103,8 @@ class _AddProductPageState extends State<AddProductPage> {
       if (_nameCtrl.text.trim().isEmpty) {
         _nameCtrl.text = masterMatch.name;
       }
-      if (masterMatch.category != null && masterMatch.category!.isNotEmpty) {
+      // Only set category if they haven't explicitly chosen one yet (default is often 'عام' or first item)
+      if (masterMatch.category != null && masterMatch.category!.isNotEmpty && _selectedCategory == _availableCategories.first) {
         if (_availableCategories.contains(masterMatch.category!)) {
           _selectedCategory = masterMatch.category!;
         }

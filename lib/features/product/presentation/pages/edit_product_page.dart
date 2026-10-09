@@ -180,11 +180,9 @@ class _EditProductPageState extends State<EditProductPage> {
       if (_nameCtrl.text.trim().isEmpty) {
         _nameCtrl.text = masterMatch.name;
       }
-      if (masterMatch.category != null && masterMatch.category!.isNotEmpty) {
-        if (_availableCategories.contains(masterMatch.category!)) {
-          _selectedCategory = masterMatch.category!;
-        }
-      }
+      // Note: We deliberately do NOT overwrite the category during edit 
+      // so the product does not jump to a different tab and seem to 'disappear'.
+      
       if ((_imageUrl == null || _imageUrl!.isEmpty) &&
           masterMatch.imageUrl != null &&
           masterMatch.imageUrl!.isNotEmpty) {
