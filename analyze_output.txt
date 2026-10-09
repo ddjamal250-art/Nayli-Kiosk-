@@ -662,6 +662,12 @@ warning - Unused import: '../../../../core/utils/sound_service.dart' - Nayli Mar
    info - Field overrides a field inherited from 'Shop' - Nayli Market Desktop\lib\features\shop\data\models\shop_model.dart:22:16 - overridden_fields
    info - Field overrides a field inherited from 'Shop' - Nayli Market Desktop\lib\features\shop\data\models\shop_model.dart:25:16 - overridden_fields
    info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\main.dart:64:60 - prefer_const_constructors
+warning - The value of the local variable 'vqd' isn't used - duck_test.dart:10:11 - unused_local_variable
+  error - Unterminated string literal - duck_test.dart:11:114 - unterminated_string_literal
+  error - Expected to find ',' - duck_test.dart:12:5 - expected_token
+  error - Local variable 'req2' can't be referenced before it is declared - duck_test.dart:12:5 - referenced_before_declaration
+  error - Expected to find ')' - duck_test.dart:12:50 - expected_token
+   info - Don't invoke 'print' in production code - duck_test.dart:16:5 - avoid_print
 warning - Unused import: '../../features/billing/presentation/pages/cashier_shifts_page.dart' - lib\config\routes\app_routes.dart:17:8 - unused_import
 warning - Unused import: '../../features/documents/presentation/widgets/receipt_ocr_scanner_dialog.dart' - lib\config\routes\app_routes.dart:43:8 - unused_import
    info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:114:36 - prefer_const_constructors
@@ -1757,21 +1763,17 @@ warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:124:9 - prefer_const_constructors
 warning - Unused import: 'package:intl/intl.dart' - lib\features\product\presentation\pages\add_product_page.dart:5:8 - unused_import
    info - The private field _unitSystemType could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:66:18 - prefer_final_fields
-warning - The operand can't be null, so the condition is always 'true' - lib\features\product\presentation\pages\add_product_page.dart:106:32 - unnecessary_null_comparison
-warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:106:63 - unnecessary_non_null_assertion
+warning - The operand can't be null, so the condition is always 'true' - lib\features\product\presentation\pages\add_product_page.dart:107:32 - unnecessary_null_comparison
 warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:107:63 - unnecessary_non_null_assertion
-warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:108:51 - unnecessary_non_null_assertion
-   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\add_product_page.dart:504:93 - unused_element
-   info - A value for optional parameter 'trailing' isn't ever given - lib\features\product\presentation\pages\add_product_page.dart:504:111 - unused_element
+warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:108:63 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:109:51 - unnecessary_non_null_assertion
+   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\add_product_page.dart:505:93 - unused_element
+   info - A value for optional parameter 'trailing' isn't ever given - lib\features\product\presentation\pages\add_product_page.dart:505:111 - unused_element
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:324:29 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:30 - prefer_const_literals_to_create_immutables
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:31 - prefer_const_constructors
-warning - The operand can't be null, so the condition is always 'true' - lib\features\product\presentation\pages\edit_product_page.dart:183:32 - unnecessary_null_comparison
-warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\edit_product_page.dart:183:63 - unnecessary_non_null_assertion
-warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\edit_product_page.dart:184:63 - unnecessary_non_null_assertion
-warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\edit_product_page.dart:185:51 - unnecessary_non_null_assertion
-   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:727:10 - unused_element
-   info - A value for optional parameter 'trailing' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:728:10 - unused_element
+   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:725:10 - unused_element
+   info - A value for optional parameter 'trailing' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:726:10 - unused_element
 warning - Unused import: 'package:go_router/go_router.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:4:8 - unused_import
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:6:8 - unused_import
 warning - Unused import: '../../domain/entities/product.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:12:8 - unused_import
@@ -2618,7 +2620,7 @@ warning - Unused import: '../../../product/domain/entities/product.dart' - lib\f
    info - Field overrides a field inherited from 'Shop' - lib\features\shop\data\models\shop_model.dart:22:16 - overridden_fields
    info - Field overrides a field inherited from 'Shop' - lib\features\shop\data\models\shop_model.dart:25:16 - overridden_fields
    info - Use 'const' with the constructor to improve performance - lib\main.dart:157:60 - prefer_const_constructors
-   info - Don't invoke 'print' in production code - test.dart:3:3 - avoid_print
+   info - Don't invoke 'print' in production code - test.dart:8:3 - avoid_print
    info - The local variable '_hasPack' starts with an underscore - test_doubling.dart:5:8 - no_leading_underscores_for_local_identifiers
 warning - Dead code - test_doubling.dart:8:68 - dead_code
    info - Don't invoke 'print' in production code - test_doubling.dart:12:3 - avoid_print
