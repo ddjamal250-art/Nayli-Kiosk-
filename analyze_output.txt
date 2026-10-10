@@ -1500,7 +1500,6 @@ warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\
 warning - Unused import: '../../../../core/utils/app_constants.dart' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:8:8 - unused_import
    info - The private field _selectedIds could be 'final' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:105:15 - prefer_final_fields
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:266:39 - prefer_const_constructors
-  error - The named parameter 'tier' isn't defined - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:294:13 - undefined_named_parameter
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:317:37 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:710:16 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:711:21 - prefer_const_literals_to_create_immutables
