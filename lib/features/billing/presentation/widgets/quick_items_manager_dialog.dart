@@ -291,7 +291,7 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
         wholesalePrice: item.price,
         units: [
           ProductUnitModel(
-            tier: UnitTier.small,
+            tierIndex: UnitTier.small.index,
             name: isCoffee ? 'كأس' : 'حبة',
             multiplier: 1.0,
             price: item.price,
