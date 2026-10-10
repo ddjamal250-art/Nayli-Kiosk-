@@ -1498,17 +1498,16 @@ warning - Unused import: 'package:uuid/uuid.dart' - lib\features\billing\present
 warning - Unused import: '../../../../core/localization/app_localizations.dart' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:6:8 - unused_import
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:7:8 - unused_import
 warning - Unused import: '../../../../core/utils/app_constants.dart' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:8:8 - unused_import
-   info - The private field _selectedIds could be 'final' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:103:15 - prefer_final_fields
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:264:39 - prefer_const_constructors
-  error - The method 'ProductUnitModel' isn't defined for the type '_QuickItemsManagerDialogState' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:291:11 - undefined_method
-  error - Undefined name 'UnitTier' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:292:19 - undefined_identifier
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:315:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:708:16 - prefer_const_constructors
-   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:709:21 - prefer_const_literals_to_create_immutables
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:712:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:740:16 - prefer_const_constructors
-   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:741:21 - prefer_const_literals_to_create_immutables
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:846:28 - prefer_const_constructors
+   info - The private field _selectedIds could be 'final' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:105:15 - prefer_final_fields
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:266:39 - prefer_const_constructors
+  error - The named parameter 'tier' isn't defined - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:294:13 - undefined_named_parameter
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:317:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:710:16 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:711:21 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:714:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:742:16 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:743:21 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:848:28 - prefer_const_constructors
 warning - The value of the field '_startTime' isn't used - lib\features\billing\presentation\widgets\session_lock_overlay.dart:30:23 - unused_field
 warning - The value of the field '_currentStockKg' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:31:10 - unused_field
 warning - The value of the local variable 'costPerKg' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:417:11 - unused_local_variable
@@ -1615,24 +1614,21 @@ warning - Unused import: 'package:url_launcher/url_launcher.dart' - lib\features
   error - The getter 'titleAr' isn't defined for the type 'CommercialDocType' - lib\features\documents\data\document_service.dart:95:46 - undefined_getter
   error - The getter 'reference' isn't defined for the type 'CommercialDocument' - lib\features\documents\data\document_service.dart:95:71 - undefined_getter
   error - The named parameter 'isPaid' isn't defined - lib\features\documents\data\document_service.dart:97:7 - undefined_named_parameter
-  error - Undefined class 'DocumentType' - lib\features\documents\presentation\pages\create_edit_document_page.dart:14:9 - undefined_class
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\create_edit_document_page.dart:19:24 - undefined_identifier
-  error - Undefined class 'DocumentType' - lib\features\documents\presentation\pages\create_edit_document_page.dart:27:8 - undefined_class
-  error - The name 'DocumentItem' isn't a type, so it can't be used as a type argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:42:14 - non_type_as_type_argument
-  error - The getter 'reference' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:52:24 - undefined_getter
-  error - The getter 'createdAt' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:53:24 - undefined_getter
-  error - The getter 'clientName' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:55:40 - undefined_getter
-  error - The getter 'clientPhone' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:56:41 - undefined_getter
+warning - The left operand can't be null, so the right operand is never executed - lib\features\documents\presentation\pages\create_edit_document_page.dart:56:56 - dead_null_aware_expression
   error - The getter 'clientAddress' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:57:43 - undefined_getter
   error - The getter 'clientRc' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:58:38 - undefined_getter
   error - The getter 'clientNif' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:59:39 - undefined_getter
   error - The getter 'clientNis' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:60:39 - undefined_getter
   error - The getter 'clientAi' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:61:38 - undefined_getter
   error - The getter 'timbreFiscal' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:63:27 - undefined_getter
-  error - The getter 'isDraft' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\create_edit_document_page.dart:64:22 - undefined_getter
-  error - The property 'totalHt' can't be unconditionally accessed because the receiver can be 'null' - lib\features\documents\presentation\pages\create_edit_document_page.dart:91:63 - unchecked_use_of_nullable_value
-  error - The property 'tvaAmount' can't be unconditionally accessed because the receiver can be 'null' - lib\features\documents\presentation\pages\create_edit_document_page.dart:92:64 - unchecked_use_of_nullable_value
-  error - The method 'DocumentItem' isn't defined for the type '_CreateEditDocumentPageState' - lib\features\documents\presentation\pages\create_edit_document_page.dart:197:34 - undefined_method
+   info - The type of the right operand ('CommercialDocStatus') isn't a subtype or a supertype of the left operand ('CommercialDocument') - lib\features\documents\presentation\pages\create_edit_document_page.dart:64:22 - unrelated_type_equality_checks
+  error - The getter 'totalHt' isn't defined for the type 'CommercialDocItem' - lib\features\documents\presentation\pages\create_edit_document_page.dart:91:63 - undefined_getter
+  error - The getter 'tvaAmount' isn't defined for the type 'CommercialDocItem' - lib\features\documents\presentation\pages\create_edit_document_page.dart:92:64 - undefined_getter
+  error - The named parameter 'id' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:197:34 - missing_required_argument
+  error - The named parameter 'productId' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:197:34 - missing_required_argument
+  error - The named parameter 'unitPrice' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:197:34 - missing_required_argument
+  error - The named parameter 'unitPriceHt' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:201:25 - undefined_named_parameter
+  error - The named parameter 'discountPercent' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:202:25 - undefined_named_parameter
   error - The named parameter 'date' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:274:17 - missing_required_argument
   error - The named parameter 'documentNumber' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:274:17 - missing_required_argument
   error - The named parameter 'entityName' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:274:17 - missing_required_argument
@@ -1647,7 +1643,6 @@ warning - Unused import: 'package:url_launcher/url_launcher.dart' - lib\features
   error - The named parameter 'clientNif' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:286:7 - undefined_named_parameter
   error - The named parameter 'clientNis' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:287:7 - undefined_named_parameter
   error - The named parameter 'clientAi' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:288:7 - undefined_named_parameter
-  error - The named parameter 'timbreFiscal' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:290:7 - undefined_named_parameter
   error - The named parameter 'date' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:318:31 - missing_required_argument
   error - The named parameter 'documentNumber' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:318:31 - missing_required_argument
   error - The named parameter 'entityName' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:318:31 - missing_required_argument
@@ -1661,65 +1656,55 @@ warning - Unused import: 'package:url_launcher/url_launcher.dart' - lib\features
   error - The named parameter 'clientNif' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:327:17 - undefined_named_parameter
   error - The named parameter 'clientNis' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:328:17 - undefined_named_parameter
   error - The named parameter 'clientAi' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:329:17 - undefined_named_parameter
-  error - The named parameter 'timbreFiscal' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:331:17 - undefined_named_parameter
-  error - The name 'DocumentType' isn't a type, so it can't be used as a type argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:361:54 - non_type_as_type_argument
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\create_edit_document_page.dart:368:32 - undefined_identifier
-  error - The method 'DocumentItem' isn't defined for the type '_CreateEditDocumentPageState' - lib\features\documents\presentation\pages\create_edit_document_page.dart:592:57 - undefined_method
-  error - The method 'DocumentItem' isn't defined for the type '_CreateEditDocumentPageState' - lib\features\documents\presentation\pages\create_edit_document_page.dart:615:57 - undefined_method
+  error - The getter 'titleAr' isn't defined for the type 'CommercialDocType' - lib\features\documents\presentation\pages\create_edit_document_page.dart:369:75 - undefined_getter
+  error - The named parameter 'id' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:592:57 - missing_required_argument
+  error - The named parameter 'productId' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:592:57 - missing_required_argument
+  error - The named parameter 'unitPrice' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:592:57 - missing_required_argument
+  error - The named parameter 'unitPriceHt' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:596:43 - undefined_named_parameter
+  error - The getter 'unitPriceHt' isn't defined for the type 'CommercialDocItem' - lib\features\documents\presentation\pages\create_edit_document_page.dart:596:61 - undefined_getter
+  error - The named parameter 'discountPercent' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:597:43 - undefined_named_parameter
+  error - The getter 'discountPercent' isn't defined for the type 'CommercialDocItem' - lib\features\documents\presentation\pages\create_edit_document_page.dart:597:65 - undefined_getter
+  error - The getter 'unitPriceHt' isn't defined for the type 'CommercialDocItem' - lib\features\documents\presentation\pages\create_edit_document_page.dart:609:56 - undefined_getter
+  error - The named parameter 'id' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:615:57 - missing_required_argument
+  error - The named parameter 'productId' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:615:57 - missing_required_argument
+  error - The named parameter 'unitPrice' is required, but there's no corresponding argument - lib\features\documents\presentation\pages\create_edit_document_page.dart:615:57 - missing_required_argument
+  error - The named parameter 'unitPriceHt' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:619:43 - undefined_named_parameter
+  error - The named parameter 'discountPercent' isn't defined - lib\features\documents\presentation\pages\create_edit_document_page.dart:620:43 - undefined_named_parameter
+  error - The getter 'discountPercent' isn't defined for the type 'CommercialDocItem' - lib\features\documents\presentation\pages\create_edit_document_page.dart:620:65 - undefined_getter
+  error - The getter 'netTotal' isn't defined for the type 'CommercialDocItem' - lib\features\documents\presentation\pages\create_edit_document_page.dart:631:55 - undefined_getter
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\documents\presentation\pages\documents_hub_page.dart:8:8 - unused_import
    info - Don't use 'BuildContext's across async gaps - lib\features\documents\presentation\pages\documents_hub_page.dart:175:34 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\documents\presentation\pages\documents_hub_page.dart:178:34 - use_build_context_synchronously
 warning - The value of the local variable 'isDesktop' isn't used - lib\features\documents\presentation\pages\documents_hub_page.dart:515:11 - unused_local_variable
 warning - Unused import: 'package:go_router/go_router.dart' - lib\features\documents\presentation\pages\documents_page.dart:2:8 - unused_import
-  error - The getter 'reference' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:52:15 - undefined_getter
-  error - The getter 'clientName' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:53:15 - undefined_getter
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:58:53 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:59:50 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:60:50 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:61:56 - undefined_identifier
-  error - The getter 'isDraft' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:62:51 - undefined_getter
-   info - The type of the right operand ('String') isn't a subtype or a supertype of the left operand ('CommercialDocStatus') - lib\features\documents\presentation\pages\documents_page.dart:62:73 - unrelated_type_equality_checks
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:63:53 - undefined_identifier
-  error - The getter 'reference' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:77:40 - undefined_getter
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:86:29 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:87:43 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:88:43 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:89:43 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:90:36 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:91:43 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:92:43 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:93:36 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:94:43 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:96:43 - undefined_identifier
-  error - Undefined class 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:107:70 - undefined_class
-  error - The getter 'reference' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:117:96 - undefined_getter
+  error - There's no constant named 'bonDeCommande' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:59:68 - undefined_enum_constant
+  error - There's no constant named 'bonDeLivraison' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:60:68 - undefined_enum_constant
+   info - The type of the right operand ('CommercialDocStatus') isn't a subtype or a supertype of the left operand ('CommercialDocument') - lib\features\documents\presentation\pages\documents_page.dart:62:51 - unrelated_type_equality_checks
+   info - The type of the right operand ('String') isn't a subtype or a supertype of the left operand ('CommercialDocStatus') - lib\features\documents\presentation\pages\documents_page.dart:62:98 - unrelated_type_equality_checks
+  error - There's no constant named 'bonAchat' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:63:71 - undefined_enum_constant
+  error - There's no constant named 'bonDeCommande' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:87:61 - undefined_enum_constant
+  error - There's no constant named 'bonDeLivraison' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:88:61 - undefined_enum_constant
+  error - There's no constant named 'bonDeCommande' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:90:54 - undefined_enum_constant
+  error - There's no constant named 'bonDeLivraison' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:91:61 - undefined_enum_constant
+  error - There's no constant named 'bonDeLivraison' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:93:54 - undefined_enum_constant
+  error - There's no constant named 'bonDeLivraison' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:96:61 - undefined_enum_constant
+  error - The getter 'titleAr' isn't defined for the type 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:117:70 - undefined_getter
   error - The getter 'titleAr' isn't defined for the type 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:128:55 - undefined_getter
-  error - The getter 'reference' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:128:74 - undefined_getter
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:151:61 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:152:58 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:153:58 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:154:59 - undefined_identifier
-  error - The getter 'isDraft' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:155:53 - undefined_getter
-   info - The type of the right operand ('String') isn't a subtype or a supertype of the left operand ('CommercialDocStatus') - lib\features\documents\presentation\pages\documents_page.dart:155:73 - unrelated_type_equality_checks
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:322:21 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:323:21 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:324:21 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:325:21 - undefined_identifier
-  error - Undefined name 'DocumentType' - lib\features\documents\presentation\pages\documents_page.dart:326:21 - undefined_identifier
-  error - The getter 'code' isn't defined for the type 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:345:33 - undefined_getter
+  error - There's no constant named 'bonDeCommande' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:152:76 - undefined_enum_constant
+  error - There's no constant named 'bonDeLivraison' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:153:76 - undefined_enum_constant
+   info - The type of the right operand ('CommercialDocStatus') isn't a subtype or a supertype of the left operand ('CommercialDocument') - lib\features\documents\presentation\pages\documents_page.dart:155:53 - unrelated_type_equality_checks
+   info - The type of the right operand ('String') isn't a subtype or a supertype of the left operand ('CommercialDocStatus') - lib\features\documents\presentation\pages\documents_page.dart:155:98 - unrelated_type_equality_checks
+  error - There's no constant named 'bonDeCommande' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:323:39 - undefined_enum_constant
+  error - There's no constant named 'bonDeLivraison' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:324:39 - undefined_enum_constant
+  error - There's no constant named 'bonAchat' in 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:326:39 - undefined_enum_constant
   error - The getter 'titleAr' isn't defined for the type 'CommercialDocType' - lib\features\documents\presentation\pages\documents_page.dart:346:33 - undefined_getter
-  error - The getter 'reference' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:360:32 - undefined_getter
-  error - The getter 'isDraft' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:365:38 - undefined_getter
-  error - The getter 'isDraft' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:369:31 - undefined_getter
-  error - The getter 'isDraft' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:370:98 - undefined_getter
-  error - The getter 'clientName' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:376:39 - undefined_getter
-  error - The getter 'clientPhone' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:376:57 - undefined_getter
-  error - The getter 'clientPhone' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:376:88 - undefined_getter
-  error - The getter 'createdAt' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:378:78 - undefined_getter
-  error - The getter 'totalTtc' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:391:31 - undefined_getter
-  error - The getter 'clientPhone' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:406:25 - undefined_getter
-  error - The getter 'clientPhone' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:406:52 - undefined_getter
-  error - The getter 'clientPhone' isn't defined for the type 'CommercialDocument' - lib\features\documents\presentation\pages\documents_page.dart:410:102 - undefined_getter
+   info - The type of the right operand ('CommercialDocStatus') isn't a subtype or a supertype of the left operand ('CommercialDocument') - lib\features\documents\presentation\pages\documents_page.dart:365:38 - unrelated_type_equality_checks
+   info - The type of the right operand ('CommercialDocStatus') isn't a subtype or a supertype of the left operand ('CommercialDocument') - lib\features\documents\presentation\pages\documents_page.dart:369:31 - unrelated_type_equality_checks
+   info - The type of the right operand ('CommercialDocStatus') isn't a subtype or a supertype of the left operand ('CommercialDocument') - lib\features\documents\presentation\pages\documents_page.dart:370:98 - unrelated_type_equality_checks
+warning - The operand can't be null, so the condition is always 'true' - lib\features\documents\presentation\pages\documents_page.dart:376:69 - unnecessary_null_comparison
+warning - The operand can't be null, so the condition is always 'true' - lib\features\documents\presentation\pages\documents_page.dart:406:37 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\features\documents\presentation\pages\documents_page.dart:406:63 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\features\documents\presentation\pages\documents_page.dart:410:113 - unnecessary_non_null_assertion
 warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\documents\presentation\widgets\document_editor_dialog.dart:3:8 - unused_import
 warning - Unused import: '../../../../core/data/hive_database.dart' - lib\features\documents\presentation\widgets\document_editor_dialog.dart:6:8 - unused_import
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\documents\presentation\widgets\document_editor_dialog.dart:7:8 - unused_import
