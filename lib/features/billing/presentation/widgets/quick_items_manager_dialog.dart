@@ -12,6 +12,8 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../product/data/models/product_model.dart';
 import '../../../product/domain/entities/product.dart';
+import '../../../product/domain/entities/product_unit.dart';
+import '../../../product/data/models/product_unit_model.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 
 class QuickItemData {
