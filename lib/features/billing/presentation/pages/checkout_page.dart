@@ -151,12 +151,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             final double newStock = (p.stock - item.quantity).toDouble().clamp(0.0, 999999.0);
             await productBox.put(
               item.product.id,
-              ProductModel(
-                id: p.id,
-                name: p.name,
-                barcode: p.barcode,
-                price: p.price,
-                costPrice: p.costPrice,
+              p.copyWith(
                 stock: newStock,
               ),
             );

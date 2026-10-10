@@ -265,19 +265,46 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
       return;
     }
 
-    final nameL = item.name.toLowerCase();
-    final isCoffee = nameL.contains('قهوة') || nameL.contains('شاي') || nameL.contains('كبسول') || nameL.contains('express');
-
-    final productModel = ProductModel(
-      id: item.linkedProductId ?? item.id,
-      name: item.name,
-      barcode: item.barcode,
-      price: item.price,
-      costPrice: item.costPrice,
-      stock: item.stock,
-      category: isCoffee ? 'القهوة الجاهزة' : 'بيع سريع',
-      wholesalePrice: item.price,
-    );
+    final existingProduct = productBox.get(item.linkedProductId ?? item.id);
+    final isCoffee = item.name.toLowerCase().contains('قهوة') || item.name.toLowerCase().contains('شاي') || item.name.toLowerCase().contains('كبسول') || item.name.toLowerCase().contains('express');
+    
+    ProductModel productModel;
+    if (existingProduct != null) {
+      productModel = existingProduct.copyWith(
+        name: item.name,
+        barcode: item.barcode,
+        price: item.price,
+        costPrice: item.costPrice,
+        stock: item.stock,
+      );
+    } else {
+      productModel = ProductModel(
+        id: item.linkedProductId ?? item.id,
+        name: item.name,
+        barcode: item.barcode,
+        price: item.price,
+        costPrice: item.costPrice,
+        stock: item.stock,
+        category: isCoffee ? 'القهوة الجاهزة' : 'بيع سريع',
+        wholesalePrice: item.price,
+        units: [
+          ProductUnitModel(
+            tier: UnitTier.small,
+            name: isCoffee ? 'كأس' : 'حبة',
+            multiplier: 1.0,
+            price: item.price,
+            cost: item.costPrice,
+          )
+        ],
+        stockBatchesModels: [
+          PurchaseBatchModel(
+            costPrice: item.costPrice,
+            remainingQuantity: item.stock,
+            dateAdded: DateTime.now(),
+          )
+        ],
+      );
+    }
 
     productBox.put(productModel.id, productModel);
     CatalogCrowdsourceHelper.silentHarvest(

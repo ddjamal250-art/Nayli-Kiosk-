@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../../../core/data/hive_database.dart';
 import '../../../core/utils/security_pin_helper.dart';
@@ -140,6 +140,12 @@ class ShiftService {
 
   /// حساب حالة الصندوق المباشرة واللحظية للمناوبة بدقة متناهية
   static Future<CashierShift> computeLiveShift(CashierShift shift) async {
+    bool _isTimeInShift(DateTime t) {
+      if (t.isBefore(shift.openedAt) && !t.isAtSameMomentAs(shift.openedAt)) return false;
+      if (shift.closedAt != null && t.isAfter(shift.closedAt!) && !t.isAtSameMomentAs(shift.closedAt!)) return false;
+      return true;
+    }
+
     double cashSales = 0.0;
     double tpeSales = 0.0;
     double creditSales = 0.0;
@@ -153,12 +159,13 @@ class ShiftService {
         if (inv is Map) {
           final invTime = DateTime.tryParse(inv['timestamp']?.toString() ?? '');
           final shiftId = inv['shiftId']?.toString();
+          
           final isThisShift = (shiftId != null && shiftId == shift.id) ||
-              (invTime != null && (invTime.isAfter(shift.openedAt) || invTime.isAtSameMomentAs(shift.openedAt)));
+              (invTime != null && _isTimeInShift(invTime));
 
           final isReturned = inv['isReturned'] == true;
           final returnDate = DateTime.tryParse(inv['returnDate']?.toString() ?? '');
-          final isReturnedInThisShift = isReturned && returnDate != null && (returnDate.isAfter(shift.openedAt) || returnDate.isAtSameMomentAs(shift.openedAt));
+          final isReturnedInThisShift = isReturned && returnDate != null && _isTimeInShift(returnDate);
 
           final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
           final rawPaid = (inv['paidAmount'] as num?)?.toDouble();
@@ -224,7 +231,7 @@ class ShiftService {
     try {
       final movements = await getDrawerMovements();
       for (var m in movements) {
-        if (m.timestamp.isAfter(shift.openedAt) || m.timestamp.isAtSameMomentAs(shift.openedAt)) {
+        if (_isTimeInShift(m.timestamp)) {
           if (m.type == 'in') {
             shiftCashIn += m.amount;
           } else {
@@ -246,7 +253,7 @@ class ShiftService {
           final type = val['type']?.toString().toUpperCase();
           if (type == 'PAYMENT') {
             final ts = DateTime.tryParse(val['timestamp']?.toString() ?? '');
-            if (ts != null && (ts.isAfter(shift.openedAt) || ts.isAtSameMomentAs(shift.openedAt))) {
+            if (ts != null && _isTimeInShift(ts)) {
               shiftDebtCollections += (val['amount'] as num?)?.toDouble() ?? 0.0;
             }
           }
@@ -264,7 +271,7 @@ class ShiftService {
         final exp = expBox.get(key);
         if (exp is Map) {
           final d = DateTime.tryParse(exp['date']?.toString() ?? '');
-          if (d != null && (d.isAfter(shift.openedAt) || d.isAtSameMomentAs(shift.openedAt))) {
+          if (d != null && _isTimeInShift(d)) {
             shiftExpenses += (exp['amount'] as num?)?.toDouble() ?? 0.0;
           }
         }

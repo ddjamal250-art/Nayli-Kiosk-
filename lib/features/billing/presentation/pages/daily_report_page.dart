@@ -170,11 +170,26 @@ class _DailyReportPageState extends State<DailyReportPage> {
     return list;
   }
 
+  bool _isTimestampInSelectedPeriod(DateTime ts) {
+    final now = DateTime.now();
+    final todayStr = DateFormat('yyyy-MM-dd').format(_customDate);
+    final tsStr = DateFormat('yyyy-MM-dd').format(ts);
+
+    if (_selectedPeriod == 0) {
+      return tsStr == todayStr;
+    } else if (_selectedPeriod == 1) {
+      return now.difference(ts).inDays <= 7;
+    } else if (_selectedPeriod == 2) {
+      return now.difference(ts).inDays <= 30;
+    } else if (_selectedPeriod == 3) {
+      return ts.year == now.year && ts.month == now.month;
+    }
+    return true;
+  }
+
   double _getFilteredExpenses() {
     final box = HiveDatabase.expensesBox;
     double total = 0.0;
-    final now = DateTime.now();
-    final todayStr = DateFormat('yyyy-MM-dd').format(_customDate);
 
     for (var key in box.keys) {
       final val = box.get(key);
@@ -184,17 +199,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
         final amount = (map['amount'] as num?)?.toDouble() ?? 0.0;
         if (dateStr == null) continue;
 
-        final expDate = DateTime.tryParse(dateStr) ?? now;
-
-        if (_selectedPeriod == 0) {
-          if (dateStr.startsWith(todayStr)) total += amount;
-        } else if (_selectedPeriod == 1) {
-          if (now.difference(expDate).inDays <= 7) total += amount;
-        } else if (_selectedPeriod == 2) {
-          if (now.difference(expDate).inDays <= 30) total += amount;
-        } else if (_selectedPeriod == 3) {
-          if (expDate.year == now.year && expDate.month == now.month) total += amount;
-        } else {
+        final expDate = DateTime.tryParse(dateStr);
+        if (expDate != null && _isTimestampInSelectedPeriod(expDate)) {
           total += amount;
         }
       }
@@ -209,8 +215,32 @@ class _DailyReportPageState extends State<DailyReportPage> {
       final val = box.get(key);
       if (val is Map) {
         final map = Map<String, dynamic>.from(val);
-        final paid = (map['paidAmount'] as num?)?.toDouble() ?? 0.0;
-        total += paid;
+        final dateStr = map['timestamp']?.toString() ?? map['date']?.toString();
+        final expDate = dateStr != null ? DateTime.tryParse(dateStr) : null;
+        
+        if (expDate != null && _isTimestampInSelectedPeriod(expDate)) {
+          final paid = (map['paidAmount'] as num?)?.toDouble() ?? 0.0;
+          total += paid;
+        }
+      }
+    }
+    return total;
+  }
+
+  double _getCustomerDebtCollections() {
+    final box = HiveDatabase.customerDebtsBox;
+    double total = 0.0;
+    for (var key in box.keys) {
+      final val = box.get(key);
+      if (val is Map) {
+        final type = val['type']?.toString().toUpperCase();
+        if (type == 'PAYMENT') {
+          final dateStr = val['timestamp']?.toString();
+          final expDate = dateStr != null ? DateTime.tryParse(dateStr) : null;
+          if (expDate != null && _isTimestampInSelectedPeriod(expDate)) {
+            total += (val['amount'] as num?)?.toDouble() ?? 0.0;
+          }
+        }
       }
     }
     return total;
@@ -513,25 +543,9 @@ class _DailyReportPageState extends State<DailyReportPage> {
     // Drawer movements calculation for current period
     double totalDrawerIn = 0.0;
     double totalDrawerOut = 0.0;
-    final todayStr = DateFormat('yyyy-MM-dd').format(_customDate);
-    final now = DateTime.now();
 
     for (final m in _drawerMovements) {
-      final mDateStr = DateFormat('yyyy-MM-dd').format(m.timestamp);
-      bool matchesPeriod = false;
-      if (_selectedPeriod == 0) {
-        matchesPeriod = mDateStr == todayStr;
-      } else if (_selectedPeriod == 1) {
-        matchesPeriod = now.difference(m.timestamp).inDays <= 7;
-      } else if (_selectedPeriod == 2) {
-        matchesPeriod = now.difference(m.timestamp).inDays <= 30;
-      } else if (_selectedPeriod == 3) {
-        matchesPeriod = m.timestamp.year == now.year && m.timestamp.month == now.month;
-      } else {
-        matchesPeriod = true;
-      }
-
-      if (matchesPeriod) {
+      if (_isTimestampInSelectedPeriod(m.timestamp)) {
         if (m.type == 'in') {
           totalDrawerIn += m.amount;
         } else {
@@ -540,7 +554,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
       }
     }
 
-    final cashIn = cashSales + totalDrawerIn;
+    final debtCollections = _getCustomerDebtCollections();
+    final cashIn = cashSales + totalDrawerIn + debtCollections;
     final cashOut = expenses + supplierCashOut + totalDrawerOut;
     final netCashFlow = cashIn - cashOut;
 
@@ -1050,6 +1065,22 @@ class _DailyReportPageState extends State<DailyReportPage> {
                           ],
                         ),
                         Text('+${totalDrawerIn.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal, fontSize: 13)),
+                      ],
+                    ),
+                  ],
+                  if (debtCollections > 0) ...[
+                    Divider(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.payments_outlined, color: Colors.teal, size: 16),
+                            const SizedBox(width: 6),
+                            Text(context.tr('تحصيلات ديون الزبائن:'), style: const TextStyle(fontSize: 11.5)),
+                          ],
+                        ),
+                        Text('+${debtCollections.toStringAsFixed(0)} دج', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal, fontSize: 13)),
                       ],
                     ),
                   ],
