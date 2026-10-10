@@ -49,18 +49,18 @@ class _DocumentsPageState extends State<DocumentsPage> {
     return _allDocuments.where((doc) {
       final query = _searchController.text.trim().toLowerCase();
       final matchesQuery = query.isEmpty ||
-          doc.reference.toLowerCase().contains(query) ||
-          doc.clientName.toLowerCase().contains(query);
+          doc.documentNumber.toLowerCase().contains(query) ||
+          doc.entityName.toLowerCase().contains(query);
 
       if (!matchesQuery) return false;
 
       if (_selectedFilter == 'الكل') return true;
-      if (_selectedFilter == 'Devis' && doc.type == DocumentType.devis) return true;
-      if (_selectedFilter == 'BC' && doc.type == DocumentType.bonDeCommande) return true;
-      if (_selectedFilter == 'BL' && doc.type == DocumentType.bonDeLivraison) return true;
-      if (_selectedFilter == 'Factures' && doc.type == DocumentType.facture) return true;
-      if (_selectedFilter == 'Brouillons' && (doc.isDraft || doc.status == 'brouillon')) return true;
-      if (_selectedFilter == 'Achat' && doc.type == DocumentType.bonAchat) return true;
+      if (_selectedFilter == 'Devis' && doc.type == CommercialDocType.devis) return true;
+      if (_selectedFilter == 'BC' && doc.type == CommercialDocType.bonDeCommande) return true;
+      if (_selectedFilter == 'BL' && doc.type == CommercialDocType.bonDeLivraison) return true;
+      if (_selectedFilter == 'Factures' && doc.type == CommercialDocType.facture) return true;
+      if (_selectedFilter == 'Brouillons' && (doc == CommercialDocStatus.enAttente || doc.status == 'brouillon')) return true;
+      if (_selectedFilter == 'Achat' && doc.type == CommercialDocType.bonAchat) return true;
       return false;
     }).toList();
   }
@@ -74,7 +74,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
           children: [
             const Icon(Icons.transform_rounded, color: Colors.teal, size: 28),
             const SizedBox(width: 8),
-            Text('تحويل المستند: ${doc.reference}'),
+            Text('تحويل المستند: ${doc.documentNumber}'),
           ],
         ),
         content: Column(
@@ -83,17 +83,17 @@ class _DocumentsPageState extends State<DocumentsPage> {
           children: [
             const Text('اختر نوع المستند المستهدف للتحويل إليه:'),
             const SizedBox(height: 12),
-            if (doc.type == DocumentType.devis) ...[
-              _buildConvertTile(ctx, doc, DocumentType.bonDeCommande, 'تحويل إلى طلبية زبون'),
-              _buildConvertTile(ctx, doc, DocumentType.bonDeLivraison, 'تحويل إلى وصل تسليم السلع'),
-              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة بيع رسمية'),
-            ] else if (doc.type == DocumentType.bonDeCommande) ...[
-              _buildConvertTile(ctx, doc, DocumentType.bonDeLivraison, 'تحويل إلى وصل تسليم السلع'),
-              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة بيع رسمية'),
-            ] else if (doc.type == DocumentType.bonDeLivraison) ...[
-              _buildConvertTile(ctx, doc, DocumentType.facture, 'تحويل إلى فاتورة بيع رسمية'),
+            if (doc.type == CommercialDocType.devis) ...[
+              _buildConvertTile(ctx, doc, CommercialDocType.bonDeCommande, 'تحويل إلى طلبية زبون'),
+              _buildConvertTile(ctx, doc, CommercialDocType.bonDeLivraison, 'تحويل إلى وصل تسليم السلع'),
+              _buildConvertTile(ctx, doc, CommercialDocType.facture, 'تحويل إلى فاتورة بيع رسمية'),
+            ] else if (doc.type == CommercialDocType.bonDeCommande) ...[
+              _buildConvertTile(ctx, doc, CommercialDocType.bonDeLivraison, 'تحويل إلى وصل تسليم السلع'),
+              _buildConvertTile(ctx, doc, CommercialDocType.facture, 'تحويل إلى فاتورة بيع رسمية'),
+            ] else if (doc.type == CommercialDocType.bonDeLivraison) ...[
+              _buildConvertTile(ctx, doc, CommercialDocType.facture, 'تحويل إلى فاتورة بيع رسمية'),
             ] else ...[
-              _buildConvertTile(ctx, doc, DocumentType.bonDeLivraison, 'استخراج وصل تسليم مكرر'),
+              _buildConvertTile(ctx, doc, CommercialDocType.bonDeLivraison, 'استخراج وصل تسليم مكرر'),
             ],
           ],
         ),
@@ -104,7 +104,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     );
   }
 
-  Widget _buildConvertTile(BuildContext ctx, CommercialDocument doc, DocumentType targetType, String label) {
+  Widget _buildConvertTile(BuildContext ctx, CommercialDocument doc, CommercialDocType targetType, String label) {
     return ListTile(
       leading: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.teal),
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -114,7 +114,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         await _loadDocuments();
         SoundService.playSaveSuccess();
         if (mounted) {
-          SnackbarHelper.showSuccess(context, 'تم إنشاء ${targetType.titleAr} برقم ${converted.reference} بنجاح!');
+          SnackbarHelper.showSuccess(context, 'تم إنشاء ${targetType.titleAr} برقم ${converted.documentNumber} بنجاح!');
         }
       },
     );
@@ -125,7 +125,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('حذف المستند'),
-        content: Text('هل أنت متأكد من حذف ${doc.type.titleAr} رقم ${doc.reference} نهائياً؟'),
+        content: Text('هل أنت متأكد من حذف ${doc.type.titleAr} رقم ${doc.documentNumber} نهائياً؟'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           ElevatedButton(
@@ -148,11 +148,11 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final devisCount = _allDocuments.where((d) => d.type == DocumentType.devis).length;
-    final bcCount = _allDocuments.where((d) => d.type == DocumentType.bonDeCommande).length;
-    final blCount = _allDocuments.where((d) => d.type == DocumentType.bonDeLivraison).length;
-    final facCount = _allDocuments.where((d) => d.type == DocumentType.facture).length;
-    final draftCount = _allDocuments.where((d) => d.isDraft || d.status == 'brouillon').length;
+    final devisCount = _allDocuments.where((d) => d.type == CommercialDocType.devis).length;
+    final bcCount = _allDocuments.where((d) => d.type == CommercialDocType.bonDeCommande).length;
+    final blCount = _allDocuments.where((d) => d.type == CommercialDocType.bonDeLivraison).length;
+    final facCount = _allDocuments.where((d) => d.type == CommercialDocType.facture).length;
+    final draftCount = _allDocuments.where((d) => d == CommercialDocStatus.enAttente || d.status == 'brouillon').length;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -319,11 +319,11 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   Widget _buildDocumentCard(CommercialDocument doc) {
     Color typeColor = Colors.teal;
-    if (doc.type == DocumentType.devis) typeColor = Colors.indigo;
-    if (doc.type == DocumentType.bonDeCommande) typeColor = Colors.orange;
-    if (doc.type == DocumentType.bonDeLivraison) typeColor = Colors.teal;
-    if (doc.type == DocumentType.facture) typeColor = Colors.green;
-    if (doc.type == DocumentType.bonAchat) typeColor = Colors.purple;
+    if (doc.type == CommercialDocType.devis) typeColor = Colors.indigo;
+    if (doc.type == CommercialDocType.bonDeCommande) typeColor = Colors.orange;
+    if (doc.type == CommercialDocType.bonDeLivraison) typeColor = Colors.teal;
+    if (doc.type == CommercialDocType.facture) typeColor = Colors.green;
+    if (doc.type == CommercialDocType.bonAchat) typeColor = Colors.purple;
 
     return Card(
       elevation: 1,
@@ -342,7 +342,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
               ),
               child: Column(
                 children: [
-                  Text(doc.type.code, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: typeColor)),
+                  Text(doc.type.name, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: typeColor)),
                   Text(doc.type.titleAr.split(' ').first, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: typeColor)),
                 ],
               ),
@@ -357,25 +357,25 @@ class _DocumentsPageState extends State<DocumentsPage> {
                 children: [
                   Row(
                     children: [
-                      Text(doc.reference, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text(doc.documentNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: doc.isDraft ? Colors.grey.shade200 : Colors.green.shade50,
+                          color: doc == CommercialDocStatus.enAttente ? Colors.grey.shade200 : Colors.green.shade50,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          doc.isDraft ? 'مسودة غير مؤكدة' : 'مؤكدة ومعتمدة',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: doc.isDraft ? Colors.grey.shade700 : Colors.green.shade800),
+                          doc == CommercialDocStatus.enAttente ? 'مسودة غير مؤكدة' : 'مؤكدة ومعتمدة',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: doc == CommercialDocStatus.enAttente ? Colors.grey.shade700 : Colors.green.shade800),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text('العميل: ${doc.clientName} ${doc.clientPhone != null ? "• ${doc.clientPhone}" : ""}',
+                  Text('العميل: ${doc.entityName} ${doc.entityPhone != null ? "• ${doc.entityPhone}" : ""}',
                       style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563), fontWeight: FontWeight.w500)),
-                  Text('التاريخ: ${DateFormat('yyyy/MM/dd HH:mm').format(doc.createdAt)} • المواد: ${doc.items.length}',
+                  Text('التاريخ: ${DateFormat('yyyy/MM/dd HH:mm').format(doc.date)} • المواد: ${doc.items.length}',
                       style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
@@ -388,7 +388,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   const Text('المبلغ الإجمالي TTC', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                  Text('${doc.totalTtc.toStringAsFixed(2)} د.ج',
+                  Text('${doc.netTotal.toStringAsFixed(2)} د.ج',
                       style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.teal)),
                 ],
               ),
@@ -403,11 +403,11 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   icon: const Icon(Icons.print_rounded, color: Colors.teal),
                   onPressed: () => DocumentPdfGenerator.printDocument(doc),
                 ),
-                if (doc.clientPhone != null && doc.clientPhone!.isNotEmpty)
+                if (doc.entityPhone != null && doc.entityPhone!.isNotEmpty)
                   IconButton(
                     tooltip: 'إرسال عبر واتساب',
                     icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.green),
-                    onPressed: () => DocumentPdfGenerator.sendViaWhatsApp(doc: doc, phoneNumber: doc.clientPhone!),
+                    onPressed: () => DocumentPdfGenerator.sendViaWhatsApp(doc: doc, phoneNumber: doc.entityPhone!),
                   ),
                 IconButton(
                   tooltip: 'تحويل المستند',

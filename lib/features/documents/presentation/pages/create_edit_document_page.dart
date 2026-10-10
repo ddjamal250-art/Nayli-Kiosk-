@@ -11,12 +11,12 @@ import '../../domain/entities/commercial_document.dart';
 
 class CreateEditDocumentPage extends StatefulWidget {
   final CommercialDocument? initialDocument;
-  final DocumentType defaultType;
+  final CommercialDocType defaultType;
 
   const CreateEditDocumentPage({
     super.key,
     this.initialDocument,
-    this.defaultType = DocumentType.facture,
+    this.defaultType = CommercialDocType.facture,
   });
 
   @override
@@ -24,7 +24,7 @@ class CreateEditDocumentPage extends StatefulWidget {
 }
 
 class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
-  late DocumentType _type;
+  late CommercialDocType _type;
   String _reference = 'جاري التوليد...';
   DateTime _createdAt = DateTime.now();
   DateTime? _dueDate;
@@ -39,7 +39,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
   final TextEditingController _clientAiController = TextEditingController();
 
   final TextEditingController _notesController = TextEditingController();
-  final List<DocumentItem> _items = [];
+  final List<CommercialDocItem> _items = [];
   double _timbreFiscal = 0.0;
   bool _isDraft = false;
 
@@ -49,11 +49,11 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
     _type = widget.initialDocument?.type ?? widget.defaultType;
     if (widget.initialDocument != null) {
       final doc = widget.initialDocument!;
-      _reference = doc.reference;
-      _createdAt = doc.createdAt;
+      _reference = doc.documentNumber;
+      _createdAt = doc.date;
       _dueDate = doc.dueDate;
-      _clientNameController.text = doc.clientName;
-      _clientPhoneController.text = doc.clientPhone ?? '';
+      _clientNameController.text = doc.entityName;
+      _clientPhoneController.text = doc.entityPhone ?? '';
       _clientAddressController.text = doc.clientAddress ?? '';
       _clientRcController.text = doc.clientRc ?? '';
       _clientNifController.text = doc.clientNif ?? '';
@@ -61,7 +61,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
       _clientAiController.text = doc.clientAi ?? '';
       _notesController.text = doc.notes ?? '';
       _timbreFiscal = doc.timbreFiscal;
-      _isDraft = doc.isDraft;
+      _isDraft = doc == CommercialDocStatus.enAttente;
       _items.addAll(doc.items);
     } else {
       _generateRef();
@@ -194,7 +194,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
                   final addedProducts = allProducts.where((p) => selectedBarcodes.contains(p.barcode)).toList();
                   setState(() {
                     for (var p in addedProducts) {
-                      _items.add(DocumentItem(
+                      _items.add(CommercialDocItem(
                         barcode: p.barcode,
                         designation: p.name,
                         quantity: 1.0,
@@ -287,7 +287,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
       clientNis: _clientNisController.text.trim(),
       clientAi: _clientAiController.text.trim(),
       items: List.from(_items),
-      timbreFiscal: _timbreFiscal,
+      
       notes: _notesController.text.trim(),
     );
 
@@ -328,7 +328,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
                 clientNis: _clientNisController.text.trim(),
                 clientAi: _clientAiController.text.trim(),
                 items: List.from(_items),
-                timbreFiscal: _timbreFiscal,
+                
                 notes: _notesController.text.trim(),
               );
               DocumentPdfGenerator.printDocument(tempDoc);
@@ -358,14 +358,14 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
                   children: [
                     // Document Type Selector
                     Expanded(
-                      child: DropdownButtonFormField<DocumentType>(
+                      child: DropdownButtonFormField<CommercialDocType>(
                         value: _type,
                         decoration: const InputDecoration(
                           labelText: 'نوع المستند',
                           border: OutlineInputBorder(),
                           isDense: true,
                         ),
-                        items: DocumentType.values.map((t) {
+                        items: CommercialDocType.values.map((t) {
                           return DropdownMenuItem(value: t, child: Text(t.titleAr));
                         }).toList(),
                         onChanged: (val) {
@@ -589,7 +589,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
                                     onChanged: (val) {
                                       final q = double.tryParse(val) ?? 1.0;
                                       setState(() {
-                                        _items[index] = DocumentItem(
+                                        _items[index] = CommercialDocItem(
                                           barcode: item.barcode,
                                           designation: item.designation,
                                           quantity: q,
@@ -612,7 +612,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
                                     onChanged: (val) {
                                       final p = double.tryParse(val) ?? 0.0;
                                       setState(() {
-                                        _items[index] = DocumentItem(
+                                        _items[index] = CommercialDocItem(
                                           barcode: item.barcode,
                                           designation: item.designation,
                                           quantity: item.quantity,
@@ -628,7 +628,7 @@ class _CreateEditDocumentPageState extends State<CreateEditDocumentPage> {
                                 // Total TTC
                                 SizedBox(
                                   width: 130,
-                                  child: Text('${item.totalTtc.toStringAsFixed(2)} د.ج TTC',
+                                  child: Text('${item.netTotal.toStringAsFixed(2)} د.ج TTC',
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal)),
                                 ),
                                 IconButton(
