@@ -44,6 +44,7 @@ import '../../domain/entities/held_cart.dart';
 import '../bloc/billing_bloc.dart';
 import '../widgets/held_carts_modal.dart';
 import '../widgets/quick_items_manager_dialog.dart';
+import '../widgets/quick_item_add_edit_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
@@ -1818,167 +1819,22 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   void _showQuickCustomItemModal() {
     SoundService.playTabSwitch();
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    final costController = TextEditingController(text: '0.0');
-    final qtyController = TextEditingController(text: '1');
-    bool saveToInventory = false;
-
-    showDialog(
+    showDialog<ProductModel>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Row(
-              children: [
-                const Icon(Icons.add_shopping_cart_rounded, color: Colors.teal, size: 28),
-                const SizedBox(width: 8),
-                Text(context.tr('quick_item_no_barcode')),
-              ],
-            ),
-            content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.9,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: context.tr('item_name'),
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: priceController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            labelText: context.tr('item_price'),
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: costController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            labelText: 'التكلفة', // Cost price field
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: qtyController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            labelText: context.tr('quantity'),
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    title: const Text('تخزين في المخزون الدائم', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('إذا تم تفعيله، سيتم حفظ هذا المنتج للرجوع إليه مستقبلاً.'),
-                    value: saveToInventory,
-                    onChanged: (val) {
-                      setState(() {
-                        saveToInventory = val;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-                onPressed: () async {
-                  final name = nameController.text.trim().isEmpty ? 'Article' : nameController.text.trim();
-                  final price = double.tryParse(priceController.text.trim()) ?? 0.0;
-                  final cost = double.tryParse(costController.text.trim()) ?? 0.0;
-                  final qty = int.tryParse(qtyController.text.trim()) ?? 1;
-    
-                  if (price <= 0) {
-                    SnackbarHelper.showWarning(context, context.tr('enter_valid_amount'));
-                    return;
-                  }
-                  
-                  final newBarcode = 'QUICK_${DateTime.now().millisecondsSinceEpoch}';
-                  
-                  Product customProduct;
-                  if (saveToInventory) {
-                    final unit = ProductUnitModel(
-                      name: 'حبة',
-                      multiplier: 1.0,
-                      price: price,
-                      cost: cost,
-                      isEnabled: true,
-                      tierIndex: UnitTier.small.index,
-                    );
-                    
-                    final batch = PurchaseBatchModel(
-                      batchId: 'BATCH_$newBarcode',
-                      costPrice: cost,
-                      quantity: 999.0,
-                      receivedAt: DateTime.now(),
-                    );
-                    
-                    final newProduct = ProductModel(
-                      id: newBarcode,
-                      name: name,
-                      barcode: newBarcode,
-                      price: price,
-                      costPrice: cost,
-                      stock: 999,
-                      category: 'سلعة حرة (Express)',
-                      units: [unit],
-                      purchaseBatches: [batch],
-                    );
-                    
-                    await HiveDatabase.productBox.put(newBarcode, newProduct);
-                    customProduct = newProduct;
-                    SnackbarHelper.showSuccess(context, 'تم حفظ السلعة في المخزون!');
-                  } else {
-                    customProduct = Product(
-                      id: newBarcode,
-                      name: name,
-                      barcode: newBarcode,
-                      price: _isReturnMode ? -price : price,
-                      costPrice: cost,
-                      stock: 999,
-                    );
-                  }
-    
-                  for (int i = 0; i < qty; i++) {
-                    context.read<BillingBloc>().add(AddProductToCartEvent(customProduct));
-                  }
-    
-                  Navigator.pop(ctx);
-                  _onItemScanned();
-                  _barcodeFocusNode.requestFocus();
-                },
-                child: Text(context.tr('save_and_add_cart'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          );
+      builder: (ctx) => QuickItemAddEditDialog(
+        addToCartOnSave: true,
+        onSaved: (item, product) {
+          setState(() {});
+          _onItemScanned();
+          _barcodeFocusNode.requestFocus();
         },
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {});
+        _barcodeFocusNode.requestFocus();
+      }
+    });
   }
 
   void _showRemoteCartsQueueModal() {
@@ -4412,15 +4268,39 @@ $itemsSummary
                     fgColor = Colors.white;
                   }
 
-                  return Container(
-                    margin: const EdgeInsets.only(right: 6, left: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.white24),
+                  return InkWell(
+                    onTap: () {
+                      if (text.startsWith('F7:')) {
+                        _showQuickCustomItemModal();
+                      } else if (text.startsWith('F1:')) {
+                        _confirmClearCart();
+                      } else if (text.startsWith('F2:')) {
+                        _holdCurrentCart();
+                      } else if (text.startsWith('F4:')) {
+                        _showDiscountModal();
+                      } else if (text.startsWith('F5:')) {
+                        _cyclePriceTier();
+                      } else if (text.startsWith('F6:')) {
+                        _toggleReturnMode();
+                      } else if (text.startsWith('F8:')) {
+                        _openSmartScaleModal();
+                      } else if (text.startsWith('F9:')) {
+                        _showRemoteCartsQueueModal();
+                      } else if (text.startsWith('F12:')) {
+                        _triggerCheckout();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(4),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 6, left: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Text(text, style: TextStyle(color: fgColor, fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
-                    child: Text(text, style: TextStyle(color: fgColor, fontSize: 11, fontWeight: FontWeight.bold)),
                   );
                 }).toList(),
               ),

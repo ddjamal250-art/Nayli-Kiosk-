@@ -1,3 +1,4 @@
+import 'quick_item_add_edit_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
@@ -197,205 +198,18 @@ class _QuickItemsManagerDialogState extends State<QuickItemsManagerDialog> {
 
   void _showAddEditModal({QuickItemData? existingItem}) {
     SoundService.playTabSwitch();
-    final nameController = TextEditingController(text: existingItem?.name ?? '');
-    final priceController = TextEditingController(text: existingItem != null ? existingItem.price.toStringAsFixed(2) : '');
-    final costController = TextEditingController(text: existingItem != null ? existingItem.costPrice.toStringAsFixed(2) : '');
-    final stockController = TextEditingController(text: existingItem != null ? existingItem.stock.toString() : '50');
-    final barcodeController = TextEditingController(text: existingItem?.barcode ?? BarcodeGeneratorHelper.generateUniqueInStoreEan13());
-    final shortCodeController = TextEditingController(text: existingItem?.shortCode ?? BarcodeGeneratorHelper.generateNextShortSku());
-    String selectedEmoji = existingItem?.icon ?? '🥖';
-
-    showDialog(
+    showDialog<ProductModel>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                Icon(existingItem != null ? Icons.edit_note_rounded : Icons.add_circle_outline, color: Colors.teal, size: 28),
-                const SizedBox(width: 8),
-                Text(existingItem != null ? 'تعديل منتج البيع السريع' : 'إضافة منتج بيع سريع جديد', style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            content: SizedBox(
-              width: 500,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Emoji Selector Row
-                    const Text('اختر أيقونة السلعة (الإيموجي):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      height: 50,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _popularEmojis.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 6),
-                        itemBuilder: (context, i) {
-                          final em = _popularEmojis[i];
-                          final isSelected = selectedEmoji == em;
-                          return InkWell(
-                            onTap: () => setModalState(() => selectedEmoji = em),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: isSelected ? Colors.teal.shade100 : Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: isSelected ? Colors.teal : Colors.grey.shade300, width: isSelected ? 2 : 1),
-                              ),
-                              child: Text(em, style: const TextStyle(fontSize: 22)),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Name
-                    TextField(
-                      controller: nameController,
-                      autofocus: existingItem == null,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم السلعة (مثلاً: خبز تقليدي / شخشوخة / بيض) *',
-                        border: OutlineInputBorder(),
-                        isDense: true,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Prices Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: priceController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'سعر البيع (د.ج) *',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: costController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'سعر الشراء / التكلفة (د.ج)',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Stock & Shortcode Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: stockController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'المخزون الحالي (القطع)',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: shortCodeController,
-                            decoration: const InputDecoration(
-                              labelText: 'الرمز السريع بالكيبورد (مثلاً 1 للخبز)',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Barcode field
-                    TextField(
-                      controller: barcodeController,
-                      decoration: InputDecoration(
-                        labelText: 'الباركود الداخلي المولد (EAN-13)',
-                        border: const OutlineInputBorder(),
-                        isDense: true,
-                        suffixIcon: IconButton(
-                          tooltip: 'توليد باركود داخلي جديد',
-                          icon: const Icon(Icons.refresh, color: Colors.teal),
-                          onPressed: () {
-                            setModalState(() {
-                              barcodeController.text = BarcodeGeneratorHelper.generateUniqueInStoreEan13();
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-                icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-                label: const Text('حفظ وربط بالمخزون', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  final name = nameController.text.trim();
-                  final price = double.tryParse(priceController.text.trim()) ?? 0.0;
-                  final cost = double.tryParse(costController.text.trim()) ?? 0.0;
-                  final stock = int.tryParse(stockController.text.trim()) ?? 0;
-                  final barcode = barcodeController.text.trim();
-                  final shortCode = shortCodeController.text.trim();
-
-                  if (name.isEmpty || price <= 0 || barcode.isEmpty) {
-                    SnackbarHelper.showWarning(context, 'يرجى إدخال اسم السلعة وسعر بيع صحيح');
-                    return;
-                  }
-
-                  final newItem = QuickItemData(
-                    id: existingItem?.id ?? 'quick_${DateTime.now().millisecondsSinceEpoch}',
-                    name: name,
-                    price: price,
-                    costPrice: cost,
-                    icon: selectedEmoji,
-                    barcode: barcode,
-                    shortCode: shortCode,
-                    stock: stock,
-                    orderIndex: existingItem?.orderIndex ?? _items.length,
-                  );
-
-                  final box = HiveDatabase.quickItemsBox;
-                  box.put(newItem.id, newItem.toMap());
-                  _syncWithProductBox(newItem);
-
-                  Navigator.pop(ctx);
-                  _loadQuickItems();
-                  SoundService.playSaveSuccess();
-                  SnackbarHelper.showSuccess(context, 'تم حفظ "$name" ومزامنته مع المخزون العام!');
-                },
-              ),
-            ],
-          );
+      builder: (ctx) => QuickItemAddEditDialog(
+        existingItem: existingItem,
+        addToCartOnSave: false,
+        onSaved: (item, product) {
+          _loadQuickItems();
         },
       ),
-    );
+    ).then((_) {
+      if (mounted) _loadQuickItems();
+    });
   }
 
   void _deleteItem(QuickItemData item) {

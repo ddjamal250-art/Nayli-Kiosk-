@@ -33,6 +33,7 @@ import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
 import '../widgets/held_carts_modal.dart';
 import '../widgets/quick_items_manager_dialog.dart';
+import '../widgets/quick_item_add_edit_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
@@ -573,102 +574,22 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   void _showQuickCustomItemModal() {
     SoundService.playTabSwitch();
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    final qtyController = TextEditingController(text: '1');
-
-    showDialog(
+    showDialog<ProductModel>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.add_shopping_cart_rounded, color: Colors.teal, size: 28),
-            const SizedBox(width: 8),
-            Text(context.tr('quick_item_no_barcode')),
-          ],
-        ),
-        content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.9,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: context.tr('item_name'),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: priceController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: context.tr('item_price'),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: qtyController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: context.tr('quantity'),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-            onPressed: () {
-              final name = nameController.text.trim().isEmpty ? 'Article' : nameController.text.trim();
-              final price = double.tryParse(priceController.text.trim()) ?? 0.0;
-              final qty = int.tryParse(qtyController.text.trim()) ?? 1;
-
-              if (price <= 0) {
-                SnackbarHelper.showWarning(context, context.tr('enter_valid_amount'));
-                return;
-              }
-
-              final customProduct = Product(
-                id: 'quick_${DateTime.now().millisecondsSinceEpoch}',
-                name: name,
-                barcode: 'QUICK_${DateTime.now().millisecondsSinceEpoch}',
-                price: _isReturnMode ? -price : price,
-                costPrice: 0.0,
-                stock: 999,
-              );
-
-              for (int i = 0; i < qty; i++) {
-                context.read<BillingBloc>().add(AddProductToCartEvent(customProduct));
-              }
-
-              Navigator.pop(ctx);
-              _onItemScanned();
-              _barcodeFocusNode.requestFocus();
-            },
-            child: Text(context.tr('save_and_add_cart'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
+      builder: (ctx) => QuickItemAddEditDialog(
+        addToCartOnSave: true,
+        onSaved: (item, product) {
+          setState(() {});
+          _onItemScanned();
+          _barcodeFocusNode.requestFocus();
+        },
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {});
+        _barcodeFocusNode.requestFocus();
+      }
+    });
   }
 
   void _showRemoteCartsQueueModal() {
@@ -2452,6 +2373,7 @@ import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
 import '../widgets/held_carts_modal.dart';
 import '../widgets/quick_items_manager_dialog.dart';
+import '../widgets/quick_item_add_edit_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
@@ -2992,102 +2914,22 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
   void _showQuickCustomItemModal() {
     SoundService.playTabSwitch();
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    final qtyController = TextEditingController(text: '1');
-
-    showDialog(
+    showDialog<ProductModel>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.add_shopping_cart_rounded, color: Colors.teal, size: 28),
-            const SizedBox(width: 8),
-            Text(context.tr('quick_item_no_barcode')),
-          ],
-        ),
-        content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.9,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: context.tr('item_name'),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: priceController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: context.tr('item_price'),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: qtyController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: context.tr('quantity'),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-            onPressed: () {
-              final name = nameController.text.trim().isEmpty ? 'Article' : nameController.text.trim();
-              final price = double.tryParse(priceController.text.trim()) ?? 0.0;
-              final qty = int.tryParse(qtyController.text.trim()) ?? 1;
-
-              if (price <= 0) {
-                SnackbarHelper.showWarning(context, context.tr('enter_valid_amount'));
-                return;
-              }
-
-              final customProduct = Product(
-                id: 'quick_${DateTime.now().millisecondsSinceEpoch}',
-                name: name,
-                barcode: 'QUICK_${DateTime.now().millisecondsSinceEpoch}',
-                price: _isReturnMode ? -price : price,
-                costPrice: 0.0,
-                stock: 999,
-              );
-
-              for (int i = 0; i < qty; i++) {
-                context.read<BillingBloc>().add(AddProductToCartEvent(customProduct));
-              }
-
-              Navigator.pop(ctx);
-              _onItemScanned();
-              _barcodeFocusNode.requestFocus();
-            },
-            child: Text(context.tr('save_and_add_cart'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
+      builder: (ctx) => QuickItemAddEditDialog(
+        addToCartOnSave: true,
+        onSaved: (item, product) {
+          setState(() {});
+          _onItemScanned();
+          _barcodeFocusNode.requestFocus();
+        },
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {});
+        _barcodeFocusNode.requestFocus();
+      }
+    });
   }
 
   void _showRemoteCartsQueueModal() {

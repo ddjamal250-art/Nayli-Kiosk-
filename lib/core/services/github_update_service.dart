@@ -317,7 +317,7 @@ class GitHubUpdateService {
       final publishedAt = publishedAtStr != null ? DateTime.tryParse(publishedAtStr) : null;
       final isPrerelease = data['prerelease'] == true;
 
-      // مطابقة الملف المناسب لنظام التشغيل الحالي
+      // مطابقة الملف المناسب لنظام التشغيل الحالي مع التحقق الصارم من أنه يخص Nayli Kiosk حصراً
       final assets = (data['assets'] as List<dynamic>?) ?? [];
       String downloadUrl = '';
       String assetName = '';
@@ -326,9 +326,16 @@ class GitHubUpdateService {
       if (Platform.isWindows) {
         for (final a in assets) {
           final name = (a['name'] ?? '').toString();
-          if (name.toLowerCase().endsWith('.exe')) {
+          final lowerName = name.toLowerCase();
+          final urlStr = (a['browser_download_url'] ?? '').toString();
+          final lowerUrl = urlStr.toLowerCase();
+          if (lowerName.endsWith('.exe') &&
+              lowerName.contains('kiosk') &&
+              !lowerName.contains('fashion') &&
+              lowerUrl.contains('/nayli-kiosk-') &&
+              !lowerUrl.contains('nayli-fashion')) {
             assetName = name;
-            downloadUrl = a['browser_download_url']?.toString() ?? '';
+            downloadUrl = urlStr;
             sizeBytes = (a['size'] as num?)?.toInt() ?? 0;
             break;
           }
@@ -336,9 +343,16 @@ class GitHubUpdateService {
       } else if (Platform.isAndroid) {
         for (final a in assets) {
           final name = (a['name'] ?? '').toString();
-          if (name.toLowerCase().endsWith('.apk')) {
+          final lowerName = name.toLowerCase();
+          final urlStr = (a['browser_download_url'] ?? '').toString();
+          final lowerUrl = urlStr.toLowerCase();
+          if (lowerName.endsWith('.apk') &&
+              lowerName.contains('kiosk') &&
+              !lowerName.contains('fashion') &&
+              lowerUrl.contains('/nayli-kiosk-') &&
+              !lowerUrl.contains('nayli-fashion')) {
             assetName = name;
-            downloadUrl = a['browser_download_url']?.toString() ?? '';
+            downloadUrl = urlStr;
             sizeBytes = (a['size'] as num?)?.toInt() ?? 0;
             break;
           }
@@ -431,7 +445,7 @@ class GitHubUpdateService {
     _isChecking = true;
 
     if (!silent) {
-      SnackbarHelper.showInfo(context, 'جاري التحقق من وجود تحديثات رسمية جديدة عبر السحابة...');
+      SnackbarHelper.showInfo(context, 'جاري التحقق من وجود تحديثات رسمية جديدة لـ Nayli Kiosk عبر السحابة...');
     }
 
     try {
@@ -455,7 +469,7 @@ class GitHubUpdateService {
           SoundService.playSaveSuccess();
           SnackbarHelper.showSuccess(
             context,
-            'أنت تستخدم أحدث إصدار متاح حالياً (v$currentVersion) ✅',
+            'أنت تستخدم أحدث إصدار متاح حالياً من نايلي كيوسك (v$currentVersion) ✅',
           );
         }
       }
@@ -543,7 +557,11 @@ class _UpdateDialogState extends State<_UpdateDialog> {
 
   Future<void> _startDownloadAndInstall() async {
     final downloadUrl = widget.releaseInfo.downloadUrl;
-    if (downloadUrl.isEmpty) return;
+    if (downloadUrl.isEmpty ||
+        !downloadUrl.toLowerCase().contains('/nayli-kiosk-') ||
+        downloadUrl.toLowerCase().contains('nayli-fashion')) {
+      return;
+    }
 
     // 1. حفظ السلة الحالية المفتوحة فوراً في Hive لضمان عدم ضياع أي بيانات تحت أي ظرف
     await GitHubUpdateService.saveActiveCartBeforeUpdate(context);
@@ -561,17 +579,21 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     // على نظام ويندوز: تحميل الملف داخل البرنامج مع شريط النسبة واستئناف التحميل التلقائي
     setState(() {
       _isDownloading = true;
-      _statusText = 'جاري الاتصال بخادم التحديثات...';
+      _statusText = 'جاري الاتصال بخادم التحديثات الخاص بـ Nayli Kiosk...';
     });
 
     File? targetFile;
     try {
       final tempDir = await getTemporaryDirectory();
+      final updateDir = Directory('${tempDir.path}/nayli_kiosk_updates');
+      if (!updateDir.existsSync()) {
+        updateDir.createSync(recursive: true);
+      }
       final String cleanVer = widget.releaseInfo.cleanVersion;
       final fileName = widget.releaseInfo.assetName.isNotEmpty
           ? '${cleanVer}-${widget.releaseInfo.assetName}'
           : 'nayli-kiosk-update-${cleanVer}.exe';
-      targetFile = File('${tempDir.path}/$fileName');
+      targetFile = File('${updateDir.path}/$fileName');
 
       // إذا كان الملف محملاً بالكامل ومطابقاً للحجم المطلوب مسبقاً، لا داعي لإعادة تحميله
       if (targetFile.existsSync()) {
