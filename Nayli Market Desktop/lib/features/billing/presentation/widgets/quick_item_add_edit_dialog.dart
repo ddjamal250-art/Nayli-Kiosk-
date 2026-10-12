@@ -13,7 +13,6 @@ import '../../../product/domain/entities/product_unit.dart';
 import '../../../product/data/models/product_unit_model.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 import '../bloc/billing_bloc.dart';
-import '../bloc/billing_event.dart';
 
 class QuickItemData {
   final String id;
@@ -208,7 +207,6 @@ class _QuickItemAddEditDialogState extends State<QuickItemAddEditDialog> {
       );
 
       final batch = PurchaseBatchModel(
-        batchId: 'BATCH_${newItem.barcode}',
         costPrice: newItem.costPrice,
         remainingQuantity: newItem.stock,
         dateAdded: DateTime.now(),

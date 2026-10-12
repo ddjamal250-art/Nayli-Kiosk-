@@ -4275,7 +4275,7 @@ $itemsSummary
                       } else if (text.startsWith('F1:')) {
                         _confirmClearCart();
                       } else if (text.startsWith('F2:')) {
-                        _holdCurrentCart();
+                        _handleHoldOrResumeCart();
                       } else if (text.startsWith('F4:')) {
                         _showDiscountModal();
                       } else if (text.startsWith('F5:')) {
