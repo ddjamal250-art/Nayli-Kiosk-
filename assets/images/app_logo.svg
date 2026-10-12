@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Brand Color Palette -->
+    <!-- Navy Blue: #06325C -->
+    <!-- Brand Orange: #FF6E00 -->
+  </defs>
+
+  <!-- Letter N Motif -->
+  <polygon
+    id="letter-n"
+    fill="#06325C"
+    points="128,106 320,106 680,594 680,917 650,917 320,433 320,917 128,917"
+  />
+
+  <!-- POS Barcode Horizontal Stripes -->
+  <g id="barcode-stripes" fill="#FF6E00">
+    <rect x="704" y="106" width="192" height="26" rx="2" />
+    <rect x="704" y="145" width="192" height="23" rx="2" />
+    <rect x="704" y="197" width="192" height="18" rx="2" />
+    <rect x="704" y="241" width="192" height="13" rx="2" />
+    <rect x="704" y="283" width="192" height="14" rx="2" />
+    <rect x="704" y="310" width="192" height="22" rx="2" />
+    <rect x="704" y="346" width="192" height="29" rx="2" />
+    <rect x="704" y="393" width="192" height="13" rx="2" />
+    <rect x="704" y="423" width="192" height="31" rx="2" />
+    <rect x="704" y="467" width="192" height="17" rx="2" />
+    <rect x="704" y="497" width="192" height="17" rx="2" />
+    <rect x="704" y="528" width="192" height="30" rx="2" />
+    <rect x="704" y="575" width="192" height="13" rx="2" />
+    <rect x="704" y="618" width="192" height="17" rx="2" />
+    <rect x="704" y="653" width="192" height="31" rx="2" />
+    <rect x="704" y="700" width="192" height="15" rx="2" />
+    <rect x="704" y="727" width="192" height="17" rx="2" />
+    <rect x="704" y="757" width="192" height="31" rx="2" />
+    <rect x="704" y="818" width="192" height="30" rx="2" />
+    <rect x="704" y="865" width="192" height="13" rx="2" />
+    <rect x="704" y="895" width="192" height="23" rx="2" />
+  </g>
+</svg>

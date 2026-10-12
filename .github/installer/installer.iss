@@ -19,6 +19,8 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\..\assets\images\app_icon.ico
+WizardImageFile=..\..\windows\wizard_large.bmp
+WizardSmallImageFile=..\..\windows\wizard_small.bmp
 LicenseFile=..\..\windows\License.rtf
 
 ; Auto-detect system language (Arabic, French, English)

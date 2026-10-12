@@ -113,6 +113,9 @@ jobs:
             Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "windows\redist\vc_redist.x64.exe"
           }
 
+      - name: Generate Installer Branding Assets
+        run: python scripts/generate_installer_assets.py
+
       - name: Compile Inno Setup Installer
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .github\installer\installer.iss

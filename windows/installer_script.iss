@@ -24,6 +24,8 @@ SetupIconFile=..\build\windows\x64\runner\Release\data\flutter_assets\assets\ima
 ; We will use the built-in icon if it exists, otherwise fall back to runner\resources. 
 ; Let's just use the known one from before.
 SetupIconFile=runner\resources\app_icon.ico
+WizardImageFile=wizard_large.bmp
+WizardSmallImageFile=wizard_small.bmp
 
 ; Automatically detect system language (Arabic, French, English)
 ShowLanguageDialog=auto

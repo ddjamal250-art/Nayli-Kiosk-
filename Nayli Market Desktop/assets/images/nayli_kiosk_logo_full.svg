@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500" width="1600" height="500">
+  <defs>
+    <style>
+      .navy { fill: #06325C; }
+      .orange { fill: #FF6E00; }
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 96px; font-weight: 800; fill: #06325C; letter-spacing: 2px; }
+      .text-sub { font-family: 'Segoe UI', Arial, sans-serif; font-size: 42px; font-weight: 600; fill: #FF6E00; letter-spacing: 6px; }
+    </style>
+  </defs>
+  <!-- Logo Mark (scaled and positioned left) -->
+  <g transform="translate(60, 50) scale(0.39)">
+    <polygon class="navy" points="128,106 320,106 680,594 680,917 650,917 320,432 320,917 128,917" />
+    <rect class="orange" x="704" y="106" width="192" height="26" />
+    <rect class="orange" x="704" y="145" width="192" height="23" />
+    <rect class="orange" x="704" y="197" width="192" height="18" />
+    <rect class="orange" x="704" y="241" width="192" height="13" />
+    <rect class="orange" x="704" y="283" width="192" height="14" />
+    <rect class="orange" x="704" y="310" width="192" height="22" />
+    <rect class="orange" x="704" y="346" width="192" height="29" />
+    <rect class="orange" x="704" y="393" width="192" height="13" />
+    <rect class="orange" x="704" y="423" width="192" height="31" />
+    <rect class="orange" x="704" y="467" width="192" height="17" />
+    <rect class="orange" x="704" y="497" width="192" height="17" />
+    <rect class="orange" x="704" y="528" width="192" height="30" />
+    <rect class="orange" x="704" y="575" width="192" height="13" />
+    <rect class="orange" x="704" y="618" width="192" height="17" />
+    <rect class="orange" x="704" y="653" width="192" height="31" />
+    <rect class="orange" x="704" y="700" width="192" height="15" />
+    <rect class="orange" x="704" y="727" width="192" height="17" />
+    <rect class="orange" x="704" y="757" width="192" height="31" />
+    <rect class="orange" x="704" y="818" width="192" height="30" />
+    <rect class="orange" x="704" y="865" width="192" height="13" />
+    <rect class="orange" x="704" y="895" width="192" height="23" />
+  </g>
+  <!-- Typography -->
+  <text x="500" y="230" class="text-title">NAYLI KIOSK</text>
+  <text x="505" y="310" class="text-sub">DESKTOP POS PRO</text>
+</svg>
