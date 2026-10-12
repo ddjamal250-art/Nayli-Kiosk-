@@ -248,50 +248,6 @@ class PosHeaderToolbar extends StatelessWidget {
                 onPressed: () => CashDrawerActionDialog.show(context, onDone: onShiftUpdated),
               ),
               
-              // 1.2 Check Drawer Status (حالة الصندوق اللحظية)
-              if (activeShift != null)
-                Tooltip(
-                  message: 'حالة الصندوق اللحظية ومراقبة حركات الدرج',
-                  child: InkWell(
-                    onTap: () {
-                      LiveCashDrawerStatusDialog.show(
-                        context,
-                        initialShift: activeShift!,
-                        onShiftUpdated: onShiftUpdated,
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.green.shade900.withOpacity(0.45),
-                            Colors.teal.shade900.withOpacity(0.45),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.greenAccent.shade400, width: 1.2),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.account_balance_wallet_rounded, color: Colors.greenAccent, size: 18),
-                          const SizedBox(width: 5),
-                          Text(
-                            '${activeShift!.expectedTotalCashInDrawer.toStringAsFixed(0)} دج | حالة الصندوق',
-                            style: const TextStyle(
-                              color: Colors.greenAccent,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
 
               // 2. Direct Inventory Access (F4)
               IconButton(

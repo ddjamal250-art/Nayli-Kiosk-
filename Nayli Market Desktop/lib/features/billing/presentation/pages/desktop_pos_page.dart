@@ -1653,7 +1653,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       _showRemoteCartsQueueModal();
       return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f10) {
-      _openCashDrawerWithSecurity();
+      if (_activeShift != null) {
+        LiveCashDrawerStatusDialog.show(
+          context,
+          initialShift: _activeShift!,
+          onShiftUpdated: _loadActiveShift,
+        );
+      } else {
+        _openCashDrawerWithSecurity();
+      }
       return true;
     } else if (event.logicalKey == LogicalKeyboardKey.f11) {
       _showRegisterHandoffModal(context.read<BillingBloc>().state);
@@ -3432,43 +3440,35 @@ $itemsSummary
   }
 
   Widget _buildCartActionButtons(BillingState state, double currentTotal) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 540;
-        if (isWide) {
-          return Row(
-            children: [
-              Expanded(flex: 7, child: _buildDiscountButton()),
-              const SizedBox(width: 8),
-              Expanded(flex: 11, child: _buildHoldButton(state)),
-              const SizedBox(width: 8),
-              Expanded(flex: 11, child: _buildTransferButton(state)),
-              const SizedBox(width: 8),
-              Expanded(flex: 15, child: _buildCheckoutButton(state, currentTotal)),
-            ],
-          );
-        } else {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(flex: 7, child: _buildDiscountButton()),
-                  const SizedBox(width: 8),
-                  Expanded(flex: 11, child: _buildHoldButton(state)),
-                  const SizedBox(width: 8),
-                  Expanded(flex: 11, child: _buildTransferButton(state)),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: _buildCheckoutButton(state, currentTotal),
-              ),
-            ],
-          );
-        }
-      },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Row 1: Operations (Discount % F4, Hold Cart F2, Return Items F6)
+        Row(
+          children: [
+            Expanded(flex: 7, child: _buildDiscountButton()),
+            const SizedBox(width: 6),
+            Expanded(flex: 11, child: _buildHoldButton(state)),
+            const SizedBox(width: 6),
+            Expanded(flex: 11, child: _buildReturnButton()),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Row 2: Payment Execution (Fast Cash ⚡ + Payment Options F12)
+        Row(
+          children: [
+            Expanded(
+              flex: 1,
+              child: _buildFastPayButton(state, currentTotal),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 1,
+              child: _buildCheckoutButton(state, currentTotal),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -3558,27 +3558,40 @@ $itemsSummary
     );
   }
 
-  Widget _buildTransferButton(BillingState state) {
+  Widget _buildReturnButton() {
+    final isActive = _isReturnMode;
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-        side: const BorderSide(color: Colors.deepOrange, width: 1.2),
+        backgroundColor: isActive ? Colors.red.shade700 : null,
+        side: BorderSide(
+          color: isActive ? Colors.redAccent : Colors.deepOrange,
+          width: 1.2,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         minimumSize: const Size(0, 46),
       ),
-      onPressed: () => _showRegisterHandoffModal(state),
+      onPressed: _toggleReturnMode,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.deepOrange, size: 17),
+          Icon(
+            isActive ? Icons.assignment_return_rounded : Icons.keyboard_return_rounded,
+            color: isActive ? Colors.white : Colors.deepOrange,
+            size: 17,
+          ),
           const SizedBox(width: 4),
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                context.tr('transfer_f11_btn'),
-                style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12),
+                isActive ? 'وضع الإرجاع نشط ⚠️' : 'إرجاع السلع (F6)',
+                style: TextStyle(
+                  color: isActive ? Colors.white : Colors.deepOrange,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
                 maxLines: 1,
               ),
             ),
@@ -3588,21 +3601,80 @@ $itemsSummary
     );
   }
 
+  Widget _buildFastPayButton(BillingState state, double currentTotal) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF10B981),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 10),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: const Size(0, 48),
+      ),
+      onPressed: () => _executeFastCheckout(state, currentTotal),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.bolt_rounded, color: Colors.amberAccent, size: 22),
+          SizedBox(width: 6),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'دفع سريع ⚡',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+                maxLines: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeFastCheckout(BillingState state, double currentTotal) async {
+    if (state.cartItems.isEmpty) {
+      SoundService.playWarningSound();
+      SnackbarHelper.showWarning(context, context.tr('empty_cart'));
+      return;
+    }
+
+    if (StaffPermissionsService.enableCustomerDisplay) {
+      LocalSyncServer.updateCustomerDisplay(
+        items: state.cartItems.map((i) => {
+          'name': i.product.name,
+          'qty': i.quantity,
+          'price': i.product.price,
+          'total': i.total,
+        }).toList(),
+        total: currentTotal,
+        subtotal: state.totalAmount,
+        discount: _cartDiscountValue,
+        customerName: _selectedCustomerName,
+      );
+    }
+
+    await _finalizeSale(PosPaymentMethod.cash, currentTotal, '', printReceipt: true);
+  }
+
   Widget _buildCheckoutButton(BillingState state, double currentTotal) {
     final payText = StaffPermissionsService.enableFastKeyboardShortcuts
-        ? (context.tr("btn_pay_checkout").contains('F12')
-            ? context.tr("btn_pay_checkout")
-            : '${context.tr("btn_pay_checkout")} (F12)')
-        : context.tr('btn_pay_checkout').replaceAll(' (F12)', '').replaceAll('(F12)', '').trim();
+        ? 'خيارات الدفع (F12)'
+        : 'خيارات الدفع';
 
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF059669),
+        backgroundColor: const Color(0xFF0F766E),
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 10),
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        minimumSize: const Size(0, 50),
+        minimumSize: const Size(0, 48),
       ),
       onPressed: () {
         if (StaffPermissionsService.enableCustomerDisplay) {
@@ -3625,14 +3697,18 @@ $itemsSummary
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
-          const SizedBox(width: 8),
+          const Icon(Icons.tune_rounded, color: Colors.white, size: 20),
+          const SizedBox(width: 6),
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 payText,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
                 maxLines: 1,
               ),
             ),
@@ -4306,7 +4382,69 @@ $itemsSummary
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          if (_activeShift != null) ...[
+            const SizedBox(width: 10),
+            Tooltip(
+              message: 'حالة الصندوق اللحظية ومراقبة حركات الدرج (F10)',
+              child: InkWell(
+                onTap: () {
+                  LiveCashDrawerStatusDialog.show(
+                    context,
+                    initialShift: _activeShift!,
+                    onShiftUpdated: _loadActiveShift,
+                  );
+                },
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.green.shade900.withOpacity(0.85),
+                        Colors.teal.shade900.withOpacity(0.85),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.greenAccent.shade400, width: 1.2),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.account_balance_wallet_rounded, color: Colors.greenAccent, size: 15),
+                      const SizedBox(width: 5),
+                      Text(
+                        '${_activeShift!.expectedTotalCashInDrawer.toStringAsFixed(0)} دج | حالة الصندوق',
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade800,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.grey.shade600),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock_clock_rounded, color: Colors.amberAccent, size: 14),
+                  SizedBox(width: 4),
+                  Text('الصندوق مغلق', style: TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(width: 14),
           const Text('Nayli POS Engine ⚡', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),
