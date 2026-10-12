@@ -79,159 +79,114 @@ warning - The value of the field '_isPrinting' isn't used - Nayli Market Desktop
    info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\daily_report_page.dart:976:23 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - Nayli Market Desktop\lib\features\billing\presentation\pages\daily_report_page.dart:977:35 - prefer_const_literals_to_create_immutables
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - Nayli Market Desktop\lib\features\billing\presentation\pages\daily_report_page.dart:1271:25 - use_build_context_synchronously
-warning - Unused import: 'package:qr_flutter/qr_flutter.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:7:8 - unused_import
-warning - Unused import: 'package:printing/printing.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:8:8 - unused_import
-warning - Unused import: 'package:url_launcher/url_launcher.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:9:8 - unused_import
-warning - Unused import: '../../../../core/utils/app_constants.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:15:8 - unused_import
-warning - Unused import: '../../../settings/presentation/pages/advanced_pos_settings_page.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:24:8 - unused_import
-warning - Unused import: '../../../product/presentation/pages/expiry_monitor_page.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:25:8 - unused_import
-warning - Unused import: '../../../shifts/data/shift_service.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:31:8 - unused_import
-warning - Unused import: '../../domain/entities/cart_item.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:32:8 - unused_import
-warning - Unused import: '../widgets/quick_items_manager_dialog.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:35:8 - unused_import
-warning - Unused import: '../widgets/printer_selection_dialog.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:37:8 - unused_import
-   info - The private field _selectedCategoryKey could be 'final' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:56:10 - prefer_final_fields
-warning - The value of the field '_selectedCategoryKey' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:56:10 - unused_field
-warning - The value of the field '_currentIpm' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:71:10 - unused_field
-   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:289:61 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:447:38 - prefer_interpolation_to_compose_strings
-  error - The name 'ProductModel' isn't a type, so it can't be used as a type argument - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:577:16 - non_type_as_type_argument
-   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:759:30 - prefer_const_constructors
-   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:811:41 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:881:29 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:887:32 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:906:17 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:911:44 - use_build_context_synchronously
-   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:911:53 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:911:60 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:914:42 - use_build_context_synchronously
-   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:914:51 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:914:58 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:986:32 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:986:41 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1168:42 - prefer_const_constructors
-   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1221:75 - prefer_interpolation_to_compose_strings
-  error - The method '_buildBottomHotkeysBar' isn't defined for the type '_DesktopPosPageState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1557:15 - undefined_method
-   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1810:31 - prefer_interpolation_to_compose_strings
-   info - Unnecessary use of string interpolation - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1955:43 - unnecessary_string_interpolations
-  error - Undefined name '_openQuickItemsManager' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2125:26 - undefined_identifier
-warning - Dead code - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2345:13 - dead_code
-  error - Undefined name 'uter' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2345:13 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2345:18 - expected_token
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2345:22 - expected_token
-  error - Unterminated string literal - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2345:23 - unterminated_string_literal
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2346:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2346:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2347:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2347:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2348:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2348:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2349:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2349:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2350:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2350:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2352:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2352:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2353:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2353:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2354:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2354:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2355:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2355:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2356:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2356:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2357:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2357:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2358:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2358:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2359:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2359:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2360:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2360:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2361:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2361:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2362:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2362:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2363:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2363:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2364:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2364:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2365:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2365:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2366:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2366:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2367:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2367:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2368:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2368:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2369:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2369:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2370:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2370:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2371:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2371:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2372:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2372:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2373:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2373:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2374:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2374:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2375:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2375:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2376:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2376:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2377:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2377:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2378:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2378:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2379:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2379:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2380:1 - expected_token
-  error - Undefined name 'import' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2380:1 - undefined_identifier
-  error - 'enum' can't be used as an identifier because it's a keyword - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:1 - expected_identifier_but_got_keyword
-  error - Expected a statement - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:1 - missing_statement
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:1 - expected_token
-  error - Undefined name 'enum' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:6 - expected_token
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:21 - expected_token
-  error - Undefined name 'detail' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:21 - undefined_identifier
-  error - Expected an identifier - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:27 - missing_identifier
-  error - Unexpected text ',' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:27 - unexpected_token
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:29 - expected_token
-  error - Undefined name 'demiGros' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:29 - undefined_identifier
-  error - Expected an identifier - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:37 - missing_identifier
-  error - Unexpected text ',' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:37 - unexpected_token
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:39 - expected_token
-  error - Undefined name 'gros' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2382:39 - undefined_identifier
-  error - 'class' can't be used as an identifier because it's a keyword - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:1 - expected_identifier_but_got_keyword
-  error - Expected a statement - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:1 - missing_statement
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:1 - expected_token
-  error - Undefined name 'class' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:7 - expected_token
-  error - 'extends' can't be used as an identifier because it's a keyword - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:22 - expected_identifier_but_got_keyword
-  error - Expected a statement - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:22 - missing_statement
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:22 - expected_token
-  error - Undefined name 'extends' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:22 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:30 - expected_token
-  error - Too many positional arguments: 0 expected, but 1 found - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2385:24 - extra_positional_arguments_could_be_named
-  error - Invalid constant value - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2385:25 - invalid_constant
-  error - The getter 'key' isn't defined in a superclass of '_DesktopPosPageState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2385:31 - undefined_super_member
-   info - The declaration 'createState' isn't referenced - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2388:25 - unused_element
-  error - 'class' can't be used as an identifier because it's a keyword - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:1 - expected_identifier_but_got_keyword
-  error - Expected a statement - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:1 - missing_statement
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:1 - expected_token
-  error - Undefined name 'class' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:1 - undefined_identifier
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:7 - expected_token
-  error - 'extends' can't be used as an identifier because it's a keyword - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:28 - expected_identifier_but_got_keyword
-  error - Expected a statement - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:28 - missing_statement
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:28 - expected_token
-  error - Undefined name 'extends' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:28 - undefined_identifier
-  error - The operator '<' isn't defined for the type 'Type' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:41 - undefined_operator
-  error - A comparison expression can't be an operand of another comparison expression - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:56 - equality_cannot_be_equality_operand
-  error - Expected an identifier - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2392:3 - missing_identifier
-  error - Expected to find '}' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2392:3 - expected_token
-  error - Expected to find ';' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4717:1 - expected_token
-  error - Expected to find ')' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4719:1 - expected_token
-  error - Expected to find '}' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4719:1 - expected_token
+warning - Unused import: 'package:qr_flutter/qr_flutter.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:9:8 - unused_import
+warning - Unused import: 'package:printing/printing.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:10:8 - unused_import
+warning - Unused import: 'package:url_launcher/url_launcher.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:11:8 - unused_import
+warning - Unused import: '../../../../core/utils/app_constants.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:19:8 - unused_import
+warning - Unused import: '../../../settings/presentation/pages/advanced_pos_settings_page.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:30:8 - unused_import
+warning - Unused import: '../../../product/presentation/pages/expiry_monitor_page.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:31:8 - unused_import
+  error - Target of URI doesn't exist: '../../../product/data/models/product_unit_model.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:36:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: '../../../product/domain/entities/product_unit.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:37:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: '../../../product/presentation/widgets/shared_category_bar.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:39:8 - uri_does_not_exist
+warning - Unused import: '../../domain/entities/cart_item.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:42:8 - unused_import
+warning - Unused import: '../widgets/printer_selection_dialog.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:48:8 - unused_import
+  error - Target of URI doesn't exist: '../../../../core/services/github_update_service.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:53:8 - uri_does_not_exist
+   info - The private field _selectedCategoryKey could be 'final' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:69:10 - prefer_final_fields
+warning - The value of the field '_currentIpm' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:85:10 - unused_field
+warning - The value of the field '_categoryTabs' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:109:16 - unused_field
+  error - The method 'getVisibleHomeScreenCategories' isn't defined for the type 'CategoryTaxonomy' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:113:49 - undefined_method
+  error - Undefined name 'GitHubUpdateService' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:122:7 - undefined_identifier
+  error - The getter 'isBeverage' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:289:15 - undefined_getter
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:328:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:329:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:330:96 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:339:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:344:70 - prefer_const_constructors
+  error - The getter 'cupsYield' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:348:60 - undefined_getter
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:354:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:355:61 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:359:119 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:371:115 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:389:66 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:444:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:445:108 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:446:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:471:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:473:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:478:136 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:484:21 - prefer_const_constructors
+  error - The argument type 'double' can't be assigned to the parameter type 'int'.  - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:512:35 - argument_type_not_assignable
+  error - The argument type 'double' can't be assigned to the parameter type 'int'.  - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:520:35 - argument_type_not_assignable
+  error - The argument type 'double' can't be assigned to the parameter type 'int'.  - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:528:62 - argument_type_not_assignable
+  error - The named parameter 'customUnitName' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:528:101 - undefined_named_parameter
+  error - The getter 'isCoffeeMachineProduct' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:547:17 - undefined_getter
+  error - The argument type 'double' can't be assigned to the parameter type 'int'.  - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:574:82 - argument_type_not_assignable
+  error - The method 'isBarcodeOrQrCode' isn't defined for the type 'BarcodeNormalizer' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:670:45 - undefined_method
+   info - Use a 'SizedBox' to add whitespace to a layout - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1139:18 - sized_box_for_whitespace
+  error - The named parameter 'invoiceId' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1275:23 - undefined_named_parameter
+  error - The getter 'coffeeRecipeJson' isn't defined for the type 'ProductModel' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1336:26 - undefined_getter
+  error - The getter 'coffeeRecipeJson' isn't defined for the type 'ProductModel' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1338:52 - undefined_getter
+  error - The argument type 'double' can't be assigned to the parameter type 'int?'.  - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1348:66 - argument_type_not_assignable
+  error - The argument type 'double' can't be assigned to the parameter type 'int?'.  - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1350:92 - argument_type_not_assignable
+  error - The getter 'units' isn't defined for the type 'ProductModel' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1362:43 - undefined_getter
+  error - The getter 'units' isn't defined for the type 'ProductModel' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1366:34 - undefined_getter
+  error - The argument type 'double' can't be assigned to the parameter type 'int?'.  - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1376:58 - argument_type_not_assignable
+  error - The getter 'isCoffeeMachineProduct' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1496:24 - undefined_getter
+   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1527:61 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:1692:38 - prefer_interpolation_to_compose_strings
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2004:30 - prefer_const_constructors
+   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2056:41 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2126:29 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2132:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2151:17 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2156:44 - use_build_context_synchronously
+   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2156:53 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2156:60 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2159:42 - use_build_context_synchronously
+   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2159:51 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2159:58 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2231:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2231:41 - use_build_context_synchronously
+  error - The getter 'isBeverage' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2389:25 - undefined_getter
+  error - The getter 'isCoffeeMachineProduct' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2391:34 - undefined_getter
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2495:42 - prefer_const_constructors
+  error - The getter 'isCoffeeMachineProduct' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2544:46 - undefined_getter
+   info - The declaration '_showPriceChecker' isn't referenced - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2609:8 - unused_element
+  error - The named parameter 'receivedAmount' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2822:7 - undefined_named_parameter
+  error - The named parameter 'changeAmount' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2823:7 - undefined_named_parameter
+  error - The named parameter 'explicitTotal' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2827:7 - undefined_named_parameter
+  error - The named parameter 'explicitDiscount' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2828:7 - undefined_named_parameter
+warning - The method doesn't override an inherited method - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2873:8 - override_on_non_overriding_member
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2877:16 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2878:21 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2881:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2890:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2899:20 - prefer_const_constructors
+  error - The getter 'stockWarning' isn't defined for the type 'BillingState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2909:50 - undefined_getter
+  error - The getter 'stockWarning' isn't defined for the type 'BillingState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2909:75 - undefined_getter
+  error - The getter 'stockWarning' isn't defined for the type 'BillingState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2909:99 - undefined_getter
+  error - The getter 'stockWarning' isn't defined for the type 'BillingState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2911:19 - undefined_getter
+  error - The getter 'stockWarning' isn't defined for the type 'BillingState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2912:31 - undefined_getter
+  error - The method 'ClearStockWarningEvent' isn't defined for the type '_DesktopPosPageState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2916:43 - undefined_method
+  error - The named parameter 'activeShift' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2995:7 - undefined_named_parameter
+  error - The named parameter 'onOpenSmartScale' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2998:7 - undefined_named_parameter
+  error - The named parameter 'onSwitchShift' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:2999:7 - undefined_named_parameter
+  error - The named parameter 'onShiftUpdated' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:3000:7 - undefined_named_parameter
+  error - The getter 'units' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:3236:57 - undefined_getter
+   info - Use interpolation to compose strings and values - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:3304:31 - prefer_interpolation_to_compose_strings
+warning - The value of the local variable 'isDark' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:3900:11 - unused_local_variable
+  error - The method 'SharedCategoryBar' isn't defined for the type '_DesktopPosPageState' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:3908:11 - undefined_method
+warning - Unnecessary type check; the result is always 'true' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:3961:13 - unnecessary_type_check
+warning - Unnecessary type check; the result is always 'true' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:3969:13 - unnecessary_type_check
+warning - The value of the local variable 'effectivePiecesPerPack' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4025:11 - unused_local_variable
+warning - The value of the local variable 'singlePiecePrice' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4026:11 - unused_local_variable
+warning - The value of the local variable 'cartonPrice' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4028:11 - unused_local_variable
+  error - The argument type 'double' can't be assigned to the parameter type 'int'.  - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4036:14 - argument_type_not_assignable
+warning - The value of the local variable 'id' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4104:15 - unused_local_variable
+warning - The value of the local variable 'cost' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4105:15 - unused_local_variable
+warning - The value of the local variable 'stock' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4106:15 - unused_local_variable
+  error - The getter 'isCoffeeMachineProduct' isn't defined for the type 'Product' - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4123:22 - undefined_getter
+warning - The '!' will have no effect because the receiver can't be null - Nayli Market Desktop\lib\features\billing\presentation\pages\desktop_pos_page.dart:4157:48 - unnecessary_non_null_assertion
 warning - Unused import: 'package:intl/intl.dart' - Nayli Market Desktop\lib\features\billing\presentation\pages\home_page.dart:7:8 - unused_import
 warning - The value of the field '_dynamicTargetOffset' isn't used - Nayli Market Desktop\lib\features\billing\presentation\pages\home_page.dart:79:11 - unused_field
    info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\pages\home_page.dart:341:47 - prefer_const_constructors
@@ -310,17 +265,16 @@ warning - Unused import: '../../../../core/theme/app_theme.dart' - Nayli Market 
 warning - Unused import: '../../../product/domain/entities/product.dart' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:11:8 - unused_import
   error - Target of URI doesn't exist: '../../../product/domain/entities/product_unit.dart' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:12:8 - uri_does_not_exist
   error - Target of URI doesn't exist: '../../../product/data/models/product_unit_model.dart' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:13:8 - uri_does_not_exist
-  error - The imported library '../bloc/billing_event.dart' can't have a part-of directive - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:16:8 - import_of_non_library
-  error - The argument type 'num' can't be assigned to the parameter type 'int?'.  - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:198:16 - argument_type_not_assignable
-  error - The method 'ProductUnitModel' isn't defined for the type '_QuickItemAddEditDialogState' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:201:20 - undefined_method
-  error - Undefined name 'UnitTier' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:202:20 - undefined_identifier
-  error - The method 'PurchaseBatchModel' isn't defined for the type '_QuickItemAddEditDialogState' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:210:21 - undefined_method
-  error - The argument type 'double' can't be assigned to the parameter type 'int'.  - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:223:16 - argument_type_not_assignable
-  error - The named parameter 'units' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:226:9 - undefined_named_parameter
-  error - The named parameter 'stockBatchesModels' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:227:9 - undefined_named_parameter
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:242:7 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:242:39 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:248:9 - use_build_context_synchronously
+  error - The argument type 'num' can't be assigned to the parameter type 'int?'.  - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:197:16 - argument_type_not_assignable
+  error - The method 'ProductUnitModel' isn't defined for the type '_QuickItemAddEditDialogState' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:200:20 - undefined_method
+  error - Undefined name 'UnitTier' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:201:20 - undefined_identifier
+  error - The method 'PurchaseBatchModel' isn't defined for the type '_QuickItemAddEditDialogState' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:209:21 - undefined_method
+  error - The argument type 'double' can't be assigned to the parameter type 'int'.  - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:221:16 - argument_type_not_assignable
+  error - The named parameter 'units' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:224:9 - undefined_named_parameter
+  error - The named parameter 'stockBatchesModels' isn't defined - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:225:9 - undefined_named_parameter
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:240:7 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:240:39 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:246:9 - use_build_context_synchronously
 warning - Unused import: 'package:uuid/uuid.dart' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:4:8 - unused_import
 warning - Unused import: '../../../../core/localization/app_localizations.dart' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:7:8 - unused_import
 warning - Unused import: '../../../../core/theme/app_theme.dart' - Nayli Market Desktop\lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:8:8 - unused_import
@@ -1165,7 +1119,6 @@ warning - The value of the local variable 'id' isn't used - lib\features\billing
 warning - The value of the local variable 'cost' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4105:15 - unused_local_variable
 warning - The value of the local variable 'stock' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4106:15 - unused_local_variable
 warning - The '!' will have no effect because the receiver can't be null - lib\features\billing\presentation\pages\desktop_pos_page.dart:4157:48 - unnecessary_non_null_assertion
-  error - The method '_holdCurrentCart' isn't defined for the type '_DesktopPosPageState' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4278:25 - undefined_method
 warning - Unused import: 'package:intl/intl.dart' - lib\features\billing\presentation\pages\home_page.dart:7:8 - unused_import
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\billing\presentation\pages\home_page.dart:72:3 - prefer_const_constructors_in_immutables
 warning - The value of the field '_dynamicTargetOffset' isn't used - lib\features\billing\presentation\pages\home_page.dart:82:11 - unused_field
@@ -1521,11 +1474,9 @@ warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\quick_amount_modal.dart:107:29 - use_build_context_synchronously
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:5:8 - unused_import
 warning - Unused import: '../../../product/domain/entities/product.dart' - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:11:8 - unused_import
-  error - The imported library '../bloc/billing_event.dart' can't have a part-of directive - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:16:8 - import_of_non_library
-  error - The named parameter 'batchId' isn't defined - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:211:9 - undefined_named_parameter
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:242:7 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:242:39 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:248:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:240:7 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:240:39 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\quick_item_add_edit_dialog.dart:246:9 - use_build_context_synchronously
 warning - Unused import: 'package:uuid/uuid.dart' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:3:8 - unused_import
 warning - Unused import: '../../../../core/localization/app_localizations.dart' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:6:8 - unused_import
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:7:8 - unused_import
