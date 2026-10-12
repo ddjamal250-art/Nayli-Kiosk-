@@ -3473,6 +3473,11 @@ $itemsSummary
   }
 
   Widget _buildDiscountButton() {
+    final lang = Localizations.localeOf(context).languageCode;
+    final discountLabel = lang == 'fr'
+        ? 'Remise'
+        : (lang == 'en' ? 'Discount' : 'خصم');
+
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
@@ -3491,7 +3496,7 @@ $itemsSummary
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                context.tr('btn_discount'),
+                discountLabel,
                 style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12),
                 maxLines: 1,
               ),
@@ -3503,6 +3508,18 @@ $itemsSummary
   }
 
   Widget _buildHoldButton(BillingState state) {
+    final lang = Localizations.localeOf(context).languageCode;
+    final String holdLabel;
+    if (state.activeHeldCarts.isNotEmpty) {
+      holdLabel = lang == 'fr'
+          ? 'Attente (${state.activeHeldCarts.length})'
+          : (lang == 'en' ? 'Hold (${state.activeHeldCarts.length})' : 'تعليق (${state.activeHeldCarts.length})');
+    } else {
+      holdLabel = lang == 'fr'
+          ? 'En Attente'
+          : (lang == 'en' ? 'Hold Cart' : 'تعليق السلة');
+    }
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -3526,9 +3543,7 @@ $itemsSummary
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      state.activeHeldCarts.isNotEmpty
-                          ? '${context.tr("hold")} (${state.activeHeldCarts.length})'
-                          : context.tr("btn_hold"),
+                      holdLabel,
                       style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12),
                       maxLines: 1,
                     ),
@@ -3560,6 +3575,11 @@ $itemsSummary
 
   Widget _buildReturnButton() {
     final isActive = _isReturnMode;
+    final lang = Localizations.localeOf(context).languageCode;
+    final returnLabel = isActive
+        ? (lang == 'fr' ? 'Mode Retour ⚠️' : (lang == 'en' ? 'Return Mode ⚠️' : 'وضع الإرجاع نشط ⚠️'))
+        : (lang == 'fr' ? 'Retour Articles' : (lang == 'en' ? 'Return Items' : 'إرجاع السلع'));
+
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
@@ -3586,7 +3606,7 @@ $itemsSummary
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                isActive ? 'وضع الإرجاع نشط ⚠️' : 'إرجاع السلع (F6)',
+                returnLabel,
                 style: TextStyle(
                   color: isActive ? Colors.white : Colors.deepOrange,
                   fontWeight: FontWeight.bold,
@@ -3602,6 +3622,11 @@ $itemsSummary
   }
 
   Widget _buildFastPayButton(BillingState state, double currentTotal) {
+    final lang = Localizations.localeOf(context).languageCode;
+    final fastPayLabel = lang == 'fr'
+        ? 'Paiement Rapide ⚡'
+        : (lang == 'en' ? 'Fast Cash ⚡' : 'دفع سريع ⚡');
+
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF10B981),
@@ -3612,18 +3637,18 @@ $itemsSummary
         minimumSize: const Size(0, 48),
       ),
       onPressed: () => _executeFastCheckout(state, currentTotal),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bolt_rounded, color: Colors.amberAccent, size: 22),
-          SizedBox(width: 6),
+          const Icon(Icons.bolt_rounded, color: Colors.amberAccent, size: 22),
+          const SizedBox(width: 6),
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                'دفع سريع ⚡',
-                style: TextStyle(
+                fastPayLabel,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -3663,9 +3688,10 @@ $itemsSummary
   }
 
   Widget _buildCheckoutButton(BillingState state, double currentTotal) {
-    final payText = StaffPermissionsService.enableFastKeyboardShortcuts
-        ? 'خيارات الدفع (F12)'
-        : 'خيارات الدفع';
+    final lang = Localizations.localeOf(context).languageCode;
+    final payText = lang == 'fr'
+        ? 'Options Paiement'
+        : (lang == 'en' ? 'Payment Options' : 'خيارات الدفع');
 
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
