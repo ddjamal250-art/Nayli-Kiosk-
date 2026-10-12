@@ -1,7 +1,7 @@
 name: billing_app
 description: A new Flutter project.
 publish_to: 'none'
-version: 1.4.0+8
+version: 2.5.1+27
 
 environment:
   sdk: '>=3.1.0 <4.0.0'
@@ -52,11 +52,19 @@ dependencies:
   printing: ^5.13.2
   url_launcher: ^6.3.0
   archive: ^3.6.1
-  http: ^1.2.0
+  file_picker: ^8.0.0
+  sqlite3: ^2.4.6
+  sqlite3_flutter_libs: ^0.5.24
+  csv: ^6.0.0
+  excel: ^4.0.6
+  file_selector: ^1.0.0
   crypto: ^3.0.3
-  file_picker: ^8.1.1
+  http: ^1.2.0
+  package_info_plus: ^8.1.0
+  window_manager: ^0.4.3
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
@@ -68,6 +76,30 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700
+
   assets:
     - assets/data/
     - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_logo.png"
+  adaptive_icon_background: "#06325C"
+  adaptive_icon_foreground: "assets/images/app_logo_foreground.png"
+  windows:
+    generate: true
+    image_path: "assets/images/app_logo.png"
+    icon_name: "app_icon"
+  web:
+    generate: true
+    image_path: "assets/images/app_logo.png"
+    background_color: "#06325C"
+    theme_color: "#06325C"
+
