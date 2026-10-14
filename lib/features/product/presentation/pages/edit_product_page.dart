@@ -55,6 +55,9 @@ class _EditProductPageState extends State<EditProductPage> {
   // --- تركيبة ووصفة القهوة الجاهزة ---
   String? _coffeeRecipeJson;
 
+  // --- إعدادات الميزان والوزن ---
+  bool _isWeighted = false;
+
   // --- إعدادات تجزئة وتقسيم السوائل والعطور ---
   String? _liquidConfigJson;
 
@@ -101,6 +104,13 @@ class _EditProductPageState extends State<EditProductPage> {
     _selectedCategory = _availableCategories.contains(p.category) ? p.category : 'عام';
     _coffeeRecipeJson = p.coffeeRecipeJson;
     _liquidConfigJson = p.liquidConfigJson;
+    _isWeighted = p.isWeighted ||
+                  p.unitSystemType == UnitSystemType.weight ||
+                  p.barcode.startsWith('SCALE_') ||
+                  p.name.contains('كغ') ||
+                  p.name.contains('ميزان') ||
+                  p.baseUnitName.trim() == 'كغ' ||
+                  (p.pluCode != null && p.pluCode!.isNotEmpty);
 
     // 1. تحميل إعدادات العلبة أولاً لتحديد مضاعف العلبة
     final packUnit = p.units.where((u) => u.tier == UnitTier.medium || u.name.contains('علب')).firstOrNull;
@@ -348,16 +358,19 @@ class _EditProductPageState extends State<EditProductPage> {
         ? BarcodeGeneratorHelper.generateUniqueInStoreEan13()
         : rawBc;
 
-    final baseName = _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة';
+    final effectiveBaseUnit = _isWeighted && (_baseUnitNameCtrl.text.isEmpty || _baseUnitNameCtrl.text == 'قطعة' || _baseUnitNameCtrl.text == 'حبة')
+        ? 'كغ'
+        : baseName;
 
-    // إضافة وحدة القطعة/الحبة الأساسية (Small Tier) لضمان اتساق الحسابات
+    // إضافة وحدة القطعة/الحبة أو الكيلوغرام الأساسية (Small Tier) لضمان اتساق الحسابات
     units.add(ProductUnit(
-      name: baseName,
+      name: effectiveBaseUnit,
       tier: UnitTier.small,
       multiplier: 1.0,
       price: _parsePrice(_priceCtrl.text),
       cost: effectiveCost,
       barcode: validBc,
+      isWeighable: _isWeighted,
     ));
 
     final updatedProduct = widget.product.copyWith(
@@ -368,10 +381,12 @@ class _EditProductPageState extends State<EditProductPage> {
       stock: _parsePrice(_stockCtrl.text),
       category: _selectedCategory,
       imageUrl: _imageUrl,
-      baseUnitName: baseName,
+      baseUnitName: effectiveBaseUnit,
       units: units,
       specialOffers: resolvedOffers,
       pluCode: plu.isNotEmpty ? plu : null,
+      isWeighted: _isWeighted,
+      unitSystemType: _isWeighted ? UnitSystemType.weight : (_liquidConfigJson != null ? UnitSystemType.volume : widget.product.unitSystemType),
       coffeeRecipeJson: _coffeeRecipeJson,
       liquidConfigJson: _liquidConfigJson,
       isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
@@ -536,13 +551,95 @@ class _EditProductPageState extends State<EditProductPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const InputLabel(text: 'كود PLU للميزان التجاري (اختياري)'),
-                TextFormField(
-                  controller: _pluCodeCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    hintText: 'مثال: 1، 42...',
-                    prefixIcon: Icon(Icons.scale, size: 18),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _isWeighted ? Colors.teal.withOpacity(0.07) : Colors.grey.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isWeighted ? Colors.teal : Colors.grey.shade300,
+                      width: _isWeighted ? 1.5 : 1.0,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        value: _isWeighted,
+                        contentPadding: EdgeInsets.zero,
+                        title: Row(
+                          children: [
+                            Icon(Icons.scale_rounded, color: _isWeighted ? Colors.teal : Colors.grey),
+                            const SizedBox(width: 8),
+                            const Text('سلعة ميزان (تباع بالوزن / كغ)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
+                        subtitle: Text(
+                          _isWeighted 
+                            ? 'مفعلة: ستظهر السلعة تلقائياً في قسم الميزان وشاشة الميزان الافتراضي (F8) وتدعم الوزن والجرامات.' 
+                            : 'غير مفعلة: تباع السلعة بالقطعة أو الحبة العادية.',
+                          style: TextStyle(fontSize: 12, color: _isWeighted ? Colors.teal.shade800 : Colors.grey),
+                        ),
+                        activeColor: Colors.teal,
+                        onChanged: (val) {
+                          setState(() {
+                            _isWeighted = val;
+                            if (_isWeighted) {
+                              if (_baseUnitNameCtrl.text.isEmpty || _baseUnitNameCtrl.text == 'قطعة' || _baseUnitNameCtrl.text == 'حبة') {
+                                _baseUnitNameCtrl.text = 'كغ';
+                              }
+                            }
+                          });
+                        },
+                      ),
+                      if (_isWeighted) ...[
+                        const Divider(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const InputLabel(text: 'كود PLU للميزان التجاري (اختياري)'),
+                                  TextFormField(
+                                    controller: _pluCodeCtrl,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: InputDecoration(
+                                      hintText: 'مثال: 1، 42...',
+                                      prefixIcon: const Icon(Icons.pin, size: 18, color: Colors.teal),
+                                      suffixIcon: _pluCodeCtrl.text.isNotEmpty 
+                                          ? IconButton(
+                                              icon: const Icon(Icons.clear, size: 16), 
+                                              onPressed: () => setState(() => _pluCodeCtrl.clear()),
+                                            ) 
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 24),
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.teal,
+                                  side: const BorderSide(color: Colors.teal),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                ),
+                                icon: const Icon(Icons.qr_code, size: 18),
+                                label: const Text('توليد كود ميزان', style: TextStyle(fontSize: 12)),
+                                onPressed: () {
+                                  setState(() {
+                                    _barcodeCtrl.text = 'SCALE_${DateTime.now().millisecondsSinceEpoch % 100000}';
+                                  });
+                                  SoundService.playScanBeep();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -571,7 +668,7 @@ class _EditProductPageState extends State<EditProductPage> {
               title: 'المخزون الحالي',
               icon: Icons.inventory_2_outlined,
               children: [
-                const InputLabel(text: 'الكمية المتوفرة بالمخزون حالياً (بالحبة)'),
+                InputLabel(text: _isWeighted ? 'الكمية المتوفرة بالمخزون حالياً (بالكيلوغرام كغ)' : 'الكمية المتوفرة بالمخزون حالياً (بالحبة)'),
                 TextFormField(controller: _stockCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
               ],
             ),

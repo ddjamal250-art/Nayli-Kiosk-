@@ -60,6 +60,7 @@ class _StockInPageState extends State<StockInPage> {
 
   // Arrivage Mode (Cartons vs Vrac Sacs vs Single Units)
   ArrivageUnitMode _unitMode = ArrivageUnitMode.cartons;
+  bool _isWeighableScaleProduct = false;
 
   // Ready Coffee Calculator & Serving Recipe Data
   ReadyCoffeeData _coffeeData = ReadyCoffeeData();
@@ -354,9 +355,11 @@ class _StockInPageState extends State<StockInPage> {
           }
         } else if (existing.isCoffeeMachineProduct || existing.coffeeRecipeJson != null) {
           _unitMode = ArrivageUnitMode.coffeeMachine;
-        } else if (existing.isWeighted || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
+        } else if (existing.isWeighted || existing.unitSystemType == UnitSystemType.weight || existing.baseUnitName == 'كغ' || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
           _unitMode = ArrivageUnitMode.vracSacs;
+          _isWeighableScaleProduct = true;
         } else {
+          _isWeighableScaleProduct = false;
           _unitMode = ArrivageUnitMode.cartons;
           final largeUnit = existing.units.where((u) => u.tier == UnitTier.large).firstOrNull;
           if (largeUnit != null) {
@@ -480,9 +483,13 @@ class _StockInPageState extends State<StockInPage> {
         ? products.where((p) => p.id == _existingProductId).firstOrNull
         : null;
 
-    final isScaleProduct = existingProduct?.units.any((u) => u.isWeighable) ?? false;
+    final isScaleProduct = _unitMode == ArrivageUnitMode.vracSacs ||
+        _isWeighableScaleProduct ||
+        (existingProduct?.isWeighted ?? false) ||
+        (existingProduct?.unitSystemType == UnitSystemType.weight) ||
+        (existingProduct?.units.any((u) => u.isWeighable) ?? false);
     final rawQtyDouble = double.tryParse(_qtyController.text.trim()) ?? 0.0;
-    final double qty = isScaleProduct ? (rawQtyDouble * 1000) : rawQtyDouble;
+    final double qty = rawQtyDouble;
 
     if (name.isEmpty) {
       SnackbarHelper.showWarning(context, 'يرجى إدخال اسم السلعة');
@@ -714,15 +721,18 @@ class _StockInPageState extends State<StockInPage> {
         stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
+        isWeighted: isScaleProduct ? true : (existingProduct?.isWeighted ?? false),
         liquidConfigJson: isLiquid ? _liquidConfig.toJsonString() : existingProduct?.liquidConfigJson,
-        baseUnitName: isLiquid ? _liquidConfig.unitName : (existingProduct?.baseUnitName ?? 'قطعة'),
-        unitSystemType: isLiquid ? UnitSystemType.volume : (existingProduct?.unitSystemType ?? UnitSystemType.discrete),
+        baseUnitName: isLiquid ? _liquidConfig.unitName : (isScaleProduct ? 'كغ' : (existingProduct?.baseUnitName ?? 'قطعة')),
+        unitSystemType: isLiquid ? UnitSystemType.volume : (isScaleProduct ? UnitSystemType.weight : (existingProduct?.unitSystemType ?? UnitSystemType.discrete)),
       );
       productBloc.add(UpdateProduct(updatedProduct));
+      final updateModel = ProductModel.fromEntity(updatedProduct);
+      await HiveDatabase.productBox.put(updateModel.id, updateModel);
       CatalogCrowdsourceHelper.silentHarvest(
         updatedProduct,
         category: effectiveCategory,
-        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : (_unitMode == ArrivageUnitMode.liquidDecant ? 'مل' : 'حبة'))),
+        unit: isScaleProduct ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : (_unitMode == ArrivageUnitMode.liquidDecant ? 'مل' : 'حبة'))),
       );
     } else {
       final newId = const Uuid().v4();
@@ -740,15 +750,18 @@ class _StockInPageState extends State<StockInPage> {
         stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
+        isWeighted: isScaleProduct,
         liquidConfigJson: isLiquid ? _liquidConfig.toJsonString() : null,
-        baseUnitName: isLiquid ? _liquidConfig.unitName : 'قطعة',
-        unitSystemType: isLiquid ? UnitSystemType.volume : UnitSystemType.discrete,
+        baseUnitName: isLiquid ? _liquidConfig.unitName : (isScaleProduct ? 'كغ' : 'قطعة'),
+        unitSystemType: isLiquid ? UnitSystemType.volume : (isScaleProduct ? UnitSystemType.weight : UnitSystemType.discrete),
       );
       productBloc.add(AddProduct(newProduct));
+      final newModel = ProductModel.fromEntity(newProduct);
+      await HiveDatabase.productBox.put(newModel.id, newModel);
       CatalogCrowdsourceHelper.silentHarvest(
         newProduct,
         category: effectiveCategory,
-        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : (_unitMode == ArrivageUnitMode.liquidDecant ? 'مل' : 'حبة'))),
+        unit: isScaleProduct ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : (_unitMode == ArrivageUnitMode.liquidDecant ? 'مل' : 'حبة'))),
       );
     }
 
@@ -807,6 +820,7 @@ class _StockInPageState extends State<StockInPage> {
       _itemImageUrl = null;
       _pinToQuickItems = false;
       _hasMiddleTier = false;
+      _isWeighableScaleProduct = false;
     });
 
     SoundService.playSaveSuccess();
@@ -1710,6 +1724,27 @@ class _StockInPageState extends State<StockInPage> {
                       },
                     ),
                   ] else if (_unitMode == ArrivageUnitMode.vracSacs) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.teal.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.scale_rounded, color: Colors.teal, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '⚖️ توريد سلع بالميزان: السلعة مصنفة كمادة موزونة تظهر تلقائياً في قسم واختصار الميزان الذكي (F8) بالكيلوغرام.',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Row(
                       children: [
                         Expanded(
@@ -1756,23 +1791,47 @@ class _StockInPageState extends State<StockInPage> {
                         final existingProduct = _existingProductId != null
                             ? products.where((p) => p.id == _existingProductId).firstOrNull
                             : null;
-                        final isScaleProduct = existingProduct?.units.any((u) => u.isWeighable) ?? false;
+                        final isScaleProduct = _isWeighableScaleProduct || (existingProduct?.isWeighted ?? false) || (existingProduct?.units.any((u) => u.isWeighable) ?? false);
                         
-                        return TextField(
-                          controller: _qtyController,
-                          focusNode: _qtyFocusNode,
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => _saveStockIn(),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            labelText: isScaleProduct ? 'الوزن المستلم (كغ)' : 'الكمية المستلمة (بالحبة)',
-                            suffixText: isScaleProduct ? 'كغ' : 'حبة',
-                            border: const OutlineInputBorder(),
-                            filled: isScaleProduct,
-                            fillColor: isScaleProduct ? Colors.teal.shade50 : null,
-                          ),
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: FilterChip(
+                                selected: _isWeighableScaleProduct,
+                                avatar: Icon(Icons.scale_rounded, size: 16, color: _isWeighableScaleProduct ? Colors.white : Colors.teal),
+                                label: Text(_isWeighableScaleProduct ? '⚖️ سلعة ميزان (بالكيلوغرام كغ)' : '🏷️ سلعة عادية (بالقطعة/الحبة)'),
+                                selectedColor: Colors.teal,
+                                labelStyle: TextStyle(
+                                  color: _isWeighableScaleProduct ? Colors.white : Colors.teal.shade900,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                                onSelected: (val) {
+                                  setState(() {
+                                    _isWeighableScaleProduct = val;
+                                  });
+                                },
+                              ),
+                            ),
+                            TextField(
+                              controller: _qtyController,
+                              focusNode: _qtyFocusNode,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _saveStockIn(),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                labelText: isScaleProduct ? 'الوزن المستلم (كغ)' : 'الكمية المستلمة (بالحبة)',
+                                suffixText: isScaleProduct ? 'كغ' : 'حبة',
+                                border: const OutlineInputBorder(),
+                                filled: isScaleProduct,
+                                fillColor: isScaleProduct ? Colors.teal.shade50 : null,
+                              ),
+                            ),
+                          ],
                         );
-                      }
+                      },
                     ),
                   ],
 
@@ -2077,6 +2136,11 @@ class _StockInPageState extends State<StockInPage> {
         onTap: () {
           setState(() {
             _unitMode = mode;
+            if (mode == ArrivageUnitMode.vracSacs) {
+              _isWeighableScaleProduct = true;
+            } else if (mode != ArrivageUnitMode.singleUnits) {
+              _isWeighableScaleProduct = false;
+            }
             if (mode == ArrivageUnitMode.coffeeMachine) {
               _selectedCategory = 'القهوة الجاهزة';
               _isCategoryUserSelected = true;

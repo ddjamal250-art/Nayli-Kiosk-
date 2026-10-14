@@ -70,7 +70,13 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
     final pBox = HiveDatabase.productBox;
 
     for (final p in pBox.values) {
-      if (p.isWeighted == true || p.unitSystemTypeIndex == 1 || p.barcode.startsWith('SCALE_') || p.name.contains('ميزان') || p.name.contains('كغ')) {
+      if (p.isWeighted == true ||
+          p.unitSystemTypeIndex == 1 ||
+          p.barcode.startsWith('SCALE_') ||
+          p.name.contains('ميزان') ||
+          p.name.contains('كغ') ||
+          p.baseUnitName.trim() == 'كغ' ||
+          (p.pluCode != null && p.pluCode!.isNotEmpty)) {
         list.add({
           'id': p.id,
           'name': p.name,
