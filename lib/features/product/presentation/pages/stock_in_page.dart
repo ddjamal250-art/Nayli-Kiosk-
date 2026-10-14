@@ -20,6 +20,7 @@ import '../../../../core/utils/catalog_crowdsource_helper.dart';
 import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../domain/entities/product.dart';
+import '../../data/models/product_model.dart';
 import '../bloc/product_bloc.dart';
 import '../../../documents/domain/entities/commercial_document.dart';
 import '../../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
