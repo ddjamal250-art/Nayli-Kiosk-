@@ -1755,9 +1755,8 @@ warning - The '!' will have no effect because the receiver can't be null - lib\f
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:324:29 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:30 - prefer_const_literals_to_create_immutables
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:31 - prefer_const_constructors
-  error - Undefined name 'baseName' - lib\features\product\presentation\pages\edit_product_page.dart:363:11 - undefined_identifier
-   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:1050:10 - unused_element
-   info - A value for optional parameter 'trailing' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:1051:10 - unused_element
+   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:1051:10 - unused_element
+   info - A value for optional parameter 'trailing' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:1052:10 - unused_element
 warning - Unused import: 'package:go_router/go_router.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:4:8 - unused_import
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:6:8 - unused_import
 warning - Unused import: '../../domain/entities/product.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:12:8 - unused_import
@@ -2143,8 +2142,6 @@ warning - The value of the local variable 'copies' isn't used - lib\features\pro
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\shopping_list_page.dart:91:7 - use_build_context_synchronously
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\product\presentation\pages\stock_in_page.dart:9:8 - depend_on_referenced_packages
    info - The declaration '_mergeUnitsWithNewPrices' isn't referenced - lib\features\product\presentation\pages\stock_in_page.dart:467:21 - unused_element
-  error - The await expression can only be used in an async function - lib\features\product\presentation\pages\stock_in_page.dart:732:7 - await_in_wrong_context
-  error - The await expression can only be used in an async function - lib\features\product\presentation\pages\stock_in_page.dart:761:7 - await_in_wrong_context
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:836:11 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:843:11 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:850:32 - use_build_context_synchronously
