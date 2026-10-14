@@ -519,11 +519,11 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
             newStock = state.isReturnMode
                 ? (productModel.stock + deductGrams).toDouble() : (productModel.stock - deductGrams).toDouble().clamp(0.0, 9999999.0);
           } else {
-            // منتج عادي: stock بالحبة
-            final deductInt = cartItem.totalStockDeduct.round();
+            // منتج عادي أو سوائل ومقاسات:
+            final deductQty = cartItem.totalStockDeduct;
             newStock = state.isReturnMode
-                ? (productModel.stock + deductInt).toDouble()
-                : (productModel.stock - deductInt).toDouble().clamp(0.0, 999999.0);
+                ? (productModel.stock + deductQty)
+                : (productModel.stock - deductQty).clamp(0.0, 999999.0);
           }
 
           
@@ -558,15 +558,21 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           productBox.put(originalId, productModel.copyWith(stock: newStock, stockBatches: updatedBatches));
 
           // SMART SHOPPING LIST AUTOMATION
-          if (newStock <= 5) {
+          final bool isLiquid = productModel.liquidConfigJson != null || productModel.isLiquidProduct;
+          final double lowStockThreshold = isLiquid
+              ? (productModel.liquidConfig?.containerVolume ?? 100.0) * 0.15
+              : 5.0;
+
+          if (newStock <= lowStockThreshold) {
             final shoppingList = HiveDatabase.shoppingListBox;
             final existingList = shoppingList.get(originalId);
+            final double refillQty = isLiquid ? (productModel.liquidConfig?.containerVolume ?? 100.0) : 10.0;
             if (existingList == null) {
               shoppingList.put(originalId, {
                 'id': originalId,
                 'name': productModel.name,
                 'currentStock': newStock,
-                'qtyToBuy': 10, // Suggested refill qty
+                'qtyToBuy': refillQty, // Suggested refill qty
               });
             } else if (existingList is Map) {
                final updatedList = Map<String, dynamic>.from(existingList);

@@ -20,8 +20,10 @@ import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/adaptive_modal_helper.dart';
 import '../../../../core/widgets/product_image_display.dart';
+import '../../../../core/widgets/liquid_bottle_indicator.dart';
 import '../../../shop/data/models/shop_model.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/liquid_decant_config.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../bloc/product_bloc.dart';
 import '../widgets/quick_receive_modal.dart';
@@ -187,17 +189,7 @@ class _ProductListPageState extends State<ProductListPage> {
       final bloc = context.read<ProductBloc>();
       for (final id in _selectedProductIds) {
         final p = allProducts.firstWhere((item) => item.id == id, orElse: () => allProducts.first);
-        final updated = Product(
-          id: p.id,
-          name: p.name,
-          barcode: p.barcode,
-          price: p.price,
-          costPrice: p.costPrice,
-          wholesalePrice: p.wholesalePrice,
-          stock: p.stock,
-          category: selectedCat,
-          expiryDate: p.expiryDate,
-        );
+        final updated = p.copyWith(category: selectedCat);
         bloc.add(UpdateProduct(updated));
       }
       SoundService.playSaveSuccess();
@@ -280,16 +272,23 @@ class _ProductListPageState extends State<ProductListPage> {
       final bloc = context.read<ProductBloc>();
       for (final id in _selectedProductIds) {
         final p = allProducts.firstWhere((item) => item.id == id, orElse: () => allProducts.first);
-        final updated = Product(
-          id: p.id,
-          name: p.name,
-          barcode: p.barcode,
-          price: p.price,
-          costPrice: p.costPrice,
-          wholesalePrice: p.wholesalePrice,
-          stock: p.stock + selectedQty,
-          category: p.category,
-          expiryDate: p.expiryDate,
+        final double qtyToAdd = (p.isLiquidProduct && p.liquidConfig != null)
+            ? (selectedQty * p.liquidConfig!.containerVolume)
+            : selectedQty.toDouble();
+
+        LiquidDecantConfig? updatedLiquidConfig;
+        if (p.isLiquidProduct && p.liquidConfig != null) {
+          final cfg = p.liquidConfig!;
+          final prevReceived = cfg.totalReceivedVolumeMl;
+          final newTotalReceived = (prevReceived > 0 ? prevReceived : p.stock) + qtyToAdd;
+          updatedLiquidConfig = cfg.copyWith(
+            totalReceivedVolumeMl: newTotalReceived,
+          );
+        }
+
+        final updated = p.copyWith(
+          stock: p.stock + qtyToAdd,
+          liquidConfigJson: updatedLiquidConfig != null ? updatedLiquidConfig.toJsonString() : p.liquidConfigJson,
         );
         bloc.add(UpdateProduct(updated));
       }
@@ -1061,12 +1060,27 @@ class _ProductListPageState extends State<ProductListPage> {
                               ),
                               SizedBox(width: 4),
                             ],
-                            ProductImageDisplay(
-                              imageUrl: product.imageUrl,
-                              width: 48,
-                              height: 48,
-                              borderRadius: 8,
-                            ),
+                            if (product.isLiquidProduct && product.liquidConfig != null && (product.imageUrl == null || product.imageUrl!.isEmpty)) ...[
+                              SizedBox(
+                                width: 44,
+                                height: 50,
+                                child: LiquidBottleIndicator(
+                                  fillRatio: product.liquidConfig!.fillRatio(product.stock),
+                                  stockMl: product.stock,
+                                  unitName: product.liquidConfig!.unitName,
+                                  animate: false,
+                                  size: 44,
+                                  showLabel: false,
+                                ),
+                              ),
+                            ] else ...[
+                              ProductImageDisplay(
+                                imageUrl: product.imageUrl,
+                                width: 48,
+                                height: 48,
+                                borderRadius: 8,
+                              ),
+                            ],
                             SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -1082,6 +1096,18 @@ class _ProductListPageState extends State<ProductListPage> {
                                               fontSize: 14.5),
                                         ),
                                       ),
+                                      if (product.isLiquidProduct) ...[
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.teal.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                                          ),
+                                          child: Text('🧴 ${product.liquidConfig?.unitName ?? "مل"}', style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.teal)),
+                                        ),
+                                        const SizedBox(width: 4),
+                                      ],
                                       if (isWeighable) ...[
                                         Container(
                                           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1135,7 +1161,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                       Container(
                                         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: product.stock > 5
+                                          color: product.stock > (product.isLiquidProduct ? ((product.liquidConfig?.containerVolume ?? 100) * 0.2) : 5)
                                               ? Colors.green.withOpacity(0.1)
                                               : (product.stock > 0
                                                   ? Colors.orange.withOpacity(0.1)
@@ -1143,13 +1169,15 @@ class _ProductListPageState extends State<ProductListPage> {
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          isWeighable
-                                              ? '${product.stock} كغ'
-                                              : '${product.stock} ${context.tr('in_stock')}',
+                                          product.isLiquidProduct
+                                              ? '${product.stock == product.stock.roundToDouble() ? product.stock.toInt() : product.stock.toStringAsFixed(1)} ${product.liquidConfig?.unitName ?? "مل"}'
+                                              : isWeighable
+                                                  ? '${product.stock} كغ'
+                                                  : '${product.stock} ${context.tr('in_stock')}',
                                           style: TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
-                                            color: product.stock > 5
+                                            color: product.stock > (product.isLiquidProduct ? ((product.liquidConfig?.containerVolume ?? 100) * 0.2) : 5)
                                                 ? Colors.green[800]
                                                 : (product.stock > 0
                                                     ? Colors.orange[800]

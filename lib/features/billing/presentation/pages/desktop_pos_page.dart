@@ -49,6 +49,7 @@ import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
 import '../widgets/pos_header_toolbar.dart';
 import '../widgets/smart_scale_modal.dart';
+import '../widgets/liquid_decant_dialog.dart';
 import '../widgets/universal_unit_selector_dialog.dart';
 import '../../../../core/services/github_update_service.dart';
 
@@ -544,6 +545,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   }
 
   void _addProductToCartWithPricing(Product product, {double quantity = 1.0}) {
+    if (product.isLiquidProduct && !_isReturnMode) {
+      LiquidDecantDialog.show(context, product);
+      return;
+    }
     if (product.isCoffeeMachineProduct && !_isReturnMode) {
       _showCoffeeSaleDialog(product, quantity.toInt());
       return;
@@ -1549,6 +1554,32 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     // 3. Find product in local inventory by barcode (exact or normalized)
     final productBloc = context.read<ProductBloc>();
     final products = productBloc.state.products.where((p) => p.category != 'مقهى - مواد خام').toList();
+
+    // Check if scanned barcode belongs to a pre-bottled liquid decant format
+    final liquidFormatMatch = products.firstWhereOrNull((p) =>
+        p.isLiquidProduct &&
+        (p.liquidConfig?.formats.any((f) => f.isEnabled && f.barcode != null && f.barcode!.isNotEmpty && f.barcode == barcodeToScan) ?? false));
+    if (liquidFormatMatch != null) {
+      final fmt = liquidFormatMatch.liquidConfig!.formats.firstWhere((f) => f.barcode == barcodeToScan);
+      final uniqueUnitLevel = 'liquid_${fmt.volumeMl.toStringAsFixed(1)}ml';
+      context.read<BillingBloc>().add(AddProductToCartEvent(
+        liquidFormatMatch,
+        quantity: multiplier.toDouble(),
+        unitLevel: uniqueUnitLevel,
+        customUnitName: '${liquidFormatMatch.name} — ${fmt.volumeMl.toInt()}${liquidFormatMatch.liquidConfig!.unitName}',
+        customPrice: fmt.sellingPrice,
+        customUnitCost: fmt.totalCost(liquidFormatMatch.liquidConfig!.costPerMl),
+        customMultiplier: fmt.volumeMl,
+      ));
+      _onItemScanned();
+      _barcodeFocusNode.requestFocus();
+      SnackbarHelper.showSuccess(
+        context,
+        '${context.tr("added_to_cart")}: ${liquidFormatMatch.name} [${fmt.volumeMl.toInt()}${liquidFormatMatch.liquidConfig!.unitName}] (x$multiplier)',
+      );
+      return;
+    }
+
     final barcodeProduct = BarcodeNormalizer.findProduct(products, barcodeToScan);
 
     if (barcodeProduct != null) {

@@ -27,10 +27,13 @@ import '../../../../core/utils/receipt_ocr_parser.dart';
 import '../../../../core/utils/product_image_search_service.dart';
 import '../widgets/product_image_picker_field.dart';
 import '../widgets/ready_coffee_calculator_card.dart';
+import '../widgets/liquid_decant_calculator_card.dart';
+import '../../domain/entities/liquid_decant_config.dart';
+import '../../../../core/widgets/liquid_bottle_indicator.dart';
 import '../widgets/product_units_editor_widget.dart';
 import '../../../billing/presentation/widgets/quick_items_manager_dialog.dart';
 
-enum ArrivageUnitMode { cartons, vracSacs, singleUnits, coffeeMachine }
+enum ArrivageUnitMode { cartons, vracSacs, singleUnits, coffeeMachine, liquidDecant }
 
 class StockInPage extends StatefulWidget {
   final ParsedReceiptResult? initialReceiptResult;
@@ -60,6 +63,9 @@ class _StockInPageState extends State<StockInPage> {
 
   // Ready Coffee Calculator & Serving Recipe Data
   ReadyCoffeeData _coffeeData = ReadyCoffeeData();
+
+  // Liquid Decant & Packaging Configuration
+  LiquidDecantConfig _liquidConfig = LiquidDecantConfig.defaultPerfumeConfig();
 
   // Controllers
   final TextEditingController _nameController = TextEditingController();
@@ -341,7 +347,14 @@ class _StockInPageState extends State<StockInPage> {
         _itemImageUrl = existing.imageUrl;
         _selectedCategory = existing.category.isNotEmpty ? existing.category : 'عام';
         _isCategoryUserSelected = true;
-        if (existing.isWeighted || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
+        if (existing.isLiquidProduct || existing.liquidConfigJson != null) {
+          _unitMode = ArrivageUnitMode.liquidDecant;
+          if (existing.liquidConfig != null) {
+            _liquidConfig = existing.liquidConfig!;
+          }
+        } else if (existing.isCoffeeMachineProduct || existing.coffeeRecipeJson != null) {
+          _unitMode = ArrivageUnitMode.coffeeMachine;
+        } else if (existing.isWeighted || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
           _unitMode = ArrivageUnitMode.vracSacs;
         } else {
           _unitMode = ArrivageUnitMode.cartons;
@@ -483,12 +496,21 @@ class _StockInPageState extends State<StockInPage> {
     double effectiveCost = costPrice;
 
     final isCoffee = _unitMode == ArrivageUnitMode.coffeeMachine;
+    final isLiquid = _unitMode == ArrivageUnitMode.liquidDecant;
 
     if (isCoffee) {
       final bags = int.tryParse(_sacCountController.text.trim()) ?? 1;
       effectiveQty = ((bags > 0 ? bags : 1) * _coffeeData.baseYieldCount).toDouble();
       effectiveCost = _coffeeData.totalCupCost;
       _selectedCategory = 'القهوة الجاهزة';
+    } else if (isLiquid) {
+      final bottles = int.tryParse(_sacCountController.text.trim()) ?? 1;
+      final vol = _liquidConfig.containerVolume > 0 ? _liquidConfig.containerVolume : 100.0;
+      effectiveQty = ((bottles > 0 ? bottles : 1) * vol).toDouble();
+      effectiveCost = _liquidConfig.costPerMl;
+      if (_selectedCategory.trim().isEmpty || _selectedCategory == 'عام') {
+        _selectedCategory = 'عطور ومستحضرات تجميل';
+      }
     } else if (_unitMode == ArrivageUnitMode.cartons) {
       final cartons = _hasCarton ? (int.tryParse(_cartonCountController.text.trim()) ?? 0) : 0;
       final cCap = int.tryParse(_unitsPerCartonController.text.trim()) ?? 1;
@@ -509,25 +531,53 @@ class _StockInPageState extends State<StockInPage> {
     }
 
     // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
-    if (_isExistingInShop && _currentStock > 0 && costPrice > 0 && !isCoffee) {
+    if (_isExistingInShop && _currentStock > 0 && costPrice > 0 && !isCoffee && !isLiquid) {
       final oldCost = (existingProduct != null && existingProduct.costPrice > 0)
           ? existingProduct.costPrice
           : costPrice;
       final totalValue = (_currentStock * oldCost) + (effectiveQty * costPrice);
       final totalStock = _currentStock + effectiveQty;
       effectiveCost = totalStock > 0 ? (totalValue / totalStock) : costPrice;
+    } else if (isLiquid && _isExistingInShop && _currentStock > 0) {
+      // Calculate PUMP for liquid products on costPerMl level
+      final oldStockMl = _currentStock;
+      final oldCostPerMl = (existingProduct != null && existingProduct.costPrice > 0)
+          ? existingProduct.costPrice
+          : (existingProduct?.liquidConfig?.costPerMl ?? _liquidConfig.costPerMl);
+      final newCostPerMl = _liquidConfig.costPerMl;
+      final newVolumeMl = effectiveQty;
+
+      if (oldCostPerMl > 0 && newCostPerMl > 0 && (oldStockMl + newVolumeMl) > 0) {
+        final blendedCostPerMl = ((oldStockMl * oldCostPerMl) + (newVolumeMl * newCostPerMl)) / (oldStockMl + newVolumeMl);
+        final newContainerCost = blendedCostPerMl * _liquidConfig.effectiveSellableVolume;
+        _liquidConfig = _liquidConfig.copyWith(
+          containerCost: newContainerCost,
+        );
+        effectiveCost = blendedCostPerMl;
+      }
     }
+
     final masterMatch = MasterCatalogService.searchByBarcode(_activeBarcode) ??
         MasterCatalogService.instance.search(name).firstOrNull;
 
     final productImageUrl = _itemImageUrl ?? existingProduct?.imageUrl ?? masterMatch?.imageUrl;
-    final effectivePrice = isCoffee ? _coffeeData.salePrice : price;
+    final effectivePrice = isCoffee
+        ? _coffeeData.salePrice
+        : (isLiquid
+            ? (_liquidConfig.defaultPricePerMl > 0
+                ? _liquidConfig.defaultPricePerMl
+                : price)
+            : price);
 
     final effectiveCategory = isCoffee
         ? 'القهوة الجاهزة'
-        : (_selectedCategory.trim().isNotEmpty
-            ? _selectedCategory.trim()
-            : (existingProduct?.category ?? masterMatch?.category ?? 'عام'));
+        : (isLiquid
+            ? (_selectedCategory.trim().isNotEmpty && _selectedCategory != 'عام'
+                ? _selectedCategory.trim()
+                : 'عطور ومستحضرات تجميل')
+            : (_selectedCategory.trim().isNotEmpty
+                ? _selectedCategory.trim()
+                : (existingProduct?.category ?? masterMatch?.category ?? 'عام')));
 
     // Resolve Special Offers
     List<SpecialOffer> resolvedOffers = [];
@@ -599,6 +649,20 @@ class _StockInPageState extends State<StockInPage> {
       resolvedUnits = [
         ProductUnit(tier: UnitTier.small, name: 'كأس', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
       ];
+    } else if (_unitMode == ArrivageUnitMode.liquidDecant) {
+      resolvedUnits = [
+        ProductUnit(tier: UnitTier.small, name: _liquidConfig.unitName, multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
+      ];
+      for (final fmt in _liquidConfig.formats.where((f) => f.isEnabled)) {
+        resolvedUnits.add(ProductUnit(
+          tier: UnitTier.medium,
+          name: '${fmt.volumeMl == fmt.volumeMl.roundToDouble() ? fmt.volumeMl.toInt() : fmt.volumeMl}${_liquidConfig.unitName}',
+          multiplier: fmt.volumeMl,
+          price: fmt.sellingPrice,
+          cost: fmt.totalCost(_liquidConfig.costPerMl),
+          barcode: fmt.barcode,
+        ));
+      }
     } else {
       resolvedUnits = [
         ProductUnit(tier: UnitTier.small, name: 'حبة', multiplier: 1.0, price: effectivePrice, cost: effectiveCost),
@@ -623,6 +687,14 @@ class _StockInPageState extends State<StockInPage> {
 
     String savedProductId = '';
 
+    if (isLiquid) {
+      final prevReceived = existingProduct?.liquidConfig?.totalReceivedVolumeMl ?? 0.0;
+      final newTotalReceived = (prevReceived > 0 ? prevReceived : _currentStock) + effectiveQty;
+      _liquidConfig = _liquidConfig.copyWith(
+        totalReceivedVolumeMl: newTotalReceived,
+      );
+    }
+
     if (_isExistingInShop && _existingProductId != null) {
       savedProductId = _existingProductId!;
       final updatedProduct = (existingProduct ?? Product(
@@ -642,12 +714,15 @@ class _StockInPageState extends State<StockInPage> {
         stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
+        liquidConfigJson: isLiquid ? _liquidConfig.toJsonString() : existingProduct?.liquidConfigJson,
+        baseUnitName: isLiquid ? _liquidConfig.unitName : (existingProduct?.baseUnitName ?? 'قطعة'),
+        unitSystemType: isLiquid ? UnitSystemType.volume : (existingProduct?.unitSystemType ?? UnitSystemType.discrete),
       );
       productBloc.add(UpdateProduct(updatedProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         updatedProduct,
         category: effectiveCategory,
-        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : 'حبة')),
+        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : (_unitMode == ArrivageUnitMode.liquidDecant ? 'مل' : 'حبة'))),
       );
     } else {
       final newId = const Uuid().v4();
@@ -665,12 +740,15 @@ class _StockInPageState extends State<StockInPage> {
         stockBatches: cappedBatches,
         expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
         imageUrl: productImageUrl,
+        liquidConfigJson: isLiquid ? _liquidConfig.toJsonString() : null,
+        baseUnitName: isLiquid ? _liquidConfig.unitName : 'قطعة',
+        unitSystemType: isLiquid ? UnitSystemType.volume : UnitSystemType.discrete,
       );
       productBloc.add(AddProduct(newProduct));
       CatalogCrowdsourceHelper.silentHarvest(
         newProduct,
         category: effectiveCategory,
-        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : 'حبة')),
+        unit: _unitMode == ArrivageUnitMode.vracSacs ? 'كغ' : (_unitMode == ArrivageUnitMode.cartons ? 'كرتونة' : (_unitMode == ArrivageUnitMode.coffeeMachine ? 'كأس' : (_unitMode == ArrivageUnitMode.liquidDecant ? 'مل' : 'حبة'))),
       );
     }
 
@@ -1355,6 +1433,8 @@ class _StockInPageState extends State<StockInPage> {
                         children: [
                           _buildModeTab('📦 كراتين وصناديق', ArrivageUnitMode.cartons),
                           const SizedBox(width: 4),
+                          _buildModeTab('✨ عطور وسوائل (تقسيم وتعبئة)', ArrivageUnitMode.liquidDecant),
+                          const SizedBox(width: 4),
                           _buildModeTab('☕ ماكينة القهوة (حساب الأكواب)', ArrivageUnitMode.coffeeMachine),
                           const SizedBox(width: 4),
                           _buildModeTab('🛍️ شكاير وميزان', ArrivageUnitMode.vracSacs),
@@ -1519,6 +1599,114 @@ class _StockInPageState extends State<StockInPage> {
                             ],
                           ),
                         );
+                      },
+                    ),
+                  ] else if (_unitMode == ArrivageUnitMode.liquidDecant) ...[
+                    // Container count & Total Volume overview row
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.teal.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _sacCountController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(
+                                labelText: 'عدد العبوات المستلمة (قوارير أصلية/BIDON) *',
+                                hintText: '1',
+                                prefixIcon: Icon(Icons.inventory_2_outlined, color: Colors.teal),
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.teal.shade100),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('إجمالي كمية المخزون بالمليلتر:', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                  Text(
+                                    '${((int.tryParse(_sacCountController.text.trim()) ?? 1) * _liquidConfig.containerVolume).toStringAsFixed(0)} ${_liquidConfig.unitName}',
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.teal),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_isExistingInShop && _existingProductId != null)
+                      Builder(builder: (context) {
+                        final existingProd = context.read<ProductBloc>().state.products
+                            .firstWhereOrNull((p) => p.id == _existingProductId);
+                        if (existingProd == null || !existingProd.isLiquidProduct) return const SizedBox.shrink();
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.teal.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              LiquidBottleIndicator(
+                                fillRatio: existingProd.liquidConfig?.fillRatio(existingProd.stock) ?? 0.0,
+                                stockMl: existingProd.stock,
+                                unitName: existingProd.liquidConfig?.unitName ?? 'مل',
+                                animate: true,
+                                size: 85,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('المخزون الحالي قبل الاستلام:', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                    Text(
+                                      '${existingProd.stock.toStringAsFixed(0)} ${existingProd.liquidConfig?.unitName ?? 'مل'}',
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'تكلفة المليلتر الحالية: ${existingProd.liquidConfig?.costPerMl.toStringAsFixed(2) ?? '—'} دج',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    // Dedicated Liquid & Decant Calculator Card
+                    LiquidDecantCalculatorCard(
+                      initialConfig: _liquidConfig,
+                      onChanged: (config) {
+                        setState(() {
+                          _liquidConfig = config;
+                          _costPriceController.text = config.costPerMl.toStringAsFixed(2);
+                          if (config.defaultPricePerMl > 0) {
+                            _priceController.text = config.defaultPricePerMl.toStringAsFixed(2);
+                          }
+                          final bottles = int.tryParse(_sacCountController.text.trim()) ?? 1;
+                          _qtyController.text = ((bottles > 0 ? bottles : 1) * config.containerVolume).toString();
+                        });
                       },
                     ),
                   ] else if (_unitMode == ArrivageUnitMode.vracSacs) ...[

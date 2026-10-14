@@ -11,6 +11,7 @@ import '../../../../core/widgets/product_image_display.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
+import 'liquid_decant_dialog.dart';
 
 class UniversalUnitSelectorDialog extends StatefulWidget {
   final Product product;
@@ -27,6 +28,9 @@ class UniversalUnitSelectorDialog extends StatefulWidget {
   });
 
   static Future<void> showForCartItem(BuildContext context, CartItem item) {
+    if (item.product.isLiquidProduct) {
+      return LiquidDecantDialog.show(context, item.product, existingCartItem: item);
+    }
     SoundService.playTabSwitch();
     return showDialog(
       context: context,
@@ -44,6 +48,9 @@ class UniversalUnitSelectorDialog extends StatefulWidget {
     Product product, {
     String initialUnit = 'pack',
   }) {
+    if (product.isLiquidProduct) {
+      return LiquidDecantDialog.show(context, product);
+    }
     SoundService.playTabSwitch();
     return showDialog(
       context: context,

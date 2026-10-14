@@ -20,6 +20,9 @@ import '../../domain/entities/special_offer.dart';
 import '../bloc/product_bloc.dart';
 import '../widgets/product_units_editor_widget.dart';
 import '../widgets/coffee_recipe_modal.dart';
+import '../../domain/entities/liquid_decant_config.dart';
+import '../widgets/liquid_decant_calculator_card.dart';
+import '../../../../core/widgets/liquid_bottle_indicator.dart';
 
 class EditProductPage extends StatefulWidget {
   final Product product;
@@ -51,6 +54,9 @@ class _EditProductPageState extends State<EditProductPage> {
 
   // --- تركيبة ووصفة القهوة الجاهزة ---
   String? _coffeeRecipeJson;
+
+  // --- إعدادات تجزئة وتقسيم السوائل والعطور ---
+  String? _liquidConfigJson;
 
   // --- إعدادات الكرتونة (Large) ---
   bool _hasCarton = false;
@@ -94,6 +100,7 @@ class _EditProductPageState extends State<EditProductPage> {
     _pluCodeCtrl = TextEditingController(text: p.pluCode ?? '');
     _selectedCategory = _availableCategories.contains(p.category) ? p.category : 'عام';
     _coffeeRecipeJson = p.coffeeRecipeJson;
+    _liquidConfigJson = p.liquidConfigJson;
 
     // 1. تحميل إعدادات العلبة أولاً لتحديد مضاعف العلبة
     final packUnit = p.units.where((u) => u.tier == UnitTier.medium || u.name.contains('علب')).firstOrNull;
@@ -366,6 +373,7 @@ class _EditProductPageState extends State<EditProductPage> {
       specialOffers: resolvedOffers,
       pluCode: plu.isNotEmpty ? plu : null,
       coffeeRecipeJson: _coffeeRecipeJson,
+      liquidConfigJson: _liquidConfigJson,
       isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
       packMultiplier: _hasPack && packCapUI > 0 ? packCapUI.toInt() : 1,
       packsPerCarton: cartonCapUI > 0 ? cartonCapUI.toInt() : 10,
@@ -381,6 +389,79 @@ class _EditProductPageState extends State<EditProductPage> {
       SnackbarHelper.showSuccess(context, 'تم تعديل المنتج بنجاح');
       context.pop();
     }
+  }
+
+  void _openLiquidDecantEditor() {
+    final currentCfg = LiquidDecantConfig.tryParse(_liquidConfigJson) ??
+        LiquidDecantConfig.defaultPerfumeConfig().copyWith(
+          containerCost: _parsePrice(_costPriceCtrl.text) > 0 ? _parsePrice(_costPriceCtrl.text) : 12000,
+          containerVolume: _parsePrice(_stockCtrl.text) > 0 ? _parsePrice(_stockCtrl.text) : 100,
+        );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Text('🧴', style: TextStyle(fontSize: 22)),
+                    SizedBox(width: 8),
+                    Text(
+                      'إعدادات تجزئة وتقسيم السوائل والعطور',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const Divider(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: LiquidDecantCalculatorCard(
+                  initialConfig: currentCfg,
+                  onChanged: (cfg) {
+                    setState(() {
+                      _liquidConfigJson = cfg.toJsonString();
+                      if (cfg.costPerMl > 0) {
+                        _costPriceCtrl.text = _formatDouble(cfg.costPerMl);
+                      }
+                      if (cfg.defaultPricePerMl > 0) {
+                        _priceCtrl.text = _formatDouble(cfg.defaultPricePerMl);
+                      }
+                      _baseUnitNameCtrl.text = cfg.unitName;
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal.shade800,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('حفظ الإعدادات والتأكيد', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -657,6 +738,153 @@ class _EditProductPageState extends State<EditProductPage> {
               ),
               const SizedBox(height: 16),
             ],
+
+            // --- إعدادات تقسيم وتعبئة السوائل والعطور ومستحضرات التجميل ---
+            Builder(
+              builder: (context) {
+                final cfg = LiquidDecantConfig.tryParse(_liquidConfigJson);
+                final hasConfig = cfg != null;
+                final isLiquidCandidate = hasConfig ||
+                    _selectedCategory.contains('عطور') ||
+                    _selectedCategory.contains('تجميل') ||
+                    _baseUnitNameCtrl.text.contains('مل') ||
+                    _baseUnitNameCtrl.text.contains('غرام');
+
+                if (!isLiquidCandidate && !hasConfig) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.water_drop_outlined, color: Colors.teal),
+                      label: const Text('تفعيل ميزة تقسيم وتعبئة السوائل والعطور 🧴', style: TextStyle(color: Colors.teal)),
+                      onPressed: _openLiquidDecantEditor,
+                    ),
+                  );
+                }
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.teal.shade300),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Text('🧴', style: TextStyle(fontSize: 18)),
+                              SizedBox(width: 8),
+                              Text(
+                                'تجزئة وتقسيم السوائل والعطور ومستحضرات التجميل:',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF004D40)),
+                              ),
+                            ],
+                          ),
+                          if (hasConfig)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.teal.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${cfg.formats.where((f) => f.isEnabled).length} مقاسات قوارير',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (hasConfig) ...[
+                        Row(
+                          children: [
+                            LiquidBottleIndicator(
+                              fillRatio: cfg.fillRatio(widget.product.stock),
+                              stockMl: widget.product.stock,
+                              unitName: cfg.unitName,
+                              animate: true,
+                              size: 70,
+                              showLabel: false,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'تكلفة المليلتر: ${cfg.costPerMl.toStringAsFixed(2)} دج',
+                                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'سعة العبوة الأم: ${cfg.containerVolume.toInt()} ${cfg.unitName} (هدر: ${cfg.spillageLossPercent}%)',
+                                    style: TextStyle(fontSize: 11.5, color: Colors.teal.shade800),
+                                  ),
+                                  if (cfg.defaultPricePerMl > 0)
+                                    Text(
+                                      'سعر التعبئة الحرة: ${cfg.defaultPricePerMl.toStringAsFixed(1)} دج/${cfg.unitName}',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.teal.shade800,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.edit, size: 16),
+                                label: const Text('تعديل جدول القوارير وهوامش الربح 🧴⚙️', style: TextStyle(fontSize: 12)),
+                                onPressed: _openLiquidDecantEditor,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.delete_outline, size: 16),
+                              label: const Text('إلغاء التقسيم', style: TextStyle(fontSize: 11)),
+                              onPressed: () => setState(() => _liquidConfigJson = null),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        const Text(
+                          'يمكنك ضبط أحجام قوارير البيع (10ml, 30ml, 50ml...) وحساب تكلفة القوارير الفارغة وأرباح كل حجم تلقائياً.',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF00695C)),
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal.shade800,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          icon: const Icon(Icons.tune, size: 16),
+                          label: const Text('تهيئة جدول القوارير وهوامش الربح الآن 🧴✨', style: TextStyle(fontSize: 12)),
+                          onPressed: _openLiquidDecantEditor,
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
 
             // --- تفاصيل الوحدات العمودية الثلاث والعروض الخاصة ---
             ProductUnitsEditorWidget(

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'product_unit.dart';
 import 'special_offer.dart';
+import 'liquid_decant_config.dart';
 
 /// نوع الوحدة الأساسية للمنتج
 enum UnitSystemType {
@@ -64,9 +65,13 @@ class Product extends Equatable {
   final bool isDeleted; // Soft Deletes
   final List<PurchaseBatch> stockBatches; // Embedded FIFO Queue
   final String? coffeeRecipeJson; // Coffee System Payload
+  final String? liquidConfigJson; // Liquid Decanting & Packaging Payload
   final List<SpecialOffer> specialOffers; // العروض الخاصة والتخفيضات الذكية
   SpecialOffer? get specialOffer =>
       specialOffers.where((o) => o.isValid).firstOrNull ?? specialOffers.firstOrNull;
+
+  LiquidDecantConfig? get liquidConfig => LiquidDecantConfig.tryParse(liquidConfigJson);
+  bool get isLiquidProduct => liquidConfigJson != null || (unitSystemType == UnitSystemType.volume && baseUnitName.contains('مل'));
   
   // --- Legacy fields for backward compatibility (ignored by new UI) ---
   final String? packName;
@@ -147,6 +152,7 @@ class Product extends Equatable {
     this.isDeleted = false,
     this.stockBatches = const [],
     this.coffeeRecipeJson,
+    this.liquidConfigJson,
     this.specialOffers = const [],
 
     this.packName,
@@ -183,6 +189,7 @@ class Product extends Equatable {
     bool? isDeleted,
     List<PurchaseBatch>? stockBatches,
     String? coffeeRecipeJson,
+    String? liquidConfigJson,
     String? baseUnitName,
     List<ProductUnit>? units,
     String? pluCode,
@@ -218,6 +225,7 @@ class Product extends Equatable {
       isDeleted: isDeleted ?? this.isDeleted,
       stockBatches: stockBatches ?? this.stockBatches,
       coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
+      liquidConfigJson: liquidConfigJson ?? this.liquidConfigJson,
       specialOffers: specialOffers ?? (specialOffer != null ? [specialOffer] : this.specialOffers),
       baseUnitName: baseUnitName ?? this.baseUnitName,
       units: units ?? this.units,
@@ -242,7 +250,7 @@ class Product extends Equatable {
   List<Object?> get props => [
         id, name, barcode, price, costPrice, stock, category,
         isWeighted, wholesalePrice, expiryDate, imageUrl,
-        unitSystemType, isDeleted, stockBatches, coffeeRecipeJson,
+        unitSystemType, isDeleted, stockBatches, coffeeRecipeJson, liquidConfigJson,
         specialOffers, baseUnitName, units, pluCode,
       ];
 }

@@ -6,6 +6,8 @@ import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
+import '../../domain/entities/liquid_decant_config.dart';
+import '../../../../core/widgets/liquid_bottle_indicator.dart';
 import '../bloc/product_bloc.dart';
 
 class QuickReceiveModal extends StatefulWidget {
@@ -53,15 +55,26 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
   void initState() {
     super.initState();
     _product = widget.product;
-    _quantityCtrl = TextEditingController(text: '1');
-    _costPriceCtrl = TextEditingController(text: _product.costPrice.toStringAsFixed(2));
-    _sellPriceCtrl = TextEditingController(text: _product.price.toStringAsFixed(2));
+    _availableUnits = _getAvailableUnits();
+
+    if (_product.isLiquidProduct && _product.liquidConfig != null) {
+      final cfg = _product.liquidConfig!;
+      _selectedUnit = _availableUnits.firstOrNull;
+      _quantity = 1.0;
+      _quantityCtrl = TextEditingController(text: '1');
+      final initialCost = _selectedUnit?.cost ?? cfg.containerCost;
+      final initialSell = _selectedUnit?.price ?? (_product.price > 0 ? _product.price : cfg.costPerMl * 1.5);
+      _costPriceCtrl = TextEditingController(text: initialCost.toStringAsFixed(2));
+      _sellPriceCtrl = TextEditingController(text: initialSell.toStringAsFixed(2));
+    } else {
+      _quantityCtrl = TextEditingController(text: '1');
+      _costPriceCtrl = TextEditingController(text: _product.costPrice.toStringAsFixed(2));
+      _sellPriceCtrl = TextEditingController(text: _product.price.toStringAsFixed(2));
+    }
     
     if (_product.expiryDate != null) {
       _expiryDate = DateTime.tryParse(_product.expiryDate!);
     }
-
-    _availableUnits = _getAvailableUnits();
   }
 
   @override
@@ -74,6 +87,27 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
 
   List<ProductUnit> _getAvailableUnits() {
     final List<ProductUnit> list = [];
+    if (_product.isLiquidProduct && _product.liquidConfig != null) {
+      final cfg = _product.liquidConfig!;
+      list.add(ProductUnit(
+        name: 'عبوة أصلية كاملة (${cfg.containerVolume.toInt()} ${cfg.unitName})',
+        tier: UnitTier.large,
+        multiplier: cfg.containerVolume,
+        cost: cfg.containerCost,
+        price: cfg.containerCost * 1.5,
+      ));
+      for (final fmt in cfg.formats.where((f) => f.isEnabled)) {
+        list.add(ProductUnit(
+          name: fmt.name,
+          tier: UnitTier.medium,
+          multiplier: fmt.volumeMl,
+          cost: fmt.totalCost(cfg.costPerMl),
+          price: fmt.sellingPrice,
+        ));
+      }
+      return list;
+    }
+
     if (_product.units.isNotEmpty) {
       for (final u in _product.units) {
         if (!u.isEnabled) continue;
@@ -121,6 +155,16 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
   double get _totalPiecesAdded => _quantity * _effectiveMultiplier;
   String get _currentUnitName => _selectedUnit?.name ?? _product.baseUnitName;
 
+  LiquidType _inferLiquidType(Product p) {
+    final cat = p.category.toLowerCase();
+    final name = p.name.toLowerCase();
+    if (name.contains('زيت') || cat.contains('زيت')) return LiquidType.oilPerfume;
+    if (name.contains('عطر') || cat.contains('عطر') || cat.contains('parfum')) return LiquidType.perfume;
+    if (name.contains('كيراتين') || name.contains('بروتين') || name.contains('شامبو') || cat.contains('شعر')) return LiquidType.hairCare;
+    if (cat.contains('تجميل') || cat.contains('مستحضر')) return LiquidType.cosmetics;
+    return LiquidType.generic;
+  }
+
   void _updateQuantity(double q) {
     final validQ = q.clamp(0.01, 99999.0);
     setState(() {
@@ -165,8 +209,38 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
 
     final pieceCost = multiplier > 0 ? (enteredCost / multiplier) : enteredCost;
 
+    LiquidDecantConfig? updatedLiquidConfig;
+    double finalCostPrice = pieceCost > 0 ? pieceCost : _product.effectiveCostPrice;
+
+    if (_product.isLiquidProduct && _product.liquidConfig != null) {
+      final config = _product.liquidConfig!;
+      final oldStockMl = _product.stock;
+      final oldCostPerMl = config.costPerMl > 0 ? config.costPerMl : _product.costPrice;
+      final newVolumeMl = realQtyAdded;
+      final newCostPerMl = pieceCost;
+
+      double blendedCostPerMl = pieceCost;
+      double newContainerCost = config.containerCost;
+
+      if (oldStockMl > 0 && oldCostPerMl > 0 && newCostPerMl > 0 && (oldStockMl + newVolumeMl) > 0) {
+        blendedCostPerMl = ((oldStockMl * oldCostPerMl) + (newVolumeMl * newCostPerMl)) / (oldStockMl + newVolumeMl);
+        newContainerCost = blendedCostPerMl * config.effectiveSellableVolume;
+      } else if (newCostPerMl > 0) {
+        newContainerCost = newCostPerMl * config.effectiveSellableVolume;
+      }
+
+      final prevReceived = config.totalReceivedVolumeMl;
+      final newTotalReceived = (prevReceived > 0 ? prevReceived : oldStockMl) + newVolumeMl;
+
+      updatedLiquidConfig = config.copyWith(
+        containerCost: newContainerCost,
+        totalReceivedVolumeMl: newTotalReceived,
+      );
+      finalCostPrice = blendedCostPerMl;
+    }
+
     final newBatch = PurchaseBatch(
-      costPrice: pieceCost > 0 ? pieceCost : _product.effectiveCostPrice,
+      costPrice: finalCostPrice,
       remainingQuantity: realQtyAdded,
       dateAdded: _dateAdded,
     );
@@ -187,10 +261,11 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
 
     final updated = _product.copyWith(
       stock: _product.stock + realQtyAdded,
-      costPrice: pieceCost > 0 ? pieceCost : _product.effectiveCostPrice,
+      costPrice: finalCostPrice,
       price: _selectedUnit == null ? (enteredSell > 0 ? enteredSell : _product.price) : _product.price,
       units: updatedUnits,
       stockBatches: newBatches,
+      liquidConfigJson: updatedLiquidConfig != null ? updatedLiquidConfig.toJsonString() : _product.liquidConfigJson,
       expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
     );
 
@@ -228,13 +303,86 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
               IconButton(icon: const Icon(Icons.close), onPressed: widget.onReceived),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(_product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          Text(
-            'المخزون الحالي: ${_product.stock} ${_product.baseUnitName}',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          const SizedBox(height: 16),
+          if (_product.isLiquidProduct && _product.liquidConfig != null) ...[
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 14),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal.shade200),
+              ),
+              child: Row(
+                children: [
+                  LiquidBottleIndicator(
+                    fillRatio: _product.liquidConfig!.fillRatio(_product.stock),
+                    stockMl: _product.stock,
+                    unitName: _product.liquidConfig!.unitName,
+                    liquidType: _inferLiquidType(_product),
+                    size: 72,
+                    showLabel: false,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _product.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF004D40)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.teal.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'حالي: ${_product.stock.toStringAsFixed(0)} ${_product.liquidConfig!.unitName}',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.teal),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'بعد الاستلام: ${newStock.toStringAsFixed(0)} ${_product.liquidConfig!.unitName}',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade900),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'سعة العبوة الأم: ${_product.liquidConfig!.containerVolume.toInt()} ${_product.liquidConfig!.unitName} | تكلفة المليلتر: ${_product.liquidConfig!.costPerMl.toStringAsFixed(2)} دج',
+                          style: TextStyle(fontSize: 10.5, color: Colors.grey.shade700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 6),
+            Text(_product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(
+              'المخزون الحالي: ${_product.stock} ${_product.baseUnitName}',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+          ],
           
           // Quantity and Unit Row
           Row(
@@ -331,26 +479,40 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
           const SizedBox(height: 12),
 
           // Common Quantity Quick-Select Chips
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [1.0, 5.0, 10.0, 20.0, 24.0, 50.0, 100.0].map((amt) {
-              final isSel = _quantity == amt;
-              return ActionChip(
-                label: Text(
-                  '+${amt == amt.roundToDouble() ? amt.toInt() : amt}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: isSel ? Colors.green.shade900 : Colors.black87,
+          Builder(builder: (context) {
+            final isLiquid = _product.isLiquidProduct;
+            final List<double> quickAmounts = isLiquid
+                ? (_effectiveMultiplier > 1
+                    ? [1.0, 2.0, 3.0, 5.0, 10.0]
+                    : [50.0, 100.0, 250.0, 500.0, 1000.0])
+                : [1.0, 5.0, 10.0, 20.0, 24.0, 50.0, 100.0];
+
+            return Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: quickAmounts.map((amt) {
+                final isSel = _quantity == amt;
+                final chipText = isLiquid && _effectiveMultiplier > 1
+                    ? '+${amt.toInt()} عبوة'
+                    : (isLiquid
+                        ? '+${amt.toInt()} مل'
+                        : '+${amt == amt.roundToDouble() ? amt.toInt() : amt}');
+                return ActionChip(
+                  label: Text(
+                    chipText,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: isSel ? Colors.green.shade900 : Colors.black87,
+                    ),
                   ),
-                ),
-                backgroundColor: isSel ? Colors.green.withOpacity(0.25) : Colors.grey[100],
-                side: isSel ? const BorderSide(color: Colors.green, width: 1.5) : BorderSide.none,
-                onPressed: () => _updateQuantity(amt),
-              );
-            }).toList(),
-          ),
+                  backgroundColor: isSel ? Colors.green.withOpacity(0.25) : Colors.grey[100],
+                  side: isSel ? const BorderSide(color: Colors.green, width: 1.5) : BorderSide.none,
+                  onPressed: () => _updateQuantity(amt),
+                );
+              }).toList(),
+            );
+          }),
           
           const SizedBox(height: 12),
 
