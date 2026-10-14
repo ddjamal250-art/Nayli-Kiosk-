@@ -1503,8 +1503,8 @@ warning - The value of the field '_popularEmojis' isn't used - lib\features\bill
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\quick_items_manager_dialog.dart:587:28 - prefer_const_constructors
 warning - The value of the field '_startTime' isn't used - lib\features\billing\presentation\widgets\session_lock_overlay.dart:30:23 - unused_field
 warning - The value of the field '_currentStockKg' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:31:10 - unused_field
-warning - The value of the local variable 'costPerKg' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:417:11 - unused_local_variable
-warning - The value of the local variable 'rawBarcode' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:429:11 - unused_local_variable
+warning - The value of the local variable 'costPerKg' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:423:11 - unused_local_variable
+warning - The value of the local variable 'rawBarcode' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:435:11 - unused_local_variable
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:1:8 - depend_on_referenced_packages
 warning - The operand can't be null, so the condition is always 'false' - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:319:28 - unnecessary_null_comparison
    info - Use interpolation to compose strings and values - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:533:36 - prefer_interpolation_to_compose_strings
@@ -1755,8 +1755,9 @@ warning - The '!' will have no effect because the receiver can't be null - lib\f
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:324:29 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:30 - prefer_const_literals_to_create_immutables
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:31 - prefer_const_constructors
-   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:953:10 - unused_element
-   info - A value for optional parameter 'trailing' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:954:10 - unused_element
+  error - Undefined name 'baseName' - lib\features\product\presentation\pages\edit_product_page.dart:363:11 - undefined_identifier
+   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:1050:10 - unused_element
+   info - A value for optional parameter 'trailing' isn't ever given - lib\features\product\presentation\pages\edit_product_page.dart:1051:10 - unused_element
 warning - Unused import: 'package:go_router/go_router.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:4:8 - unused_import
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:6:8 - unused_import
 warning - Unused import: '../../domain/entities/product.dart' - lib\features\product\presentation\pages\expiry_monitor_page.dart:12:8 - unused_import
@@ -2141,9 +2142,16 @@ warning - The value of the local variable 'copies' isn't used - lib\features\pro
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\shopping_list_page.dart:88:9 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\shopping_list_page.dart:91:7 - use_build_context_synchronously
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\product\presentation\pages\stock_in_page.dart:9:8 - depend_on_referenced_packages
-   info - The declaration '_mergeUnitsWithNewPrices' isn't referenced - lib\features\product\presentation\pages\stock_in_page.dart:463:21 - unused_element
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:994:25 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1063:32 - use_build_context_synchronously
+   info - The declaration '_mergeUnitsWithNewPrices' isn't referenced - lib\features\product\presentation\pages\stock_in_page.dart:466:21 - unused_element
+  error - Undefined name 'ProductModel' - lib\features\product\presentation\pages\stock_in_page.dart:730:27 - undefined_identifier
+  error - The await expression can only be used in an async function - lib\features\product\presentation\pages\stock_in_page.dart:731:7 - await_in_wrong_context
+  error - Undefined name 'ProductModel' - lib\features\product\presentation\pages\stock_in_page.dart:759:24 - undefined_identifier
+  error - The await expression can only be used in an async function - lib\features\product\presentation\pages\stock_in_page.dart:760:7 - await_in_wrong_context
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:835:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:842:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:849:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1008:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1077:32 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\product\presentation\pages\supplier_invoices_page.dart:134:19 - use_build_context_synchronously
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\widgets\liquid_decant_calculator_card.dart:74:21 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\product\presentation\widgets\liquid_decant_calculator_card.dart:81:20 - prefer_const_literals_to_create_immutables
