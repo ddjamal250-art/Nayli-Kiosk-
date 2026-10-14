@@ -358,6 +358,7 @@ class _EditProductPageState extends State<EditProductPage> {
         ? BarcodeGeneratorHelper.generateUniqueInStoreEan13()
         : rawBc;
 
+    final baseName = _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة';
     final effectiveBaseUnit = _isWeighted && (_baseUnitNameCtrl.text.isEmpty || _baseUnitNameCtrl.text == 'قطعة' || _baseUnitNameCtrl.text == 'حبة')
         ? 'كغ'
         : baseName;

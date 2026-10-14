@@ -473,7 +473,7 @@ class _StockInPageState extends State<StockInPage> {
   }
 
 
-  void _saveStockIn() {
+  Future<void> _saveStockIn() async {
     final name = _nameController.text.trim();
     final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
     final costPrice = double.tryParse(_costPriceController.text.trim()) ?? 0.0;
