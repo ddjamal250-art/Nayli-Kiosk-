@@ -5,27 +5,31 @@ class ProductOptionChoice extends Equatable {
   final String id;
   final String name; // e.g. "كبير", "حليب لوز", "سكر زيادة"
   final double priceDelta; // e.g. +50.0, +30.0, -10.0
+  final bool isDefault;
 
   const ProductOptionChoice({
     required this.id,
     required this.name,
     this.priceDelta = 0.0,
+    this.isDefault = false,
   });
 
   Map<String, dynamic> toMap() => {
     'id': id,
     'name': name,
     'priceDelta': priceDelta,
+    'isDefault': isDefault,
   };
 
   factory ProductOptionChoice.fromMap(Map<dynamic, dynamic> map) => ProductOptionChoice(
     id: map['id']?.toString() ?? '',
     name: map['name']?.toString() ?? '',
     priceDelta: (map['priceDelta'] as num?)?.toDouble() ?? 0.0,
+    isDefault: map['isDefault'] == true,
   );
 
   @override
-  List<Object> get props => [id, name, priceDelta];
+  List<Object> get props => [id, name, priceDelta, isDefault];
 }
 
 class ProductOptionGroup extends Equatable {
@@ -78,18 +82,24 @@ class ProductOptionGroup extends Equatable {
 }
 
 class SelectedProductOption extends Equatable {
+  final String? groupId;
   final String groupName;
+  final String? choiceId;
   final String choiceName;
   final double priceDelta;
 
   const SelectedProductOption({
+    this.groupId,
     required this.groupName,
+    this.choiceId,
     required this.choiceName,
     this.priceDelta = 0.0,
   });
 
   Map<String, dynamic> toMap() => {
+    'groupId': groupId,
     'groupName': groupName,
+    'choiceId': choiceId,
     'choiceName': choiceName,
     'priceDelta': priceDelta,
   };
@@ -97,7 +107,9 @@ class SelectedProductOption extends Equatable {
   Map<String, dynamic> toJson() => toMap();
 
   factory SelectedProductOption.fromMap(Map<dynamic, dynamic> map) => SelectedProductOption(
+    groupId: map['groupId']?.toString(),
     groupName: map['groupName']?.toString() ?? '',
+    choiceId: map['choiceId']?.toString(),
     choiceName: map['choiceName']?.toString() ?? '',
     priceDelta: (map['priceDelta'] as num?)?.toDouble() ?? 0.0,
   );
@@ -105,5 +117,5 @@ class SelectedProductOption extends Equatable {
   factory SelectedProductOption.fromJson(Map<dynamic, dynamic> map) => SelectedProductOption.fromMap(map);
 
   @override
-  List<Object> get props => [groupName, choiceName, priceDelta];
+  List<Object?> get props => [groupId, groupName, choiceId, choiceName, priceDelta];
 }
