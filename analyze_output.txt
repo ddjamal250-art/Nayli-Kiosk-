@@ -676,8 +676,7 @@ warning - Unused import: '../../features/documents/presentation/widgets/receipt_
    info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:279:36 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:283:36 - prefer_const_constructors
    info - The private field _connectedClients could be 'final' - lib\core\data\local_sync_server.dart:107:14 - prefer_final_fields
-warning - Unnecessary type check; the result is always 'true' - lib\core\data\local_sync_server.dart:552:32 - unnecessary_type_check
-  error - The name 'stopServer' is already defined - lib\core\data\local_sync_server.dart:1120:23 - duplicate_definition
+warning - Unnecessary type check; the result is always 'true' - lib\core\data\local_sync_server.dart:557:32 - unnecessary_type_check
 warning - Unused import: 'package:flutter/services.dart' - lib\core\data\master_catalog_service.dart:4:8 - unused_import
    info - The declaration '_parseJson' isn't referenced - lib\core\data\master_catalog_service.dart:48:24 - unused_element
 warning - The left operand can't be null, so the right operand is never executed - lib\core\data\master_catalog_service.dart:134:38 - dead_null_aware_expression
@@ -792,7 +791,6 @@ warning - Unused import: '../../../product/data/models/product_model.dart' - lib
    info - Unnecessary braces in a string interpolation - lib\features\billing\presentation\bloc\billing_bloc.dart:99:31 - unnecessary_brace_in_string_interps
    info - Unnecessary braces in a string interpolation - lib\features\billing\presentation\bloc\billing_bloc.dart:122:32 - unnecessary_brace_in_string_interps
    info - The declaration '_onCleanExpiredHeldCarts' isn't referenced - lib\features\billing\presentation\bloc\billing_bloc.dart:389:8 - unused_element
-  error - The method 'toJson' isn't defined for the type 'SelectedProductOption' - lib\features\billing\presentation\bloc\billing_bloc.dart:464:71 - undefined_method
 warning - Unused import: '../../../../core/utils/printer_helper.dart' - lib\features\billing\presentation\pages\cashier_shifts_page.dart:8:8 - unused_import
 warning - Unused import: '../../../../core/widgets/primary_button.dart' - lib\features\billing\presentation\pages\checkout_page.dart:1:8 - unused_import
 warning - Unused import: '../../../../core/service_locator.dart' - lib\features\billing\presentation\pages\checkout_page.dart:7:8 - unused_import
@@ -1110,29 +1108,24 @@ warning - The value of the field '_categoryTabs' isn't used - lib\features\billi
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2300:58 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2372:32 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2372:41 - use_build_context_synchronously
-  error - Undefined name 'dateStr' - lib\features\billing\presentation\pages\desktop_pos_page.dart:2384:11 - undefined_identifier
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:2635:42 - prefer_const_constructors
-   info - The declaration '_showPriceChecker' isn't referenced - lib\features\billing\presentation\pages\desktop_pos_page.dart:2749:8 - unused_element
-warning - The method doesn't override an inherited method - lib\features\billing\presentation\pages\desktop_pos_page.dart:3045:8 - override_on_non_overriding_member
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:3049:16 - prefer_const_constructors
-   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\pages\desktop_pos_page.dart:3050:21 - prefer_const_literals_to_create_immutables
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:3053:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:3062:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:3071:20 - prefer_const_constructors
-   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:3479:35 - prefer_interpolation_to_compose_strings
-warning - The value of the local variable 'isDark' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4206:11 - unused_local_variable
-warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4318:13 - unnecessary_type_check
-warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4326:13 - unnecessary_type_check
-warning - The value of the local variable 'effectivePiecesPerPack' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4382:11 - unused_local_variable
-warning - The value of the local variable 'singlePiecePrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4383:11 - unused_local_variable
-warning - The value of the local variable 'cartonPrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4385:11 - unused_local_variable
-warning - The value of the local variable 'price' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4487:15 - unused_local_variable
-warning - The value of the local variable 'id' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4490:15 - unused_local_variable
-warning - The value of the local variable 'cost' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4491:15 - unused_local_variable
-warning - The value of the local variable 'stock' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4492:15 - unused_local_variable
-warning - The '!' will have no effect because the receiver can't be null - lib\features\billing\presentation\pages\desktop_pos_page.dart:4558:48 - unnecessary_non_null_assertion
-  error - Expected an identifier - lib\features\billing\presentation\pages\desktop_pos_page.dart:4587:17 - missing_identifier
-  error - Expected to find ']' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4587:17 - expected_token
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:2637:42 - prefer_const_constructors
+   info - The declaration '_showPriceChecker' isn't referenced - lib\features\billing\presentation\pages\desktop_pos_page.dart:2751:8 - unused_element
+warning - The method doesn't override an inherited method - lib\features\billing\presentation\pages\desktop_pos_page.dart:3047:8 - override_on_non_overriding_member
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:3051:16 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\pages\desktop_pos_page.dart:3052:21 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:3055:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:3064:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:3073:20 - prefer_const_constructors
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:3481:35 - prefer_interpolation_to_compose_strings
+warning - The value of the local variable 'isDark' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4208:11 - unused_local_variable
+warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4320:13 - unnecessary_type_check
+warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4328:13 - unnecessary_type_check
+warning - The value of the local variable 'effectivePiecesPerPack' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4384:11 - unused_local_variable
+warning - The value of the local variable 'singlePiecePrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4385:11 - unused_local_variable
+warning - The value of the local variable 'cartonPrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4387:11 - unused_local_variable
+warning - The value of the local variable 'cost' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4493:15 - unused_local_variable
+warning - The value of the local variable 'stock' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4494:15 - unused_local_variable
+warning - The '!' will have no effect because the receiver can't be null - lib\features\billing\presentation\pages\desktop_pos_page.dart:4565:48 - unnecessary_non_null_assertion
 warning - Unused import: 'package:intl/intl.dart' - lib\features\billing\presentation\pages\home_page.dart:7:8 - unused_import
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\billing\presentation\pages\home_page.dart:72:3 - prefer_const_constructors_in_immutables
 warning - The value of the field '_dynamicTargetOffset' isn't used - lib\features\billing\presentation\pages\home_page.dart:82:11 - unused_field
@@ -2227,13 +2220,12 @@ warning - Unused import: '../../../product/domain/entities/product.dart' - lib\f
    info - Use interpolation to compose strings and values - lib\features\settings\presentation\pages\kiosk_settings_page.dart:626:54 - prefer_interpolation_to_compose_strings
    info - Use interpolation to compose strings and values - lib\features\settings\presentation\pages\kiosk_settings_page.dart:689:55 - prefer_interpolation_to_compose_strings
    info - Use interpolation to compose strings and values - lib\features\settings\presentation\pages\kiosk_settings_page.dart:726:13 - prefer_interpolation_to_compose_strings
-  error - Undefined class 'StreamSubscription' - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:42:3 - undefined_class
-   info - Use 'const' with the constructor to improve performance - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:171:45 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:385:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:393:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:408:30 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:418:28 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:1144:53 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:172:45 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:386:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:394:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:409:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:419:28 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\settings\presentation\pages\lan_sync_settings_page.dart:1145:53 - prefer_const_constructors
    info - Invalid use of a private type in a public API - lib\features\settings\presentation\pages\receipt_customizer_page.dart:31:19 - library_private_types_in_public_api
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\settings\presentation\pages\receipt_customizer_page.dart:164:3 - prefer_const_constructors_in_immutables
    info - The declaration '_getSeparatorLine' isn't referenced - lib\features\settings\presentation\pages\receipt_customizer_page.dart:491:10 - unused_element
