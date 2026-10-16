@@ -142,6 +142,10 @@ class ProductModel extends Product {
   final String? liquidConfigJson;
 
   @override
+  @HiveField(20)
+  final String? optionsConfigJson;
+
+  @override
   List<SpecialOffer> get specialOffers => SpecialOffer.listFromJsonString(specialOfferJson);
 
   @override
@@ -171,6 +175,7 @@ class ProductModel extends Product {
     this.coffeeRecipeJson,
     this.specialOfferJson,
     this.liquidConfigJson,
+    this.optionsConfigJson,
     bool isCoffeeMachineProduct = false,
     int packMultiplier = 1,
     int packsPerCarton = 10,
@@ -204,6 +209,7 @@ class ProductModel extends Product {
           stockBatches: stockBatchesModels,
           coffeeRecipeJson: coffeeRecipeJson,
           liquidConfigJson: liquidConfigJson,
+          optionsConfigJson: optionsConfigJson,
           specialOffers: SpecialOffer.listFromJsonString(specialOfferJson),
           isCoffeeMachineProduct: isCoffeeMachineProduct,
           packMultiplier: packMultiplier,
@@ -238,6 +244,7 @@ class ProductModel extends Product {
     List<PurchaseBatch>? stockBatches,
     String? coffeeRecipeJson,
     String? liquidConfigJson,
+    String? optionsConfigJson,
     String? baseUnitName,
     List<ProductUnit>? units,
     String? pluCode,
@@ -282,6 +289,7 @@ class ProductModel extends Product {
           : this.stockBatchesModels,
       coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
       liquidConfigJson: liquidConfigJson ?? this.liquidConfigJson,
+      optionsConfigJson: optionsConfigJson ?? this.optionsConfigJson,
       specialOfferJson: specialOffers != null
           ? SpecialOffer.listToJsonString(specialOffers)
           : (specialOffer != null
@@ -324,6 +332,7 @@ class ProductModel extends Product {
       stockBatchesModels: product.stockBatches.map((b) => PurchaseBatchModel.fromEntity(b)).toList(),
       coffeeRecipeJson: product.coffeeRecipeJson,
       liquidConfigJson: product.liquidConfigJson,
+      optionsConfigJson: product.optionsConfigJson,
       specialOfferJson: product.specialOffers.isNotEmpty
           ? SpecialOffer.listToJsonString(product.specialOffers)
           : (product.specialOffer != null ? jsonEncode(product.specialOffer!.toJson()) : null),
@@ -364,6 +373,7 @@ class ProductModel extends Product {
       stockBatches: stockBatchesModels,
       coffeeRecipeJson: coffeeRecipeJson,
       liquidConfigJson: liquidConfigJson,
+      optionsConfigJson: optionsConfigJson,
       specialOffers: specialOffers,
       isCoffeeMachineProduct: isCoffeeMachineProduct,
     );
@@ -394,6 +404,7 @@ class ProductModel extends Product {
       coffeeRecipeJson: json['coffeeRecipeJson']?.toString(),
       liquidConfigJson: json['liquidConfigJson']?.toString(),
       specialOfferJson: json['specialOfferJson']?.toString(),
+      optionsConfigJson: json['optionsConfigJson']?.toString(),
     );
   }
 
@@ -419,6 +430,7 @@ class ProductModel extends Product {
       'coffeeRecipeJson': coffeeRecipeJson,
       'liquidConfigJson': liquidConfigJson,
       'specialOfferJson': specialOfferJson,
+      'optionsConfigJson': optionsConfigJson,
     };
   }
 }
@@ -454,13 +466,14 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       pluCode: fields[17] as String?,
       specialOfferJson: fields[18] as String?,
       liquidConfigJson: fields[19] as String?,
+      optionsConfigJson: fields[20] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductModel obj) {
     writer
-      ..writeByte(20)
+      ..writeByte(21)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -500,7 +513,9 @@ class ProductModelAdapter extends TypeAdapter<ProductModel> {
       ..writeByte(18)
       ..write(obj.specialOfferJson)
       ..writeByte(19)
-      ..write(obj.liquidConfigJson);
+      ..write(obj.liquidConfigJson)
+      ..writeByte(20)
+      ..write(obj.optionsConfigJson);
   }
 
   @override

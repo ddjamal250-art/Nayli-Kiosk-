@@ -91,10 +91,108 @@ class PrinterHelper {
   }
 
   static Future<void> openCashDrawer() async {
+    final List<int> drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
+
+    // 1. Android / iOS: Bluetooth thermal printer
+    if (Platform.isAndroid || Platform.isIOS) {
+      try {
+        await PrintBluetoothThermal.writeBytes(drawerCommand);
+      } catch (_) {}
+      return;
+    }
+
+    // 2. Windows Desktop: Winspool RAW printer spooler
+    if (Platform.isWindows) {
+      try {
+        final printerName = defaultThermalPrinter.isNotEmpty ? defaultThermalPrinter : '';
+        if (printerName.isNotEmpty) {
+          await _sendRawBytesToWindowsPrinter(printerName, drawerCommand);
+        } else {
+          final printers = await Printing.listPrinters();
+          final best = findBestThermalPrinter(printers);
+          if (best != null) {
+            await _sendRawBytesToWindowsPrinter(best.name, drawerCommand);
+          }
+        }
+      } catch (e) {
+        debugPrint('Windows drawer kick error: $e');
+      }
+    }
+  }
+
+  /// Sends raw ESC/POS command bytes to a Windows printer spooler via winspool.drv
+  static Future<void> _sendRawBytesToWindowsPrinter(String printerName, List<int> bytes) async {
     try {
-      final List<int> drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
-      await PrintBluetoothThermal.writeBytes(drawerCommand);
-    } catch (_) {}
+      final tempDir = Directory.systemTemp;
+      final file = File('${tempDir.path}\\drawer_${DateTime.now().millisecondsSinceEpoch}.bin');
+      await file.writeAsBytes(bytes);
+
+      final escapedPrinter = printerName.replaceAll('"', '`"');
+      final escapedPath = file.path.replaceAll('\\', '\\\\');
+
+      final psScript = '''
+\$printer = "$escapedPrinter";
+\$filePath = "$escapedPath";
+\$bytes = [System.IO.File]::ReadAllBytes(\$filePath);
+
+\$code = @"
+using System;
+using System.Runtime.InteropServices;
+public class RawPrinterHelper {
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
+    public class DOCINFOA {
+        [MarshalAs(UnmanagedType.LPStr)] public string pDocName;
+        [MarshalAs(UnmanagedType.LPStr)] public string pOutputFile;
+        [MarshalAs(UnmanagedType.LPStr)] public string pDataType;
+    }
+    [DllImport("winspool.Drv", EntryPoint="OpenPrinterA", SetLastError=true, CharSet=CharSet.Ansi, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool OpenPrinter([MarshalAs(UnmanagedType.LPStr)] string szPrinter, out IntPtr hPrinter, IntPtr pd);
+    [DllImport("winspool.Drv", EntryPoint="ClosePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool ClosePrinter(IntPtr hPrinter);
+    [DllImport("winspool.Drv", EntryPoint="StartDocPrinterA", SetLastError=true, CharSet=CharSet.Ansi, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool StartDocPrinter(IntPtr hPrinter, Int32 level, [In, MarshalAs(UnmanagedType.LPStruct)] DOCINFOA di);
+    [DllImport("winspool.Drv", EntryPoint="EndDocPrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool EndDocPrinter(IntPtr hPrinter);
+    [DllImport("winspool.Drv", EntryPoint="StartPagePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool StartPagePrinter(IntPtr hPrinter);
+    [DllImport("winspool.Drv", EntryPoint="EndPagePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool EndPagePrinter(IntPtr hPrinter);
+    [DllImport("winspool.Drv", EntryPoint="WritePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool WritePrinter(IntPtr hPrinter, IntPtr pBytes, Int32 dwCount, out Int32 dwWritten);
+
+    public static bool Send(string printerName, byte[] data) {
+        IntPtr hPrinter;
+        if (!OpenPrinter(printerName, out hPrinter, IntPtr.Zero)) return false;
+        DOCINFOA di = new DOCINFOA();
+        di.pDocName = "Nayli_POS_DrawerKick";
+        di.pDataType = "RAW";
+        if (StartDocPrinter(hPrinter, 1, di)) {
+            if (StartPagePrinter(hPrinter)) {
+                IntPtr pUnmanagedBytes = Marshal.AllocCoTaskMem(data.Length);
+                Marshal.Copy(data, 0, pUnmanagedBytes, data.Length);
+                int written;
+                WritePrinter(hPrinter, pUnmanagedBytes, data.Length, out written);
+                Marshal.FreeCoTaskMem(pUnmanagedBytes);
+                EndPagePrinter(hPrinter);
+            }
+            EndDocPrinter(hPrinter);
+        }
+        ClosePrinter(hPrinter);
+        return true;
+    }
+}
+"@
+Add-Type -TypeDefinition \$code -Language CSharp;
+[RawPrinterHelper]::Send(\$printer, \$bytes);
+''';
+
+      await Process.run('powershell', ['-NoProfile', '-Command', psScript]);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      debugPrint('Error sending raw bytes to Windows printer: $e');
+    }
   }
 
   static Future<pw.ThemeData> getArabicTheme() async {

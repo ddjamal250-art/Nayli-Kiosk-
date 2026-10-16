@@ -32,6 +32,7 @@ import '../../../settings/presentation/pages/advanced_pos_settings_page.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
 import '../../../../core/utils/tpe_payment_service.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
+import '../../../customer/data/loyalty_service.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/data/models/product_model.dart';
 import '../../../product/data/models/product_unit_model.dart';
@@ -48,6 +49,8 @@ import '../widgets/quick_items_manager_dialog.dart';
 import '../widgets/quick_item_add_edit_dialog.dart';
 import '../widgets/printer_selection_dialog.dart';
 import '../widgets/pos_payment_modal.dart';
+import '../widgets/product_options_modal.dart';
+import '../../../product/domain/entities/product_option.dart';
 import '../widgets/pos_header_toolbar.dart';
 import '../widgets/smart_scale_modal.dart';
 import '../widgets/liquid_decant_dialog.dart';
@@ -79,6 +82,32 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   double _cartDiscountValue = 0.0;
   bool _isDiscountPercentage = false;
   bool _showTouchNumpad = false;
+  bool _sortByBestSelling = false;
+  Map<String, double> _productSalesCounts = {};
+
+  void _computeSalesStats() {
+    try {
+      final counts = <String, double>{};
+      final box = HiveDatabase.invoicesBox;
+      for (final invoice in box.values) {
+        if (invoice is! Map) continue;
+        final items = invoice['items'];
+        if (items is! List) continue;
+        for (final it in items) {
+          if (it is! Map) continue;
+          final id = it['id']?.toString() ?? '';
+          final name = it['name']?.toString() ?? '';
+          final qty = (it['qty'] as num?)?.toDouble() ?? 1.0;
+          if (id.isNotEmpty) counts[id] = (counts[id] ?? 0.0) + qty;
+          if (name.isNotEmpty) counts[name] = (counts[name] ?? 0.0) + qty;
+        }
+      }
+      _productSalesCounts = counts;
+    } catch (e) {
+      debugPrint('Error computing sales stats: $e');
+    }
+  }
+
   List<Product> _searchSuggestions = [];
 
   // Costco IPM Speedometer tracking
@@ -545,7 +574,12 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     );
   }
 
-  void _addProductToCartWithPricing(Product product, {double quantity = 1.0}) {
+  Future<void> _addProductToCartWithPricing(
+    Product product, {
+    double quantity = 1.0,
+    List<SelectedProductOption>? selectedOptions,
+    String? itemNote,
+  }) async {
     if (product.isLiquidProduct && !_isReturnMode) {
       LiquidDecantDialog.show(context, product);
       return;
@@ -554,6 +588,20 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       _showCoffeeSaleDialog(product, quantity.toInt());
       return;
     }
+
+    // Product Options / Modifiers Check
+    if (product.hasOptions && !_isReturnMode && selectedOptions == null) {
+      final optRes = await ProductOptionsModal.show(
+        context,
+        product: product,
+        quantity: quantity,
+        basePrice: product.price,
+      );
+      if (optRes == null) return;
+      selectedOptions = optRes.selectedOptions;
+      itemNote = optRes.itemNote;
+    }
+
     double effectivePrice = product.price;
     if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
       effectivePrice = product.wholesalePrice;
@@ -575,9 +623,14 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       category: product.category,
       imageUrl: product.imageUrl,
       wholesalePrice: product.wholesalePrice,
-      );
+    );
 
-    context.read<BillingBloc>().add(AddProductToCartEvent(itemProduct, quantity: quantity.toDouble()));
+    context.read<BillingBloc>().add(AddProductToCartEvent(
+      itemProduct,
+      quantity: quantity.toDouble(),
+      selectedOptions: selectedOptions,
+      itemNote: itemNote,
+    ));
     _onItemScanned();
     if (mounted) {
       setState(() {
@@ -585,6 +638,54 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         _barcodeController.clear();
       });
       _barcodeFocusNode.requestFocus();
+    }
+  }
+
+  Future<void> _editItemNote(CartItem item) async {
+    final controller = TextEditingController(text: item.itemNote ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.edit_note_rounded, color: Colors.teal),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'ملاحظة: ${item.product.name}',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'مثال: بدون سكر، ساخن، طلب خاص...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('حفظ الملاحظة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && mounted) {
+      context.read<BillingBloc>().add(
+        UpdateCartItemNoteEvent(item.cartKey, result.isEmpty ? null : result),
+      );
     }
   }
 
@@ -2274,9 +2375,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Kiosk');
     final invoiceNumber = '#${DateTime.now().millisecondsSinceEpoch % 90000 + 10000}';
-    final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
-
-    final itemsSummary = state.cartItems.map((ci) => '• ${ci.product.name} (x${ci.quantity}) = ${(ci.product.price * ci.quantity).toStringAsFixed(0)} DA').join('\n');
+    final earnedPoints = LoyaltyService.calculatePointsForAmount(total);
+    final itemsSummary = state.cartItems.map((ci) => '• ${ci.displayNameWithUnit} (x${ci.quantity}) = ${ci.total.toStringAsFixed(0)} DA').join('\n');
 
     final message = '''
 🧾 *وصل مشتريات رقمي - $shopName*
@@ -2287,7 +2387,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 $itemsSummary
 --------------------------------
 💰 *المجموع الصافي: ${total.toStringAsFixed(2)} DA*
-رصيد الديون المتبقي: ${_customerCreditBalance.toStringAsFixed(2)} DA
+${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoints.toInt()} نقطة\n' : ''}رصيد الديون المتبقي: ${_customerCreditBalance.toStringAsFixed(2)} DA
 
 شكراً لتعاملكم معنا! • Merci de votre visite!
 ''';
@@ -2812,16 +2912,25 @@ $itemsSummary
       selectedCustomerId: _selectedCustomerId,
       selectedCustomerName: _selectedCustomerName,
       customerCreditBalance: _customerCreditBalance,
-      onFinalizeSale: (method, total, tpeRef, {bool printReceipt = true, double? receivedAmount}) =>
-          _finalizeSale(method, total, tpeRef, printReceipt: printReceipt, receivedAmount: receivedAmount),
+      onFinalizeSale: (method, total, tpeRef, {bool printReceipt = true, double? receivedAmount, List<Map<String, dynamic>>? splitPayments, String? orderNote}) =>
+          _finalizeSale(method, total, tpeRef, printReceipt: printReceipt, receivedAmount: receivedAmount, splitPayments: splitPayments, orderNote: orderNote),
       onSendWhatsAppReceipt: (total, billingState) =>
           _sendWhatsAppReceipt(total, billingState),
     );
   }
 
-  Future<void> _finalizeSale(PosPaymentMethod method, double total, String tpeRef, {bool printReceipt = true, double? receivedAmount}) async {
+  Future<void> _finalizeSale(
+    PosPaymentMethod method,
+    double total,
+    String tpeRef, {
+    bool printReceipt = true,
+    double? receivedAmount,
+    List<Map<String, dynamic>>? splitPayments,
+    String? orderNote,
+  }) async {
     final billingBloc = context.read<BillingBloc>();
     final isCredit = method == PosPaymentMethod.customerCredit;
+    final isSplit = method == PosPaymentMethod.split;
 
     if (method == PosPaymentMethod.tpeCard) {
       await TpePaymentService.processTpePayment(amount: total, manualReference: tpeRef);
@@ -2829,7 +2938,9 @@ $itemsSummary
       await SoundService.playCheckoutSuccess();
     }
 
-    if (method == PosPaymentMethod.cash) {
+    final bool hasCash = method == PosPaymentMethod.cash ||
+        (isSplit && splitPayments != null && splitPayments.any((p) => p['method'] == 'Espèces'));
+    if (hasCash) {
       await SoundService.playDrawerKick();
       await PrinterHelper.openCashDrawer();
     }
@@ -2840,11 +2951,13 @@ $itemsSummary
     final shopName = shop?.name ?? 'Nayli Kiosk';
     final shopPhone = shop?.phoneNumber ?? '';
 
-    final String paymentMethodStr = method == PosPaymentMethod.tpeCard
-        ? 'TPE / Carte'
-        : (method == PosPaymentMethod.baridiPayQr
-            ? 'BaridiPay QR'
-            : (isCredit ? 'Crédit' : 'Espèces'));
+    final String paymentMethodStr = isSplit
+        ? 'Paiement Partagé (مجزأ)'
+        : (method == PosPaymentMethod.tpeCard
+            ? 'TPE / Carte'
+            : (method == PosPaymentMethod.baridiPayQr
+                ? 'BaridiPay QR'
+                : (isCredit ? 'Crédit' : 'Espèces')));
 
     final double tendered = receivedAmount ?? total;
     final double change = (method == PosPaymentMethod.cash && tendered > total) ? (tendered - total) : 0.0;
@@ -2866,17 +2979,28 @@ $itemsSummary
       skipPhysicalPrint: !printReceipt,
       explicitTotal: total,
       explicitDiscount: _cartDiscountValue,
+      splitPayments: splitPayments,
+      orderNote: orderNote,
     ));
 
-    // 2. If credit, update customer debt in Hive
-    if (isCredit && _selectedCustomerId != null) {
+    // 2. If credit (full or split part), update customer debt in Hive
+    double creditAmountToApply = isCredit ? total : 0.0;
+    if (isSplit && splitPayments != null) {
+      for (final sp in splitPayments) {
+        if (sp['method'] == 'Crédit') {
+          creditAmountToApply += (sp['amount'] as num?)?.toDouble() ?? 0.0;
+        }
+      }
+    }
+
+    if (creditAmountToApply > 0 && _selectedCustomerId != null) {
       try {
         final cBox = HiveDatabase.customersBox;
         final cData = cBox.get(_selectedCustomerId);
         if (cData is Map) {
           final updatedData = Map<String, dynamic>.from(cData);
           final currentDebt = (updatedData['debt'] as num?)?.toDouble() ?? (updatedData['currentDebt'] as num?)?.toDouble() ?? 0.0;
-          final newDebt = _isReturnMode ? (currentDebt - total).clamp(0.0, double.infinity) : currentDebt + total;
+          final newDebt = _isReturnMode ? (currentDebt - creditAmountToApply).clamp(0.0, double.infinity) : currentDebt + creditAmountToApply;
           updatedData['debt'] = newDebt;
           updatedData['currentDebt'] = newDebt;
           await cBox.put(_selectedCustomerId, updatedData);
@@ -2884,6 +3008,14 @@ $itemsSummary
       } catch (e) {
         debugPrint('Error updating customer debt: $e');
       }
+    }
+
+    // 3. Award loyalty points if customer is selected
+    if (_selectedCustomerId != null && !_isReturnMode) {
+      await LoyaltyService.awardPointsForSale(
+        customerId: _selectedCustomerId!,
+        totalAmount: total,
+      );
     }
 
     // 3. Reset local POS UI state for next customer
@@ -3340,10 +3472,50 @@ $itemsSummary
                                 ],
                               ],
                             ),
-                            subtitle: Text(
-                              '${item.unitPrice.toStringAsFixed(2)} DA' +
-                                  (item.unitLevel != 'pack' ? ' [${item.unitDisplayName}]' : ''),
-                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${item.unitPrice.toStringAsFixed(2)} DA' +
+                                      (item.unitLevel != 'pack' ? ' [${item.unitDisplayName}]' : ''),
+                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                ),
+                                if (item.selectedOptions != null && item.selectedOptions!.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      item.selectedOptions!.map((o) => '${o.choiceName} (+${o.priceDelta.toStringAsFixed(0)})').join(' • '),
+                                      style: TextStyle(fontSize: 10, color: Colors.teal.shade700, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                InkWell(
+                                  onTap: () => _editItemNote(item),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.edit_note,
+                                          size: 14,
+                                          color: item.itemNote != null ? Colors.teal : Colors.grey.shade600,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          item.itemNote != null && item.itemNote!.isNotEmpty
+                                              ? item.itemNote!
+                                              : 'إضافة ملاحظة...',
+                                          style: TextStyle(
+                                            fontSize: 10.5,
+                                            color: item.itemNote != null ? Colors.teal.shade900 : Colors.grey.shade600,
+                                            fontWeight: item.itemNote != null ? FontWeight.bold : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             trailing: SizedBox(
                               width: 230,
@@ -4044,24 +4216,75 @@ $itemsSummary
             onCategoryChanged: (catKey, catName) {
               _showCategoryProductsModal(catKey, catName);
             },
-            leadingAction: InkWell(
-              onTap: _openQuickItemsManager,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.teal.shade50,
+            leadingAction: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _sortByBestSelling = !_sortByBestSelling;
+                    });
+                    if (_sortByBestSelling) {
+                      _computeSalesStats();
+                      SoundService.playScanBeep();
+                    } else {
+                      SoundService.playTabSwitch();
+                    }
+                  },
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.teal.shade200),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _sortByBestSelling ? Colors.deepOrange.shade50 : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _sortByBestSelling ? Colors.deepOrange.shade300 : Colors.grey.shade300,
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _sortByBestSelling ? Icons.local_fire_department_rounded : Icons.trending_up_rounded,
+                          size: 16,
+                          color: _sortByBestSelling ? Colors.deepOrange : Colors.grey.shade700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _sortByBestSelling ? 'الأكثر طلباً 🔥' : 'ترتيب مخصص',
+                          style: TextStyle(
+                            color: _sortByBestSelling ? Colors.deepOrange.shade900 : Colors.grey.shade800,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
-                    const SizedBox(width: 4),
-                    Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
-                  ],
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: _openQuickItemsManager,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.teal.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.tune_rounded, size: 16, color: Colors.teal),
+                        const SizedBox(width: 4),
+                        Text(context.tr('customize_toolbar_btn'), style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 11)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -4180,7 +4403,36 @@ $itemsSummary
     for (var it in items) {
       if (it is Map) quickList.add(it);
     }
-    quickList.sort((a, b) => ((a['orderIndex'] as num?)?.toInt() ?? 0).compareTo((b['orderIndex'] as num?)?.toInt() ?? 0));
+    if (_sortByBestSelling) {
+      if (_productSalesCounts.isEmpty) {
+        _computeSalesStats();
+      }
+      quickList.sort((a, b) {
+        final aLinked = a['linkedProductId']?.toString() ?? '';
+        final aId = a['id']?.toString() ?? '';
+        final aBc = a['barcode']?.toString() ?? '';
+        final aName = a['name']?.toString() ?? '';
+        final aScore = _productSalesCounts[aLinked] ??
+            _productSalesCounts[aId] ??
+            _productSalesCounts[aBc] ??
+            _productSalesCounts[aName] ??
+            0.0;
+
+        final bLinked = b['linkedProductId']?.toString() ?? '';
+        final bId = b['id']?.toString() ?? '';
+        final bBc = b['barcode']?.toString() ?? '';
+        final bName = b['name']?.toString() ?? '';
+        final bScore = _productSalesCounts[bLinked] ??
+            _productSalesCounts[bId] ??
+            _productSalesCounts[bBc] ??
+            _productSalesCounts[bName] ??
+            0.0;
+
+        return bScore.compareTo(aScore);
+      });
+    } else {
+      quickList.sort((a, b) => ((a['orderIndex'] as num?)?.toInt() ?? 0).compareTo((b['orderIndex'] as num?)?.toInt() ?? 0));
+    }
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GridView.builder(
@@ -4252,10 +4504,25 @@ $itemsSummary
 
         return InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
+          onTap: () async {
             _onItemScanned();
             if (prod.isCoffeeMachineProduct && !_isReturnMode) {
               _showCoffeeSaleDialog(prod, 1);
+            } else if (prod.hasOptions && !_isReturnMode) {
+              final optRes = await ProductOptionsModal.show(
+                context,
+                product: prod,
+                quantity: 1.0,
+                basePrice: prod.price,
+              );
+              if (optRes != null) {
+                _addProductToCartWithPricing(
+                  prod,
+                  quantity: 1.0,
+                  selectedOptions: optRes.selectedOptions,
+                  itemNote: optRes.itemNote,
+                );
+              }
             } else {
               UniversalUnitSelectorDialog.showForProduct(context, prod);
             }
@@ -4316,7 +4583,13 @@ $itemsSummary
                   ),
                 ),
                 const SizedBox(height: 2),
-                // Price row
+                // Price row & Best Selling Badge
+                final double soldCount = _productSalesCounts[item['linkedProductId']?.toString() ?? ''] ??
+                    _productSalesCounts[id] ??
+                    _productSalesCounts[barcode] ??
+                    _productSalesCounts[name] ??
+                    0.0;
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -4332,7 +4605,25 @@ $itemsSummary
                         ),
                       ),
                     ),
-                    const Icon(Icons.add_shopping_cart_rounded, size: 16, color: Colors.teal),
+                    if (_sortByBestSelling && soldCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.deepOrange.shade300, width: 0.8),
+                        ),
+                        child: Text(
+                          '🔥 ${soldCount == soldCount.toInt() ? soldCount.toInt() : soldCount.toStringAsFixed(1)}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepOrange.shade900,
+                          ),
+                        ),
+                      )
+                    else
+                      const Icon(Icons.add_shopping_cart_rounded, size: 16, color: Colors.teal),
                   ],
                 ),
               ],

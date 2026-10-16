@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'product_unit.dart';
 import 'special_offer.dart';
 import 'liquid_decant_config.dart';
+import 'product_option.dart';
 
 /// نوع الوحدة الأساسية للمنتج
 enum UnitSystemType {
@@ -66,7 +67,12 @@ class Product extends Equatable {
   final List<PurchaseBatch> stockBatches; // Embedded FIFO Queue
   final String? coffeeRecipeJson; // Coffee System Payload
   final String? liquidConfigJson; // Liquid Decanting & Packaging Payload
+  final String? optionsConfigJson; // Product Options / Modifiers Payload
   final List<SpecialOffer> specialOffers; // العروض الخاصة والتخفيضات الذكية
+
+  List<ProductOptionGroup> get optionGroups => ProductOptionGroup.parseJsonList(optionsConfigJson);
+  bool get hasOptions => optionGroups.isNotEmpty;
+
   SpecialOffer? get specialOffer =>
       specialOffers.where((o) => o.isValid).firstOrNull ?? specialOffers.firstOrNull;
 
@@ -153,6 +159,7 @@ class Product extends Equatable {
     this.stockBatches = const [],
     this.coffeeRecipeJson,
     this.liquidConfigJson,
+    this.optionsConfigJson,
     this.specialOffers = const [],
 
     this.packName,
@@ -190,6 +197,7 @@ class Product extends Equatable {
     List<PurchaseBatch>? stockBatches,
     String? coffeeRecipeJson,
     String? liquidConfigJson,
+    String? optionsConfigJson,
     String? baseUnitName,
     List<ProductUnit>? units,
     String? pluCode,
@@ -226,6 +234,7 @@ class Product extends Equatable {
       stockBatches: stockBatches ?? this.stockBatches,
       coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
       liquidConfigJson: liquidConfigJson ?? this.liquidConfigJson,
+      optionsConfigJson: optionsConfigJson ?? this.optionsConfigJson,
       specialOffers: specialOffers ?? (specialOffer != null ? [specialOffer] : this.specialOffers),
       baseUnitName: baseUnitName ?? this.baseUnitName,
       units: units ?? this.units,
@@ -251,7 +260,7 @@ class Product extends Equatable {
         id, name, barcode, price, costPrice, stock, category,
         isWeighted, wholesalePrice, expiryDate, imageUrl,
         unitSystemType, isDeleted, stockBatches, coffeeRecipeJson, liquidConfigJson,
-        specialOffers, baseUnitName, units, pluCode,
+        optionsConfigJson, specialOffers, baseUnitName, units, pluCode,
       ];
 }
 

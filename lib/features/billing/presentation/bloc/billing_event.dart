@@ -24,6 +24,10 @@ class AddProductToCartEvent extends BillingEvent {
   final double? weightKg;
   /// معامل الضرب للوحدة عند العروض الخاصة والصفقات
   final double? customMultiplier;
+  /// ملاحظة خاصة بالبند (للمطبخ أو التحضير)
+  final String? itemNote;
+  /// خيارات وإضافات المنتج المختارة
+  final List<SelectedProductOption>? selectedOptions;
 
   const AddProductToCartEvent(
     this.product, {
@@ -34,6 +38,8 @@ class AddProductToCartEvent extends BillingEvent {
     this.customUnitCost,
     this.weightKg,
     this.customMultiplier,
+    this.itemNote,
+    this.selectedOptions,
   });
 
   @override
@@ -46,7 +52,19 @@ class AddProductToCartEvent extends BillingEvent {
         customUnitCost ?? 0.0,
         weightKg ?? 0.0,
         customMultiplier ?? 1.0,
+        itemNote ?? '',
+        selectedOptions ?? const [],
       ];
+}
+
+class UpdateCartItemNoteEvent extends BillingEvent {
+  final String cartKey;
+  final String? note;
+
+  const UpdateCartItemNoteEvent(this.cartKey, this.note);
+
+  @override
+  List<Object> get props => [cartKey, note ?? ''];
 }
 
 class SwitchCartItemUnitEvent extends BillingEvent {
@@ -168,6 +186,10 @@ class PrintReceiptEvent extends BillingEvent {
   final double? explicitDiscount;
   final double? receivedAmount;
   final double? changeAmount;
+  /// تفاصيل الدفع المجزأ إن وُجد (مبالغ الكاش، البطاقة، بريدي، الكريدي)
+  final List<Map<String, dynamic>>? splitPayments;
+  /// ملاحظة عامة على الفاتورة / الطلب
+  final String? orderNote;
 
   const PrintReceiptEvent({
     required this.shopName,
@@ -187,6 +209,8 @@ class PrintReceiptEvent extends BillingEvent {
     this.specificPrinterName,
     this.explicitTotal,
     this.explicitDiscount,
+    this.splitPayments,
+    this.orderNote,
   });
 
   @override
@@ -208,6 +232,8 @@ class PrintReceiptEvent extends BillingEvent {
         specificPrinterName ?? '',
         explicitTotal ?? 0.0,
         explicitDiscount ?? 0.0,
+        splitPayments ?? const [],
+        orderNote ?? '',
       ];
 }
 

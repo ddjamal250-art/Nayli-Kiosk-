@@ -75,6 +75,65 @@ class LocalSyncClient {
     return false;
   }
 
+  static RawDatagramSocket? _discoverySocket;
+  static bool _isDiscovering = false;
+  static final StreamController<Map<String, dynamic>> _discoveredMasterController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static Stream<Map<String, dynamic>> get discoveredMasterStream => _discoveredMasterController.stream;
+
+  /// Start listening for UDP beacons from Master POS on LAN (Port 8889)
+  static Future<void> startAutoDiscovery({Function(String ip, int port, String storeName)? onDiscovered}) async {
+    if (_isDiscovering) return;
+    try {
+      _discoverySocket = await RawDatagramSocket.bind(
+        InternetAddress.anyIPv4,
+        8889,
+        reuseAddress: true,
+        reusePort: !Platform.isWindows,
+      );
+      _discoverySocket?.broadcastEnabled = true;
+      _isDiscovering = true;
+
+      _discoverySocket?.listen((RawSocketEvent event) {
+        if (event == RawSocketEvent.read) {
+          final datagram = _discoverySocket?.receive();
+          if (datagram != null) {
+            try {
+              final text = utf8.decode(datagram.data);
+              final map = jsonDecode(text);
+              if (map is Map && map['app'] == 'nayli_pos_lan') {
+                final ip = map['serverIp']?.toString() ?? datagram.address.address;
+                final port = (map['port'] as num?)?.toInt() ?? 8080;
+                final store = map['storeName']?.toString() ?? 'Nayli POS Master';
+
+                final masterData = {
+                  'ip': ip,
+                  'port': port,
+                  'storeName': store,
+                  'timestamp': DateTime.now().millisecondsSinceEpoch,
+                };
+
+                _discoveredMasterController.add(masterData);
+
+                if (onDiscovered != null) {
+                  onDiscovered(ip, port, store);
+                }
+              }
+            } catch (_) {}
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('Error starting auto discovery listener: $e');
+    }
+  }
+
+  static void stopAutoDiscovery() {
+    _discoverySocket?.close();
+    _discoverySocket = null;
+    _isDiscovering = false;
+  }
+
   /// Pull latest products from Master Desktop Server to Mobile
   static Future<int> pullProductsFromMaster() async {
     final serverIp = getServerIp();
@@ -98,7 +157,8 @@ class LocalSyncClient {
           int updatedCount = 0;
           for (var item in list) {
             final p = ProductModel.fromJson(item as Map<String, dynamic>);
-            await HiveDatabase.productBox.put(p.barcode, p);
+            // CRITICAL FIX: Save by p.id (NOT p.barcode) so keys remain identical and reliable!
+            await HiveDatabase.productBox.put(p.id, p);
             updatedCount++;
           }
           await SoundService.playRestockSound();

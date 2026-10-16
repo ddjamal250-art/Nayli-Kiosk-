@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../../../core/data/hive_database.dart';
 import '../../../core/utils/security_pin_helper.dart';
@@ -490,11 +490,13 @@ class ShiftService {
     final autoBackup = HiveDatabase.settingsBox.get('auto_backup_on_shift_close', defaultValue: true);
     if (autoBackup) {
       try {
-        final backupFile = await BackupService.createFullBackupZip(customNote: 'نسخة ختام الوردية: ${closedShift.id}');
-        final token = TelegramService.getBotToken();
-        final chatId = TelegramService.getChatId();
-        if (token.isNotEmpty && chatId.isNotEmpty) {
-          await BackupService.sendToTelegramBot(backupFile: backupFile, botToken: token, chatId: chatId);
+        final backupFile = await BackupService.triggerAutoSnapshot(reason: 'ختام الوردية: ${closedShift.id}');
+        if (backupFile != null) {
+          final token = TelegramService.getBotToken();
+          final chatId = TelegramService.getChatId();
+          if (token.isNotEmpty && chatId.isNotEmpty) {
+            await BackupService.sendToTelegramBot(backupFile: backupFile, botToken: token, chatId: chatId);
+          }
         }
       } catch (_) {}
     }

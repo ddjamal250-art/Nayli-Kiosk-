@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:collection/collection.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/domain/entities/product_unit.dart';
+import '../../../product/domain/entities/product_option.dart';
 
 class CartItem extends Equatable {
   final Product product;
@@ -14,6 +15,10 @@ class CartItem extends Equatable {
   final double? weightKg;
   /// معامل الضرب المخصص للوحدة عند العروض الخاصة والصفقات المخصصة
   final double? customMultiplier;
+  /// ملاحظة خاصة بالبند (مثلاً للمطبخ أو الكافي: "بدون سكر"، "زيادة حليب")
+  final String? itemNote;
+  /// الخيارات الإضافية المختارة (مثلاً: نكهة الفانيلا +20 دج، حجم كبير +50 دج)
+  final List<SelectedProductOption>? selectedOptions;
 
   const CartItem({
     required this.product,
@@ -24,6 +29,8 @@ class CartItem extends Equatable {
     this.customUnitCost,
     this.weightKg,
     this.customMultiplier,
+    this.itemNote,
+    this.selectedOptions,
   });
 
   ProductUnit? get selectedUnit {
@@ -31,11 +38,16 @@ class CartItem extends Equatable {
     return product.units.firstWhereOrNull((u) => u.name == unitLevel);
   }
 
+  double get optionsPriceDelta {
+    if (selectedOptions == null || selectedOptions!.isEmpty) return 0.0;
+    return selectedOptions!.fold(0.0, (sum, opt) => sum + opt.priceDelta);
+  }
+
   double get unitPrice {
     if (customUnitPrice != null && customUnitPrice! > 0) return customUnitPrice!;
     final unit = selectedUnit;
-    if (unit != null) return unit.price;
-    return product.price; // Base unit price
+    final basePrice = unit != null ? unit.price : product.price; // Base unit price
+    return basePrice + optionsPriceDelta;
   }
 
   double get unitCost {
@@ -55,11 +67,29 @@ class CartItem extends Equatable {
   }
 
   String get displayNameWithUnit {
-    if (unitLevel == 'base' && customUnitName == null) return product.name;
-    return '${product.name} [$unitDisplayName]';
+    String name = (unitLevel == 'base' && customUnitName == null)
+        ? product.name
+        : '${product.name} [$unitDisplayName]';
+    if (selectedOptions != null && selectedOptions!.isNotEmpty) {
+      final optsText = selectedOptions!.map((o) => o.choiceName).join(', ');
+      name += ' ($optsText)';
+    }
+    if (itemNote != null && itemNote!.trim().isNotEmpty) {
+      name += ' [${itemNote!.trim()}]';
+    }
+    return name;
   }
 
-  String get cartKey => '${product.id}_$unitLevel';
+  String get cartKey {
+    final optionsKey = selectedOptions != null && selectedOptions!.isNotEmpty
+        ? selectedOptions!.map((o) => '${o.groupName}:${o.choiceName}').join('|')
+        : '';
+    final noteKey = itemNote?.trim() ?? '';
+    if (optionsKey.isEmpty && noteKey.isEmpty) {
+      return '${product.id}_$unitLevel';
+    }
+    return '${product.id}_${unitLevel}_${optionsKey}_$noteKey';
+  }
 
   /// المجموع الإجمالي للبيع مع دعم العروض الخاصة والتخفيضات والإرجاع
   double get total {
@@ -158,6 +188,8 @@ class CartItem extends Equatable {
     double? customUnitCost,
     double? weightKg,
     double? customMultiplier,
+    String? itemNote,
+    List<SelectedProductOption>? selectedOptions,
   }) {
     return CartItem(
       product: product ?? this.product,
@@ -168,6 +200,8 @@ class CartItem extends Equatable {
       customUnitCost: customUnitCost ?? this.customUnitCost,
       weightKg: weightKg ?? this.weightKg,
       customMultiplier: customMultiplier ?? this.customMultiplier,
+      itemNote: itemNote ?? this.itemNote,
+      selectedOptions: selectedOptions ?? this.selectedOptions,
     );
   }
 
@@ -175,5 +209,6 @@ class CartItem extends Equatable {
   List<Object?> get props => [
     product, quantity, unitLevel, customUnitName,
     customUnitPrice, customUnitCost, weightKg, customMultiplier,
+    itemNote, selectedOptions,
   ];
 }

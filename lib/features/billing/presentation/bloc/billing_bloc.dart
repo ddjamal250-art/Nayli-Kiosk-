@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/held_cart.dart';
 import '../../../product/domain/entities/product.dart';
+import '../../../product/domain/entities/product_option.dart';
 import '../../../product/data/models/product_model.dart';
 import '../../../product/domain/usecases/product_usecases.dart';
 import '../../../shifts/data/shift_service.dart';
@@ -24,6 +25,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       : super(const BillingState()) {
     on<ScanBarcodeEvent>(_onScanBarcode);
     on<AddProductToCartEvent>(_onAddProductToCart);
+    on<UpdateCartItemNoteEvent>(_onUpdateCartItemNote);
     on<ClearStockWarningEvent>((event, emit) => emit(state.copyWith(clearStockWarning: true)));
     on<SwitchCartItemUnitEvent>(_onSwitchCartItemUnit);
     on<AddCustomItemEvent>(_onAddCustomItem);
@@ -170,11 +172,23 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     // للمنتجات الميزانية: كل مسح = عنصر جديد (لا ندمج بالوزن)
     final isWeighableAdd = event.weightKg != null;
 
-    final targetKey = '${event.product.id}_${event.unitLevel}';
+    final tempItem = CartItem(
+      product: event.product,
+      unitLevel: event.unitLevel,
+      customUnitPrice: event.customPrice,
+      customUnitName: event.customUnitName,
+      customUnitCost: event.customUnitCost,
+      weightKg: event.weightKg,
+      customMultiplier: event.customMultiplier,
+      itemNote: event.itemNote,
+      selectedOptions: event.selectedOptions,
+    );
+    final targetKey = tempItem.cartKey;
+
     final existingIndex = cleanState.cartItems
         .indexWhere((item) => item.cartKey == targetKey);
     if (!isWeighableAdd && existingIndex >= 0) {
-      // منتج عادي موجود → نزيد الكمية
+      // منتج عادي موجود بنفس الخيارات والملاحظات → نزيد الكمية
       final existingItem = cleanState.cartItems[existingIndex];
       final backendItems = List<CartItem>.from(cleanState.cartItems);
       final newQty = existingItem.quantity + event.quantity;
@@ -194,7 +208,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       emit(cleanState.copyWith(cartItems: backendItems, error: null, stockWarning: warning));
     } else {
-      // منتج جديد أو منتج ميزاني (يُضاف دائماً كعنصر جديد)
+      // منتج جديد أو منتج ميزاني أو خيارات مختلفة
       final newItem = CartItem(
         product: event.product,
         quantity: event.quantity,
@@ -204,10 +218,21 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         customUnitCost: event.customUnitCost,
         weightKg: event.weightKg,
         customMultiplier: event.customMultiplier,
+        itemNote: event.itemNote,
+        selectedOptions: event.selectedOptions,
       );
       emit(cleanState.copyWith(
           cartItems: [...cleanState.cartItems, newItem], error: null));
     }
+  }
+
+  void _onUpdateCartItemNote(
+      UpdateCartItemNoteEvent event, Emitter<BillingState> emit) {
+    final index = state.cartItems.indexWhere((item) => item.cartKey == event.cartKey);
+    if (index < 0) return;
+    final updatedCart = List<CartItem>.from(state.cartItems);
+    updatedCart[index] = updatedCart[index].copyWith(itemNote: event.note);
+    emit(state.copyWith(cartItems: updatedCart));
   }
 
   void _onSwitchCartItemUnit(
@@ -435,6 +460,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                 'category': item.product.category,
                 'total': item.total,
                 'profit': item.profit,
+                'itemNote': item.itemNote,
+                'selectedOptions': item.selectedOptions?.map((o) => o.toJson()).toList(),
               })
           .toList();
 
@@ -693,6 +720,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'paidAmount': isReturn ? -effectiveCashPaid : effectiveCashPaid,
         'receivedAmount': isReturn ? -tenderedCash : tenderedCash,
         'changeAmount': changeBack,
+        'splitPayments': event.splitPayments,
+        'orderNote': event.orderNote,
       });
 
       // 3. Print physical receipt (unless skipped)

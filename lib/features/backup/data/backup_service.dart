@@ -123,6 +123,31 @@ class BackupService {
     return backupFile;
   }
 
+  /// Trigger an automatic restore snapshot with retention rotation (keeps max 5 snapshots)
+  static Future<File?> triggerAutoSnapshot({required String reason}) async {
+    try {
+      final file = await createFullBackupZip(customNote: 'Auto Snapshot: $reason');
+      final backupDir = await getBackupDirectory();
+      final entities = backupDir.listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.nbak') || f.path.endsWith('.zip'))
+          .toList()
+        ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+
+      if (entities.length > 5) {
+        for (int i = 5; i < entities.length; i++) {
+          try {
+            await entities[i].delete();
+          } catch (_) {}
+        }
+      }
+      return file;
+    } catch (e) {
+      debugPrint('Auto snapshot error: $e');
+      return null;
+    }
+  }
+
   /// Check external removable drives (D:, E:, F:, G:, U:) on Windows
   static Future<void> _mirrorToExternalDrives(Uint8List bytes, String fileName) async {
     if (!Platform.isWindows) return;

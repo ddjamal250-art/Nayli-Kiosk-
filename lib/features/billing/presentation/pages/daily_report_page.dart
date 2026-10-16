@@ -13,6 +13,7 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../widgets/cash_drawer_action_dialog.dart';
 import '../../../shifts/data/shift_service.dart';
+import '../../domain/entities/tax_config.dart';
 
 class DailyReportPage extends StatefulWidget {
   DailyReportPage({super.key});
@@ -913,6 +914,47 @@ class _DailyReportPageState extends State<DailyReportPage> {
               ],
             ),
             SizedBox(height: 8),
+
+            // Optional Tax / TVA Summary Card (Only shown if enabled in Settings)
+            if (TaxConfig.fromSettings().isTaxEnabled) ...[
+              Builder(
+                builder: (context) {
+                  final taxConfig = TaxConfig.fromSettings();
+                  final revenueToTax = _selectedDepartment == 'الشامل 📊' ? totalRevenue : deptRevenue;
+                  final calc = taxConfig.calculate(revenueToTax);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.indigo.shade50,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.indigo.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildMetricCard(
+                            title: 'الصافي بدون ضريبة (HT)',
+                            value: '${calc.htAmount.toStringAsFixed(0)} دج',
+                            icon: Icons.receipt_long,
+                            color: Colors.indigo.shade800,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildMetricCard(
+                            title: 'الرسم على القيمة المضافة (TVA ${taxConfig.defaultTvaRate.toStringAsFixed(0)}%)',
+                            value: '${calc.tvaAmount.toStringAsFixed(0)} دج',
+                            icon: Icons.account_balance_outlined,
+                            color: Colors.deepPurple.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
 
             // Net Profit Banner (Final Profit = Gross Profit - Expenses)
             Container(

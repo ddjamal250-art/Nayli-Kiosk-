@@ -38,12 +38,34 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
   bool _isTestingMaster = false;
   String? _masterPingResult;
 
+  List<Map<String, String>> _availableIps = [];
+  StreamSubscription? _discoverySub;
+  Map<String, dynamic>? _autoDiscoveredMaster;
+
   @override
   void initState() {
     super.initState();
     _isServerRunning = LocalSyncServer.isRunning;
     _loadMasterInfo();
     _refreshNetwork();
+    _initAutoDiscovery();
+  }
+
+  void _initAutoDiscovery() {
+    LocalSyncClient.startAutoDiscovery();
+    _discoverySub = LocalSyncClient.discoveredMasterStream.listen((data) {
+      if (mounted) {
+        setState(() {
+          _autoDiscoveredMaster = data;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _discoverySub?.cancel();
+    super.dispose();
   }
 
   void _loadMasterInfo() {
@@ -265,13 +287,115 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
 
   Future<void> _refreshNetwork() async {
     setState(() => _isLoadingIp = true);
+    final ips = await LocalSyncServer.getAvailableIps();
     final ip = await LocalSyncServer.getLocalIp();
     if (mounted) {
       setState(() {
+        _availableIps = ips;
         _localIp = ip;
         _isLoadingIp = false;
         _isServerRunning = LocalSyncServer.isRunning;
       });
+    }
+  }
+
+  void _showAdapterSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.alt_route_rounded, color: Colors.indigo),
+            SizedBox(width: 8),
+            Text('اختيار محول الشبكة (Network Adapter)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SizedBox(
+          width: 480,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'إذا كان جهازك متصلاً بعدة شبكات (مثل Wi-Fi وشبكة وهمية)، اختر المحول الحقيقي المتصل بالمودم:',
+                style: TextStyle(fontSize: 12.5),
+              ),
+              const SizedBox(height: 12),
+              if (_availableIps.isEmpty)
+                const Text('لا توجد محولات شبكة إضافية متاحة.', style: TextStyle(color: Colors.grey)),
+              ..._availableIps.map((entry) {
+                final isSelected = entry['ip'] == _localIp;
+                final isVirt = entry['isVirtual'] == 'true';
+                return Card(
+                  color: isSelected ? Colors.indigo.shade50 : (isVirt ? Colors.grey.shade100 : Colors.white),
+                  child: ListTile(
+                    leading: Icon(
+                      isVirt ? Icons.layers_clear_rounded : (entry['name']!.toLowerCase().contains('wi-fi') ? Icons.wifi : Icons.settings_ethernet),
+                      color: isSelected ? Colors.indigo : (isVirt ? Colors.grey : Colors.teal),
+                    ),
+                    title: Text('${entry['name']} ${isVirt ? "(محول وهمي/افتراضي)" : ""}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isVirt ? Colors.grey.shade700 : Colors.black87)),
+                    subtitle: Text('IP: ${entry['ip']}', style: const TextStyle(fontSize: 12, fontFamily: 'monospace')),
+                    trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.indigo) : null,
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      await HiveDatabase.settingsBox.put('preferred_server_ip', entry['ip']);
+                      await _refreshNetwork();
+                      if (_isServerRunning) {
+                        await LocalSyncServer.stopServer();
+                        await LocalSyncServer.startServer();
+                      }
+                      SoundService.playSaveSuccess();
+                    },
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await HiveDatabase.settingsBox.delete('preferred_server_ip');
+              await _refreshNetwork();
+              if (_isServerRunning) {
+                await LocalSyncServer.stopServer();
+                await LocalSyncServer.startServer();
+              }
+            },
+            child: const Text('إعادة للاكتشاف التلقائي'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _fixFirewallRule() async {
+    SoundService.playTabSwitch();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('جاري تهيئة وتطبيق إذن جدار حماية ويندوز (Firewall)...')),
+    );
+    final success = await LocalSyncServer.ensureWindowsFirewallRule();
+    if (success) {
+      SoundService.playSaveSuccess();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ تم السماح للبرنامج في جدار حماية ويندوز بنجاح!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      SoundService.playVoidWarning();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ تعذر تشغيل الأمر تلقائياً. تأكد من تشغيل البرنامج كمسؤول (Run as administrator) إذا لزم الأمر.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
@@ -368,6 +492,9 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_autoDiscoveredMaster != null && _connectedMasterIp != _autoDiscoveredMaster!['ip'])
+                _buildAutoDiscoveredBanner(),
+
               // 1. PHONE TO MASTER PC PAIRING SECTION (Scan QR with Camera or Manual IP)
               _buildPhoneToMasterPairingCard(),
               const SizedBox(height: 16),
@@ -577,8 +704,19 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('بيانات الاتصال المحلي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('بيانات الاتصال المحلي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    icon: const Icon(Icons.alt_route_rounded, size: 16),
+                    label: const Text('تبديل المحول / بطاقة الشبكة', style: TextStyle(fontSize: 11.5)),
+                    onPressed: _showAdapterSelectionDialog,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
 
               _buildInfoRow('عنوان الـ IP المحلي:', _isLoadingIp ? 'جاري الفحص...' : _localIp, Icons.laptop_windows_rounded),
               const SizedBox(height: 10),
@@ -604,21 +742,43 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
             children: [
               const Text('فحص واختبار الاتصال بالشبكة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 11),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                icon: _isTestingPing
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.speed_rounded, size: 18),
-                label: Text(
-                  _isTestingPing ? 'جاري الفحص...' : 'فحص استجابة الخادم المحلي',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                ),
-                onPressed: _isTestingPing || !_isServerRunning ? null : _testPing,
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: _isTestingPing
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.speed_rounded, size: 18),
+                      label: Text(
+                        _isTestingPing ? 'جاري الفحص...' : 'فحص الخادم',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                      onPressed: _isTestingPing || !_isServerRunning ? null : _testPing,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.teal.shade800,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.security_rounded, size: 18),
+                      label: const Text(
+                        'إذن جدار الحماية',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                      onPressed: _fixFirewallRule,
+                    ),
+                  ),
+                ],
               ),
               if (_pingStatus.isNotEmpty) ...[
                 const SizedBox(height: 10),
@@ -715,6 +875,69 @@ class _LanSyncSettingsPageState extends State<LanSyncSettingsPage> {
         const SizedBox(height: 2),
         Text(label, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)), textAlign: TextAlign.center, maxLines: 1),
       ],
+    );
+  }
+
+  Widget _buildAutoDiscoveredBanner() {
+    final ip = _autoDiscoveredMaster!['ip']?.toString() ?? '';
+    final port = _autoDiscoveredMaster!['port']?.toString() ?? '8080';
+    final store = _autoDiscoveredMaster!['storeName']?.toString() ?? 'كاشير المحل الرئيسي';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.teal.shade700, Colors.teal.shade900],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.teal.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.radar_rounded, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '📡 تم اكتشاف كاشير رئيسي على الشبكة تلقائياً!',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$store  •  IP: $ip:$port',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.teal.shade900,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            icon: const Icon(Icons.link_rounded, size: 18),
+            label: const Text('ربط فوري', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            onPressed: () {
+              _processScannedMasterCode('$ip:$port');
+            },
+          ),
+        ],
+      ),
     );
   }
 

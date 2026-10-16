@@ -28,6 +28,8 @@ class PosPaymentModal {
       String tpeRef, {
       bool printReceipt,
       double? receivedAmount,
+      List<Map<String, dynamic>>? splitPayments,
+      String? orderNote,
     }) onFinalizeSale,
     required void Function(double total, BillingState state) onSendWhatsAppReceipt,
   }) {
@@ -46,6 +48,11 @@ class PosPaymentModal {
 
     double receivedAmount = calculatedTotal;
     final manualTpeRefController = TextEditingController();
+    final cashSplitController = TextEditingController();
+    final cardSplitController = TextEditingController();
+    final baridiSplitController = TextEditingController();
+    final creditSplitController = TextEditingController();
+    final orderNoteController = TextEditingController();
     bool shouldPrintReceipt = HiveDatabase.settingsBox.get('pos_auto_print_receipt', defaultValue: true) as bool;
 
     showDialog(
@@ -263,7 +270,201 @@ class PosPaymentModal {
                         ],
                       ),
                     ),
+                  ] else if (paymentMethod == PosPaymentMethod.split) ...[
+                    Builder(
+                      builder: (context) {
+                        final double cashVal = double.tryParse(cashSplitController.text) ?? 0.0;
+                        final double cardVal = double.tryParse(cardSplitController.text) ?? 0.0;
+                        final double baridiVal = double.tryParse(baridiSplitController.text) ?? 0.0;
+                        final double creditVal = double.tryParse(creditSplitController.text) ?? 0.0;
+                        final double allocated = cashVal + cardVal + baridiVal + creditVal;
+                        final double remaining = total - allocated;
+
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.purple.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('توزيع مبالغ الدفع المجزأ:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: remaining.abs() < 0.01
+                                          ? Colors.green.shade100
+                                          : (remaining > 0 ? Colors.red.shade100 : Colors.orange.shade100),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      remaining.abs() < 0.01
+                                          ? '✅ المجموع مكتمل تماماً'
+                                          : (remaining > 0
+                                              ? 'متبقي: ${remaining.toStringAsFixed(2)} DA'
+                                              : 'زيادة: ${(-remaining).toStringAsFixed(2)} DA'),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: remaining.abs() < 0.01
+                                            ? Colors.green.shade900
+                                            : (remaining > 0 ? Colors.red.shade900 : Colors.orange.shade900),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Quick Fill Buttons
+                              if (remaining > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      ActionChip(
+                                        avatar: const Text('💵'),
+                                        label: Text('+ الباقي كاش (${remaining.toStringAsFixed(0)} DA)', style: const TextStyle(fontSize: 11)),
+                                        onPressed: () {
+                                          setModalState(() {
+                                            cashSplitController.text = (cashVal + remaining).toStringAsFixed(2);
+                                          });
+                                          SoundService.playTabSwitch();
+                                        },
+                                      ),
+                                      ActionChip(
+                                        avatar: const Text('💳'),
+                                        label: Text('+ الباقي TPE (${remaining.toStringAsFixed(0)} DA)', style: const TextStyle(fontSize: 11)),
+                                        onPressed: () {
+                                          setModalState(() {
+                                            cardSplitController.text = (cardVal + remaining).toStringAsFixed(2);
+                                          });
+                                          SoundService.playTabSwitch();
+                                        },
+                                      ),
+                                      ActionChip(
+                                        avatar: const Text('📱'),
+                                        label: Text('+ الباقي بريدي (${remaining.toStringAsFixed(0)} DA)', style: const TextStyle(fontSize: 11)),
+                                        onPressed: () {
+                                          setModalState(() {
+                                            baridiSplitController.text = (baridiVal + remaining).toStringAsFixed(2);
+                                          });
+                                          SoundService.playTabSwitch();
+                                        },
+                                      ),
+                                      if (selectedCustomerId != null)
+                                        ActionChip(
+                                          avatar: const Text('📒'),
+                                          label: Text('+ الباقي كريدي (${remaining.toStringAsFixed(0)} DA)', style: const TextStyle(fontSize: 11)),
+                                          onPressed: () {
+                                            setModalState(() {
+                                              creditSplitController.text = (creditVal + remaining).toStringAsFixed(2);
+                                            });
+                                            SoundService.playTabSwitch();
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ),
+
+                              // Row 1: Cash & TPE Card
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: cashSplitController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      decoration: const InputDecoration(
+                                        prefixText: '💵 ',
+                                        labelText: 'نقداً (كاش)',
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                      onChanged: (_) => setModalState(() {}),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: cardSplitController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      decoration: const InputDecoration(
+                                        prefixText: '💳 ',
+                                        labelText: 'بطاقة (TPE)',
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                      onChanged: (_) => setModalState(() {}),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Row 2: BaridiPay & Credit
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: baridiSplitController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      decoration: const InputDecoration(
+                                        prefixText: '📱 ',
+                                        labelText: 'بريدي موب (BaridiMob)',
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                      onChanged: (_) => setModalState(() {}),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: creditSplitController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      enabled: selectedCustomerId != null,
+                                      decoration: InputDecoration(
+                                        prefixText: '📒 ',
+                                        labelText: selectedCustomerId != null ? 'كريدي ($selectedCustomerName)' : 'كريدي (اختر زبوناً)',
+                                        border: const OutlineInputBorder(),
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                      onChanged: (_) => setModalState(() {}),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ],
+                  const SizedBox(height: 10),
+
+                  // Optional Order / Invoice Note
+                  TextField(
+                    controller: orderNoteController,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.note_alt_outlined, size: 18),
+                      labelText: 'ملاحظة الفاتورة / الطلب (اختياري)',
+                      hintText: 'مثال: طاولة رقم 4، توصيل، طلب خاص...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                  ),
                   const SizedBox(height: 12),
 
                   // Printer Selection & Auto-Print Toggle Bar
@@ -408,6 +609,34 @@ class PosPaymentModal {
                     }
                   }
 
+                  if (paymentMethod == PosPaymentMethod.split) {
+                    final double cashVal = double.tryParse(cashSplitController.text) ?? 0.0;
+                    final double cardVal = double.tryParse(cardSplitController.text) ?? 0.0;
+                    final double baridiVal = double.tryParse(baridiSplitController.text) ?? 0.0;
+                    final double creditVal = double.tryParse(creditSplitController.text) ?? 0.0;
+                    final double allocated = cashVal + cardVal + baridiVal + creditVal;
+                    if ((total - allocated).abs() > 0.05) {
+                      SnackbarHelper.showError(context, '❌ يجب أن يعادل مجموع أجزاء الدفع الإجمالي تماماً (${total.toStringAsFixed(2)} DA)');
+                      return;
+                    }
+                  }
+
+                  List<Map<String, dynamic>>? splitList;
+                  if (paymentMethod == PosPaymentMethod.split) {
+                    final double cashVal = double.tryParse(cashSplitController.text) ?? 0.0;
+                    final double cardVal = double.tryParse(cardSplitController.text) ?? 0.0;
+                    final double baridiVal = double.tryParse(baridiSplitController.text) ?? 0.0;
+                    final double creditVal = double.tryParse(creditSplitController.text) ?? 0.0;
+                    splitList = [
+                      if (cashVal > 0) {'method': 'Espèces', 'amount': cashVal},
+                      if (cardVal > 0) {'method': 'TPE / Carte', 'amount': cardVal},
+                      if (baridiVal > 0) {'method': 'BaridiPay QR', 'amount': baridiVal},
+                      if (creditVal > 0) {'method': 'Crédit', 'amount': creditVal},
+                    ];
+                  }
+
+                  final noteText = orderNoteController.text.trim();
+
                   Navigator.pop(ctx);
                   await onFinalizeSale(
                     paymentMethod,
@@ -415,6 +644,8 @@ class PosPaymentModal {
                     manualTpeRefController.text,
                     printReceipt: shouldPrintReceipt,
                     receivedAmount: paymentMethod == PosPaymentMethod.cash ? receivedAmount : total,
+                    splitPayments: splitList,
+                    orderNote: noteText.isNotEmpty ? noteText : null,
                   );
                 },
               ),

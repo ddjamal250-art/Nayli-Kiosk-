@@ -114,52 +114,183 @@ class LocalSyncServer {
   static Stream<Map<String, dynamic>> get masterActivationStream => _masterActivationStreamController.stream;
   static int get connectedClients => _connectedClients;
 
+  static RawDatagramSocket? _beaconSocket;
+  static Timer? _beaconTimer;
+
   static Future<String> getLocalIp() async {
     try {
+      // 1. Check if user configured a preferred IP in settings
+      final preferred = HiveDatabase.settingsBox.get('preferred_server_ip', defaultValue: '') as String;
+      if (preferred.trim().isNotEmpty && preferred != '127.0.0.1') {
+        return preferred.trim();
+      }
+
       final interfaces = await NetworkInterface.list(
         includeLoopback: false,
         type: InternetAddressType.IPv4,
       );
       
-      // Sort interfaces to prioritize Wi-Fi and Ethernet over virtual/WSL interfaces
+      bool isVirtual(String name, String ip) {
+        final lower = name.toLowerCase();
+        return lower.contains('virtual') ||
+               lower.contains('veth') ||
+               lower.contains('wsl') ||
+               lower.contains('vmware') ||
+               lower.contains('hyper-v') ||
+               lower.contains('virtualbox') ||
+               lower.contains('host-only') ||
+               lower.contains('vbox') ||
+               lower.contains('pseudo') ||
+               lower.contains('loopback') ||
+               ip.startsWith('192.168.56.') || // VirtualBox Host-Only default
+               ip.startsWith('169.254.');     // APIPA self-assigned
+      }
+
+      bool isPreferred(String name) {
+        final lower = name.toLowerCase();
+        return lower.contains('wi-fi') || lower.contains('wlan') || lower.contains('ethernet') || lower.contains('eth');
+      }
+      
+      // Sort interfaces: physical Wi-Fi/Ethernet first, virtual ones strictly last
       final sortedInterfaces = interfaces.toList()..sort((a, b) {
         final nameA = a.name.toLowerCase();
         final nameB = b.name.toLowerCase();
+        final ipA = a.addresses.isNotEmpty ? a.addresses.first.address : '';
+        final ipB = b.addresses.isNotEmpty ? b.addresses.first.address : '';
         
-        bool isVirtual(String name) => name.contains('virtual') || name.contains('veth') || name.contains('wsl') || name.contains('vmware') || name.contains('hyper-v');
-        bool isPreferred(String name) => name.contains('wi-fi') || name.contains('wlan') || name.contains('ethernet') || name.contains('eth');
-        
-        if (isVirtual(nameA) && !isVirtual(nameB)) return 1;
-        if (!isVirtual(nameA) && isVirtual(nameB)) return -1;
-        if (isPreferred(nameA) && !isPreferred(nameB)) return -1;
-        if (!isPreferred(nameA) && isPreferred(nameB)) return 1;
+        final virtA = isVirtual(nameA, ipA);
+        final virtB = isVirtual(nameB, ipB);
+        if (virtA && !virtB) return 1;
+        if (!virtA && virtB) return -1;
+
+        final prefA = isPreferred(nameA);
+        final prefB = isPreferred(nameB);
+        if (prefA && !prefB) return -1;
+        if (!prefA && prefB) return 1;
         return 0;
       });
 
+      // Pass 1: True standard LAN private IP (192.168.x.x, 10.x.x.x) on non-virtual adapter
       for (var interface in sortedInterfaces) {
         for (var addr in interface.addresses) {
-          if (!addr.isLoopback) {
-            // Also ensure it's a private network IP to avoid weird public/virtual IPs if possible
-            if (addr.address.startsWith('192.168.') || addr.address.startsWith('10.') || addr.address.startsWith('172.')) {
-               return addr.address;
+          if (!addr.isLoopback && !isVirtual(interface.name, addr.address)) {
+            if (addr.address.startsWith('192.168.') || addr.address.startsWith('10.')) {
+              return addr.address;
             }
           }
         }
       }
       
-      // Fallback to first non-loopback if no standard private IP is found
+      // Pass 2: Any non-virtual 172.16 - 172.31 private IP
       for (var interface in sortedInterfaces) {
         for (var addr in interface.addresses) {
-          if (!addr.isLoopback) {
-             return addr.address;
+          if (!addr.isLoopback && !isVirtual(interface.name, addr.address)) {
+            return addr.address;
           }
         }
       }
-      
+
+      // Fallback
+      for (var interface in sortedInterfaces) {
+        for (var addr in interface.addresses) {
+          if (!addr.isLoopback && !addr.address.startsWith('169.254.')) {
+            return addr.address;
+          }
+        }
+      }
     } catch (e) {
       debugPrint('Error finding local IP: $e');
     }
     return '127.0.0.1';
+  }
+
+  /// List all local network adapters and their IPs for diagnostics and manual selection
+  static Future<List<Map<String, String>>> getAvailableIps() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+        includeLoopback: false,
+        type: InternetAddressType.IPv4,
+      );
+      final List<Map<String, String>> list = [];
+      for (var iface in interfaces) {
+        for (var addr in iface.addresses) {
+          if (!addr.isLoopback && !addr.address.startsWith('169.254.')) {
+            final isVirt = iface.name.toLowerCase().contains('virtual') ||
+                           iface.name.toLowerCase().contains('vbox') ||
+                           iface.name.toLowerCase().contains('host-only') ||
+                           addr.address.startsWith('192.168.56.');
+            list.add({
+              'name': iface.name,
+              'ip': addr.address,
+              'isVirtual': isVirt ? 'true' : 'false',
+            });
+          }
+        }
+      }
+      return list;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Starts UDP Beacon broadcasting server IP and Port every 3 seconds for zero-config mobile discovery
+  static Future<void> startUdpBeacon(String ip, int p) async {
+    try {
+      stopUdpBeacon();
+      _beaconSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+      _beaconSocket?.broadcastEnabled = true;
+
+      _beaconTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+        if (!_isRunning) {
+          timer.cancel();
+          return;
+        }
+        try {
+          final payload = jsonEncode({
+            'app': 'nayli_pos_lan',
+            'serverIp': ip,
+            'port': p,
+            'storeName': HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli POS Master'),
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          });
+          _beaconSocket?.send(
+            utf8.encode(payload),
+            InternetAddress('255.255.255.255'),
+            8889,
+          );
+        } catch (_) {}
+      });
+      _logController.add('📡 UDP Discovery Beacon broadcasting on port 8889 ($ip:$p)');
+    } catch (e) {
+      debugPrint('Error starting UDP beacon: $e');
+    }
+  }
+
+  static void stopUdpBeacon() {
+    _beaconTimer?.cancel();
+    _beaconTimer = null;
+    _beaconSocket?.close();
+    _beaconSocket = null;
+  }
+
+  /// Ensures Windows Firewall allows inbound connections on POS server ports
+  static Future<bool> ensureWindowsFirewallRule() async {
+    if (!Platform.isWindows) return true;
+    try {
+      final res = await Process.run('netsh', [
+        'advfirewall', 'firewall', 'add', 'rule',
+        'name=Nayli Market POS LAN Server',
+        'dir=in',
+        'action=allow',
+        'protocol=TCP',
+        'localport=8080-8090',
+        'profile=any',
+      ]);
+      return res.exitCode == 0;
+    } catch (e) {
+      debugPrint('Firewall rule error: $e');
+      return false;
+    }
   }
 
   /// Start Embedded Master Server
@@ -167,31 +298,37 @@ class LocalSyncServer {
     if (_isRunning) return true;
 
     try {
+      // Proactively ensure Windows Firewall allows LAN connections
+      unawaited(ensureWindowsFirewallRule());
+
       final candidatePorts = [customPort, 8081, 8082, 8888, 9090];
       HttpServer? boundServer;
-    int boundPort = customPort;
+      int boundPort = customPort;
 
-    for (final p in candidatePorts) {
-      try {
-        boundServer = await HttpServer.bind(InternetAddress.anyIPv4, p);
-        boundPort = p;
-        break;
-      } catch (e) {
-        debugPrint('Port $p is busy, trying next...');
+      for (final p in candidatePorts) {
+        try {
+          boundServer = await HttpServer.bind(InternetAddress.anyIPv4, p);
+          boundPort = p;
+          break;
+        } catch (e) {
+          debugPrint('Port $p is busy, trying next...');
+        }
       }
-    }
 
-    if (boundServer == null) {
-      debugPrint('Failed to bind LocalSyncServer to any port');
-      _isRunning = false;
-      return false;
-    }
+      if (boundServer == null) {
+        debugPrint('Failed to bind LocalSyncServer to any port');
+        _isRunning = false;
+        return false;
+      }
 
-    port = boundPort;
-    _server = boundServer;
-    _isRunning = true;
-    final ip = await getLocalIp();
-    _logController.add('Master POS Server started at http://$ip:$port');
+      port = boundPort;
+      _server = boundServer;
+      _isRunning = true;
+      final ip = await getLocalIp();
+      _logController.add('Master POS Server started at http://$ip:$port');
+
+      // Start zero-config UDP beacon for mobile auto-pairing
+      startUdpBeacon(ip, port);
 
       _server!.listen((HttpRequest request) async {
         // Enable CORS
@@ -977,6 +1114,19 @@ class LocalSyncServer {
     request.response.headers.contentType = ContentType.html;
     request.response.write(html);
     await request.response.close();
+  }
+
+  /// Stop server and UDP discovery beacon
+  static Future<void> stopServer() async {
+    try {
+      stopUdpBeacon();
+      await _server?.close(force: true);
+      _server = null;
+      _isRunning = false;
+      _logController.add('POS Local Server stopped');
+    } catch (e) {
+      debugPrint('Error stopping server: $e');
+    }
   }
 }
 

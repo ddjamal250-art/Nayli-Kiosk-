@@ -23,6 +23,8 @@ import '../widgets/coffee_recipe_modal.dart';
 import '../../domain/entities/liquid_decant_config.dart';
 import '../widgets/liquid_decant_calculator_card.dart';
 import '../../../../core/widgets/liquid_bottle_indicator.dart';
+import '../widgets/product_options_config_modal.dart';
+import '../../domain/entities/product_option.dart';
 
 class EditProductPage extends StatefulWidget {
   final Product product;
@@ -60,6 +62,9 @@ class _EditProductPageState extends State<EditProductPage> {
 
   // --- إعدادات تجزئة وتقسيم السوائل والعطور ---
   String? _liquidConfigJson;
+
+  // --- إعدادات خيارات وتعديلات المنتج (Options & Modifiers) ---
+  String? _optionsConfigJson;
 
   // --- إعدادات الكرتونة (Large) ---
   bool _hasCarton = false;
@@ -104,6 +109,7 @@ class _EditProductPageState extends State<EditProductPage> {
     _selectedCategory = _availableCategories.contains(p.category) ? p.category : 'عام';
     _coffeeRecipeJson = p.coffeeRecipeJson;
     _liquidConfigJson = p.liquidConfigJson;
+    _optionsConfigJson = p.optionsConfigJson;
     _isWeighted = p.isWeighted ||
                   p.unitSystemType == UnitSystemType.weight ||
                   p.barcode.startsWith('SCALE_') ||
@@ -390,6 +396,7 @@ class _EditProductPageState extends State<EditProductPage> {
       unitSystemType: _isWeighted ? UnitSystemType.weight : (_liquidConfigJson != null ? UnitSystemType.volume : widget.product.unitSystemType),
       coffeeRecipeJson: _coffeeRecipeJson,
       liquidConfigJson: _liquidConfigJson,
+      optionsConfigJson: _optionsConfigJson,
       isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
       packMultiplier: _hasPack && packCapUI > 0 ? packCapUI.toInt() : 1,
       packsPerCarton: cartonCapUI > 0 ? cartonCapUI.toInt() : 10,
@@ -1020,6 +1027,29 @@ class _EditProductPageState extends State<EditProductPage> {
               specialOffers: _specialOffers,
               onSpecialOffersChange: (v) => setState(() => _specialOffers = v),
             ),
+            const SizedBox(height: 16),
+
+            // --- خيارات وتعديلات المنتج (Options & Modifiers) ---
+            _SectionCard(
+              title: 'خيارات وتعديلات المنتج (الأحجام، الإضافات، النكهات)',
+              icon: Icons.tune_rounded,
+              trailing: (_optionsConfigJson != null && _optionsConfigJson!.isNotEmpty)
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'مفعّلة (${ProductOptionGroup.parseJsonList(_optionsConfigJson).length} مجموعات)',
+                        style: TextStyle(color: Colors.teal.shade800, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  : null,
+              children: [
+                _buildProductOptionsSection(),
+              ],
+            ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _saveProduct,
@@ -1033,6 +1063,145 @@ class _EditProductPageState extends State<EditProductPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _openProductOptionsEditor() async {
+    final result = await ProductOptionsConfigModal.show(
+      context,
+      initialOptionsJson: _optionsConfigJson,
+    );
+    if (!mounted) return;
+    setState(() {
+      _optionsConfigJson = result;
+    });
+  }
+
+  Widget _buildProductOptionsSection() {
+    final groups = ProductOptionGroup.parseJsonList(_optionsConfigJson);
+    if (groups.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.teal.shade50.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.teal.shade100),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'أضف خيارات للمنتج تسأل عنها شاشة البيع تلقائياً (مثل: الحجم، الإضافات، السكر، النكهة، مع/بدون) مع تعديل السعر تلقائياً.',
+              style: TextStyle(fontSize: 12.5, color: Colors.teal),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('إعداد خيارات وتعديلات المنتج ✨'),
+              onPressed: _openProductOptionsEditor,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...groups.map((group) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      group.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    const SizedBox(width: 8),
+                    if (group.isRequired)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text('إلزامي', style: TextStyle(fontSize: 10, color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                      ),
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        group.isMultiSelect ? 'متعدد الاختيارات' : 'خيار وحيد',
+                        style: TextStyle(fontSize: 10, color: Colors.blue.shade800),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: group.choices.map((c) {
+                    final sign = c.priceDelta > 0 ? '+${c.priceDelta.toStringAsFixed(0)}' : (c.priceDelta < 0 ? c.priceDelta.toStringAsFixed(0) : '0');
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Text(
+                        '${c.name} ($sign دج)',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.teal,
+                side: const BorderSide(color: Colors.teal),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.edit_note_rounded, size: 18),
+              label: const Text('تعديل الخيارات والإضافات'),
+              onPressed: _openProductOptionsEditor,
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+              label: const Text('حذف الخيارات'),
+              onPressed: () => setState(() => _optionsConfigJson = null),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

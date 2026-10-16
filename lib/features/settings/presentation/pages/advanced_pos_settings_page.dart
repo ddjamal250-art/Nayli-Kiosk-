@@ -6,6 +6,7 @@ import '../../../../core/utils/expiry_tracker_service.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/services/github_update_service.dart';
 import '../../../product/presentation/pages/expiry_monitor_page.dart';
+import '../../../billing/domain/entities/tax_config.dart';
 
 class AdvancedPosSettingsPage extends StatefulWidget {
   const AdvancedPosSettingsPage({super.key});
@@ -25,6 +26,8 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
   late bool _fastShortcuts;
   late bool _customerDisplay;
   late bool _expiryTracking;
+  late bool _taxEnabled;
+  late double _tvaRate;
 
   @override
   void initState() {
@@ -43,6 +46,9 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
     _fastShortcuts = StaffPermissionsService.enableFastKeyboardShortcuts;
     _customerDisplay = StaffPermissionsService.enableCustomerDisplay;
     _expiryTracking = StaffPermissionsService.enableExpiryTracking;
+    final taxConfig = TaxConfig.fromSettings();
+    _taxEnabled = taxConfig.isTaxEnabled;
+    _tvaRate = taxConfig.defaultTvaRate;
   }
 
   @override
@@ -328,6 +334,55 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
                               }
                             }
                           },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // SECTION: OPTIONAL TAX / TVA ENGINE
+          _buildSectionHeader('المحرك الضريبي وحساب القيمة المضافة (TVA) 🧾', 'اختياري وغير مفعل افتراضياً لحساب الضرائب والفواتير النظامية'),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: const Text('تفعيل حساب الضريبة والقيمة المضافة (TVA)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text('غير مفعل مبدئياً: عند التفعيل، يتم احتساب المبالغ الصافية (HT) ومبالغ الـ TVA في التقارير', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  value: _taxEnabled,
+                  activeColor: AppTheme.primaryColor,
+                  onChanged: (v) async {
+                    setState(() => _taxEnabled = v);
+                    final cfg = TaxConfig(isTaxEnabled: v, defaultTvaRate: _tvaRate);
+                    await cfg.saveToSettings();
+                    SnackbarHelper.showSuccess(context, v ? 'تم تفعيل حساب الضرائب بنجاح' : 'تم تعطيل حساب الضرائب');
+                  },
+                ),
+                if (_taxEnabled) ...[
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        const Text('نسبة القيمة المضافة الافتراضية (%):', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 80,
+                          child: TextFormField(
+                            initialValue: _tvaRate.toStringAsFixed(0),
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+                            onChanged: (val) async {
+                              final numVal = double.tryParse(val) ?? 19.0;
+                              _tvaRate = numVal;
+                              final cfg = TaxConfig(isTaxEnabled: _taxEnabled, defaultTvaRate: numVal);
+                              await cfg.saveToSettings();
+                            },
+                          ),
                         ),
                       ],
                     ),
