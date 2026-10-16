@@ -2377,6 +2377,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     final invoiceNumber = '#${DateTime.now().millisecondsSinceEpoch % 90000 + 10000}';
     final earnedPoints = LoyaltyService.calculatePointsForAmount(total);
     final itemsSummary = state.cartItems.map((ci) => '• ${ci.displayNameWithUnit} (x${ci.quantity}) = ${ci.total.toStringAsFixed(0)} DA').join('\n');
+    final now = DateTime.now();
+    final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
     final message = '''
 🧾 *وصل مشتريات رقمي - $shopName*
@@ -4490,6 +4492,11 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
         final id = item['id']?.toString() ?? barcode;
         final cost = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
         final stock = (item['stock'] as num?)?.toDouble() ?? 999.0;
+        final double soldCount = _productSalesCounts[item['linkedProductId']?.toString() ?? ''] ??
+            _productSalesCounts[id] ??
+            _productSalesCounts[barcode] ??
+            _productSalesCounts[name] ??
+            0.0;
 
         final prod = _resolveProductForQuickItem(item);
         final rawImg = item['imageUrl']?.toString().trim() ??
@@ -4584,12 +4591,6 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
                 ),
                 const SizedBox(height: 2),
                 // Price row & Best Selling Badge
-                final double soldCount = _productSalesCounts[item['linkedProductId']?.toString() ?? ''] ??
-                    _productSalesCounts[id] ??
-                    _productSalesCounts[barcode] ??
-                    _productSalesCounts[name] ??
-                    0.0;
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

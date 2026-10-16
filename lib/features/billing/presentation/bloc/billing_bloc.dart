@@ -461,7 +461,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                 'total': item.total,
                 'profit': item.profit,
                 'itemNote': item.itemNote,
-                'selectedOptions': item.selectedOptions?.map((o) => o.toJson()).toList(),
+                'selectedOptions': item.selectedOptions?.map((o) => o.toMap()).toList(),
               })
           .toList();
 

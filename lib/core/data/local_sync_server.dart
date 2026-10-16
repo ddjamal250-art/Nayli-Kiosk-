@@ -397,11 +397,16 @@ class LocalSyncServer {
   }
 
   static Future<void> stopServer() async {
-    if (_server != null) {
-      await _server!.close(force: true);
-      _server = null;
-      _isRunning = false;
-      _logController.add('Server stopped.');
+    try {
+      stopUdpBeacon();
+      if (_server != null) {
+        await _server!.close(force: true);
+        _server = null;
+        _isRunning = false;
+        _logController.add('Server stopped.');
+      }
+    } catch (e) {
+      debugPrint('Error stopping server: $e');
     }
   }
 
@@ -1116,18 +1121,6 @@ class LocalSyncServer {
     await request.response.close();
   }
 
-  /// Stop server and UDP discovery beacon
-  static Future<void> stopServer() async {
-    try {
-      stopUdpBeacon();
-      await _server?.close(force: true);
-      _server = null;
-      _isRunning = false;
-      _logController.add('POS Local Server stopped');
-    } catch (e) {
-      debugPrint('Error stopping server: $e');
-    }
-  }
 }
 
 
