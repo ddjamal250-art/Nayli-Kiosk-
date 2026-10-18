@@ -7,6 +7,7 @@ import '../../features/product/data/models/product_model.dart';
 import '../../features/shop/data/models/shop_model.dart';
 import '../../features/shifts/data/shift_service.dart';
 import '../../features/billing/data/return_fix_migration_service.dart';
+import '../../features/product/data/product_integrity_service.dart';
 import '../utils/online_license_service.dart';
 
 class HiveDatabase {
@@ -110,6 +111,13 @@ class HiveDatabase {
       await ShiftService.repairHistoricalData();
     } catch (e) {
       debugPrint('Retroactive shift repair failed: $e');
+    }
+
+    // التدقيق والتطهير الشامل لسلامة بيانات المنتجات والمخزون
+    try {
+      await ProductIntegrityService.repairProductDataIntegrity();
+    } catch (e) {
+      debugPrint('Product integrity repair failed: $e');
     }
   }
 

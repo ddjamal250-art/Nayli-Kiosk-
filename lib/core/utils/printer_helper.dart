@@ -129,12 +129,15 @@ class PrinterHelper {
 
       final escapedPrinter = printerName.replaceAll('"', '`"');
       final escapedPath = file.path.replaceAll('\\', '\\\\');
+      final dllPath = '${tempDir.path}\\NayliRawPrinter.dll'.replaceAll('\\', '\\\\');
 
       final psScript = '''
 \$printer = "$escapedPrinter";
 \$filePath = "$escapedPath";
+\$dllPath = "$dllPath";
 \$bytes = [System.IO.File]::ReadAllBytes(\$filePath);
 
+if (-not (Test-Path \$dllPath)) {
 \$code = @"
 using System;
 using System.Runtime.InteropServices;
@@ -182,14 +185,25 @@ public class RawPrinterHelper {
     }
 }
 "@
-Add-Type -TypeDefinition \$code -Language CSharp;
+    Add-Type -TypeDefinition \$code -OutputAssembly \$dllPath -Language CSharp;
+} else {
+    Add-Type -Path \$dllPath;
+}
 [RawPrinterHelper]::Send(\$printer, \$bytes);
 ''';
 
-      await Process.run('powershell', ['-NoProfile', '-Command', psScript]);
-      if (await file.exists()) {
-        await file.delete();
-      }
+      await Process.start(
+        'powershell',
+        ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', psScript],
+        mode: ProcessStartMode.detached,
+      );
+
+      // Delete temp command file in background after delay
+      Future.delayed(const Duration(seconds: 4), () {
+        if (file.existsSync()) {
+          try { file.deleteSync(); } catch (_) {}
+        }
+      });
     } catch (e) {
       debugPrint('Error sending raw bytes to Windows printer: $e');
     }

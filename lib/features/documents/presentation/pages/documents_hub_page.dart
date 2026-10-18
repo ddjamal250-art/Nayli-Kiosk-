@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -295,7 +296,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
         final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled) || weightKg != null;
 
         final double stockToAdd = hasWeighable && weightKg != null
-            ? (weightKg * 1000).toDouble()
+            ? weightKg.toDouble()
             : qty;
         final double newStock = (productModel.stock + stockToAdd).toDouble();
         final updatedProd = productModel.copyWith(stock: newStock);
@@ -339,7 +340,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
     // Open drawer if cash payment
     if (inv['paymentMethod'] == 'Espèces' || inv['paymentMethod'] == 'كاش') {
       try {
-        await PrinterHelper.openCashDrawer();
+        unawaited(PrinterHelper.openCashDrawer());
       } catch (_) {}
     }
 

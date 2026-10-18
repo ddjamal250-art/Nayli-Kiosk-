@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hive/hive.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/usecases/product_usecases.dart';
 import '../../../../core/usecase/usecase.dart';
+import '../../../../core/data/hive_database.dart';
 
 part 'product_event.dart';
 part 'product_state.dart';
@@ -13,6 +16,9 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   final UpdateProductUseCase updateProductUseCase;
   final DeleteProductUseCase deleteProductUseCase;
   final AdjustStockUseCase adjustStockUseCase;
+
+  StreamSubscription? _boxSubscription;
+  Timer? _debounceTimer;
 
   ProductBloc({
     required this.getProductsUseCase,
@@ -27,11 +33,38 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     on<DeleteProduct>(_onDeleteProduct);
     on<AdjustProductStock>(_onAdjustProductStock);
     on<BatchDeductStock>(_onBatchDeductStock);
+
+    _listenToProductBoxChanges();
+  }
+
+  void _listenToProductBoxChanges() {
+    _boxSubscription?.cancel();
+    try {
+      if (Hive.isBoxOpen(HiveDatabase.productBoxName)) {
+        _boxSubscription = HiveDatabase.productBox.watch().listen((_) {
+          _debounceTimer?.cancel();
+          _debounceTimer = Timer(const Duration(milliseconds: 150), () {
+            if (!isClosed) {
+              add(const LoadProducts(silent: true));
+            }
+          });
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Future<void> close() {
+    _boxSubscription?.cancel();
+    _debounceTimer?.cancel();
+    return super.close();
   }
 
   Future<void> _onLoadProducts(
       LoadProducts event, Emitter<ProductState> emit) async {
-    emit(state.copyWith(status: ProductStatus.loading));
+    if (!event.silent) {
+      emit(state.copyWith(status: ProductStatus.loading));
+    }
     final result = await getProductsUseCase(NoParams());
     result.fold(
       (failure) => emit(state.copyWith(

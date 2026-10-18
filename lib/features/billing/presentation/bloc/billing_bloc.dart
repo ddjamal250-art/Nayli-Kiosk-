@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:bloc/bloc.dart';
 import 'dart:convert';
 import 'package:collection/collection.dart';
@@ -546,20 +548,11 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
             continue; // Skip the rest of the deduction for the cup itself
           }
 
-          // fallback to original weighable check
-          final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled);
-          if (hasWeighable && cartItem.weightKg != null) {
-            final deductGrams = (cartItem.weightKg!.abs() * 1000).round();
-            newStock = isItemReturn
-                ? (productModel.stock + deductGrams).toDouble() 
-                : (productModel.stock - deductGrams).toDouble().clamp(0.0, 9999999.0);
-          } else {
-            // منتج عادي أو سوائل ومقاسات:
-            final deductQty = cartItem.totalStockDeduct.abs();
-            newStock = isItemReturn
-                ? (productModel.stock + deductQty)
-                : (productModel.stock - deductQty).clamp(0.0, 999999.0);
-          }
+          // الخصم أو الاسترجاع الحقيقي للمخزون (يدعم القطع، المقاسات، والمنتجات الموزونة بالكيلوغرام مباشرة)
+          final deductQty = cartItem.totalStockDeduct.abs();
+          newStock = isItemReturn
+              ? (productModel.stock + deductQty).toDouble()
+              : (productModel.stock - deductQty).toDouble().clamp(0.0, 9999999.0);
 
           // FIFO Batch Deduction or Restock
           List<PurchaseBatch> updatedBatches = List.from(productModel.stockBatches);
@@ -739,28 +732,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'orderNote': event.orderNote,
       });
 
-      // 3. Print physical receipt (unless skipped)
-      if (!event.skipPhysicalPrint) {
-        await printerHelper.printReceipt(
-          shopName: event.shopName,
-          address1: event.address1,
-          address2: event.address2,
-          phone: event.phone,
-          items: items,
-          total: positiveTotal,
-          discount: snapDiscount,
-          footer: event.footer,
-          customerName: event.customerName,
-          isCredit: event.isCredit,
-          paidAmount: tenderedCash,
-          previousDebt: event.previousDebt,
-          newDebtTotal: event.newDebtTotal,
-          specificPrinterName: event.specificPrinterName,
-          invoiceId: invoiceId,
-          isReturn: isReturn,
-        );
-      }
-
+      // تفريغ السلة وإنهاء عملية البيع فوراً في واجهة المستخدم دون أي تأخير
       emit(state.copyWith(
         cartItems: const [],
         isPrinting: false,
@@ -769,6 +741,32 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         isDiscountPercentage: false,
         isReturnMode: false,
       ));
+
+      // 3. طباعة الإيصال في الخلفية بدون حجز الواجهة أو تأخير عمليات البيع
+      if (!event.skipPhysicalPrint) {
+        unawaited(
+          printerHelper.printReceipt(
+            shopName: event.shopName,
+            address1: event.address1,
+            address2: event.address2,
+            phone: event.phone,
+            items: items,
+            total: positiveTotal,
+            discount: snapDiscount,
+            footer: event.footer,
+            customerName: event.customerName,
+            isCredit: event.isCredit,
+            paidAmount: tenderedCash,
+            previousDebt: event.previousDebt,
+            newDebtTotal: event.newDebtTotal,
+            specificPrinterName: event.specificPrinterName,
+            invoiceId: invoiceId,
+            isReturn: isReturn,
+          ).catchError((e) {
+            debugPrint('Physical receipt background printing error: $e');
+          }),
+        );
+      }
     } catch (e) {
       emit(state.copyWith(
           isPrinting: false, error: 'Print failed: $e', clearError: false));

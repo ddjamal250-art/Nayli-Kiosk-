@@ -46,7 +46,16 @@ class _ProductListPageState extends State<ProductListPage> {
   final Set<String> _selectedProductIds = {};
 
   List<String> _categoryTabs = [];
-  
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ProductBloc>().add(const LoadProducts());
+      }
+    });
+  }
 
 
   String get _selectedCategoryFilter =>

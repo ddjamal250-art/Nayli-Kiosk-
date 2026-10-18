@@ -85,10 +85,15 @@ class ReturnFixMigrationService {
             orderNote.contains('retour') ||
             orderNote.contains('استرجاع');
         final double totalAmt = (rawInv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+        final bool isProperReturn = (rawInv['isReturn'] == true && totalAmt <= 0);
+        if (isProperReturn) continue; // فواتير الإرجاع النظامية السالبة تم خصمها واسترجاع مخزونها بنجاح ولا تمس
+
         final bool flagConflict = (rawInv['isReturn'] == true && totalAmt > 0);
 
-        // هل الفاتورة فاتورة إرجاع سابقة تالفة؟
-        final bool isCorruptedReturn = hasReturnSign || (noteIndicatesReturn && totalAmt > 0) || flagConflict;
+        // هل الفاتورة فاتورة إرجاع سابقة تالفة؟ (أي سُجلت كبيع موجب ومبلغ موجب بدلاً من إرجاع سالب)
+        final bool isCorruptedReturn = (hasReturnSign && totalAmt > 0) ||
+            (noteIndicatesReturn && totalAmt > 0) ||
+            flagConflict;
         if (!isCorruptedReturn) continue;
 
         // 1. استصلاح المخزون لكل منتج في الفاتورة (+2x Q)
@@ -160,8 +165,8 @@ class ReturnFixMigrationService {
 
             double unitsToAdd = 0.0;
             if (hasWeighable && weightKg > 0) {
-              // الميزاني بالغرامات: نقص بمقدار weightKg * 1000، نعوض بـ 2x
-              unitsToAdd = (weightKg * 1000.0 * 2.0);
+              // الميزاني بالكيلوغرام: نقص بمقدار weightKg، نعوض بـ 2x بالكيلوغرام
+              unitsToAdd = (weightKg * 2.0);
             } else {
               final double qty = ((item['qty'] as num?)?.toDouble() ?? 1.0).abs();
               final int? unitLevel = (item['unitLevel'] as num?)?.toInt();

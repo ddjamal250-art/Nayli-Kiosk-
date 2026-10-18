@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -128,7 +129,7 @@ class _CashDrawerActionDialogState extends State<CashDrawerActionDialog> {
 
       if (_openDrawerHardware) {
         try {
-          await PrinterHelper.openCashDrawer();
+          unawaited(PrinterHelper.openCashDrawer());
         } catch (_) {}
       }
 

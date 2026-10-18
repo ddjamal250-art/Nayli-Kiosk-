@@ -1480,7 +1480,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         }
 
         final double stockToAdd = hasWeighable && weightKg != null
-            ? (weightKg * 1000).toDouble()
+            ? weightKg.toDouble()
             : (qty * unitMultiplier);
         final double newStock = (productModel.stock + stockToAdd).toDouble();
         final updatedProd = productModel.copyWith(stock: newStock);
@@ -1524,7 +1524,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     // Open drawer if cash payment to give money back
     if (invoiceData['paymentMethod'] == 'Espèces' || invoiceData['paymentMethod'] == 'كاش') {
       try {
-        await PrinterHelper.openCashDrawer();
+        unawaited(PrinterHelper.openCashDrawer());
       } catch (_) {}
     }
 
@@ -2418,8 +2418,8 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
       title: context.tr('pos_open_drawer'),
     );
     if (isAuthorized) {
-      await SoundService.playDrawerKick();
-      await PrinterHelper.openCashDrawer();
+      unawaited(SoundService.playDrawerKick());
+      unawaited(PrinterHelper.openCashDrawer());
       if (mounted) {
         SnackbarHelper.showSuccess(context, context.tr('pos_open_drawer'));
       }
@@ -2942,14 +2942,14 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
     if (method == PosPaymentMethod.tpeCard) {
       await TpePaymentService.processTpePayment(amount: total, manualReference: tpeRef);
     } else {
-      await SoundService.playCheckoutSuccess();
+      unawaited(SoundService.playCheckoutSuccess());
     }
 
     final bool hasCash = method == PosPaymentMethod.cash ||
         (isSplit && splitPayments != null && splitPayments.any((p) => p['method'] == 'Espèces'));
     if (hasCash) {
-      await SoundService.playDrawerKick();
-      await PrinterHelper.openCashDrawer();
+      unawaited(SoundService.playDrawerKick());
+      unawaited(PrinterHelper.openCashDrawer());
     }
 
     // 1. Dispatch PrintReceiptEvent to deduct stock and save invoice in invoicesBox

@@ -96,7 +96,8 @@ class _EditProductPageState extends State<EditProductPage> {
   void initState() {
     super.initState();
     _availableCategories = CategoryTaxonomy.getDropdownCategories();
-    final p = widget.product;
+    final liveProduct = HiveDatabase.productBox.get(widget.product.id) ?? widget.product;
+    final p = liveProduct;
     _barcodeCtrl = TextEditingController(text: p.barcode);
     _nameCtrl = TextEditingController(text: p.name);
     _priceCtrl = TextEditingController(text: p.price > 0 ? _formatDouble(p.price) : '');
@@ -380,12 +381,14 @@ class _EditProductPageState extends State<EditProductPage> {
       isWeighable: _isWeighted,
     ));
 
-    final updatedProduct = widget.product.copyWith(
+    final liveProduct = HiveDatabase.productBox.get(widget.product.id) ?? widget.product;
+    final updatedProduct = liveProduct.copyWith(
       name: _nameCtrl.text.trim(),
       barcode: validBc,
       price: _parsePrice(_priceCtrl.text),
       costPrice: effectiveCost,
       stock: _parsePrice(_stockCtrl.text),
+      stockBatches: liveProduct.stockBatches,
       category: _selectedCategory,
       imageUrl: _imageUrl,
       baseUnitName: effectiveBaseUnit,
@@ -393,11 +396,11 @@ class _EditProductPageState extends State<EditProductPage> {
       specialOffers: resolvedOffers,
       pluCode: plu.isNotEmpty ? plu : null,
       isWeighted: _isWeighted,
-      unitSystemType: _isWeighted ? UnitSystemType.weight : (_liquidConfigJson != null ? UnitSystemType.volume : widget.product.unitSystemType),
+      unitSystemType: _isWeighted ? UnitSystemType.weight : (_liquidConfigJson != null ? UnitSystemType.volume : liveProduct.unitSystemType),
       coffeeRecipeJson: _coffeeRecipeJson,
       liquidConfigJson: _liquidConfigJson,
       optionsConfigJson: _optionsConfigJson,
-      isCoffeeMachineProduct: widget.product.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
+      isCoffeeMachineProduct: liveProduct.isCoffeeMachineProduct || _coffeeRecipeJson != null || _selectedCategory.contains('قهوة'),
       packMultiplier: _hasPack && packCapUI > 0 ? packCapUI.toInt() : 1,
       packsPerCarton: cartonCapUI > 0 ? cartonCapUI.toInt() : 10,
       hasMultiUnit: _hasCarton || _hasPack,

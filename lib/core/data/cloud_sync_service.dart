@@ -138,7 +138,7 @@ class CloudSyncService {
           int count = 0;
           for (var item in list) {
             final p = ProductModel.fromJson(item as Map<String, dynamic>);
-            await HiveDatabase.productBox.put(p.barcode, p);
+            await HiveDatabase.productBox.put(p.id, p);
             count++;
           }
           return count;
