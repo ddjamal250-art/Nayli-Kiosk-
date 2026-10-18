@@ -1745,9 +1745,6 @@ warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\
    info - Field overrides a field inherited from 'ProductUnit' - lib\features\product\data\models\product_unit_model.dart:28:14 - overridden_fields
    info - Field overrides a field inherited from 'ProductUnit' - lib\features\product\data\models\product_unit_model.dart:32:14 - overridden_fields
   error - Target of URI doesn't exist: '../models/product_model.dart' - lib\features\product\data\product_integrity_service.dart:3:8 - uri_does_not_exist
-  error - Target of URI doesn't exist: '../../domain/entities/product.dart' - lib\features\product\data\product_integrity_service.dart:4:8 - uri_does_not_exist
-  error - The name 'PurchaseBatch' isn't a type, so it can't be used as a type argument - lib\features\product\data\product_integrity_service.dart:73:14 - non_type_as_type_argument
-  error - The property 'remainingQuantity' can't be unconditionally accessed because the receiver can be 'null' - lib\features\product\data\product_integrity_service.dart:84:49 - unchecked_use_of_nullable_value
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\product\data\repositories\product_repository_impl.dart:1:8 - depend_on_referenced_packages
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:90:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:108:13 - prefer_const_constructors
