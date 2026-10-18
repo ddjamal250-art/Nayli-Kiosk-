@@ -785,19 +785,8 @@ warning - Unused import: '../../../../core/localization/app_localizations.dart' 
    info - Use interpolation to compose strings and values - lib\features\billing\data\kiosk_service.dart:82:86 - prefer_interpolation_to_compose_strings
 warning - The operand can't be null, so the condition is always 'true' - lib\features\billing\data\kiosk_service.dart:159:18 - unnecessary_null_comparison
    info - Use interpolation to compose strings and values - lib\features\billing\data\kiosk_service.dart:229:19 - prefer_interpolation_to_compose_strings
-  error - Target of URI doesn't exist: '../../../product/data/models/product_model.dart' - lib\features\billing\data\return_fix_migration_service.dart:4:8 - uri_does_not_exist
-  error - Target of URI doesn't exist: '../../../product/domain/entities/product.dart' - lib\features\billing\data\return_fix_migration_service.dart:5:8 - uri_does_not_exist
-  error - Target of URI doesn't exist: '../../../shifts/data/shift_service.dart' - lib\features\billing\data\return_fix_migration_service.dart:6:8 - uri_does_not_exist
+warning - Unused import: '../../product/data/models/product_model.dart' - lib\features\billing\data\return_fix_migration_service.dart:4:8 - unused_import
 warning - The receiver can't be null because of short-circuiting, so the null-aware operator '?.' can't be used - lib\features\billing\data\return_fix_migration_service.dart:127:78 - invalid_null_aware_operator
-  error - The name 'PurchaseBatch' isn't a type, so it can't be used as a type argument - lib\features\billing\data\return_fix_migration_service.dart:132:28 - non_type_as_type_argument
-  error - The property 'dateAdded' can't be unconditionally accessed because the receiver can be 'null' - lib\features\billing\data\return_fix_migration_service.dart:134:53 - unchecked_use_of_nullable_value
-  error - The property 'dateAdded' can't be unconditionally accessed because the receiver can be 'null' - lib\features\billing\data\return_fix_migration_service.dart:134:75 - unchecked_use_of_nullable_value
-  error - The method 'PurchaseBatch' isn't defined for the type 'ReturnFixMigrationService' - lib\features\billing\data\return_fix_migration_service.dart:140:40 - undefined_method
-  error - The name 'PurchaseBatch' isn't a type, so it can't be used as a type argument - lib\features\billing\data\return_fix_migration_service.dart:182:18 - non_type_as_type_argument
-  error - The property 'dateAdded' can't be unconditionally accessed because the receiver can be 'null' - lib\features\billing\data\return_fix_migration_service.dart:184:47 - unchecked_use_of_nullable_value
-  error - The property 'dateAdded' can't be unconditionally accessed because the receiver can be 'null' - lib\features\billing\data\return_fix_migration_service.dart:184:69 - unchecked_use_of_nullable_value
-  error - The method 'PurchaseBatch' isn't defined for the type 'ReturnFixMigrationService' - lib\features\billing\data\return_fix_migration_service.dart:190:34 - undefined_method
-  error - Undefined name 'ShiftService' - lib\features\billing\data\return_fix_migration_service.dart:285:15 - undefined_identifier
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\billing\domain\entities\cart_item.dart:2:8 - depend_on_referenced_packages
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\billing\presentation\bloc\billing_bloc.dart:4:8 - depend_on_referenced_packages
 warning - Unused import: '../../../product/data/models/product_model.dart' - lib\features\billing\presentation\bloc\billing_bloc.dart:10:8 - unused_import
@@ -805,10 +794,6 @@ warning - Unused import: '../../../product/data/models/product_model.dart' - lib
    info - Unnecessary braces in a string interpolation - lib\features\billing\presentation\bloc\billing_bloc.dart:122:32 - unnecessary_brace_in_string_interps
    info - The declaration '_onCleanExpiredHeldCarts' isn't referenced - lib\features\billing\presentation\bloc\billing_bloc.dart:389:8 - unused_element
 warning - The left operand can't be null, so the right operand is never executed - lib\features\billing\presentation\bloc\billing_bloc.dart:442:69 - dead_null_aware_expression
-  error - The named parameter 'batchNumber' isn't defined - lib\features\billing\presentation\bloc\billing_bloc.dart:534:30 - undefined_named_parameter
-  error - The named parameter 'initialQuantity' isn't defined - lib\features\billing\presentation\bloc\billing_bloc.dart:535:30 - undefined_named_parameter
-  error - The named parameter 'batchNumber' isn't defined - lib\features\billing\presentation\bloc\billing_bloc.dart:594:20 - undefined_named_parameter
-  error - The named parameter 'initialQuantity' isn't defined - lib\features\billing\presentation\bloc\billing_bloc.dart:595:20 - undefined_named_parameter
 warning - Unused import: '../../../../core/utils/printer_helper.dart' - lib\features\billing\presentation\pages\cashier_shifts_page.dart:8:8 - unused_import
 warning - Unused import: '../../../../core/widgets/primary_button.dart' - lib\features\billing\presentation\pages\checkout_page.dart:1:8 - unused_import
 warning - Unused import: '../../../../core/service_locator.dart' - lib\features\billing\presentation\pages\checkout_page.dart:7:8 - unused_import
