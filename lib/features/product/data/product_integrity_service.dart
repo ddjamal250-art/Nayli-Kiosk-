@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/data/hive_database.dart';
-import '../models/product_model.dart';
+import 'models/product_model.dart';
 import '../domain/entities/product.dart';
 
 /// خدمة تدقيق وسلامة بيانات المنتجات والمخزون

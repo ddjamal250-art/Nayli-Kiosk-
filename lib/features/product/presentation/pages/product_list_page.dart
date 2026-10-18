@@ -47,16 +47,6 @@ class _ProductListPageState extends State<ProductListPage> {
 
   List<String> _categoryTabs = [];
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<ProductBloc>().add(const LoadProducts());
-      }
-    });
-  }
-
 
   String get _selectedCategoryFilter =>
       _selectedCategoryIndex < _categoryTabs.length ? _categoryTabs[_selectedCategoryIndex] : 'الكل';
@@ -315,6 +305,11 @@ class _ProductListPageState extends State<ProductListPage> {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
       });
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ProductBloc>().add(const LoadProducts());
+      }
     });
   }
 
