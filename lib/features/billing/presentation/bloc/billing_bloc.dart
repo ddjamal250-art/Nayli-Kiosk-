@@ -531,8 +531,6 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                            updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + (newRawStock - rawProduct.stock).toDouble());
                        } else {
                            updatedBatches.add(PurchaseBatch(
-                             batchNumber: 'RET-${DateTime.now().millisecondsSinceEpoch}',
-                             initialQuantity: deductUnits.toDouble(),
                              remainingQuantity: deductUnits.toDouble(),
                              costPrice: rawProduct.costPrice,
                              dateAdded: DateTime.now(),
@@ -591,8 +589,6 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                  updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + returnedQty);
              } else {
                  updatedBatches.add(PurchaseBatch(
-                   batchNumber: 'RET-${DateTime.now().millisecondsSinceEpoch}',
-                   initialQuantity: returnedQty,
                    remainingQuantity: returnedQty,
                    costPrice: productModel.costPrice,
                    dateAdded: DateTime.now(),

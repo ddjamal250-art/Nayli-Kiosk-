@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import '../../../../core/data/hive_database.dart';
-import '../../../product/data/models/product_model.dart';
-import '../../../product/domain/entities/product.dart';
-import '../../../shifts/data/shift_service.dart';
+import '../../../core/data/hive_database.dart';
+import '../../product/data/models/product_model.dart';
+import '../../product/domain/entities/product.dart';
+import '../../shifts/data/shift_service.dart';
 
 /// خدمة الإصلاح التلقائي والاستصلاح بأثر رجعي لفواتير الإرجاع السابقة التالفة
 /// تقوم باستعادة المخزون الضائع (+2x Q)، وتصحيح إشارات الفواتير السابقة، وإعادة احتساب الورديات
@@ -138,8 +138,6 @@ class ReturnFixMigrationService {
                         );
                       } else {
                         rawBatches.add(PurchaseBatch(
-                          batchNumber: 'RET-FIX-${DateTime.now().millisecondsSinceEpoch}',
-                          initialQuantity: restoreGrams.toDouble(),
                           remainingQuantity: restoreGrams.toDouble(),
                           costPrice: rawProduct.costPrice,
                           dateAdded: DateTime.now(),
@@ -188,8 +186,6 @@ class ReturnFixMigrationService {
               );
             } else {
               updatedBatches.add(PurchaseBatch(
-                batchNumber: 'RET-FIX-${DateTime.now().millisecondsSinceEpoch}',
-                initialQuantity: unitsToAdd,
                 remainingQuantity: unitsToAdd,
                 costPrice: product.costPrice,
                 dateAdded: DateTime.now(),
