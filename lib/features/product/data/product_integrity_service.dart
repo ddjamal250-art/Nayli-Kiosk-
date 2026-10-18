@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/data/hive_database.dart';
 import '../models/product_model.dart';
-import '../../domain/entities/product.dart';
+import '../domain/entities/product.dart';
 
 /// خدمة تدقيق وسلامة بيانات المنتجات والمخزون
 /// تعالج المفاتيح المكررة في Hive وتصحح أي كميات سالبة ناتجة عن أخطاء سابقة
