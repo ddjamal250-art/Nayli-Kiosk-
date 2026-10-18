@@ -190,6 +190,8 @@ class PrintReceiptEvent extends BillingEvent {
   final List<Map<String, dynamic>>? splitPayments;
   /// ملاحظة عامة على الفاتورة / الطلب
   final String? orderNote;
+  /// وسم صريح لعملية إرجاع السلع وصرف المبلغ للزبون
+  final bool? isReturn;
 
   const PrintReceiptEvent({
     required this.shopName,
@@ -211,6 +213,7 @@ class PrintReceiptEvent extends BillingEvent {
     this.explicitDiscount,
     this.splitPayments,
     this.orderNote,
+    this.isReturn,
   });
 
   @override
@@ -234,6 +237,7 @@ class PrintReceiptEvent extends BillingEvent {
         explicitDiscount ?? 0.0,
         splitPayments ?? const [],
         orderNote ?? '',
+        isReturn ?? false,
       ];
 }
 

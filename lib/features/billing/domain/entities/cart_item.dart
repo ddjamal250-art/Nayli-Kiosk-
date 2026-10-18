@@ -43,11 +43,14 @@ class CartItem extends Equatable {
     return selectedOptions!.fold(0.0, (sum, opt) => sum + opt.priceDelta);
   }
 
+  bool get isReturnItem => unitPrice < 0 || quantity < 0 || total < 0;
+
   double get unitPrice {
-    if (customUnitPrice != null && customUnitPrice! > 0) return customUnitPrice!;
+    if (customUnitPrice != null && customUnitPrice != 0) return customUnitPrice!;
     final unit = selectedUnit;
     final basePrice = unit != null ? unit.price : product.price; // Base unit price
-    return basePrice + optionsPriceDelta;
+    final sign = product.price < 0 ? -1.0 : 1.0;
+    return (basePrice.abs() * sign) + (optionsPriceDelta * sign);
   }
 
   double get unitCost {
@@ -93,12 +96,15 @@ class CartItem extends Equatable {
 
   /// المجموع الإجمالي للبيع مع دعم العروض الخاصة والتخفيضات والإرجاع
   double get total {
-    if (weightKg != null) return customUnitPrice ?? (weightKg! * unitPrice);
+    if (weightKg != null) {
+      if (customUnitPrice != null) return customUnitPrice!;
+      return (weightKg! * unitPrice);
+    }
 
     // إذا تم تحديد عرض خاص أو سعر مخصص بالصفقة مباشرة
     if (unitLevel == 'custom' && customUnitPrice != null) {
       final isNegative = unitPrice < 0 || quantity < 0;
-      final t = (customUnitPrice! * quantity.abs());
+      final t = (customUnitPrice!.abs() * quantity.abs());
       return isNegative ? -t : t;
     }
 

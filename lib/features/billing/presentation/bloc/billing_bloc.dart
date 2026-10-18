@@ -439,12 +439,13 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         return;
       }
 
-      final bool isReturn = state.isReturnMode;
+      final bool isReturn = event.isReturn ?? state.isReturnMode ?? (state.isRefund || currentCartItems.any((i) => i.isReturnItem));
       final double snapSubtotal = state.subTotalAmount;
       final double snapDiscount = event.explicitDiscount ?? state.calculatedDiscount;
-      final double positiveTotal = (event.explicitTotal != null && event.explicitTotal! > 0)
-          ? event.explicitTotal!
-          : state.totalAmount;
+      final double magnitude = event.explicitTotal != null && event.explicitTotal != 0
+          ? event.explicitTotal!.abs()
+          : (state.totalAmount != 0 ? state.totalAmount.abs() : snapSubtotal.abs());
+      final double positiveTotal = magnitude;
 
       final items = currentCartItems
           .map((item) => {
@@ -465,7 +466,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
               })
           .toList();
 
-      // 1. Auto-deduct stock from Hive for all sold products
+      // 1. Auto-deduct or restock from Hive for all products
       final productBox = HiveDatabase.productBox;
       for (final cartItem in currentCartItems) {
         String originalId = cartItem.product.id;
@@ -483,11 +484,11 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
         final productModel = productBox.get(originalId);
         if (productModel != null) {
+          final bool isItemReturn = isReturn || cartItem.isReturnItem || cartItem.total < 0;
           double newStock = 0.0;
 
           if (productModel.coffeeRecipeJson != null) {
-            // Deduct raw materials instead of this product's stock.
-            // The cup itself has stock=999, no need to deduct.
+            // Deduct or restock raw materials instead of this product's stock.
             try {
               final recipe = jsonDecode(productModel.coffeeRecipeJson!);
               if (recipe is List && recipe.isNotEmpty) {
@@ -498,14 +499,14 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                   final double qtyPerCup = (item['qty'] as num?)?.toDouble() ?? 0.0;
                   final rawProduct = productBox.get(rawId);
                   if (rawProduct != null) {
-                    final deductUnits = (qtyPerCup * cartItem.quantity).round();
-                    final double newRawStock = state.isReturnMode 
+                    final deductUnits = (qtyPerCup * cartItem.quantity.abs()).round();
+                    final double newRawStock = isItemReturn 
                         ? (rawProduct.stock + deductUnits).toDouble() 
                         : (rawProduct.stock - deductUnits).toDouble().clamp(0.0, 9999999.0);
                     
-                    // FIFO Batch Deduction
+                    // FIFO Batch Deduction or Restock
                     List<PurchaseBatch> updatedBatches = List.from(rawProduct.stockBatches);
-                    if (!state.isReturnMode && updatedBatches.isNotEmpty) {
+                    if (!isItemReturn && updatedBatches.isNotEmpty) {
                        double remainingToDeduct = (rawProduct.stock - newRawStock).toDouble();
                        updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
                        
@@ -522,12 +523,20 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                            }
                        }
                        updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
-                    } else if (state.isReturnMode) {
+                    } else if (isItemReturn) {
                        // On return, just add it to the newest batch or create one
                        if (updatedBatches.isNotEmpty) {
                            updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
                            final newest = updatedBatches.first;
                            updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + (newRawStock - rawProduct.stock).toDouble());
+                       } else {
+                           updatedBatches.add(PurchaseBatch(
+                             batchNumber: 'RET-${DateTime.now().millisecondsSinceEpoch}',
+                             initialQuantity: deductUnits.toDouble(),
+                             remainingQuantity: deductUnits.toDouble(),
+                             costPrice: rawProduct.costPrice,
+                             dateAdded: DateTime.now(),
+                           ));
                        }
                     }
 
@@ -542,21 +551,21 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           // fallback to original weighable check
           final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled);
           if (hasWeighable && cartItem.weightKg != null) {
-            final deductGrams = (cartItem.weightKg! * 1000).round();
-            newStock = state.isReturnMode
-                ? (productModel.stock + deductGrams).toDouble() : (productModel.stock - deductGrams).toDouble().clamp(0.0, 9999999.0);
+            final deductGrams = (cartItem.weightKg!.abs() * 1000).round();
+            newStock = isItemReturn
+                ? (productModel.stock + deductGrams).toDouble() 
+                : (productModel.stock - deductGrams).toDouble().clamp(0.0, 9999999.0);
           } else {
             // منتج عادي أو سوائل ومقاسات:
-            final deductQty = cartItem.totalStockDeduct;
-            newStock = state.isReturnMode
+            final deductQty = cartItem.totalStockDeduct.abs();
+            newStock = isItemReturn
                 ? (productModel.stock + deductQty)
                 : (productModel.stock - deductQty).clamp(0.0, 999999.0);
           }
 
-          
-          // FIFO Batch Deduction
+          // FIFO Batch Deduction or Restock
           List<PurchaseBatch> updatedBatches = List.from(productModel.stockBatches);
-          if (!state.isReturnMode && updatedBatches.isNotEmpty) {
+          if (!isItemReturn && updatedBatches.isNotEmpty) {
              double remainingToDeduct = (productModel.stock - newStock).toDouble();
              updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
              
@@ -573,12 +582,21 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                  }
              }
              updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
-          } else if (state.isReturnMode) {
+          } else if (isItemReturn) {
              // On return, just add it to the newest batch or create one
+             final double returnedQty = (newStock - productModel.stock).toDouble();
              if (updatedBatches.isNotEmpty) {
                  updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
                  final newest = updatedBatches.first;
-                 updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + (newStock - productModel.stock).toDouble());
+                 updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + returnedQty);
+             } else {
+                 updatedBatches.add(PurchaseBatch(
+                   batchNumber: 'RET-${DateTime.now().millisecondsSinceEpoch}',
+                   initialQuantity: returnedQty,
+                   remainingQuantity: returnedQty,
+                   costPrice: productModel.costPrice,
+                   dateAdded: DateTime.now(),
+                 ));
              }
           }
 
@@ -702,6 +720,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'totalCost': finalTotalCost,
         'netProfit': finalNetProfit,
         'isReturn': isReturn,
+        'status': isReturn ? 'return' : (event.isCredit ? 'credit' : 'completed'),
         'tobaccoSales': isReturn ? -tobaccoSales : tobaccoSales,
         'tobaccoCost': isReturn ? -tobaccoCost : tobaccoCost,
         'tobaccoProfit': isReturn ? -tobaccoProfit : tobaccoProfit,
@@ -717,8 +736,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'isCredit': event.isCredit,
         'paymentMethod': event.paymentMethod,
         'customerName': event.customerName,
-        'paidAmount': isReturn ? -effectiveCashPaid : effectiveCashPaid,
-        'receivedAmount': isReturn ? -tenderedCash : tenderedCash,
+        'paidAmount': isReturn ? -positiveTotal : effectiveCashPaid,
+        'receivedAmount': isReturn ? -positiveTotal : tenderedCash,
         'changeAmount': changeBack,
         'splitPayments': event.splitPayments,
         'orderNote': event.orderNote,
@@ -742,6 +761,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           newDebtTotal: event.newDebtTotal,
           specificPrinterName: event.specificPrinterName,
           invoiceId: invoiceId,
+          isReturn: isReturn,
         );
       }
 
@@ -751,6 +771,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         printSuccess: true,
         discountValue: 0.0,
         isDiscountPercentage: false,
+        isReturnMode: false,
       ));
     } catch (e) {
       emit(state.copyWith(

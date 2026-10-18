@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../features/product/data/models/product_model.dart';
 import '../../features/shop/data/models/shop_model.dart';
 import '../../features/shifts/data/shift_service.dart';
+import '../../features/billing/data/return_fix_migration_service.dart';
 import '../utils/online_license_service.dart';
 
 class HiveDatabase {
@@ -96,6 +97,13 @@ class HiveDatabase {
         await settingsBox.delete('merchant_telegram_chat_id');
       }
     } catch (_) {}
+
+    // الإصلاح التلقائي الشامل لفواتير واسترجاع السلع التالفة بأثر رجعي
+    try {
+      await ReturnFixMigrationService.runRetroactiveReturnRepair();
+    } catch (e) {
+      debugPrint('Retroactive return repair failed: $e');
+    }
 
     // التدقيق والإصلاح التلقائي الشامل لبيانات الصندوق والورديات بأثر رجعي
     try {

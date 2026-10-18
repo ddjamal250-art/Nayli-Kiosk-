@@ -15,6 +15,7 @@ import '../../data/commercial_document_service.dart';
 import '../../domain/entities/commercial_document.dart';
 import '../widgets/document_editor_dialog.dart';
 import '../widgets/receipt_ocr_scanner_dialog.dart';
+import '../../../billing/data/return_fix_migration_service.dart';
 import 'package:uuid/uuid.dart';
 
 class DocumentsHubPage extends StatefulWidget {
@@ -366,8 +367,58 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
               children: [
                 const Icon(Icons.receipt_long_rounded, color: Colors.indigo, size: 28),
                 const SizedBox(width: 8),
-                Text('أرشيف وصولات الكاشير السريعة (${rawInvoices.length}) 🧾',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Expanded(
+                  child: Text('أرشيف وصولات الكاشير السريعة (${rawInvoices.length}) 🧾',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.deepOrange.shade800,
+                    side: BorderSide(color: Colors.deepOrange.shade300),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.auto_fix_high_rounded, size: 16),
+                  label: const Text('استصلاح الإرجاعات السابقة بأثر رجعي 🔄',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  onPressed: () async {
+                    final res = await ReturnFixMigrationService.runRetroactiveReturnRepair(force: true);
+                    setModalState(() {});
+                    if (context.mounted) {
+                      final fixedCount = res['fixedCount'] ?? 0;
+                      final restoredStock = (res['restoredStockUnits'] as num?)?.toDouble() ?? 0.0;
+                      showDialog(
+                        context: context,
+                        builder: (dCtx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: const Row(
+                            children: [
+                              Icon(Icons.check_circle_outline_rounded, color: Colors.teal, size: 24),
+                              SizedBox(width: 8),
+                              Text('تقرير التدقيق والاستصلاح بأثر رجعي',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            ],
+                          ),
+                          content: Text(
+                            fixedCount > 0
+                                ? '✅ تم استصلاح $fixedCount فاتورة إرجاع سابقة تالفة بنجاح!\n'
+                                  '• السلع المستعادة إلى المخزون: $restoredStock قطعة/وحدة.\n'
+                                  '• تم خصم مبالغ الإرجاع من تقارير الصندوق والورديات.\n'
+                                  '• تم تصحيح رصيد ديون الزبائن.'
+                                : '✨ جميع فواتير الإرجاع السابقة سليمة ومطابقة تماماً!\nلم يتم العثور على أي فواتير بحاجة للإصلاح.',
+                            style: const TextStyle(fontSize: 13, height: 1.5),
+                          ),
+                          actions: [
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(dCtx),
+                              child: const Text('تم'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                ),
               ],
             ),
             content: SizedBox(
@@ -390,14 +441,21 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                         final method = inv['paymentMethod']?.toString() ?? (inv['isCredit'] == true ? 'Crédit' : 'Espèces');
                         final items = List<Map<String, dynamic>>.from(inv['items'] ?? []);
                         final isReturned = inv['isReturned'] == true || inv['status'] == 'returned';
+                        final isReturnReceipt = inv['isReturn'] == true || (inv['totalAmount'] as num? ?? 0) < 0;
 
                         return ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           leading: CircleAvatar(
-                            backgroundColor: isReturned ? Colors.red.shade50 : Colors.indigo.shade50,
+                            backgroundColor: isReturnReceipt 
+                                ? Colors.deepOrange.shade50 
+                                : (isReturned ? Colors.red.shade50 : Colors.indigo.shade50),
                             child: Icon(
-                              isReturned ? Icons.undo_rounded : Icons.receipt_rounded,
-                              color: isReturned ? Colors.red : Colors.indigo,
+                              isReturnReceipt
+                                  ? Icons.assignment_return_rounded
+                                  : (isReturned ? Icons.undo_rounded : Icons.receipt_rounded),
+                              color: isReturnReceipt 
+                                  ? Colors.deepOrange 
+                                  : (isReturned ? Colors.red : Colors.indigo),
                             ),
                           ),
                           title: Row(
@@ -411,7 +469,19 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                                   color: isReturned ? Colors.grey : null,
                                 ),
                               ),
-                              if (isReturned) ...[
+                              if (isReturnReceipt) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.deepOrange.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.deepOrange.shade200),
+                                  ),
+                                  child: const Text('وصل إرجاع واسترداد 🔄',
+                                      style: TextStyle(color: Colors.deepOrange, fontSize: 10, fontWeight: FontWeight.bold)),
+                                ),
+                              ] else if (isReturned) ...[
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -425,10 +495,12 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                                 ),
                               ],
                               const Spacer(),
-                              Text('${total.toStringAsFixed(2)} DA',
+                              Text('${isReturnReceipt ? "- " : ""}${total.abs().toStringAsFixed(2)} DA',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w900,
-                                    color: isReturned ? Colors.grey : Colors.teal,
+                                    color: isReturnReceipt
+                                        ? Colors.deepOrange.shade800
+                                        : (isReturned ? Colors.grey : Colors.teal),
                                     fontSize: 14,
                                     decoration: isReturned ? TextDecoration.lineThrough : null,
                                   )),
@@ -441,7 +513,7 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (!isReturned) ...[
+                              if (!isReturned && !isReturnReceipt) ...[
                                 OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: Colors.red,
@@ -459,26 +531,35 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
                               ],
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: isReturned ? Colors.grey.shade600 : Colors.teal,
+                                  backgroundColor: isReturnReceipt
+                                      ? Colors.deepOrange.shade700
+                                      : (isReturned ? Colors.grey.shade600 : Colors.teal),
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   minimumSize: const Size(0, 32),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                                 icon: const Icon(Icons.print_rounded, size: 16, color: Colors.white),
-                                label: Text(isReturned ? 'طباعة نسخة ملغاة' : 'طباعة نسخة',
-                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                label: Text(
+                                  isReturnReceipt
+                                      ? 'طباعة وصل إرجاع'
+                                      : (isReturned ? 'طباعة نسخة ملغاة' : 'طباعة نسخة'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
                                 onPressed: () async {
                                   final shopName = HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli Kiosk');
                                   final shopPhone = HiveDatabase.settingsBox.get('shop_phone', defaultValue: '');
-                                  final duplicataPrefix = isReturned ? ' (ANNULÉ/ملغى)' : ' (DUPLICATA)';
+                                  final duplicataPrefix = isReturnReceipt
+                                      ? ' (RETOUR/إرجاع)'
+                                      : (isReturned ? ' (ANNULÉ/ملغى)' : ' (DUPLICATA)');
                                   final printed = await PrinterHelper.printReceiptWindows(
                                     shopName: '$shopName$duplicataPrefix',
                                     phone: shopPhone,
                                     items: items,
-                                    total: total,
+                                    total: total.abs(),
                                     customerName: customer,
                                     isCredit: inv['isCredit'] == true,
-                                    paidAmount: (inv['paidAmount'] as num?)?.toDouble() ?? 0.0,
+                                    paidAmount: (inv['paidAmount'] as num?)?.toDouble()?.abs() ?? 0.0,
+                                    isReturn: isReturnReceipt,
                                   );
                                   if (printed) {
                                     SoundService.playCheckoutSuccess();

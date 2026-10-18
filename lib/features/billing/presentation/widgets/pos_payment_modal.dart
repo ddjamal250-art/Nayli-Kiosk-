@@ -36,17 +36,24 @@ class PosPaymentModal {
     SoundService.playTabSwitch();
     PosPaymentMethod paymentMethod = PosPaymentMethod.cash;
 
+    final bool isReturnMode = state.isRefund || state.totalAmount < 0;
+
     // Calculate final total after discount
     double calculatedTotal = state.totalAmount;
     if (cartDiscountValue > 0) {
       if (isDiscountPercentage) {
-        calculatedTotal = calculatedTotal - (calculatedTotal * (cartDiscountValue / 100));
+        calculatedTotal = isReturnMode 
+            ? (calculatedTotal + (calculatedTotal.abs() * (cartDiscountValue / 100))) 
+            : (calculatedTotal - (calculatedTotal * (cartDiscountValue / 100)));
       } else {
-        calculatedTotal = (calculatedTotal - cartDiscountValue).clamp(0.0, double.infinity);
+        calculatedTotal = isReturnMode
+            ? (calculatedTotal + cartDiscountValue.abs())
+            : (calculatedTotal - cartDiscountValue).clamp(0.0, double.infinity);
       }
     }
 
-    double receivedAmount = calculatedTotal;
+    final double displayTotal = isReturnMode ? calculatedTotal.abs() : calculatedTotal;
+    double receivedAmount = displayTotal;
     final manualTpeRefController = TextEditingController();
     final cashSplitController = TextEditingController();
     final cardSplitController = TextEditingController();
@@ -60,16 +67,23 @@ class PosPaymentModal {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
-          final total = calculatedTotal;
-          final change = (receivedAmount - total).clamp(0.0, 999999.0);
+          final total = displayTotal;
+          final change = isReturnMode ? 0.0 : (receivedAmount - total).clamp(0.0, 999999.0);
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Row(
               children: [
-                const Icon(Icons.point_of_sale_rounded, color: Colors.teal, size: 30),
+                Icon(
+                  isReturnMode ? Icons.assignment_return_rounded : Icons.point_of_sale_rounded,
+                  color: isReturnMode ? Colors.deepOrange : Colors.teal,
+                  size: 30,
+                ),
                 const SizedBox(width: 8),
-                Text(context.tr('btn_pay_checkout'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  isReturnMode ? 'استرجاع سلع وصرف نقدي للزبون 🔄' : context.tr('btn_pay_checkout'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -88,9 +102,12 @@ class PosPaymentModal {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                     decoration: BoxDecoration(
-                      color: Colors.teal.shade50,
+                      color: isReturnMode ? Colors.deepOrange.shade50 : Colors.teal.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.teal.shade200),
+                      border: Border.all(
+                        color: isReturnMode ? Colors.deepOrange.shade300 : Colors.teal.shade200,
+                        width: 1.5,
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -98,14 +115,27 @@ class PosPaymentModal {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(context.tr('cart_net_total'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text(
+                              isReturnMode ? 'المبلغ المستحق إرجاعه للزبون (صرف من الصندوق):' : context.tr('cart_net_total'),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: isReturnMode ? Colors.deepOrange.shade900 : Colors.black87,
+                              ),
+                            ),
                             if (cartDiscountValue > 0)
                               Text('${context.tr("discount")}: ${cartDiscountValue.toStringAsFixed(1)}${isDiscountPercentage ? "%" : " DA"}',
                                   style: const TextStyle(fontSize: 12, color: Colors.purple, fontWeight: FontWeight.bold)),
                           ],
                         ),
-                        Text('${total.toStringAsFixed(2)} DA',
-                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.teal)),
+                        Text(
+                          '${isReturnMode ? "- " : ""}${total.toStringAsFixed(2)} DA',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: isReturnMode ? Colors.deepOrange.shade800 : Colors.teal,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -142,65 +172,88 @@ class PosPaymentModal {
 
                   // Dynamic Content based on method
                   if (paymentMethod == PosPaymentMethod.cash) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            autofocus: true,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: InputDecoration(
-                              labelText: context.tr('paid_amount'),
-                              border: const OutlineInputBorder(),
-                              prefixIcon: const Icon(Icons.money),
+                    if (isReturnMode) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.amber.shade400, width: 1.2),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Colors.orange, size: 26),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'سيتم فتح درج النقود (Tiroir Caisse) تلقائياً لصرف مبلغ ${displayTotal.toStringAsFixed(2)} دج نقداً للزبون وخصمه من رصيد الصندوق والوردية.',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, height: 1.4),
+                              ),
                             ),
-                            onChanged: (val) {
-                              final numVal = double.tryParse(val) ?? 0.0;
-                              setModalState(() {
-                                receivedAmount = numVal;
-                              });
-                            },
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
+                      ),
+                    ] else ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              autofocus: true,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                labelText: context.tr('paid_amount'),
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.money),
+                              ),
+                              onChanged: (val) {
+                                final numVal = double.tryParse(val) ?? 0.0;
+                                setModalState(() {
+                                  receivedAmount = numVal;
+                                });
+                              },
+                            ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(context.tr('change_due'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                              Text('${change.toStringAsFixed(2)} DA',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: change >= 0 ? Colors.green : Colors.red)),
-                            ],
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(context.tr('change_due'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                Text('${change.toStringAsFixed(2)} DA',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: change >= 0 ? Colors.green : Colors.red)),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Quick Bill Buttons
-                    Row(
-                      children: [500, 1000, 2000, 5000].map((bill) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ActionChip(
-                            label: Text('+$bill DA'),
-                            onPressed: () {
-                              setModalState(() {
-                                receivedAmount = bill.toDouble();
-                              });
-                              SoundService.playTabSwitch();
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Quick Bill Buttons
+                      Row(
+                        children: [500, 1000, 2000, 5000].map((bill) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ActionChip(
+                              label: Text('+$bill DA'),
+                              onPressed: () {
+                                setModalState(() {
+                                  receivedAmount = bill.toDouble();
+                                });
+                                SoundService.playTabSwitch();
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ] else if (paymentMethod == PosPaymentMethod.tpeCard) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -558,12 +611,19 @@ class PosPaymentModal {
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
+                  backgroundColor: isReturnMode ? Colors.deepOrange.shade700 : Colors.teal,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 ),
-                icon: Icon(shouldPrintReceipt ? Icons.print_rounded : Icons.check_circle_outline, color: Colors.white),
+                icon: Icon(
+                  isReturnMode
+                      ? Icons.assignment_return_rounded
+                      : (shouldPrintReceipt ? Icons.print_rounded : Icons.check_circle_outline),
+                  color: Colors.white,
+                ),
                 label: Text(
-                  shouldPrintReceipt ? context.tr('confirm_and_print') : context.tr('confirm_and_save_sale'),
+                  isReturnMode
+                      ? 'تأكيد الإرجاع وصرف ${total.toStringAsFixed(2)} دج للزبون ↩️'
+                      : (shouldPrintReceipt ? context.tr('confirm_and_print') : context.tr('confirm_and_save_sale')),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 onPressed: () async {
@@ -640,10 +700,10 @@ class PosPaymentModal {
                   Navigator.pop(ctx);
                   await onFinalizeSale(
                     paymentMethod,
-                    total,
+                    isReturnMode ? -total : total,
                     manualTpeRefController.text,
                     printReceipt: shouldPrintReceipt,
-                    receivedAmount: paymentMethod == PosPaymentMethod.cash ? receivedAmount : total,
+                    receivedAmount: isReturnMode ? -total : (paymentMethod == PosPaymentMethod.cash ? receivedAmount : total),
                     splitPayments: splitList,
                     orderNote: noteText.isNotEmpty ? noteText : null,
                   );

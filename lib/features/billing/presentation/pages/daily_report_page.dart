@@ -442,9 +442,19 @@ class _DailyReportPageState extends State<DailyReportPage> {
   @override
   Widget build(BuildContext context) {
     final invoices = _getFilteredInvoices();
-    final totalRevenue = invoices.fold<double>(0.0, (sum, inv) => sum + ((inv['totalAmount'] as num?)?.toDouble() ?? 0.0));
-    final totalCost = invoices.fold<double>(0.0, (sum, inv) => sum + ((inv['totalCost'] as num?)?.toDouble() ?? 0.0));
-    final grossProfit = (totalRevenue - totalCost).clamp(0.0, totalRevenue);
+    final totalRevenue = invoices.fold<double>(0.0, (sum, inv) {
+      if (inv['isReturned'] == true && (inv['isReturn'] != true && (inv['totalAmount'] as num? ?? 0) >= 0)) {
+        return sum;
+      }
+      return sum + ((inv['totalAmount'] as num?)?.toDouble() ?? 0.0);
+    });
+    final totalCost = invoices.fold<double>(0.0, (sum, inv) {
+      if (inv['isReturned'] == true && (inv['isReturn'] != true && (inv['totalCost'] as num? ?? 0) >= 0)) {
+        return sum;
+      }
+      return sum + ((inv['totalCost'] as num?)?.toDouble() ?? 0.0);
+    });
+    final grossProfit = (totalRevenue - totalCost);
     final expenses = _getFilteredExpenses();
     final netProfit = (grossProfit - expenses);
 
@@ -523,17 +533,28 @@ class _DailyReportPageState extends State<DailyReportPage> {
       final isCard = method.contains('TPE') || method.contains('Card') || method.contains('Carte') || method.contains('Baridi');
       return i['isCredit'] != true && !isCard;
     }).fold<double>(0.0, (sum, i) {
-      final isReturned = i['isReturned'] == true;
       final tot = (i['totalAmount'] as num?)?.toDouble() ?? 0.0;
       final p = (i['paidAmount'] as num?)?.toDouble() ?? 0.0;
+      final isReturnReceipt = i['isReturn'] == true || tot < 0;
+      final isReturned = i['isReturned'] == true;
+      if (isReturnReceipt) {
+        final absTot = tot.abs();
+        final absP = p.abs();
+        final effectiveRefund = (absP > 0 && absP < absTot) ? absP : absTot;
+        return sum - effectiveRefund;
+      }
       final effective = (p > 0 && p < tot) ? p : tot;
       return isReturned ? (sum - effective) : (sum + effective);
     });
 
     final creditSales = invoices.where((i) => i['isCredit'] == true).fold<double>(0.0, (sum, i) {
-      final isReturned = i['isReturned'] == true;
       final tot = (i['totalAmount'] as num?)?.toDouble() ?? 0.0;
       final p = (i['paidAmount'] as num?)?.toDouble() ?? 0.0;
+      final isReturnReceipt = i['isReturn'] == true || tot < 0;
+      final isReturned = i['isReturned'] == true;
+      if (isReturnReceipt) {
+        return sum - tot.abs();
+      }
       final cashPart = (p > 0) ? (p > tot ? tot : p) : 0.0;
       final creditPart = (tot - cashPart).clamp(0.0, double.infinity);
       return isReturned ? (sum - creditPart) : (sum + creditPart);

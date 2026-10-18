@@ -177,6 +177,7 @@ class ShiftService {
               method.contains('BaridiPay') ||
               method.contains('Baridi');
 
+          final bool isReturnReceipt = inv['isReturn'] == true || total < 0;
           double saleCash = 0.0;
           double saleTpe = 0.0;
           double saleCredit = 0.0;
@@ -184,22 +185,25 @@ class ShiftService {
           if (isCardOrDigital) {
             saleTpe = total;
           } else if (isCredit) {
-            // الدفع بالكريدي (آجل) مع إمكانية تسبيق نقدي (Acompte)
-            final paid = rawPaid ?? 0.0;
-            final cashPart = (paid > 0) ? (paid > total ? total : paid) : 0.0;
-            final creditPart = (total - cashPart).clamp(0.0, double.infinity);
-            saleCash = cashPart;
-            saleCredit = creditPart;
+            if (isReturnReceipt) {
+              saleCredit = -total.abs();
+              saleCash = 0.0;
+            } else {
+              // الدفع بالكريدي (آجل) مع إمكانية تسبيق نقدي (Acompte)
+              final paid = rawPaid ?? 0.0;
+              final cashPart = (paid > 0) ? (paid > total ? total : paid) : 0.0;
+              final creditPart = (total - cashPart).clamp(0.0, double.infinity);
+              saleCash = cashPart;
+              saleCredit = creditPart;
+            }
           } else {
             // الدفع نقداً (كاش):
-            // تصحيح جذري: إذا أدخل التاجر ورقة نقدية كبيرة (مثل 2000 دج) لفاتورة قيمتها 400 دج لحساب الصرف،
-            // فإن ما يستقر في الدرج فعلياً هو قيمة الفاتورة فقط (400 دج)، لأن الباقي (1600 دج) أُرجع للزبون من الدرج.
             final paid = rawPaid ?? total;
-            if (total >= 0) {
+            if (!isReturnReceipt && total >= 0) {
               final effectiveCash = (paid > 0 && paid < total) ? paid : total;
               saleCash = effectiveCash;
             } else {
-              // وصل إرجاع مباشر سالب (total < 0)
+              // وصل إرجاع مباشر سالب
               final absTotal = total.abs();
               final absPaid = paid.abs();
               final effectiveRefund = (absPaid > 0 && absPaid < absTotal) ? absPaid : absTotal;
@@ -214,7 +218,7 @@ class ShiftService {
             creditSales += saleCredit;
           }
 
-          if (isReturnedInThisShift) {
+          if (isReturnedInThisShift && !isReturnReceipt) {
             cashSales -= saleCash;
             tpeSales -= saleTpe;
             creditSales -= saleCredit;

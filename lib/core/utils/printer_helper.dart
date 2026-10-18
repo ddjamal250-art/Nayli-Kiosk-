@@ -350,6 +350,7 @@ Add-Type -TypeDefinition \$code -Language CSharp;
     String? specificAddress,
     String? specificSlogan,
     String? specificFooter,
+    bool isReturn = false,
   }) async {
     final theme = await getArabicTheme();
 
@@ -587,11 +588,31 @@ Add-Type -TypeDefinition \$code -Language CSharp;
 
         case 'invoice_info':
           sectionWidgets.add(
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
-                pw.Text('وصل رقم: #$displayInvoiceNumber', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
-                pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
+                if (isReturn || total < 0)
+                  pw.Container(
+                    margin: const pw.EdgeInsets.only(bottom: 3),
+                    padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey300,
+                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(3)),
+                    ),
+                    child: pw.Center(
+                      child: pw.Text(
+                        '*** وصل إرجاع سلع واسترداد (RETOUR) ***',
+                        style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('وصل رقم: #$displayInvoiceNumber', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()), style: const pw.TextStyle(fontSize: 8)),
+                  ],
+                ),
               ],
             ),
           );
@@ -682,6 +703,7 @@ Add-Type -TypeDefinition \$code -Language CSharp;
           break;
 
         case 'totals':
+          final bool isReceiptReturn = isReturn || total < 0;
           sectionWidgets.add(
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
@@ -689,11 +711,14 @@ Add-Type -TypeDefinition \$code -Language CSharp;
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('المجموع الإجمالي (Total):', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                    pw.Text('${effectiveTotal.toStringAsFixed(2)} دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                    pw.Text(
+                      isReceiptReturn ? 'المبلغ المسترجع للزبون:' : 'المجموع الإجمالي (Total):',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+                    ),
+                    pw.Text('${effectiveTotal.abs().toStringAsFixed(2)} دج', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                   ],
                 ),
-                if (discount > 0) ...[
+                if (discount > 0 && !isReceiptReturn) ...[
                   pw.SizedBox(height: 1.5),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -703,7 +728,7 @@ Add-Type -TypeDefinition \$code -Language CSharp;
                     ],
                   ),
                 ],
-                if (paidAmount > 0) ...[
+                if (paidAmount > 0 && !isReceiptReturn) ...[
                   pw.SizedBox(height: 1.5),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -713,7 +738,7 @@ Add-Type -TypeDefinition \$code -Language CSharp;
                     ],
                   ),
                 ],
-                if (paidAmount > effectiveTotal) ...[
+                if (paidAmount > effectiveTotal && !isReceiptReturn) ...[
                   pw.SizedBox(height: 1.5),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -895,6 +920,7 @@ Add-Type -TypeDefinition \$code -Language CSharp;
     String? footer,
     String? specificPrinterName,
     String? invoiceId,
+    bool isReturn = false,
   }) async {
     try {
       final bytes = await generateReceiptPdfBytes(
@@ -912,6 +938,7 @@ Add-Type -TypeDefinition \$code -Language CSharp;
         specificAddress: address1,
         specificSlogan: address2,
         specificFooter: footer,
+        isReturn: isReturn,
       );
 
       final displayInvoiceNumber = (invoiceId != null && invoiceId.isNotEmpty) ? invoiceId : 'FAC-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
@@ -1021,6 +1048,7 @@ Add-Type -TypeDefinition \$code -Language CSharp;
     List<String> extraLines = const [],
     String? specificPrinterName,
     String? invoiceId,
+    bool isReturn = false,
   }) async {
     // If running on Windows desktop, use native Windows spooler
     if (Platform.isWindows) {
@@ -1040,6 +1068,7 @@ Add-Type -TypeDefinition \$code -Language CSharp;
         footer: footer,
         specificPrinterName: specificPrinterName,
         invoiceId: invoiceId,
+        isReturn: isReturn,
       );
       return;
     }

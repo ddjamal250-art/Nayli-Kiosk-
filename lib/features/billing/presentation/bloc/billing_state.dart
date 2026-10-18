@@ -25,10 +25,20 @@ class BillingState extends Equatable {
     this.stockWarning,
   });
 
+  bool get isRefund => isReturnMode || subTotalAmount < 0;
   double get subTotalAmount => cartItems.fold(0, (sum, item) => sum + item.total);
-  double get calculatedDiscount => isDiscountPercentage ? (subTotalAmount * (discountValue / 100.0)) : discountValue;
-  double get totalAmount => (subTotalAmount - calculatedDiscount).clamp(0.0, double.infinity);
-  double get changeAmount => paidAmount > totalAmount ? (paidAmount - totalAmount) : 0.0;
+  double get calculatedDiscount => isDiscountPercentage ? (subTotalAmount.abs() * (discountValue / 100.0)) : discountValue;
+  double get totalAmount {
+    if (isRefund) {
+      if (subTotalAmount < 0) {
+        return (subTotalAmount + calculatedDiscount.abs()).clamp(-double.infinity, 0.0);
+      }
+      return -(subTotalAmount - calculatedDiscount).abs();
+    }
+    return (subTotalAmount - calculatedDiscount).clamp(0.0, double.infinity);
+  }
+  double get refundAmount => totalAmount.abs();
+  double get changeAmount => (!isRefund && paidAmount > totalAmount) ? (paidAmount - totalAmount) : 0.0;
   bool get hasParkedCart => heldCarts.any((c) => !c.isExpired);
   List<HeldCart> get activeHeldCarts => heldCarts.where((c) => !c.isExpired).toList();
 

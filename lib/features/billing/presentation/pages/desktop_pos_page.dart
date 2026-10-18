@@ -1323,6 +1323,9 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                   setState(() {
                     _isReturnMode = true;
                   });
+                  if (!context.read<BillingBloc>().state.isReturnMode) {
+                    context.read<BillingBloc>().add(ToggleReturnModeEvent());
+                  }
                   SoundService.playWarningSound();
                   SnackbarHelper.showWarning(
                     context,
@@ -1869,6 +1872,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     setState(() {
       _isReturnMode = !_isReturnMode;
     });
+    context.read<BillingBloc>().add(ToggleReturnModeEvent());
     if (_isReturnMode) {
       SoundService.playWarningSound();
       SnackbarHelper.showWarning(context, context.tr('return_mode_active'));
@@ -2457,6 +2461,7 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
               context.read<BillingBloc>().add(ClearCartEvent());
               setState(() {
                 _cartDiscountValue = 0.0;
+                _isReturnMode = false;
               });
               _barcodeFocusNode.requestFocus();
             },
@@ -2961,8 +2966,10 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
                 ? 'BaridiPay QR'
                 : (isCredit ? 'Crédit' : 'Espèces')));
 
-    final double tendered = receivedAmount ?? total;
-    final double change = (method == PosPaymentMethod.cash && tendered > total) ? (tendered - total) : 0.0;
+    final bool isActuallyReturn = _isReturnMode || total < 0 || billingBloc.state.isRefund;
+    final double posTotal = total.abs();
+    final double tendered = receivedAmount != null ? receivedAmount.abs() : posTotal;
+    final double change = (!isActuallyReturn && method == PosPaymentMethod.cash && tendered > posTotal) ? (tendered - posTotal) : 0.0;
 
     billingBloc.add(PrintReceiptEvent(
       shopName: shopName,
@@ -2977,20 +2984,25 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
       receivedAmount: tendered,
       changeAmount: change,
       previousDebt: _customerCreditBalance,
-      newDebtTotal: isCredit ? (_customerCreditBalance + total) : _customerCreditBalance,
+      newDebtTotal: isCredit 
+          ? (isActuallyReturn 
+              ? (_customerCreditBalance - posTotal).clamp(0.0, double.infinity)
+              : (_customerCreditBalance + posTotal)) 
+          : _customerCreditBalance,
       skipPhysicalPrint: !printReceipt,
-      explicitTotal: total,
+      explicitTotal: posTotal,
       explicitDiscount: _cartDiscountValue,
       splitPayments: splitPayments,
       orderNote: orderNote,
+      isReturn: isActuallyReturn,
     ));
 
     // 2. If credit (full or split part), update customer debt in Hive
-    double creditAmountToApply = isCredit ? total : 0.0;
+    double creditAmountToApply = isCredit ? posTotal : 0.0;
     if (isSplit && splitPayments != null) {
       for (final sp in splitPayments) {
         if (sp['method'] == 'Crédit') {
-          creditAmountToApply += (sp['amount'] as num?)?.toDouble() ?? 0.0;
+          creditAmountToApply += ((sp['amount'] as num?)?.toDouble() ?? 0.0).abs();
         }
       }
     }
@@ -3002,7 +3014,7 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
         if (cData is Map) {
           final updatedData = Map<String, dynamic>.from(cData);
           final currentDebt = (updatedData['debt'] as num?)?.toDouble() ?? (updatedData['currentDebt'] as num?)?.toDouble() ?? 0.0;
-          final newDebt = _isReturnMode ? (currentDebt - creditAmountToApply).clamp(0.0, double.infinity) : currentDebt + creditAmountToApply;
+          final newDebt = isActuallyReturn ? (currentDebt - creditAmountToApply).clamp(0.0, double.infinity) : currentDebt + creditAmountToApply;
           updatedData['debt'] = newDebt;
           updatedData['currentDebt'] = newDebt;
           await cBox.put(_selectedCustomerId, updatedData);
@@ -3013,16 +3025,16 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
     }
 
     // 3. Award loyalty points if customer is selected
-    if (_selectedCustomerId != null && !_isReturnMode) {
+    if (_selectedCustomerId != null && !isActuallyReturn) {
       await LoyaltyService.awardPointsForSale(
         customerId: _selectedCustomerId!,
-        totalAmount: total,
+        totalAmount: posTotal,
       );
     }
 
     // 3. Reset local POS UI state for next customer
     if (mounted) {
-      final wasReturn = _isReturnMode;
+      final wasReturn = isActuallyReturn;
       setState(() {
         _cartDiscountValue = 0.0;
         _selectedCustomerId = null;
@@ -3030,6 +3042,9 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
         _customerCreditBalance = 0.0;
         _isReturnMode = false;
       });
+      if (billingBloc.state.isReturnMode) {
+        billingBloc.add(ToggleReturnModeEvent());
+      }
       if (wasReturn) {
         SnackbarHelper.showSuccess(
           context,
