@@ -13,7 +13,7 @@ import '../../../../core/utils/snackbar_helper.dart';
 
 import '../../../product/domain/repositories/product_repository.dart';
 import '../../../product/data/models/product_model.dart';
-import '../../../product/domain/entities/purchase_batch.dart';
+import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
 import '../../../customer/domain/entities/customer.dart';

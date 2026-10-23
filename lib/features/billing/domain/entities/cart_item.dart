@@ -63,6 +63,10 @@ class CartItem extends Equatable {
     return product.effectiveCostPrice; // Base unit cost
   }
 
+  double get unitPriceEffective => unitPrice;
+
+  double get effectiveUnitCost => unitCost;
+
   String get unitDisplayName {
     if (customUnitName != null && customUnitName!.trim().isNotEmpty) return customUnitName!.trim();
     if (unitLevel != 'base') return unitLevel;

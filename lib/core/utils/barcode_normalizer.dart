@@ -8,6 +8,13 @@ class BarcodeNormalizer {
     return barcode.trim().replaceAll(RegExp(r'[\s\u200B-\u200D\uFEFF]+'), '');
   }
 
+  /// تطبيع الباركود (تنظيف + تحويل أزيرتي إذا لزم الأمر)
+  static String normalize(String? barcode) {
+    if (barcode == null) return '';
+    final cleaned = clean(barcode);
+    return normalizeAzertyInput(cleaned);
+  }
+
   /// يقوم بتحويل رموز لوحة المفاتيح الفرنسية (AZERTY) إلى أرقامها الحقيقية
   /// عند استخدام ماسح باركود في نظام ويندوز مضبوط على لغة فرنسية
   static String normalizeAzertyInput(String raw) {
