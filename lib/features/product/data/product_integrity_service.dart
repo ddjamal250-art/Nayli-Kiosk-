@@ -4,15 +4,16 @@ import 'models/product_model.dart';
 import '../domain/entities/product.dart';
 
 /// خدمة تدقيق وسلامة بيانات المنتجات والمخزون
-/// تعالج المفاتيح المكررة في Hive وتصحح أي كميات سالبة ناتجة عن أخطاء سابقة
+/// تعالج المفاتيح المكررة في Hive وتصحح أي كميات سالبة أو مضاعفات وحدات مضخمة ناتجة عن أخطاء سابقة
 class ProductIntegrityService {
-  static const String integrityKey = 'has_repaired_product_integrity_v1';
+  static const String integrityKey = 'has_repaired_product_integrity_v2';
 
   /// فحص وتنظيف شامل لبيانات المنتجات والمخزون
   static Future<Map<String, dynamic>> repairProductDataIntegrity({bool force = false}) async {
     final result = <String, dynamic>{
       'duplicateKeysRemoved': 0,
       'negativeStocksFixed': 0,
+      'inflatedUnitsFixed': 0,
       'repairedProducts': <String>[],
     };
 
@@ -30,6 +31,7 @@ class ProductIntegrityService {
 
       int duplicatesRemoved = 0;
       int negativeFixed = 0;
+      int inflatedUnitsFixed = 0;
       final List<String> repairedProducts = [];
 
       // 1. تنظيف المفاتيح المكررة (مثلاً إذا حُفظ المنتج بمفتاح الباركود بدلاً من المعرف ID)
@@ -54,7 +56,7 @@ class ProductIntegrityService {
         }
       }
 
-      // 2. تدقيق المخزون والكميات ومنع القيم السالبة الشاذة
+      // 2. تدقيق المخزون والكميات وسعات الوحدات ومنع القيم السالبة أو المضاعفة خطأً
       for (final key in productBox.keys) {
         final product = productBox.get(key);
         if (product == null) continue;
@@ -67,6 +69,51 @@ class ProductIntegrityService {
           correctedStock = 0.0;
           needsUpdate = true;
           negativeFixed++;
+        }
+
+        // فحص وإصلاح سعة الكرتونة (UnitTier.large) التي تضاعفت سابقاً بسبب ضربها المتكرر في سعة الباك (UnitTier.medium)
+        List<ProductUnit> updatedUnits = List<ProductUnit>.from(product.units);
+        final mediumIdx = updatedUnits.indexWhere((u) => u.tier == UnitTier.medium);
+        final largeIdx = updatedUnits.indexWhere((u) => u.tier == UnitTier.large);
+        if (mediumIdx != -1 && largeIdx != -1) {
+          final mediumUnit = updatedUnits[mediumIdx];
+          final largeUnit = updatedUnits[largeIdx];
+          final pCap = mediumUnit.multiplier;
+          final double cCap = largeUnit.multiplier;
+
+          if (pCap > 1 && cCap > pCap) {
+            double? expectedCap;
+            if (largeUnit.cost > 0 && product.costPrice > 0) {
+              expectedCap = largeUnit.cost / product.costPrice;
+            } else if (largeUnit.price > 0 && product.price > 0) {
+              expectedCap = largeUnit.price / product.price;
+            }
+
+            double healedCap = cCap;
+            if (expectedCap != null && expectedCap >= 2) {
+              while ((healedCap / pCap) >= pCap &&
+                  ((healedCap / pCap) - expectedCap).abs() < (healedCap - expectedCap).abs() * 0.5) {
+                healedCap = (healedCap / pCap).roundToDouble();
+              }
+            } else if (!product.isLiquidProduct && healedCap > 250 && (healedCap % pCap == 0)) {
+              while (healedCap > 250 && (healedCap / pCap) >= pCap && (healedCap % pCap == 0)) {
+                healedCap = (healedCap / pCap).roundToDouble();
+              }
+            }
+
+            if (healedCap != cCap && healedCap >= pCap) {
+              updatedUnits[largeIdx] = ProductUnit(
+                name: largeUnit.name,
+                barcode: largeUnit.barcode,
+                multiplier: healedCap,
+                price: largeUnit.price,
+                cost: largeUnit.cost,
+                tier: largeUnit.tier,
+              );
+              needsUpdate = true;
+              inflatedUnitsFixed++;
+            }
+          }
         }
 
         // فحص دفعات الشراء FIFO ومنع أي كميات سالبة فيها
@@ -87,6 +134,7 @@ class ProductIntegrityService {
         if (needsUpdate) {
           final sanitized = product.copyWith(
             stock: correctedStock,
+            units: updatedUnits,
             stockBatches: sanitizedBatches,
           );
           await productBox.put(product.id, sanitized);
@@ -96,10 +144,11 @@ class ProductIntegrityService {
 
       result['duplicateKeysRemoved'] = duplicatesRemoved;
       result['negativeStocksFixed'] = negativeFixed;
+      result['inflatedUnitsFixed'] = inflatedUnitsFixed;
       result['repairedProducts'] = repairedProducts;
 
       await settingsBox.put(integrityKey, true);
-      debugPrint('ProductIntegrityService complete: duplicates removed=$duplicatesRemoved, negative stocks healed=$negativeFixed');
+      debugPrint('ProductIntegrityService complete: duplicates removed=$duplicatesRemoved, negative stocks healed=$negativeFixed, inflated units fixed=$inflatedUnitsFixed');
     } catch (e) {
       debugPrint('ProductIntegrityService error: $e');
     }

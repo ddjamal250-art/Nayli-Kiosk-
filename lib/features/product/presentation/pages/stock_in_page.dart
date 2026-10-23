@@ -526,10 +526,21 @@ class _StockInPageState extends State<StockInPage> {
       final pCap = int.tryParse(_unitsPerPackController.text.trim()) ?? 1;
       final piCount = int.tryParse(_pieceCountController.text.trim()) ?? 0;
 
-      final cartonMultiplier = _hasMiddleTier ? (cCap * pCap) : cCap;
+      // cCap هو دائماً إجمالي الحبات في الكرتونة الواحدة بدون ضرب متكرر في pCap
+      final cartonMultiplier = cCap > 0 ? cCap : 1;
       final totalReceivedPieces = (cartons * cartonMultiplier) + (pCount * pCap) + piCount;
       if (totalReceivedPieces > 0) {
         effectiveQty = totalReceivedPieces.toDouble();
+        _qtyController.text = totalReceivedPieces.toString();
+      }
+      if (effectiveCost <= 0) {
+        final cCostVal = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
+        final pCostVal = double.tryParse(_packCostController.text.trim()) ?? 0.0;
+        if (_hasCarton && cCostVal > 0 && cartonMultiplier > 0) {
+          effectiveCost = cCostVal / cartonMultiplier;
+        } else if (_hasMiddleTier && pCostVal > 0 && pCap > 0) {
+          effectiveCost = pCostVal / pCap;
+        }
       }
     }
 
@@ -539,13 +550,14 @@ class _StockInPageState extends State<StockInPage> {
     }
 
     // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
-    if (_isExistingInShop && _currentStock > 0 && costPrice > 0 && !isCoffee && !isLiquid) {
+    final unitBatchCost = effectiveCost;
+    if (_isExistingInShop && _currentStock > 0 && unitBatchCost > 0 && !isCoffee && !isLiquid) {
       final oldCost = (existingProduct != null && existingProduct.costPrice > 0)
           ? existingProduct.costPrice
-          : costPrice;
-      final totalValue = (_currentStock * oldCost) + (effectiveQty * costPrice);
+          : unitBatchCost;
+      final totalValue = (_currentStock * oldCost) + (effectiveQty * unitBatchCost);
       final totalStock = _currentStock + effectiveQty;
-      effectiveCost = totalStock > 0 ? (totalValue / totalStock) : costPrice;
+      effectiveCost = totalStock > 0 ? (totalValue / totalStock) : unitBatchCost;
     } else if (isLiquid && _isExistingInShop && _currentStock > 0) {
       // Calculate PUMP for liquid products on costPerMl level
       final oldStockMl = _currentStock;
@@ -615,7 +627,7 @@ class _StockInPageState extends State<StockInPage> {
       final pCap = int.tryParse(_unitsPerPackController.text.trim()) ?? 1;
 
       if (_hasCarton) {
-        final cartonMultiplier = _hasMiddleTier ? (cCap * pCap).toDouble() : cCap.toDouble();
+        final cartonMultiplier = (cCap > 0 ? cCap : 1).toDouble();
         final cPrice = double.tryParse(_cartonsPriceController.text.trim()) ?? (effectivePrice * cartonMultiplier);
         final cCost = double.tryParse(_cartonCostController.text.trim()) ?? (effectiveCost * cartonMultiplier);
         final cBarcode = _cartonBarcodeController.text.trim();
@@ -847,7 +859,7 @@ class _StockInPageState extends State<StockInPage> {
       }
     }
 
-    SnackbarHelper.showSuccess(context, '✅ تم تسجيل توريد "$name" (+$qty ${_unitMode == ArrivageUnitMode.vracSacs ? "كغ" : "حبة"}) بنجاح!');
+    SnackbarHelper.showSuccess(context, '✅ تم تسجيل توريد "$name" (+${effectiveQty == effectiveQty.roundToDouble() ? effectiveQty.toInt() : effectiveQty} ${_unitMode == ArrivageUnitMode.vracSacs ? "كغ" : "حبة"}) بنجاح!');
   }
 
   Future<void> _pickReceiptDate() async {
@@ -931,6 +943,7 @@ class _StockInPageState extends State<StockInPage> {
             _cartonsPriceController.text = largeUnit.price.toStringAsFixed(2);
             _cartonCostController.text = largeUnit.cost.toStringAsFixed(2);
             
+            _unitsPerCartonController.text = (largeUnit.multiplier == largeUnit.multiplier.roundToDouble() ? largeUnit.multiplier.toInt().toString() : largeUnit.multiplier.toString());
             final mediumUnit = existing.units.where((u) => u.tier == UnitTier.medium).firstOrNull;
             if (mediumUnit != null) {
               _hasMiddleTier = true;
@@ -940,7 +953,6 @@ class _StockInPageState extends State<StockInPage> {
               _unitsPerPackController.text = (mediumUnit.multiplier == mediumUnit.multiplier.roundToDouble() ? mediumUnit.multiplier.toInt().toString() : mediumUnit.multiplier.toString());
             } else {
               _hasMiddleTier = false;
-              _unitsPerCartonController.text = (largeUnit.multiplier == largeUnit.multiplier.roundToDouble() ? largeUnit.multiplier.toInt().toString() : largeUnit.multiplier.toString());
             }
           }
         }

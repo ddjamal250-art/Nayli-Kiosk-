@@ -41,6 +41,8 @@ import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../../product/presentation/widgets/shared_category_bar.dart';
 import '../../../../core/widgets/product_image_display.dart';
 import '../../../shifts/data/shift_service.dart';
+import '../../../shifts/data/staff_member_model.dart';
+import '../../../shifts/data/staff_service.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/held_cart.dart';
 import '../bloc/billing_bloc.dart';
@@ -122,6 +124,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   StreamSubscription<RemoteIncomingCart>? _remoteCartSub;
   StreamSubscription<RemoteIncomingCart>? _handoffCartSub;
   StreamSubscription<Map<String, dynamic>>? _unlistedKioskScanSub;
+  StreamSubscription<String>? _wirelessBarcodeScanSub;
   int _pendingRemoteCartsCount = 0;
 
   // USB Barcode Wedge Rapid Buffer
@@ -188,6 +191,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     _remoteCartSub?.cancel();
     _handoffCartSub?.cancel();
     _unlistedKioskScanSub?.cancel();
+    _wirelessBarcodeScanSub?.cancel();
     super.dispose();
   }
 
@@ -196,6 +200,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       final started = await LocalSyncServer.startServer();
       final ip = await LocalSyncServer.getLocalIp();
       
+      _wirelessBarcodeScanSub = LocalSyncServer.barcodeScanStream.listen((barcode) {
+        if (mounted && barcode.isNotEmpty) {
+          _handleBarcodeSubmit(barcode);
+          SoundService.playBarcodeBeep();
+        }
+      });
+
       _remoteCartSub = LocalSyncServer.remoteCartStream.listen((cart) {
         if (mounted) {
           setState(() {
@@ -3190,73 +3201,299 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
     );
   }
 
-  void _showSwitchShiftDialog() {
+  Future<void> _showSwitchShiftDialog() async {
     if (_activeShift == null) return;
-    
-    final actualCashCtrl = TextEditingController();
-    
+
+    await StaffService.seedInitialAdminIfEmpty();
+    List<StaffMember> staffList = StaffService.getActiveStaff();
+    StaffMember? selectedNextStaff = staffList
+            .where((s) => s.id != _activeShift!.staffId && s.name != _activeShift!.workerName)
+            .firstOrNull ??
+        staffList.firstOrNull;
+
+    final expectedCash = _activeShift!.expectedTotalCashInDrawer;
+    final actualCashCtrl = TextEditingController(text: expectedCash.toStringAsFixed(0));
+    final nextFloatCtrl = TextEditingController(text: expectedCash.toStringAsFixed(0));
+    final nextPinCtrl = TextEditingController();
+    String? errorMsg;
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.swap_horiz, color: Colors.blueAccent),
-            SizedBox(width: 8),
-            Text('تبديل المناوبة / إغلاق الحساب', style: TextStyle(color: Colors.white, fontSize: 18)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('سيتم إنهاء مناوبة الكاشير: ${_activeShift!.workerName}', style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 16),
-            const Text('شحال كاين دراهم في لاكيس حالياً (الفعلي)؟', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: actualCashCtrl,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(color: Colors.blueAccent, fontSize: 24, fontWeight: FontWeight.bold),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFF0F172A),
-                hintText: '0.0',
-                hintStyle: const TextStyle(color: Colors.white38),
-                suffixText: 'دج',
-                suffixStyle: const TextStyle(color: Colors.white),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) {
+          final bool nextNeedsPin = selectedNextStaff != null &&
+              (selectedNextStaff!.isAdmin
+                  ? (SecurityPinHelper.isPinEnabled() ||
+                      (selectedNextStaff!.pin.trim().isNotEmpty &&
+                          selectedNextStaff!.pin != '9999' &&
+                          selectedNextStaff!.pin != '0000'))
+                  : selectedNextStaff!.pin.trim().isNotEmpty);
+
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            title: Row(
+              children: [
+                const Icon(Icons.swap_horiz_rounded, color: Colors.blueAccent, size: 26),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'تبديل المناوبة بين العمال',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    final ok = await SecurityPinHelper.authenticate(
+                      context,
+                      title: 'إدارة العمال',
+                      message: 'أدخل رمز المدير لإدارة قائمة العمال',
+                    );
+                    if (ok && mounted) {
+                      await context.push('/staff-management');
+                      final refreshed = StaffService.getActiveStaff();
+                      setDlgState(() {
+                        staffList = refreshed;
+                        if (selectedNextStaff != null) {
+                          selectedNextStaff = staffList.where((s) => s.id == selectedNextStaff!.id).firstOrNull ??
+                              staffList.firstOrNull;
+                        } else {
+                          selectedNextStaff = staffList.firstOrNull;
+                        }
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 16, color: Colors.amberAccent),
+                  label: const Text('إدارة العمال', style: TextStyle(color: Colors.amberAccent, fontSize: 12)),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 440,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.person_outline, color: Colors.blueAccent),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'العامل المسلم (الحالي): ${_activeShift!.workerName}',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                                ),
+                                Text(
+                                  'المبلغ المتوقع في الدرج: ${expectedCash.toStringAsFixed(2)} دج',
+                                  style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      '1. المبلغ الفعلي الموجود في الصندوق عند التسليم:',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: actualCashCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: const TextStyle(color: Colors.blueAccent, fontSize: 18, fontWeight: FontWeight.bold),
+                      onChanged: (val) {
+                        nextFloatCtrl.text = val;
+                      },
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF0F172A),
+                        suffixText: 'دج',
+                        suffixStyle: const TextStyle(color: Colors.white),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      '2. اختر العامل المستلم للمناوبة الجديدة (من قائمة عمال المدير):',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      value: selectedNextStaff?.id,
+                      dropdownColor: const Color(0xFF0F172A),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF0F172A),
+                        prefixIcon: const Icon(Icons.badge_outlined, color: Colors.tealAccent),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        isDense: true,
+                      ),
+                      items: staffList.map((s) {
+                        final roleAr = s.isAdmin ? 'مدير' : (s.role == 'supervisor' ? 'مشرف' : (s.role == 'cashier' ? 'كاشير' : 'عامل'));
+                        return DropdownMenuItem<String>(
+                          value: s.id,
+                          child: Text('${s.name} ($roleAr)'),
+                        );
+                      }).toList(),
+                      onChanged: (id) {
+                        setDlgState(() {
+                          selectedNextStaff = staffList.where((s) => s.id == id).firstOrNull;
+                          nextPinCtrl.clear();
+                          errorMsg = null;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '3. رصيد بداية المناوبة الجديدة (Fond de caisse):',
+                      style: TextStyle(color: Colors.white70, fontSize: 12.5),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: nextFloatCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: const TextStyle(color: Colors.greenAccent, fontSize: 16, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF0F172A),
+                        suffixText: 'دج',
+                        suffixStyle: const TextStyle(color: Colors.white),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        isDense: true,
+                      ),
+                    ),
+                    if (nextNeedsPin) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        '4. الرمز السري (PIN) للعامل المستلم (${selectedNextStaff!.name}):',
+                        style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 12.5),
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: nextPinCtrl,
+                        obscureText: true,
+                        maxLength: 4,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 8, fontWeight: FontWeight.bold),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          hintText: '****',
+                          hintStyle: const TextStyle(color: Colors.white38),
+                          counterText: '',
+                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.amberAccent),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          isDense: true,
+                        ),
+                      ),
+                    ],
+                    if (errorMsg != null) ...[
+                      const SizedBox(height: 10),
+                      Text(errorMsg!, style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('تراجع', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-            onPressed: () async {
-              final actual = double.tryParse(actualCashCtrl.text) ?? 0.0;
-              Navigator.pop(ctx);
-              
-              await ShiftService.closeShift(
-                activeShift: _activeShift!,
-                actualCashInDrawer: actual,
-              );
-              
-              SoundService.playSaveSuccess();
-              if (mounted) {
-                context.go('/login');
-              }
-            },
-            child: const Text('إنهاء وتبديل 🚀', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+              ),
+              Wrap(
+                spacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orangeAccent,
+                      side: const BorderSide(color: Colors.orangeAccent),
+                    ),
+                    icon: const Icon(Icons.logout_rounded, size: 16),
+                    label: const Text('إغلاق المناوبة فقط', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    onPressed: () async {
+                      final actual = double.tryParse(actualCashCtrl.text.trim()) ?? 0.0;
+                      Navigator.pop(ctx);
+                      await ShiftService.closeShift(
+                        activeShift: _activeShift!,
+                        actualCashInDrawer: actual,
+                      );
+                      SoundService.playSaveSuccess();
+                      if (mounted) {
+                        context.go('/login');
+                      }
+                    },
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                    icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 18),
+                    label: const Text('تسليم وتبديل المناوبة فوراً 🚀', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    onPressed: () async {
+                      if (selectedNextStaff == null) {
+                        setDlgState(() => errorMsg = 'يرجى اختيار العامل المستلم!');
+                        return;
+                      }
+                      if (nextNeedsPin) {
+                        final entered = nextPinCtrl.text.trim();
+                        final staffPin = selectedNextStaff!.pin.trim();
+                        final okStaff = staffPin.isNotEmpty && entered == staffPin;
+                        final okAdmin = SecurityPinHelper.isPinEnabled() && SecurityPinHelper.verifyPin(entered);
+                        if (!okStaff && !okAdmin) {
+                          SoundService.playVoidWarning();
+                          setDlgState(() => errorMsg = 'الرمز السري للعامل المستلم غير صحيح!');
+                          return;
+                        }
+                      }
+
+                      final actual = double.tryParse(actualCashCtrl.text.trim()) ?? 0.0;
+                      final nextFloat = double.tryParse(nextFloatCtrl.text.trim()) ?? actual;
+                      Navigator.pop(ctx);
+
+                      await ShiftService.closeShift(
+                        activeShift: _activeShift!,
+                        actualCashInDrawer: actual,
+                        notes: 'تسليم مناوبة إلى ${selectedNextStaff!.name}',
+                      );
+
+                      await ShiftService.openShift(
+                        workerName: selectedNextStaff!.name,
+                        floatAmount: nextFloat,
+                        staffId: selectedNextStaff!.id,
+                      );
+
+                      await _loadActiveShift();
+                      SoundService.playSaveSuccess();
+                      if (mounted) {
+                        SnackbarHelper.showSuccess(
+                          context,
+                          '✅ تم تبديل المناوبة بنجاح إلى العامل: ${selectedNextStaff!.name}',
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

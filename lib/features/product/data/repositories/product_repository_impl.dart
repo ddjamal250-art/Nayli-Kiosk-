@@ -92,12 +92,9 @@ class ProductRepositoryImpl implements ProductRepository {
       final box = HiveDatabase.productBox;
       final existingModel = box.get(id);
       if (existingModel != null) {
-        final updatedStock = existingModel.stock + quantityDelta;
-        final updatedModel = ProductModel(
-          id: existingModel.id,
-          name: existingModel.name,
-          barcode: existingModel.barcode,
-          price: existingModel.price,
+        final rawStock = existingModel.stock + quantityDelta;
+        final updatedStock = rawStock < 0 ? 0.0 : rawStock;
+        final updatedModel = existingModel.copyWith(
           stock: updatedStock,
         );
         await box.put(id, updatedModel);

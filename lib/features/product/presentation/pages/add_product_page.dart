@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../widgets/product_image_picker_field.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -65,7 +64,7 @@ class _AddProductPageState extends State<AddProductPage> {
   String? _imageUrl;
   bool _isSaving = false;
   List<String> _availableCategories = [];
-  UnitSystemType _unitSystemType = UnitSystemType.discrete;
+  final UnitSystemType _unitSystemType = UnitSystemType.discrete;
   String? _optionsConfigJson;
 
   @override
@@ -106,7 +105,6 @@ class _AddProductPageState extends State<AddProductPage> {
       if (_nameCtrl.text.trim().isEmpty) {
         _nameCtrl.text = masterMatch.name;
       }
-      // Only set category if they haven't explicitly chosen one yet (default is often 'عام' or first item)
       if (masterMatch.category != null && masterMatch.category!.isNotEmpty && _selectedCategory == _availableCategories.first) {
         if (_availableCategories.contains(masterMatch.category!)) {
           _selectedCategory = masterMatch.category!;
@@ -199,6 +197,188 @@ class _AddProductPageState extends State<AddProductPage> {
     return s;
   }
 
+  void _showMultiUnitStockCalculator() {
+    final totalStock = _parsePrice(_stockCtrl.text).floor();
+    final cCap = _parsePrice(_cartonCapacityCtrl.text).floor();
+    final pCap = _parsePrice(_packCapacityCtrl.text).floor();
+
+    int rem = totalStock > 0 ? totalStock : 0;
+    int initCartons = (_hasCarton && cCap > 0) ? (rem ~/ cCap) : 0;
+    if (_hasCarton && cCap > 0) rem = rem % cCap;
+    int initPacks = (_hasPack && pCap > 0) ? (rem ~/ pCap) : 0;
+    if (_hasPack && pCap > 0) rem = rem % pCap;
+    int initPieces = rem;
+
+    final cCtrl = TextEditingController(text: initCartons.toString());
+    final pCtrl = TextEditingController(text: initPacks.toString());
+    final piCtrl = TextEditingController(text: initPieces.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final cVal = int.tryParse(cCtrl.text.trim()) ?? 0;
+          final pVal = int.tryParse(pCtrl.text.trim()) ?? 0;
+          final piVal = int.tryParse(piCtrl.text.trim()) ?? 0;
+          final calcTotal = (_hasCarton && cCap > 0 ? cVal * cCap : 0) +
+              (_hasPack && pCap > 0 ? pVal * pCap : 0) +
+              piVal;
+
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.calculate_rounded, color: Colors.teal),
+                SizedBox(width: 8),
+                Text('حاسبة المخزون حسب الوحدات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_hasCarton && cCap > 0) ...[
+                    TextField(
+                      controller: cCtrl,
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'عدد الكراتين (سعة الكرتونة: $cCap حبة)',
+                        suffixText: 'كرتونة',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  if (_hasPack && pCap > 0) ...[
+                    TextField(
+                      controller: pCtrl,
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'عدد العلب المفردة (سعة العلبة: $pCap حبة)',
+                        suffixText: 'علبة',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  TextField(
+                    controller: piCtrl,
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'عدد الحبات المفردة (الفرط)',
+                      suffixText: 'حبة',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.teal.shade200),
+                    ),
+                    child: Text(
+                      'الإجمالي المحسوب: $calcTotal ${_baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : "حبة"}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.teal.shade900),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('إلغاء'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                onPressed: () {
+                  setState(() {
+                    _stockCtrl.text = calcTotal.toString();
+                  });
+                  Navigator.pop(ctx);
+                },
+                child: const Text('اعتماد المخزون'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMultiUnitStockBreakdown() {
+    if (!_hasCarton && !_hasPack) return const SizedBox.shrink();
+    final totalStock = _parsePrice(_stockCtrl.text).floor();
+    final cCap = _parsePrice(_cartonCapacityCtrl.text).floor();
+    final pCap = _parsePrice(_packCapacityCtrl.text).floor();
+    final baseName = _baseUnitNameCtrl.text.trim().isNotEmpty ? _baseUnitNameCtrl.text.trim() : 'حبة';
+
+    int rem = totalStock > 0 ? totalStock : 0;
+    final cartons = (_hasCarton && cCap > 0) ? (rem ~/ cCap) : 0;
+    if (_hasCarton && cCap > 0) rem = rem % cCap;
+    final packs = (_hasPack && pCap > 0) ? (rem ~/ pCap) : 0;
+    if (_hasPack && pCap > 0) rem = rem % pCap;
+    final loosePieces = rem;
+
+    final parts = <String>[];
+    if (_hasCarton && cCap > 0) parts.add('📦 $cartons كرتونة');
+    if (_hasPack && pCap > 0) parts.add('🛍️ $packs علبة');
+    parts.add('🍬 $loosePieces $baseName');
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.teal.shade50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.teal.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.inventory_rounded, size: 18, color: Colors.teal.shade800),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'تفصيل الكمية بالوحدات: ${parts.join(' + ')}',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
+                  ),
+                  Text(
+                    'الإجمالي بالوحدة الأساسية: $totalStock $baseName',
+                    style: TextStyle(fontSize: 11, color: Colors.teal.shade700),
+                  ),
+                ],
+              ),
+            ),
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.teal.shade700,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: _showMultiUnitStockCalculator,
+              icon: const Icon(Icons.calculate_outlined, size: 16),
+              label: const Text('إدخال بالكرتونة/العلبة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
@@ -208,7 +388,8 @@ class _AddProductPageState extends State<AddProductPage> {
 
     final cartonCapUI = _parsePrice(_cartonCapacityCtrl.text);
     final packCapUI = _parsePrice(_packCapacityCtrl.text);
-    final cartonMultiplier = _hasPack ? (cartonCapUI * packCapUI) : (cartonCapUI > 0 ? cartonCapUI : 24.0);
+    // سعة الكرتونة في الواجهة هي دائماً إجمالي الحبات في الكرتونة الواحدة
+    final cartonMultiplier = cartonCapUI > 0 ? cartonCapUI : 24.0;
 
     // بناء وحدات البيع (كرتونة، علبة، حبة)
     final List<ProductUnit> units = [];
@@ -305,7 +486,9 @@ class _AddProductPageState extends State<AddProductPage> {
       pluCode: plu.isNotEmpty ? plu : null,
       unitSystemType: _unitSystemType,
       packMultiplier: _hasPack && packCapUI > 0 ? packCapUI.toInt() : 1,
-      packsPerCarton: cartonCapUI > 0 ? cartonCapUI.toInt() : 10,
+      packsPerCarton: (_hasPack && packCapUI > 0 && cartonCapUI > 0)
+          ? (cartonCapUI / packCapUI).round().clamp(1, 999999)
+          : (cartonCapUI > 0 ? cartonCapUI.toInt() : 10),
       hasMultiUnit: _hasCarton || _hasPack,
       optionsConfigJson: _optionsConfigJson,
     );
@@ -429,14 +612,20 @@ class _AddProductPageState extends State<AddProductPage> {
               title: 'المخزون الحالي',
               icon: Icons.inventory_2_outlined,
               children: [
-                const InputLabel(text: 'الكمية المتوفرة بالمخزون حالياً (بالحبة)'),
-                TextFormField(controller: _stockCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                const InputLabel(text: 'الكمية الإجمالية المتوفرة بالمخزون حالياً (بالوحدة الأساسية / الحبة)'),
+                TextFormField(
+                  controller: _stockCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  onChanged: (_) => setState(() {}),
+                ),
+                _buildMultiUnitStockBreakdown(),
               ],
             ),
             const SizedBox(height: 16),
 
             // --- تفاصيل الوحدات العمودية الثلاث والعروض الخاصة ---
             ProductUnitsEditorWidget(
+              onInputsChanged: () => setState(() {}),
               hasCarton: _hasCarton,
               onHasCartonChange: (v) => setState(() => _hasCarton = v),
               cartonBarcodeCtrl: _cartonBarcodeCtrl,
@@ -445,25 +634,7 @@ class _AddProductPageState extends State<AddProductPage> {
               cartonPriceCtrl: _cartonPriceCtrl,
 
               hasPack: _hasPack,
-              onHasPackChange: (v) {
-                setState(() {
-                  if (_hasCarton && _cartonCapacityCtrl.text.isNotEmpty) {
-                    final currentCartonCap = _parsePrice(_cartonCapacityCtrl.text);
-                    final currentPackCap = _parsePrice(_packCapacityCtrl.text);
-                    final packCap = currentPackCap > 0 ? currentPackCap : 6.0;
-                    if (v == true && !_hasPack) {
-                      if (currentCartonCap >= packCap && packCap > 1.0) {
-                        _cartonCapacityCtrl.text = _formatDouble(currentCartonCap / packCap);
-                      }
-                    } else if (v == false && _hasPack) {
-                      if (currentCartonCap > 0 && packCap > 1.0) {
-                        _cartonCapacityCtrl.text = _formatDouble(currentCartonCap * packCap);
-                      }
-                    }
-                  }
-                  _hasPack = v;
-                });
-              },
+              onHasPackChange: (v) => setState(() => _hasPack = v),
               packBarcodeCtrl: _packBarcodeCtrl,
               packCapacityCtrl: _packCapacityCtrl,
               packCostCtrl: _packCostCtrl,
@@ -695,5 +866,3 @@ class _SectionCard extends StatelessWidget {
     );
   }
 }
-
-

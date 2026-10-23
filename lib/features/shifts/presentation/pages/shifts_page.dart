@@ -7,7 +7,10 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/telegram_service.dart';
 import '../../../../core/data/local_sync_server.dart';
 import '../../../backup/data/backup_service.dart';
+import '../../../../core/utils/security_pin_helper.dart';
 import '../../data/shift_service.dart';
+import '../../data/staff_member_model.dart';
+import '../../data/staff_service.dart';
 import '../widgets/algerian_denomination_dialog.dart';
 import '../widgets/live_pos_radar_widget.dart';
 
@@ -52,68 +55,161 @@ class _ShiftsPageState extends State<ShiftsPage> {
     }
   }
 
-  void _showOpenShiftModal() {
+  Future<void> _showOpenShiftModal() async {
     SoundService.playTabSwitch();
-    final workerController = TextEditingController(text: 'الكاشير 1');
+    await StaffService.seedInitialAdminIfEmpty();
+    List<StaffMember> staffList = StaffService.getActiveStaff();
+    StaffMember? selectedStaff = staffList.firstOrNull;
     final floatController = TextEditingController(text: '5000');
+    final pinController = TextEditingController();
+    String? errorMsg;
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.point_of_sale_rounded, color: Colors.teal, size: 28),
-            SizedBox(width: 8),
-            Text('فتح وردية جديدة وبدء العمل'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: workerController,
-              decoration: const InputDecoration(labelText: 'اسم العامل / الكاشير', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: floatController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'رصيد بداية الصندوق - الفكة (Fond de caisse د.ج)',
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.monetization_on_outlined),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.calculate_rounded, color: Colors.teal),
-                  tooltip: 'حاسبة الفئات النقدية الجزائرية 🇩🇿',
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) {
+          final bool needsPin = selectedStaff != null &&
+              (selectedStaff!.isAdmin
+                  ? (SecurityPinHelper.isPinEnabled() ||
+                      (selectedStaff!.pin.trim().isNotEmpty &&
+                          selectedStaff!.pin != '9999' &&
+                          selectedStaff!.pin != '0000'))
+                  : selectedStaff!.pin.trim().isNotEmpty);
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.point_of_sale_rounded, color: Colors.teal, size: 28),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('فتح وردية جديدة وبدء العمل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                TextButton.icon(
                   onPressed: () async {
-                    final counted = await AlgerianDenominationDialog.show(context, title: 'حساب رصيد بداية الصندوق (عهدة الانطلاق)');
-                    if (counted != null) {
-                      floatController.text = counted.toStringAsFixed(0);
+                    final ok = await SecurityPinHelper.authenticate(
+                      context,
+                      title: 'إدارة العمال',
+                      message: 'أدخل رمز المدير لإدارة حسابات العمال',
+                    );
+                    if (ok && mounted) {
+                      await context.push('/staff-management');
+                      final refreshed = StaffService.getActiveStaff();
+                      setDlgState(() {
+                        staffList = refreshed;
+                        selectedStaff = staffList.firstOrNull;
+                      });
                     }
                   },
+                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 16, color: Colors.teal),
+                  label: const Text('إدارة العمال', style: TextStyle(fontSize: 12)),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-            onPressed: () async {
-              final worker = workerController.text.trim().isEmpty ? 'الكاشير' : workerController.text.trim();
-              final float = double.tryParse(floatController.text.trim()) ?? 0.0;
-              Navigator.pop(ctx);
-              await ShiftService.openShift(workerName: worker, floatAmount: float);
-              await _loadShifts();
-              SoundService.playSaveSuccess();
-              if (mounted) {
-                SnackbarHelper.showSuccess(context, 'تم فتح وردية $worker برصيد بداية: ${float.toStringAsFixed(2)} د.ج');
-              }
-            },
-            child: const Text('فتح الوردية', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedStaff?.id,
+                  decoration: const InputDecoration(
+                    labelText: 'اختر العامل / الكاشير (من قائمة عمال المدير)',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: staffList.map((s) {
+                    final roleAr = s.isAdmin ? 'مدير' : (s.role == 'supervisor' ? 'مشرف' : (s.role == 'cashier' ? 'كاشير' : 'عامل'));
+                    return DropdownMenuItem<String>(
+                      value: s.id,
+                      child: Text('${s.name} ($roleAr)'),
+                    );
+                  }).toList(),
+                  onChanged: (id) {
+                    setDlgState(() {
+                      selectedStaff = staffList.where((s) => s.id == id).firstOrNull;
+                      pinController.clear();
+                      errorMsg = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: floatController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'رصيد بداية الصندوق - الفكة (Fond de caisse د.ج)',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.monetization_on_outlined),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calculate_rounded, color: Colors.teal),
+                      tooltip: 'حاسبة الفئات النقدية الجزائرية 🇩🇿',
+                      onPressed: () async {
+                        final counted = await AlgerianDenominationDialog.show(context, title: 'حساب رصيد بداية الصندوق (عهدة الانطلاق)');
+                        if (counted != null) {
+                          floatController.text = counted.toStringAsFixed(0);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                if (needsPin) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: pinController,
+                    obscureText: true,
+                    maxLength: 4,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'الرمز السري للعامل (PIN)',
+                      prefixIcon: Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(),
+                      counterText: '',
+                    ),
+                  ),
+                ],
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 8),
+                  Text(errorMsg!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                onPressed: () async {
+                  if (selectedStaff == null) {
+                    setDlgState(() => errorMsg = 'يرجى اختيار العامل أولاً');
+                    return;
+                  }
+                  if (needsPin) {
+                    final entered = pinController.text.trim();
+                    final staffPin = selectedStaff!.pin.trim();
+                    final okStaff = staffPin.isNotEmpty && entered == staffPin;
+                    final okAdmin = SecurityPinHelper.isPinEnabled() && SecurityPinHelper.verifyPin(entered);
+                    if (!okStaff && !okAdmin) {
+                      SoundService.playVoidWarning();
+                      setDlgState(() => errorMsg = 'الرمز السري غير صحيح!');
+                      return;
+                    }
+                  }
+                  final worker = selectedStaff!.name;
+                  final float = double.tryParse(floatController.text.trim()) ?? 0.0;
+                  Navigator.pop(ctx);
+                  await ShiftService.openShift(
+                    workerName: worker,
+                    floatAmount: float,
+                    staffId: selectedStaff!.id,
+                  );
+                  await _loadShifts();
+                  SoundService.playSaveSuccess();
+                  if (mounted) {
+                    SnackbarHelper.showSuccess(context, 'تم فتح وردية $worker برصيد بداية: ${float.toStringAsFixed(2)} د.ج');
+                  }
+                },
+                child: const Text('فتح الوردية', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

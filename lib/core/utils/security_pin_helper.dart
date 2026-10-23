@@ -45,19 +45,44 @@ class SecurityPinHelper {
     return enabled && hash != null && hash.isNotEmpty;
   }
 
-  /// Set / Update Manager PIN
+  /// Set / Update Manager PIN (and synchronize with default Admin staff member)
   static Future<void> setPin(String pin) async {
+    final cleanPin = pin.trim();
     final box = HiveDatabase.settingsBox;
-    final hash = _hashPin(pin);
+    final hash = _hashPin(cleanPin);
     await box.put(_pinHashKey, hash);
     await box.put(_pinEnabledKey, true);
+
+    try {
+      final staffBox = HiveDatabase.staffBox;
+      for (final adminKey in ['staff_admin_master', 'admin_01']) {
+        final raw = staffBox.get(adminKey);
+        if (raw is Map) {
+          final updated = Map<String, dynamic>.from(raw);
+          updated['pin'] = cleanPin;
+          await staffBox.put(adminKey, updated);
+        }
+      }
+    } catch (_) {}
   }
 
-  /// Disable PIN protection
+  /// Disable PIN protection (and clear default Admin staff member PIN)
   static Future<void> disablePin() async {
     final box = HiveDatabase.settingsBox;
     await box.put(_pinEnabledKey, false);
     await box.delete(_pinHashKey);
+
+    try {
+      final staffBox = HiveDatabase.staffBox;
+      for (final adminKey in ['staff_admin_master', 'admin_01']) {
+        final raw = staffBox.get(adminKey);
+        if (raw is Map) {
+          final updated = Map<String, dynamic>.from(raw);
+          updated['pin'] = '';
+          await staffBox.put(adminKey, updated);
+        }
+      }
+    } catch (_) {}
   }
 
   /// Verify entered PIN against stored cryptographic hash (Zero Hardcoded PINs)

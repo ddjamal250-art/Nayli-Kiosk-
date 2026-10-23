@@ -101,7 +101,7 @@ class Product extends Equatable {
   double get wholesalePackPrice => units.where((u) => u.tier == UnitTier.medium).firstOrNull?.price ?? (units.isNotEmpty ? units.first.price : 0.0);
   double get wholesaleCartonPrice => units.where((u) => u.tier == UnitTier.large).firstOrNull?.price ?? (units.isNotEmpty ? units.first.price : 0.0);
   double get cartonCostPrice => units.where((u) => u.tier == UnitTier.large).firstOrNull?.cost ?? (units.isNotEmpty ? units.first.cost : 0.0);
-  double get piecesPerPack => units.where((u) => u.tier == UnitTier.small).firstOrNull?.multiplier ?? (units.isNotEmpty ? units.first.multiplier : 20.0);
+  double get piecesPerPack => units.where((u) => u.tier == UnitTier.small).firstOrNull?.multiplier ?? (units.isNotEmpty ? units.first.multiplier : (isTobaccoProduct ? 20.0 : 1.0));
   double get packsPerCartonCount => units.where((u) => u.tier == UnitTier.medium).firstOrNull?.multiplier ?? (units.isNotEmpty ? units.first.multiplier : 10.0);
   String get unitType => unitSystemType.name;
   String get unit => baseUnitName;

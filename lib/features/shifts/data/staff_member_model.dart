@@ -101,8 +101,7 @@ class StaffMember {
     }
   }
 
-  bool get hasPosAccess =>
-      role == 'admin' || role == 'supervisor' || role == 'cashier';
+  bool get hasPosAccess => isActive;
 
   bool get isAdmin => role == 'admin';
   bool get isSupervisor => role == 'supervisor' || role == 'admin';

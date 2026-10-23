@@ -6,6 +6,9 @@ import '../../../core/utils/sound_service.dart';
 import '../../../core/utils/online_license_service.dart';
 import '../../backup/data/backup_service.dart';
 import '../../../core/utils/telegram_service.dart';
+import 'staff_member_model.dart';
+import 'staff_service.dart';
+import 'attendance_service.dart';
 
 class CashDrawerMovement {
   final String id;
@@ -45,6 +48,7 @@ class CashDrawerMovement {
 
 class CashierShift {
   final String id;
+  final String? staffId;
   final String workerName;
   final DateTime openedAt;
   final DateTime? closedAt;
@@ -63,6 +67,7 @@ class CashierShift {
 
   CashierShift({
     required this.id,
+    this.staffId,
     required this.workerName,
     required this.openedAt,
     this.closedAt,
@@ -91,6 +96,7 @@ class CashierShift {
 
   Map<String, dynamic> toMap() => {
     'id': id,
+    'staffId': staffId,
     'workerName': workerName,
     'openedAt': openedAt.toIso8601String(),
     'closedAt': closedAt?.toIso8601String(),
@@ -110,6 +116,7 @@ class CashierShift {
 
   factory CashierShift.fromMap(Map<dynamic, dynamic> map) => CashierShift(
     id: map['id']?.toString() ?? 'shift_',
+    staffId: map['staffId']?.toString(),
     workerName: map['workerName']?.toString() ?? 'الكاشير',
     openedAt: DateTime.tryParse(map['openedAt']?.toString() ?? '') ?? DateTime.now(),
     closedAt: map['closedAt'] != null ? DateTime.tryParse(map['closedAt'].toString()) : null,
@@ -286,6 +293,7 @@ class ShiftService {
 
     return CashierShift(
       id: shift.id,
+      staffId: shift.staffId,
       workerName: shift.workerName,
       openedAt: shift.openedAt,
       closedAt: shift.closedAt,
@@ -381,6 +389,7 @@ class ShiftService {
 
           final updatedShift = CashierShift(
             id: rawShift.id,
+            staffId: rawShift.staffId,
             workerName: rawShift.workerName,
             openedAt: rawShift.openedAt,
             closedAt: rawShift.closedAt,
@@ -430,21 +439,45 @@ class ShiftService {
     return null;
   }
 
-  /// Open new cashier shift
+  /// Open new cashier shift (linked to Manager's staff list & attendance)
   static Future<CashierShift> openShift({
     required String workerName,
     required double floatAmount,
+    String? staffId,
   }) async {
+    await StaffService.seedInitialAdminIfEmpty();
+    final activeStaff = StaffService.getActiveStaff();
+    StaffMember? matchedStaff;
+    if (staffId != null && staffId.isNotEmpty) {
+      matchedStaff = activeStaff.where((s) => s.id == staffId).firstOrNull;
+    }
+    matchedStaff ??= activeStaff.where((s) => s.name.trim() == workerName.trim()).firstOrNull;
+
+    final resolvedStaffId = matchedStaff?.id ?? staffId;
+    final resolvedWorkerName = matchedStaff?.name ?? workerName;
+
     final b = await box;
     final id = 'shift_${DateTime.now().millisecondsSinceEpoch}';
     final shift = CashierShift(
       id: id,
-      workerName: workerName,
+      staffId: resolvedStaffId,
+      workerName: resolvedWorkerName,
       openedAt: DateTime.now(),
       floatAmount: floatAmount,
       isClosed: false,
     );
     await b.put(id, shift.toMap());
+
+    if (resolvedStaffId != null && resolvedStaffId.isNotEmpty) {
+      try {
+        await AttendanceService.recordPointage(
+          staffId: resolvedStaffId,
+          staffName: resolvedWorkerName,
+          notes: 'فتح مناوبة ($id)',
+        );
+      } catch (_) {}
+    }
+
     return shift;
   }
 
@@ -459,6 +492,7 @@ class ShiftService {
 
     final closedShift = CashierShift(
       id: live.id,
+      staffId: live.staffId,
       workerName: live.workerName,
       openedAt: live.openedAt,
       closedAt: DateTime.now(),
@@ -477,6 +511,16 @@ class ShiftService {
     );
 
     await b.put(closedShift.id, closedShift.toMap());
+
+    if (closedShift.staffId != null && closedShift.staffId!.isNotEmpty) {
+      try {
+        await AttendanceService.recordPointage(
+          staffId: closedShift.staffId!,
+          staffName: closedShift.workerName,
+          notes: 'إغلاق مناوبة (${closedShift.id})',
+        );
+      } catch (_) {}
+    }
 
     // Dispatch Telegram Daily Z-Report directly to merchant's phone
     try {
@@ -588,7 +632,11 @@ class _LockScreenDialogState extends State<_LockScreenDialog> {
   }
 
   void _verify() {
-    if (SecurityPinHelper.verifyPin(_pin)) {
+    final cleanPin = _pin.trim();
+    final isMasterMatch = SecurityPinHelper.verifyPin(cleanPin);
+    final isStaffMatch = StaffService.findByPin(cleanPin) != null;
+
+    if (isMasterMatch || isStaffMatch) {
       SoundService.playSaveSuccess();
       Navigator.pop(context, true);
     } else {
@@ -664,6 +712,21 @@ class _LockScreenDialogState extends State<_LockScreenDialog> {
                 ),
 
                 const SizedBox(height: 12),
+                if (!SecurityPinHelper.isPinEnabled())
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.lock_open_rounded, size: 18),
+                      label: const Text('استئناف العمل مباشرة (بدون رمز قفل)',
+                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      onPressed: () => Navigator.pop(context, true),
+                    ),
+                  ),
                 // Supervisor Override Trigger
                 TextButton.icon(
                   icon: const Icon(Icons.admin_panel_settings_outlined, size: 16, color: Colors.indigo),

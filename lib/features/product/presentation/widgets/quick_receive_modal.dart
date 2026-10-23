@@ -111,16 +111,7 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
     if (_product.units.isNotEmpty) {
       for (final u in _product.units) {
         if (!u.isEnabled) continue;
-        double mult = u.multiplier;
-        // تصحيح معامل الكرتونة في حالة كانت البيانات القديمة تسجل سعة العلب وليس مجموع الحبات
-        if (u.tier == UnitTier.large) {
-          final pack = _product.units.firstWhereOrNull(
-            (p) => p.tier == UnitTier.medium || (p.tier != UnitTier.large && p.multiplier > 1),
-          );
-          if (pack != null && mult > 0 && pack.multiplier > 0 && mult <= pack.multiplier) {
-            mult = mult * pack.multiplier;
-          }
-        }
+        final double mult = u.multiplier;
         if (mult > 1 || (u.name.trim() != _product.baseUnitName.trim())) {
           list.add(u.copyWith(multiplier: mult > 0 ? mult : 1.0));
         }

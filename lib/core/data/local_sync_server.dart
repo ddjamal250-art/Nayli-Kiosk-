@@ -8,6 +8,9 @@ import '../../features/billing/data/kiosk_service.dart';
 import '../../features/product/data/models/product_model.dart';
 import '../utils/barcode_normalizer.dart';
 import '../utils/license_service.dart';
+import '../utils/merchant_context_service.dart';
+import '../utils/product_image_helper.dart';
+import 'sync_message_protocol.dart';
 
 class RemoteCartItem {
   final String barcode;
@@ -102,7 +105,9 @@ class LocalSyncServer {
   static final StreamController<RemoteIncomingCart> _remoteCartStreamController = StreamController<RemoteIncomingCart>.broadcast();
   static final StreamController<RemoteIncomingCart> _posHandoffStreamController = StreamController<RemoteIncomingCart>.broadcast();
   static final StreamController<Map<String, dynamic>> _masterActivationStreamController = StreamController<Map<String, dynamic>>.broadcast();
-  
+  static final StreamController<String> _barcodeScanStreamController = StreamController<String>.broadcast();
+
+  static final Set<WebSocket> _activeWebSockets = {};
   static final List<RemoteIncomingCart> pendingRemoteCarts = [];
   static int _connectedClients = 0;
 
@@ -112,6 +117,7 @@ class LocalSyncServer {
   static Stream<RemoteIncomingCart> get remoteCartStream => _remoteCartStreamController.stream;
   static Stream<RemoteIncomingCart> get posHandoffStream => _posHandoffStreamController.stream;
   static Stream<Map<String, dynamic>> get masterActivationStream => _masterActivationStreamController.stream;
+  static Stream<String> get barcodeScanStream => _barcodeScanStreamController.stream;
   static int get connectedClients => _connectedClients;
 
   static RawDatagramSocket? _beaconSocket;
@@ -248,9 +254,11 @@ class LocalSyncServer {
         try {
           final payload = jsonEncode({
             'app': 'nayli_pos_lan',
+            'v': 2,
             'serverIp': ip,
             'port': p,
-            'storeName': HiveDatabase.settingsBox.get('shop_name', defaultValue: 'Nayli POS Master'),
+            'merchantId': MerchantContextService.getMerchantId(),
+            'storeName': MerchantContextService.getStoreName(),
             'timestamp': DateTime.now().millisecondsSinceEpoch,
           });
           _beaconSocket?.send(
@@ -331,6 +339,12 @@ class LocalSyncServer {
       startUdpBeacon(ip, port);
 
       _server!.listen((HttpRequest request) async {
+        // 1. Native WebSocket Upgrade Check (Full-Duplex Real-Time Sync)
+        if (WebSocketTransformer.isUpgradeRequest(request)) {
+          await _handleWebSocket(request);
+          return;
+        }
+
         // Enable CORS
         request.response.headers.add('Access-Control-Allow-Origin', '*');
         request.response.headers.add('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -344,7 +358,9 @@ class LocalSyncServer {
 
         final path = request.uri.path;
         try {
-          if (path == '/api/status' && request.method == 'GET') {
+          if (path.startsWith('/images/') && request.method == 'GET') {
+            await _handleGetImageFile(request);
+          } else if (path == '/api/status' && request.method == 'GET') {
             await _handleStatus(request);
           } else if (path == '/api/products' && request.method == 'GET') {
             await _handleGetProducts(request);
@@ -396,9 +412,23 @@ class LocalSyncServer {
     }
   }
 
+  static WebSocket? _cloudBridgeSocket;
+  static Timer? _cloudBridgeReconnectTimer;
+  static bool _cloudBridgeActive = false;
+
   static Future<void> stopServer() async {
     try {
       stopUdpBeacon();
+      stopCloudBridge();
+      for (final s in _activeWebSockets) {
+        try {
+          s.close(WebSocketStatus.goingAway, 'Server stopped');
+        } catch (_) {}
+      }
+      _activeWebSockets.clear();
+      _connectedClients = 0;
+      _clientsController.add(0);
+
       if (_server != null) {
         await _server!.close(force: true);
         _server = null;
@@ -408,6 +438,404 @@ class LocalSyncServer {
     } catch (e) {
       debugPrint('Error stopping server: $e');
     }
+  }
+
+  /// Broadcast a SyncMessage to all connected WebSocket clients and Cloud Relay Bridge
+  static void broadcastSyncMessage(SyncMessage msg, {WebSocket? excludeSocket}) {
+    final jsonStr = msg.toJson();
+    for (final s in _activeWebSockets.toList()) {
+      if (s != excludeSocket && s.readyState == WebSocket.open) {
+        try {
+          s.add(jsonStr);
+        } catch (_) {}
+      }
+    }
+    // Forward broadcast to Cloud Relay Bridge (so remote 4G phones receive it too)
+    if (_cloudBridgeSocket != null && _cloudBridgeSocket != excludeSocket && _cloudBridgeSocket!.readyState == WebSocket.open) {
+      try {
+        _cloudBridgeSocket!.add(jsonStr);
+      } catch (_) {}
+    }
+  }
+
+  /// Broadcast an inventory stock update to all connected companion devices
+  static void broadcastInventoryChange(List<Map<String, dynamic>> items) {
+    if (_activeWebSockets.isEmpty) return;
+    final msg = SyncMessage(
+      id: '${DateTime.now().microsecondsSinceEpoch}',
+      type: SyncMessageType.upRes,
+      event: SyncEvents.inventoryChange,
+      merchantId: MerchantContextService.getMerchantId(),
+      payload: {'items': items, 'timestamp': DateTime.now().millisecondsSinceEpoch},
+    );
+    broadcastSyncMessage(msg);
+  }
+
+  /// Broadcast a completed sale to all connected companion devices
+  static void broadcastSaleCompleted(Map<String, dynamic> saleData) {
+    if (_activeWebSockets.isEmpty) return;
+    final msg = SyncMessage(
+      id: '${DateTime.now().microsecondsSinceEpoch}',
+      type: SyncMessageType.upRes,
+      event: SyncEvents.saleCreated,
+      merchantId: MerchantContextService.getMerchantId(),
+      payload: saleData,
+    );
+    broadcastSyncMessage(msg);
+  }
+
+  /// Serves local images over HTTP with caching
+  static Future<void> _handleGetImageFile(HttpRequest request) async {
+    try {
+      final fileName = request.uri.path.substring('/images/'.length);
+      if (fileName.isEmpty) {
+        request.response.statusCode = HttpStatus.notFound;
+        await request.response.close();
+        return;
+      }
+
+      final resolved = await ProductImageHelper.resolveImagePath(fileName);
+      if (resolved != null && File(resolved).existsSync()) {
+        final file = File(resolved);
+        final ext = resolved.split('.').last.toLowerCase();
+        if (ext == 'png') {
+          request.response.headers.contentType = ContentType('image', 'png');
+        } else if (ext == 'webp') {
+          request.response.headers.contentType = ContentType('image', 'webp');
+        } else {
+          request.response.headers.contentType = ContentType('image', 'jpeg');
+        }
+        request.response.headers.add('Cache-Control', 'public, max-age=86400');
+        await file.openRead().pipe(request.response);
+      } else {
+        request.response.statusCode = HttpStatus.notFound;
+        request.response.write('Image not found');
+        await request.response.close();
+      }
+    } catch (e) {
+      request.response.statusCode = HttpStatus.internalServerError;
+      await request.response.close();
+    }
+  }
+
+  /// Native WebSocket Connection & Event Handler
+  static Future<void> _handleWebSocket(HttpRequest request) async {
+    try {
+      final socket = await WebSocketTransformer.upgrade(request);
+      _activeWebSockets.add(socket);
+      _connectedClients = _activeWebSockets.length;
+      _clientsController.add(_connectedClients);
+      _logController.add('🔌 Real-Time WebSocket client connected (Total: $_connectedClients)');
+
+      socket.listen(
+        (data) async {
+          try {
+            final text = data.toString();
+            final msg = SyncMessage.fromJson(text);
+            await _dispatchIncomingSyncMessage(msg, socket);
+          } catch (e) {
+            debugPrint('Error processing WebSocket message: $e');
+          }
+        },
+        onDone: () {
+          _activeWebSockets.remove(socket);
+          _connectedClients = _activeWebSockets.length;
+          _clientsController.add(_connectedClients);
+          _logController.add('WebSocket client disconnected (Remaining: $_connectedClients)');
+        },
+        onError: (err) {
+          _activeWebSockets.remove(socket);
+          _connectedClients = _activeWebSockets.length;
+          _clientsController.add(_connectedClients);
+          debugPrint('WebSocket error: $err');
+        },
+      );
+    } catch (e) {
+      debugPrint('WebSocket upgrade failed: $e');
+    }
+  }
+
+  /// Unified Dispatcher for both LAN WebSocket and Cloud Relay Bridge
+  static Future<void> _dispatchIncomingSyncMessage(SyncMessage msg, WebSocket socket) async {
+    // 1. Strict Merchant Isolation Verification
+    final serverMerchantId = MerchantContextService.getMerchantId();
+    if (msg.merchantId.isNotEmpty && msg.merchantId != serverMerchantId) {
+      _logController.add('⛔ Blocked cross-merchant request from ID: ${msg.merchantId}');
+      final errResp = SyncMessage(
+        id: msg.id,
+        type: SyncMessageType.res,
+        event: 'error',
+        merchantId: serverMerchantId,
+        payload: {'error': 'Merchant Mismatch: Access denied.'},
+      );
+      socket.add(errResp.toJson());
+      await socket.close(WebSocketStatus.policyViolation, 'Merchant Mismatch');
+      return;
+    }
+
+    // 2. Dispatch by Event Type
+    switch (msg.event) {
+      case SyncEvents.ping:
+        socket.add(SyncMessage(
+          id: msg.id,
+          type: SyncMessageType.res,
+          event: SyncEvents.pong,
+          merchantId: serverMerchantId,
+          payload: {'status': 'pong', 'time': DateTime.now().millisecondsSinceEpoch},
+        ).toJson());
+        break;
+
+      case SyncEvents.auth:
+        socket.add(SyncMessage(
+          id: msg.id,
+          type: SyncMessageType.res,
+          event: SyncEvents.auth,
+          merchantId: serverMerchantId,
+          payload: {
+            'authenticated': true,
+            'storeName': MerchantContextService.getStoreName(),
+            'merchantId': serverMerchantId,
+            'isActivated': LicenseService.isActivated(),
+            'serverTime': DateTime.now().millisecondsSinceEpoch,
+          },
+        ).toJson());
+        break;
+
+      case SyncEvents.scanBarcode:
+        final rawBarcode = msg.payload is Map
+            ? (msg.payload['barcode'] ?? msg.payload['text'] ?? '').toString()
+            : msg.payload.toString();
+        final cleanBarcode = BarcodeNormalizer.normalize(rawBarcode);
+        if (cleanBarcode.isNotEmpty) {
+          _barcodeScanStreamController.add(cleanBarcode);
+          _logController.add('📲 Wireless Douchette Scan received: $cleanBarcode');
+
+          // Immediate ACK to the sender
+          socket.add(SyncMessage(
+            id: msg.id,
+            type: SyncMessageType.res,
+            event: SyncEvents.scanBarcode,
+            merchantId: serverMerchantId,
+            payload: {'success': true, 'barcode': cleanBarcode},
+          ).toJson());
+
+          // Broadcast update to all other paired devices
+          broadcastSyncMessage(SyncMessage(
+            id: '${DateTime.now().microsecondsSinceEpoch}',
+            type: SyncMessageType.upRes,
+            event: SyncEvents.scanBarcode,
+            merchantId: serverMerchantId,
+            payload: {'barcode': cleanBarcode, 'source': 'remote_companion'},
+          ), excludeSocket: socket);
+        }
+        break;
+
+      case SyncEvents.loadCatalog:
+        final productsBox = HiveDatabase.productBox;
+        final allProducts = productsBox.values.toList();
+        final list = allProducts.map((p) => p.toJson()).toList();
+
+        final shouldCompress = msg.compressed == true;
+        final payloadData = shouldCompress ? SyncCompressionHelper.compressJson(list) : list;
+
+        socket.add(SyncMessage(
+          id: msg.id,
+          type: SyncMessageType.res,
+          event: SyncEvents.loadCatalog,
+          merchantId: serverMerchantId,
+          compressed: shouldCompress,
+          payload: {
+            'count': list.length,
+            'products': payloadData,
+          },
+        ).toJson());
+        break;
+
+      case SyncEvents.handoffCart:
+        try {
+          final cartMap = msg.payload as Map<String, dynamic>;
+          final cart = RemoteIncomingCart.fromMap(cartMap);
+          pendingRemoteCarts.add(cart);
+          _remoteCartStreamController.add(cart);
+          _logController.add('🛒 Remote Cart received via WebSocket: ${cart.token} (${cart.senderName})');
+
+          socket.add(SyncMessage(
+            id: msg.id,
+            type: SyncMessageType.res,
+            event: SyncEvents.handoffCart,
+            merchantId: serverMerchantId,
+            payload: {'success': true, 'token': cart.token, 'id': cart.id},
+          ).toJson());
+
+          broadcastSyncMessage(SyncMessage(
+            id: '${DateTime.now().microsecondsSinceEpoch}',
+            type: SyncMessageType.upRes,
+            event: SyncEvents.handoffCart,
+            merchantId: serverMerchantId,
+            payload: cart.toMap(),
+          ), excludeSocket: socket);
+        } catch (e) {
+          socket.add(SyncMessage(
+            id: msg.id,
+            type: SyncMessageType.res,
+            event: SyncEvents.handoffCart,
+            merchantId: serverMerchantId,
+            payload: {'success': false, 'error': e.toString()},
+          ).toJson());
+        }
+        break;
+
+      case SyncEvents.pushSale:
+        try {
+          final data = msg.payload as Map<String, dynamic>;
+          final invoiceId = data['id'] ?? 'INV-${DateTime.now().millisecondsSinceEpoch}';
+          await HiveDatabase.invoicesBox.put(invoiceId, data);
+
+          final updatedItems = <Map<String, dynamic>>[];
+          if (data['items'] is List) {
+            final items = data['items'] as List;
+            for (var item in items) {
+              final barcode = item['barcode'];
+              final qty = (item['quantity'] as num?)?.toDouble() ?? 1.0;
+
+              final product = HiveDatabase.productBox.values
+                  .where((p) => BarcodeNormalizer.matches(p.barcode, barcode?.toString()))
+                  .firstOrNull;
+
+              if (product != null && product is ProductModel) {
+                final double newStock = (product.stock - qty.toDouble()).toDouble().clamp(0.0, 999999.0);
+                final updatedProduct = product.copyWith(stock: newStock);
+                await HiveDatabase.productBox.put(product.id, updatedProduct);
+                updatedItems.add({
+                  'id': product.id,
+                  'barcode': product.barcode,
+                  'newStock': newStock,
+                });
+              }
+            }
+          }
+
+          _logController.add('💰 Sale recorded via WebSocket: $invoiceId');
+
+          // Response to sender
+          socket.add(SyncMessage(
+            id: msg.id,
+            type: SyncMessageType.res,
+            event: SyncEvents.pushSale,
+            merchantId: serverMerchantId,
+            payload: {'success': true, 'invoiceId': invoiceId},
+          ).toJson());
+
+          // Broadcast inventory change to all companion devices
+          if (updatedItems.isNotEmpty) {
+            broadcastInventoryChange(updatedItems);
+          }
+        } catch (e) {
+          socket.add(SyncMessage(
+            id: msg.id,
+            type: SyncMessageType.res,
+            event: SyncEvents.pushSale,
+            merchantId: serverMerchantId,
+            payload: {'success': false, 'error': e.toString()},
+          ).toJson());
+        }
+        break;
+
+      case SyncEvents.getImage:
+        final imageName = (msg.payload is Map ? msg.payload['name'] : msg.payload)?.toString() ?? '';
+        final resolvedPath = await ProductImageHelper.resolveImagePath(imageName);
+        if (resolvedPath != null && File(resolvedPath).existsSync()) {
+          final bytes = await File(resolvedPath).readAsBytes();
+          final compressedBase64 = SyncCompressionHelper.compressImageBytes(bytes);
+          socket.add(SyncMessage(
+            id: msg.id,
+            type: SyncMessageType.res,
+            event: SyncEvents.getImage,
+            merchantId: serverMerchantId,
+            compressed: true,
+            payload: {
+              'name': imageName,
+              'found': true,
+              'data': compressedBase64,
+            },
+          ).toJson());
+        } else {
+          socket.add(SyncMessage(
+            id: msg.id,
+            type: SyncMessageType.res,
+            event: SyncEvents.getImage,
+            merchantId: serverMerchantId,
+            payload: {'name': imageName, 'found': false},
+          ).toJson());
+        }
+        break;
+
+      default:
+        _logController.add('Unknown sync event: ${msg.event}');
+    }
+  }
+
+  /// Connects Master POS to Cloud Relay Gateway so remote companion devices (4G) can interact with it
+  static Future<void> startCloudBridge({String? customRelayUrl}) async {
+    final merchantId = MerchantContextService.getMerchantId();
+    if (merchantId.isEmpty || merchantId == 'SHOP-DEFAULT') return;
+
+    final defaultRelay = HiveDatabase.settingsBox.get(
+      'cloud_relay_url',
+      defaultValue: 'wss://relay.naylimarket.app/tunnel',
+    ) as String;
+    final relayUrl = customRelayUrl ?? defaultRelay;
+
+    _cloudBridgeActive = true;
+    _connectCloudBridge(relayUrl, merchantId);
+  }
+
+  static Future<void> _connectCloudBridge(String relayUrl, String merchantId) async {
+    if (!_cloudBridgeActive) return;
+    try {
+      final uri = Uri.parse('$relayUrl?room=$merchantId&role=master&merchantId=$merchantId');
+      final socket = await WebSocket.connect(uri.toString()).timeout(const Duration(seconds: 8));
+      _cloudBridgeSocket = socket;
+      _logController.add('☁️ Cloud Relay Bridge connected! Remote 4G access active for Room: $merchantId');
+
+      socket.listen(
+        (data) async {
+          try {
+            final text = data.toString();
+            final msg = SyncMessage.fromJson(text);
+            await _dispatchIncomingSyncMessage(msg, socket);
+          } catch (e) {
+            debugPrint('Cloud bridge message error: $e');
+          }
+        },
+        onDone: () {
+          _cloudBridgeSocket = null;
+          _scheduleCloudBridgeReconnect(relayUrl, merchantId);
+        },
+        onError: (e) {
+          _cloudBridgeSocket = null;
+          _scheduleCloudBridgeReconnect(relayUrl, merchantId);
+        },
+      );
+    } catch (e) {
+      _cloudBridgeSocket = null;
+      _scheduleCloudBridgeReconnect(relayUrl, merchantId);
+    }
+  }
+
+  static void _scheduleCloudBridgeReconnect(String relayUrl, String merchantId) {
+    if (!_cloudBridgeActive) return;
+    _cloudBridgeReconnectTimer?.cancel();
+    _cloudBridgeReconnectTimer = Timer(const Duration(seconds: 15), () {
+      _connectCloudBridge(relayUrl, merchantId);
+    });
+  }
+
+  static void stopCloudBridge() {
+    _cloudBridgeActive = false;
+    _cloudBridgeReconnectTimer?.cancel();
+    _cloudBridgeSocket?.close(WebSocketStatus.goingAway, 'Server stopping');
+    _cloudBridgeSocket = null;
   }
 
   static Future<void> _handleStatus(HttpRequest request) async {

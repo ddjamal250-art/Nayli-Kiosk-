@@ -16,6 +16,7 @@ import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/scale_barcode_parser.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
 import '../../../../core/data/hive_database.dart';
+import '../../../../core/data/local_sync_server.dart';
 
 part 'billing_event.dart';
 part 'billing_state.dart';
@@ -412,7 +413,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       PrintReceiptEvent event, Emitter<BillingState> emit) async {
     final printerHelper = PrinterHelper();
 
-    if (!Platform.isWindows && !printerHelper.isConnected) {
+    if (!event.skipPhysicalPrint && !Platform.isWindows && !printerHelper.isConnected) {
       final savedMac = HiveDatabase.settingsBox.get('printer_mac');
       if (savedMac != null) {
         final connected = await printerHelper.connect(savedMac);
@@ -470,6 +471,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
       // 1. Auto-deduct or restock from Hive for all products
       final productBox = HiveDatabase.productBox;
+      final modifiedInventoryItems = <Map<String, dynamic>>[];
       for (final cartItem in currentCartItems) {
         String originalId = cartItem.product.id;
         if (originalId.contains('_carton_')) {
@@ -541,6 +543,11 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                     }
 
                     productBox.put(rawId, rawProduct.copyWith(stock: newRawStock, stockBatches: updatedBatches));
+                    modifiedInventoryItems.add({
+                      'id': rawId,
+                      'barcode': rawProduct.barcode,
+                      'newStock': newRawStock,
+                    });
                   }
                 }
               }
@@ -590,6 +597,11 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           }
 
           productBox.put(originalId, productModel.copyWith(stock: newStock, stockBatches: updatedBatches));
+          modifiedInventoryItems.add({
+            'id': originalId,
+            'barcode': productModel.barcode,
+            'newStock': newStock,
+          });
 
           // SMART SHOPPING LIST AUTOMATION
           final bool isLiquid = productModel.liquidConfigJson != null || productModel.isLiquidProduct;
@@ -731,6 +743,21 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'splitPayments': event.splitPayments,
         'orderNote': event.orderNote,
       });
+
+      // بث التحديثات اللحظية لجميع الهواتف المتصلة (LAN أو WAN)
+      if (modifiedInventoryItems.isNotEmpty) {
+        try {
+          LocalSyncServer.broadcastInventoryChange(modifiedInventoryItems);
+        } catch (_) {}
+      }
+      try {
+        LocalSyncServer.broadcastSaleCompleted({
+          'id': invoiceId,
+          'totalAmount': finalTotalAmount,
+          'timestamp': DateTime.now().toIso8601String(),
+          'items': items,
+        });
+      } catch (_) {}
 
       // تفريغ السلة وإنهاء عملية البيع فوراً في واجهة المستخدم دون أي تأخير
       emit(state.copyWith(

@@ -105,14 +105,14 @@ class _OfferRowControllers {
   })  : qtyCtrl = TextEditingController(
           text: quantity > 0
               ? (quantity == quantity.roundToDouble()
-                  ? (quantity == quantity.roundToDouble() ? quantity.toInt().toString() : quantity.toString())
+                  ? quantity.toInt().toString()
                   : quantity.toString())
               : '',
         ),
         priceCtrl = TextEditingController(
           text: price > 0
               ? (price == price.roundToDouble()
-                  ? (price == price.roundToDouble() ? price.toInt().toString() : price.toString())
+                  ? price.toInt().toString()
                   : price.toString())
               : '',
         );
@@ -250,11 +250,6 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     }
   }
 
-  double _safeDivide(double num, double den) {
-    if (den <= 0) return 0.0;
-    return num / den;
-  }
-
   double _parse(TextEditingController? ctrl) {
     if (ctrl == null) return 0.0;
     final cleaned = ctrl.text.trim().replaceAll(',', '.').replaceAll('،', '.');
@@ -266,11 +261,18 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     if (mounted) setState(() {});
   }
 
+  /// سعة الكرتونة (cCap) وسعة العلبة (pCap) كلاهما دائماً بعدد الحبات الأساسية (Base Pieces)
   double? get _suggestedPackCost {
     final cCost = _parse(widget.cartonCostCtrl);
     final cCap = _parse(widget.cartonCapacityCtrl);
+    final pCap = _parse(widget.packCapacityCtrl);
     if (cCost > 0 && cCap > 0) {
-      return (cCost / cCap);
+      final pieceCostFromCarton = cCost / cCap;
+      return (widget.hasPack && pCap > 0) ? (pieceCostFromCarton * pCap) : pieceCostFromCarton;
+    }
+    final piCost = _parse(widget.pieceCostCtrl);
+    if (piCost > 0 && pCap > 0) {
+      return piCost * pCap;
     }
     return null;
   }
@@ -284,7 +286,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     final cCost = _parse(widget.cartonCostCtrl);
     final cCap = _parse(widget.cartonCapacityCtrl);
     if (cCost > 0 && cCap > 0) {
-      return (widget.hasPack && pCap > 0) ? (cCost / (cCap * pCap)) : (cCost / cCap);
+      return (cCost / cCap);
     }
     return null;
   }
@@ -292,8 +294,14 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
   double? get _suggestedPackPrice {
     final cPrice = _parse(widget.cartonPriceCtrl);
     final cCap = _parse(widget.cartonCapacityCtrl);
+    final pCap = _parse(widget.packCapacityCtrl);
     if (cPrice > 0 && cCap > 0) {
-      return (cPrice / cCap);
+      final piecePriceFromCarton = cPrice / cCap;
+      return (widget.hasPack && pCap > 0) ? (piecePriceFromCarton * pCap) : piecePriceFromCarton;
+    }
+    final piPrice = _parse(widget.piecePriceCtrl);
+    if (piPrice > 0 && pCap > 0) {
+      return piPrice * pCap;
     }
     return null;
   }
@@ -307,7 +315,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     final cPrice = _parse(widget.cartonPriceCtrl);
     final cCap = _parse(widget.cartonCapacityCtrl);
     if (cPrice > 0 && cCap > 0) {
-      return (widget.hasPack && pCap > 0) ? (cPrice / (cCap * pCap)) : (cPrice / cCap);
+      return (cPrice / cCap);
     }
     return null;
   }
@@ -315,8 +323,13 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
   int? get _suggestedPacksFromCarton {
     final cCount = _parse(widget.cartonCountCtrl).toInt();
     final cCap = _parse(widget.cartonCapacityCtrl).toInt();
+    final pCap = _parse(widget.packCapacityCtrl).toInt();
     if (widget.hasCarton && cCount > 0 && cCap > 0) {
-      return cCount * cCap;
+      final totalPiecesFromCartons = cCount * cCap;
+      if (widget.hasPack && pCap > 0) {
+        return (totalPiecesFromCartons / pCap).floor();
+      }
+      return totalPiecesFromCartons;
     }
     return null;
   }
@@ -329,8 +342,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
 
     int total = 0;
     if (widget.hasCarton && cCount > 0 && cCap > 0) {
-      final multiplier = widget.hasPack && pCap > 0 ? (cCap * pCap) : cCap;
-      total += (cCount * multiplier);
+      total += (cCount * cCap);
     }
     if (widget.hasPack && pCount > 0 && pCap > 0) {
       total += (pCount * pCap);
@@ -348,32 +360,31 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     final isAlreadySame = (currentVal - suggestedVal).abs() < 0.01;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 2),
+      padding: const EdgeInsets.only(top: 4),
       child: InkWell(
         onTap: () {
-          final str = suggestedVal.toStringAsFixed(2);
-          final clean = str.endsWith('.00') ? str.substring(0, str.length - 3) : str;
-          targetCtrl.text = clean;
+          targetCtrl.text = suggestedVal == suggestedVal.roundToDouble()
+              ? suggestedVal.toInt().toString()
+              : suggestedVal.toStringAsFixed(2);
           _onInputsChanged();
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: isAlreadySame ? Colors.grey.shade100 : Colors.amber.shade50,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: isAlreadySame ? Colors.grey.shade300 : Colors.amber.shade400,
-              width: 0.8,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isAlreadySame ? Icons.check_circle_outline : Icons.lightbulb_outline_rounded,
+                isAlreadySame ? Icons.check_circle_outline : Icons.lightbulb_outline,
                 size: 13,
-                color: isAlreadySame ? Colors.grey.shade600 : Colors.amber.shade900,
+                color: isAlreadySame ? Colors.green : Colors.amber.shade900,
               ),
               const SizedBox(width: 4),
               Text(
@@ -407,6 +418,12 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final cCapVal = _parse(cartonCapacityCtrl);
+    final pCapVal = _parse(packCapacityCtrl);
+    final packsPerCartonText = (hasCarton && hasPack && cCapVal > 0 && pCapVal > 0)
+        ? (cCapVal / pCapVal).toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '')
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -426,7 +443,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
               TextField(
                 controller: cartonCountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                onChanged: (_) => onInputsChanged?.call(),
+                onChanged: (_) => _onInputsChanged(),
                 decoration: const InputDecoration(
                   labelText: 'عدد الكراتين المستلمة في هذه الشحنة *',
                   suffixText: 'كرتونة',
@@ -445,10 +462,11 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                     controller: cartonCapacityCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => _onInputsChanged(),
-                    decoration: InputDecoration(
-                      labelText: 'سعة الكرتونة (كم حبة؟) *',
+                    decoration: const InputDecoration(
+                      labelText: 'سعة الكرتونة (إجمالي الحبات) *',
+                      helperText: 'إجمالي الحبات داخل الكرتونة الواحدة',
                       suffixText: 'حبة/كرتونة',
-                      border: const OutlineInputBorder(),
+                      border: OutlineInputBorder(),
                       isDense: true,
                     ),
                   ),
@@ -473,6 +491,28 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                 ),
               ],
             ),
+            if (packsPerCartonText != null) ...[
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.brown.shade100.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 14, color: Colors.brown.shade800),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'الكرتونة الواحدة تحتوي على $packsPerCartonText علبة × ${pCapVal.toInt()} حبة = ${cCapVal.toInt()} حبة إجمالاً',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.brown.shade900),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             Row(
               children: [
@@ -535,13 +575,15 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'المحسوب من الكراتين: $_suggestedPacksFromCarton علبة (${_parse(widget.cartonCountCtrl).toInt()} كرتونة × ${_parse(widget.cartonCapacityCtrl).toInt()})',
+                          'الكراتين المدخلة أعلاه تعادل: $_suggestedPacksFromCarton علبة (تُجمع تلقائياً مع العلب الإضافية)',
                           style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.indigo.shade900),
                         ),
                       ),
                       InkWell(
                         onTap: () {
-                          packCountCtrl?.text = _suggestedPacksFromCarton.toString();
+                          final existingPacks = _parse(packCountCtrl).toInt();
+                          packCountCtrl?.text = (existingPacks + _suggestedPacksFromCarton!).toString();
+                          cartonCountCtrl?.text = '0';
                           _onInputsChanged();
                         },
                         child: Container(
@@ -550,7 +592,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                             color: Colors.indigo.shade600,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text('اعتماد كإجمالي', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                          child: const Text('تحويل الكراتين لعلب', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -560,10 +602,10 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
               TextField(
                 controller: packCountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                onChanged: (_) => onInputsChanged?.call(),
+                onChanged: (_) => _onInputsChanged(),
                 decoration: InputDecoration(
-                  labelText: hasCarton ? 'عدد العلب (إضافية منفردة أو إجمالي)' : 'عدد العلب المستلمة',
-                  hintText: 'أدخل العلب الإضافية إن وجدت أو الإجمالي',
+                  labelText: hasCarton ? 'عدد العلب المفردة الإضافية (خارج الكراتين)' : 'عدد العلب المستلمة',
+                  hintText: hasCarton ? 'أدخل فقط العلب الإضافية خارج الكراتين (أو 0)' : 'أدخل عدد العلب المستلمة',
                   suffixText: 'علبة',
                   prefixIcon: const Icon(Icons.inventory_2_outlined),
                   border: const OutlineInputBorder(),
@@ -689,13 +731,16 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'المحسوب من العلب والكراتين: $_suggestedPiecesFromTiers حبة',
+                          'حبات الكراتين والعلب أعلاه: $_suggestedPiecesFromTiers حبة (تُجمع تلقائياً مع الحبات الفردية)',
                           style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.green.shade900),
                         ),
                       ),
                       InkWell(
                         onTap: () {
-                          pieceCountCtrl?.text = _suggestedPiecesFromTiers.toString();
+                          final existingPieces = _parse(pieceCountCtrl).toInt();
+                          pieceCountCtrl?.text = (existingPieces + _suggestedPiecesFromTiers!).toString();
+                          cartonCountCtrl?.text = '0';
+                          packCountCtrl?.text = '0';
                           _onInputsChanged();
                         },
                         child: Container(
@@ -704,7 +749,7 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
                             color: Colors.green.shade700,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text('اعتماد كإجمالي', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                          child: const Text('دمج الكل كحبات', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -714,10 +759,10 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
               TextField(
                 controller: pieceCountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                onChanged: (_) => onInputsChanged?.call(),
+                onChanged: (_) => _onInputsChanged(),
                 decoration: InputDecoration(
-                  labelText: (hasCarton || hasPack) ? 'عدد الحبات (فردية إضافية أو إجمالي)' : 'عدد الحبات المستلمة',
-                  hintText: 'أدخل الحبات الإضافية إن وجدت أو الإجمالي',
+                  labelText: (hasCarton || hasPack) ? 'عدد الحبات المفردة الإضافية (خارج الكراتين والعلب)' : 'عدد الحبات المستلمة',
+                  hintText: (hasCarton || hasPack) ? 'أدخل فقط الحبات الفرط الإضافية (أو 0)' : 'أدخل عدد الحبات المستلمة',
                   suffixText: 'حبة',
                   prefixIcon: const Icon(Icons.tag),
                   border: const OutlineInputBorder(),
@@ -1182,18 +1227,27 @@ class _ProductUnitsEditorWidgetState extends State<ProductUnitsEditorWidget> {
     final pPrice = _parse(widget.packPriceCtrl);
     final piPrice = _parse(widget.piecePriceCtrl);
 
-    final cartonMultiplier = widget.hasPack ? (cCap * pCap) : cCap;
+    // cCap هو دائماً إجمالي الحبات في الكرتونة الواحدة
+    final cartonMultiplier = cCap;
     final totalPieces = (widget.hasCarton ? (cCount * cartonMultiplier) : 0)
                       + (widget.hasPack ? (pCount * pCap) : 0)
                       + piCount;
 
-    final totalCost = (widget.hasCarton ? (cCount * cCost) : 0)
-                    + (widget.hasPack ? (pCount * pCost) : 0)
-                    + (piCount * piCost);
+    final effectivePiCost = piCost > 0 ? piCost : (_suggestedPieceCost ?? 0.0);
+    final effectivePCost = pCost > 0 ? pCost : (_suggestedPackCost ?? (effectivePiCost * pCap));
+    final effectiveCCost = cCost > 0 ? cCost : (effectivePiCost * cCap);
 
-    final totalRevenue = (widget.hasCarton ? (cCount * cPrice) : 0)
-                       + (widget.hasPack ? (pCount * pPrice) : 0)
-                       + (piCount * piPrice);
+    final effectivePiPrice = piPrice > 0 ? piPrice : (_suggestedPiecePrice ?? 0.0);
+    final effectivePPrice = pPrice > 0 ? pPrice : (_suggestedPackPrice ?? (effectivePiPrice * pCap));
+    final effectiveCPrice = cPrice > 0 ? cPrice : (effectivePiPrice * cCap);
+
+    final totalCost = (widget.hasCarton ? (cCount * effectiveCCost) : 0.0)
+                    + (widget.hasPack ? (pCount * effectivePCost) : 0.0)
+                    + (piCount * effectivePiCost);
+
+    final totalRevenue = (widget.hasCarton ? (cCount * effectiveCPrice) : 0.0)
+                       + (widget.hasPack ? (pCount * effectivePPrice) : 0.0)
+                       + (piCount * effectivePiPrice);
 
     final totalProfit = totalRevenue - totalCost;
     final marginPct = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0.0;

@@ -489,7 +489,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'المخزون: ${p.stock} ${p.resolvedPackName}',
+                                'المخزون: ${p.stock} ${p.baseUnitName}',
                                 style: TextStyle(
                                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
                                   fontSize: 11.5,

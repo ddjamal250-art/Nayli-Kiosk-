@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -8,6 +7,7 @@ import '../../../../core/utils/security_pin_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/license_service.dart';
 import '../../data/staff_member_model.dart';
+import '../../data/staff_service.dart';
 import '../../data/shift_service.dart';
 
 class CashierLoginPage extends StatefulWidget {
@@ -33,40 +33,230 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
   Future<void> _checkActiveShift() async {
     final activeShift = await ShiftService.getActiveShift();
     if (activeShift != null && mounted) {
-      // إذا كاين مناوبة مفتوحة ديجا، يدخل مباشرة لنقطة البيع
       context.go('/');
     }
   }
 
-  void _loadStaff() {
-    final box = HiveDatabase.staffBox;
-    final List<StaffMember> loaded = [];
-    for (var key in box.keys) {
-      final val = box.get(key);
-      if (val is Map) {
-        final staff = StaffMember.fromMap(val);
-        if (staff.isActive && staff.hasPosAccess) {
-          loaded.add(staff);
-        }
+  Future<void> _loadStaff() async {
+    await StaffService.seedInitialAdminIfEmpty();
+    final loaded = StaffService.getActiveStaff();
+    if (mounted) {
+      setState(() {
+        _staffList = loaded;
+      });
+    }
+  }
+
+  bool _doesStaffHaveConfiguredPin(StaffMember staff) {
+    final cleanPin = staff.pin.trim();
+    if (staff.isAdmin) {
+      if (SecurityPinHelper.isPinEnabled()) return true;
+      return cleanPin.isNotEmpty && cleanPin != '9999' && cleanPin != '0000';
+    }
+    return cleanPin.isNotEmpty;
+  }
+
+  void _onSelectStaff(StaffMember staff) {
+    SoundService.playTabSwitch();
+    if (!_doesStaffHaveConfiguredPin(staff)) {
+      if (staff.isAdmin) {
+        _showFirstTimePinChoiceDialog(staff);
+      } else {
+        setState(() {
+          _selectedStaff = staff;
+          _pin = '';
+          _errorMsg = null;
+        });
+        _promptForFloatAmount(staffOverride: staff);
       }
+      return;
     }
-    
-    // إذا مكانش حتى عامل مسجل، نزيدو مدير افتراضي
-    if (loaded.isEmpty) {
-      final defaultAdmin = StaffMember(
-        id: 'admin_01',
-        name: 'المدير العام',
-        role: 'admin',
-        pin: '0000',
-        barcode: 'ADMIN',
-      );
-      box.put(defaultAdmin.id, defaultAdmin.toMap());
-      loaded.add(defaultAdmin);
-    }
-    
+
     setState(() {
-      _staffList = loaded;
+      _selectedStaff = staff;
+      _pin = '';
+      _errorMsg = null;
     });
+  }
+
+  Future<void> _showFirstTimePinChoiceDialog(StaffMember adminStaff) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.verified_user_rounded, color: Colors.amber, size: 28),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'إعداد الحماية الأول للمدير',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'مرحباً بك! لم تقم بإنشاء رمز قفل سري (PIN) للمدير بعد.',
+              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'يمكنك الآن إما إنشاء رمز القفل الخاص بك أولاً (4 أرقام) ليطلبه البرنامج مستقبلاً، أو الدخول مباشرة لفتح المناوبة وتعيين الرمز لاحقاً من الإعدادات.',
+              style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('رجوع', style: TextStyle(color: Colors.grey)),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.amberAccent,
+                  side: const BorderSide(color: Colors.amberAccent),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                label: const Text('إنشاء رمز القفل الآن 🔐', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showCreateInitialPinDialog(adminStaff);
+                },
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.login_rounded, size: 18),
+                label: const Text('دخول مباشر بدون رمز 🚀', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _promptForFloatAmount(staffOverride: adminStaff);
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showCreateInitialPinDialog(StaffMember adminStaff) async {
+    final pinCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    String? localError;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.pin_rounded, color: Colors.amber, size: 26),
+              SizedBox(width: 8),
+              Text('تعيين رمز القفل السري للمدير', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'اختر رمزاً سرياً مكوناً من 4 أرقام لحماية الإدارة والمناوبات:',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: pinCtrl,
+                autofocus: true,
+                maxLength: 4,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 22, letterSpacing: 10, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  labelText: 'الرمز السري الجديد (4 أرقام)',
+                  labelStyle: const TextStyle(color: Colors.white70, fontSize: 13, letterSpacing: 0),
+                  filled: true,
+                  fillColor: const Color(0xFF0F172A),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: confirmCtrl,
+                maxLength: 4,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 22, letterSpacing: 10, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  labelText: 'تأكيد الرمز السري',
+                  labelStyle: const TextStyle(color: Colors.white70, fontSize: 13, letterSpacing: 0),
+                  filled: true,
+                  fillColor: const Color(0xFF0F172A),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              if (localError != null) ...[
+                const SizedBox(height: 8),
+                Text(localError!, style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+              icon: const Icon(Icons.check_circle_outline, size: 18),
+              label: const Text('حفظ الرمز ومتابعة فتح المناوبة', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () async {
+                final p1 = pinCtrl.text.trim();
+                final p2 = confirmCtrl.text.trim();
+                if (p1.length != 4 || int.tryParse(p1) == null) {
+                  setDlgState(() => localError = 'يرجى إدخال 4 أرقام صحيحة!');
+                  return;
+                }
+                if (p1 != p2) {
+                  setDlgState(() => localError = 'الرمزان غير متطابقين!');
+                  return;
+                }
+                await SecurityPinHelper.setPin(p1);
+                final updatedAdmin = adminStaff.copyWith(pin: p1);
+                await StaffService.saveStaff(updatedAdmin);
+                await _loadStaff();
+                if (ctx.mounted) Navigator.pop(ctx);
+                SoundService.playSaveSuccess();
+                if (mounted) {
+                  _promptForFloatAmount(staffOverride: updatedAdmin);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _onPinKey(String key) {
@@ -93,7 +283,6 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
   Future<void> _verifyPin() async {
     if (_selectedStaff == null) return;
     
-    // التحقق من الـ PIN (للعامل أو المشرف العام)
     final enteredPinClean = _pin.trim();
     final staffPinClean = _selectedStaff!.pin.trim();
     
@@ -102,7 +291,7 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
     
     if (isStaffMatch || isManagerOverride) {
       SoundService.playSaveSuccess();
-      _promptForFloatAmount();
+      _promptForFloatAmount(staffOverride: _selectedStaff);
     } else {
       SoundService.playVoidWarning();
       setState(() {
@@ -112,7 +301,10 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
     }
   }
 
-  Future<void> _promptForFloatAmount() async {
+  Future<void> _promptForFloatAmount({StaffMember? staffOverride}) async {
+    final targetStaff = staffOverride ?? _selectedStaff;
+    if (targetStaff == null) return;
+
     double floatAmount = 0.0;
     final ctrl = TextEditingController();
 
@@ -134,7 +326,7 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'مرحباً ${_selectedStaff!.name}! شحال كاين صرف في لاكيس حالياً (Fond de caisse)؟',
+              'مرحباً ${targetStaff.name}! شحال كاين صرف في لاكيس حالياً (Fond de caisse)؟',
               style: const TextStyle(color: Colors.white70, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -183,13 +375,12 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
     );
 
     if (result == true) {
-      // فتح المناوبة
       await ShiftService.openShift(
-        workerName: _selectedStaff!.name,
+        workerName: targetStaff.name,
         floatAmount: floatAmount,
+        staffId: targetStaff.id,
       );
       
-      // التوجه لنقطة البيع
       if (mounted) {
         context.go('/');
       }
@@ -242,7 +433,6 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
               final val = codeCtrl.text.trim();
               if (val.isEmpty) return;
               
-              // Verify activation code
               final res = await LicenseService.verifyAndApplyDouchetteToken(val);
               if (res['success'] == true || val == LicenseService.getCleanMachineId()) {
                 Navigator.pop(ctx);
@@ -284,8 +474,12 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             onPressed: () async {
               if (newPinCtrl.text.length == 4) {
+                final cleanNewPin = newPinCtrl.text.trim();
                 if (_selectedStaff != null) {
-                  final updated = _selectedStaff!.copyWith(pin: newPinCtrl.text);
+                  if (_selectedStaff!.isAdmin) {
+                    await SecurityPinHelper.setPin(cleanNewPin);
+                  }
+                  final updated = _selectedStaff!.copyWith(pin: cleanNewPin);
                   await HiveDatabase.staffBox.put(updated.id, updated.toMap());
                   setState(() {
                     final idx = _staffList.indexWhere((s) => s.id == updated.id);
@@ -293,13 +487,15 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
                     _selectedStaff = updated;
                   });
                 } else {
-                  await SecurityPinHelper.setPin(newPinCtrl.text);
+                  await SecurityPinHelper.setPin(cleanNewPin);
                 }
-                Navigator.pop(ctx);
+                if (ctx.mounted) Navigator.pop(ctx);
                 SoundService.playSaveSuccess();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('تم تغيير الرمز السري بنجاح!'), backgroundColor: Colors.green),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم تغيير الرمز السري بنجاح!'), backgroundColor: Colors.green),
+                  );
+                }
               }
             },
             child: const Text('حفظ الرمز 💾'),
@@ -307,6 +503,19 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
         ],
       ),
     );
+  }
+
+  String _roleLabel(String role) {
+    switch (role) {
+      case 'admin':
+        return 'مدير النظام';
+      case 'supervisor':
+        return 'مشرف';
+      case 'cashier':
+        return 'كاشير';
+      default:
+        return 'عامل';
+    }
   }
 
   @override
@@ -337,7 +546,7 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'الرجاء اختيار حسابك لفتح المناوبة وبدء العمل',
+                    'الرجاء اختيار حساب العامل أو المدير لفتح المناوبة وبدء العمل',
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
@@ -350,18 +559,12 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
                       spacing: 20,
                       runSpacing: 20,
                       children: _staffList.map((staff) {
+                        final hasPin = _doesStaffHaveConfiguredPin(staff);
                         return SizedBox(
-                          width: 180,
-                          height: 190,
+                          width: 190,
+                          height: 210,
                           child: InkWell(
-                            onTap: () {
-                              SoundService.playTabSwitch();
-                              setState(() {
-                                _selectedStaff = staff;
-                                _pin = '';
-                                _errorMsg = null;
-                              });
-                            },
+                            onTap: () => _onSelectStaff(staff),
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
                               decoration: BoxDecoration(
@@ -392,7 +595,7 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
                                     padding: const EdgeInsets.symmetric(horizontal: 10),
                                     child: Text(
                                       staff.name,
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                                       textAlign: TextAlign.center,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -406,13 +609,32 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      staff.role == 'admin' ? 'مدير النظام' : 'كاشير',
+                                      _roleLabel(staff.role),
                                       style: TextStyle(
                                         color: staff.isAdmin ? Colors.indigoAccent : Colors.tealAccent,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        hasPin ? Icons.lock_rounded : Icons.lock_open_rounded,
+                                        size: 13,
+                                        color: hasPin ? Colors.amberAccent : Colors.greenAccent,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        hasPin ? 'محمي برمز PIN' : 'دخول مباشر',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: hasPin ? Colors.amberAccent : Colors.greenAccent,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -421,6 +643,28 @@ class _CashierLoginPageState extends State<CashierLoginPage> {
                         );
                       }).toList(),
                     ),
+                  ),
+                  const SizedBox(height: 32),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                      side: const BorderSide(color: Color(0xFF334155)),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.manage_accounts_rounded, size: 20, color: Color(0xFF818CF8)),
+                    label: const Text('إدارة العمال وإضافة كاشير / مناوب جديد', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () async {
+                      final ok = await SecurityPinHelper.authenticate(
+                        context,
+                        title: 'إدارة العمال والمناوبات',
+                        message: 'أدخل رمز المدير لإدارة حسابات العمال',
+                      );
+                      if (ok && mounted) {
+                        await context.push('/staff-management');
+                        _loadStaff();
+                      }
+                    },
                   ),
                 ],
               ),

@@ -5,28 +5,46 @@ import '../../../core/utils/security_pin_helper.dart';
 import 'staff_member_model.dart';
 
 class StaffService {
-  /// Ensures the default Admin account exists on first launch
+  /// Ensures the default Admin account exists on first launch without a premature hardcoded PIN
   static Future<void> seedInitialAdminIfEmpty() async {
     try {
       final box = HiveDatabase.staffBox;
+      // Remove duplicate legacy admin_01 if staff_admin_master also exists
+      if (box.containsKey('admin_01') && box.containsKey('staff_admin_master')) {
+        await box.delete('admin_01');
+      }
+
       if (box.isEmpty) {
-        const existingManagerPin = '9999';
         final admin = StaffMember(
           id: 'staff_admin_master',
           name: 'المدير العام (المشرف الرئيسي)',
           phone: '',
           department: 'admin',
           role: 'admin',
-          pin: existingManagerPin,
+          pin: '', // No PIN required until the merchant explicitly sets one
           barcode: 'STAFF-0001',
           baseSalary: 0.0,
           isActive: true,
           preferredStation: 'الإدارة',
         );
         await box.put(admin.id, admin.toMap());
+      } else if (!SecurityPinHelper.isPinEnabled()) {
+        // Heal legacy factory PINs ('9999' / '0000') if the merchant has never enabled PIN lock
+        for (final key in box.keys) {
+          final raw = box.get(key);
+          if (raw is Map) {
+            final role = raw['role']?.toString() ?? '';
+            final pin = raw['pin']?.toString() ?? '';
+            if (role == 'admin' && (pin == '9999' || pin == '0000')) {
+              final updated = Map<String, dynamic>.from(raw);
+              updated['pin'] = '';
+              await box.put(key, updated);
+            }
+          }
+        }
       }
     } catch (e) {
-      debugPrint('seedInitialAdminIfEmpty error: ');
+      debugPrint('seedInitialAdminIfEmpty error: $e');
     }
   }
 

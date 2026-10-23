@@ -13,6 +13,8 @@ import '../../../../core/utils/snackbar_helper.dart';
 
 import '../../../product/domain/repositories/product_repository.dart';
 import '../../../product/data/models/product_model.dart';
+import '../../../product/domain/entities/purchase_batch.dart';
+import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/cubit/customer_cubit.dart';
@@ -142,17 +144,44 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
 
     try {
-      // 1. Decrement product stock in database
+      // 1. Decrement product stock in database (supporting multi-unit suffixes & FIFO batches)
       final productBox = HiveDatabase.productBox;
       for (final item in billingState.cartItems) {
-        if (!item.product.id.startsWith('custom_') && !item.product.id.startsWith('direct_')) {
-          final p = productBox.get(item.product.id);
+        if (!item.product.id.startsWith('custom_') && !item.product.id.startsWith('direct_') && !item.product.id.startsWith('UNKNOWN_')) {
+          String baseId = item.product.id;
+          for (final suffix in ['_carton_', '_pack_', '_pack', '_piece_', '_meter_', '_ml_', '_unit_', '_offer_']) {
+            if (baseId.contains(suffix)) {
+              baseId = baseId.split(suffix).first;
+              break;
+            }
+          }
+          final p = productBox.get(baseId) ?? productBox.get(item.product.id);
           if (p != null) {
-            final double newStock = (p.stock - item.quantity).toDouble().clamp(0.0, 999999.0);
+            final double deductQty = item.totalStockDeduct;
+            final double newStock = (p.stock - deductQty).toDouble().clamp(0.0, 9999999.0);
+            double remainingToDeduct = deductQty;
+            final updatedBatches = <PurchaseBatch>[];
+            for (final batch in p.stockBatches) {
+              if (remainingToDeduct <= 0) {
+                updatedBatches.add(batch);
+              } else if (batch.remainingQuantity > remainingToDeduct) {
+                updatedBatches.add(PurchaseBatch(
+                  costPrice: batch.costPrice,
+                  remainingQuantity: batch.remainingQuantity - remainingToDeduct,
+                  dateAdded: batch.dateAdded,
+                  supplierName: batch.supplierName,
+                  supplierPhone: batch.supplierPhone,
+                ));
+                remainingToDeduct = 0;
+              } else {
+                remainingToDeduct -= batch.remainingQuantity;
+              }
+            }
             await productBox.put(
-              item.product.id,
+              p.id,
               p.copyWith(
                 stock: newStock,
+                stockBatches: updatedBatches,
               ),
             );
           }
@@ -162,14 +191,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
       // 2. Calculate costs and save invoice in invoicesBox for Daily Reports & Profit
       final totalCost = billingState.cartItems.fold<double>(
         0.0,
-        (sum, i) => sum + (i.product.costPrice * i.quantity),
+        (sum, i) => sum + i.totalCostForInvoice,
       );
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
       final items = billingState.cartItems.map((item) => {
-        'name': item.product.name,
+        'id': item.product.id,
+        'barcode': item.product.barcode,
+        'name': item.selectedUnit != null ? '${item.product.name} (${item.selectedUnit!.name})' : item.product.name,
         'qty': item.quantity,
-        'price': item.product.price,
-        'costPrice': item.product.costPrice,
+        'stockDeducted': item.totalStockDeduct,
+        'unitMultiplier': item.selectedUnit?.multiplier ?? 1.0,
+        'price': item.unitPriceEffective,
+        'costPrice': item.effectiveUnitCost,
         'total': item.total,
       }).toList();
 
@@ -228,6 +261,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       if (mounted) {
         context.read<BillingBloc>().add(ClearCartEvent());
+        context.read<ProductBloc>().add(const LoadProducts());
         context.showAppSnackBar('✅ تم تسجيل البيع وتحديث المخزون والأرباح بنجاح!', backgroundColor: const Color(0xFF059669));
         context.go('/');
       }

@@ -6,6 +6,10 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/printer_helper.dart';
+import '../../../../core/utils/security_pin_helper.dart';
+import '../../../shifts/data/shift_service.dart';
+import '../../../shifts/data/staff_member_model.dart';
+import '../../../shifts/data/staff_service.dart';
 
 class CashierShiftsPage extends StatefulWidget {
   const CashierShiftsPage({super.key});
@@ -49,67 +53,163 @@ class _CashierShiftsPageState extends State<CashierShiftsPage> {
     });
   }
 
-  void _openShiftDialog() {
+  Future<void> _openShiftDialog() async {
+    await StaffService.seedInitialAdminIfEmpty();
+    List<StaffMember> staffList = StaffService.getActiveStaff();
+    StaffMember? selectedStaff = staffList.firstOrNull;
     final cashCtrl = TextEditingController(text: '5000');
-    final cashierNameCtrl = TextEditingController(text: 'الكاشير 1');
+    final pinCtrl = TextEditingController();
+    String? errorMsg;
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.lock_open, color: Colors.green),
-            SizedBox(width: 8),
-            Text('بدء مناوبة جديدة (فتح الصندوق)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: cashierNameCtrl,
-              decoration: const InputDecoration(labelText: 'اسم الكاشير / البائع', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: cashCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'رصيد بداية الصندوق (عهدة البداية)',
-                suffixText: 'دج',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: () async {
-              final initial = double.tryParse(cashCtrl.text.trim()) ?? 0.0;
-              final shiftId = const Uuid().v4();
-              final newShift = {
-                'id': shiftId,
-                'cashierName': cashierNameCtrl.text.trim().isEmpty ? 'كاشير' : cashierNameCtrl.text.trim(),
-                'openedAt': DateTime.now().toIso8601String(),
-                'closedAt': null,
-                'initialCash': initial,
-                'expectedCash': initial,
-                'actualCash': null,
-                'difference': 0.0,
-                'isClosed': false,
-              };
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) {
+          final bool needsPin = selectedStaff != null &&
+              (selectedStaff!.isAdmin
+                  ? (SecurityPinHelper.isPinEnabled() ||
+                      (selectedStaff!.pin.trim().isNotEmpty &&
+                          selectedStaff!.pin != '9999' &&
+                          selectedStaff!.pin != '0000'))
+                  : selectedStaff!.pin.trim().isNotEmpty);
 
-              await HiveDatabase.shiftsBox.put(shiftId, newShift);
-              _loadShifts();
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('فتح المناوبة الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.lock_open, color: Colors.green),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('بدء مناوبة جديدة (فتح الصندوق)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    final ok = await SecurityPinHelper.authenticate(
+                      context,
+                      title: 'إدارة العمال',
+                      message: 'أدخل رمز المدير لإدارة قائمة العمال',
+                    );
+                    if (ok && mounted) {
+                      await context.push('/staff-management');
+                      final refreshed = StaffService.getActiveStaff();
+                      setDlgState(() {
+                        staffList = refreshed;
+                        selectedStaff = staffList.firstOrNull;
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
+                  label: const Text('العمال', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedStaff?.id,
+                  decoration: const InputDecoration(
+                    labelText: 'اختر الكاشير / العامل (من قائمة المدير)',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: staffList.map((s) {
+                    final roleAr = s.isAdmin ? 'مدير' : (s.role == 'supervisor' ? 'مشرف' : (s.role == 'cashier' ? 'كاشير' : 'عامل'));
+                    return DropdownMenuItem<String>(
+                      value: s.id,
+                      child: Text('${s.name} ($roleAr)'),
+                    );
+                  }).toList(),
+                  onChanged: (id) {
+                    setDlgState(() {
+                      selectedStaff = staffList.where((s) => s.id == id).firstOrNull;
+                      pinCtrl.clear();
+                      errorMsg = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: cashCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'رصيد بداية الصندوق (عهدة البداية)',
+                    suffixText: 'دج',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                if (needsPin) ...[
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: pinCtrl,
+                    obscureText: true,
+                    maxLength: 4,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'الرمز السري للعامل (PIN)',
+                      prefixIcon: Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(),
+                      counterText: '',
+                    ),
+                  ),
+                ],
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 8),
+                  Text(errorMsg!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                onPressed: () async {
+                  if (selectedStaff == null) {
+                    setDlgState(() => errorMsg = 'يرجى اختيار العامل أولاً');
+                    return;
+                  }
+                  if (needsPin) {
+                    final entered = pinCtrl.text.trim();
+                    final staffPin = selectedStaff!.pin.trim();
+                    final okStaff = staffPin.isNotEmpty && entered == staffPin;
+                    final okAdmin = SecurityPinHelper.isPinEnabled() && SecurityPinHelper.verifyPin(entered);
+                    if (!okStaff && !okAdmin) {
+                      setDlgState(() => errorMsg = 'الرمز السري غير صحيح!');
+                      return;
+                    }
+                  }
+                  final initial = double.tryParse(cashCtrl.text.trim()) ?? 0.0;
+                  final shiftId = const Uuid().v4();
+                  final newShift = {
+                    'id': shiftId,
+                    'staffId': selectedStaff!.id,
+                    'cashierName': selectedStaff!.name,
+                    'openedAt': DateTime.now().toIso8601String(),
+                    'closedAt': null,
+                    'initialCash': initial,
+                    'expectedCash': initial,
+                    'actualCash': null,
+                    'difference': 0.0,
+                    'isClosed': false,
+                  };
+
+                  await HiveDatabase.shiftsBox.put(shiftId, newShift);
+                  await ShiftService.openShift(
+                    workerName: selectedStaff!.name,
+                    floatAmount: initial,
+                    staffId: selectedStaff!.id,
+                  );
+                  _loadShifts();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: const Text('فتح المناوبة الآن', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
