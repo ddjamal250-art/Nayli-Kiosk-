@@ -26,6 +26,8 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
   late bool _fastShortcuts;
   late bool _customerDisplay;
   late bool _expiryTracking;
+  late bool _warnOutOfStock;
+  late bool _allowNegativeStock;
   late bool _taxEnabled;
   late double _tvaRate;
 
@@ -46,6 +48,8 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
     _fastShortcuts = StaffPermissionsService.enableFastKeyboardShortcuts;
     _customerDisplay = StaffPermissionsService.enableCustomerDisplay;
     _expiryTracking = StaffPermissionsService.enableExpiryTracking;
+    _warnOutOfStock = StaffPermissionsService.warnOnOutOfStockSale;
+    _allowNegativeStock = StaffPermissionsService.allowNegativeStockSale;
     final taxConfig = TaxConfig.fromSettings();
     _taxEnabled = taxConfig.isTaxEnabled;
     _tvaRate = taxConfig.defaultTvaRate;
@@ -343,6 +347,38 @@ class _AdvancedPosSettingsPageState extends State<AdvancedPosSettingsPage> {
             ),
           ),
           const SizedBox(height: 24),
+
+                    // SECTION 6: STOCK & OUT-OF-STOCK ALERTS
+          _buildSectionHeader('6. التحكم في المخزون وتنبيهات النفاد 📦', 'حماية المتجر من تفويت السلع نافدة المخزون والتحكم في البيع بالسالب'),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: const Text('تنبيه عند تمرير سلعة نفد مخزونها (كمية 0 أو غير كافية)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text('إطلاق صافرة تحذيرية وإظهار نافذة تنبيه فورية عند مسح أو اختيار سلعة رصيدها 0 لمنع تفويتها بدون علم التاجر', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  value: _warnOutOfStock,
+                  activeColor: AppTheme.primaryColor,
+                  onChanged: (v) async {
+                    setState(() => _warnOutOfStock = v);
+                    await StaffPermissionsService.setWarnOnOutOfStockSale(v);
+                  },
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  title: const Text('السماح بالبيع بالسالب بعد تأكيد التاجر', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  subtitle: const Text('إذا كان مفعلاً: يعرض خيار "متابعة البيع بالسالب" للسلع المتوفرة بالرف، وفي حال التعطيل يمنع بيع السلع نافدة المخزون نهائياً', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  value: _allowNegativeStock,
+                  activeColor: Colors.orange,
+                  onChanged: (v) async {
+                    setState(() => _allowNegativeStock = v);
+                    await StaffPermissionsService.setAllowNegativeStockSale(v);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // SECTION: OPTIONAL TAX / TVA ENGINE
           _buildSectionHeader('المحرك الضريبي وحساب القيمة المضافة (TVA) 🧾', 'اختياري وغير مفعل افتراضياً لحساب الضرائب والفواتير النظامية'),

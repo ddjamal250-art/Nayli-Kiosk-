@@ -13,6 +13,8 @@ class StaffPermissionsService {
   static const String _keyKeyboardShortcuts = 'pref_enable_fast_shortcuts';
   static const String _keyCustomerDisplay = 'pref_enable_customer_display';
   static const String _keyExpiryTracking = 'pref_enable_expiry_tracking';
+  static const String _keyWarnOutOfStock = 'pref_warn_out_of_stock';
+  static const String _keyAllowNegativeStock = 'pref_allow_negative_stock';
 
   // 1. الوضع المشدد الشامل
   static bool get isStrictStaffMode =>
@@ -93,6 +95,22 @@ class StaffPermissionsService {
 
   static Future<void> setEnableExpiryTracking(bool value) async {
     await HiveDatabase.settingsBox.put(_keyExpiryTracking, value);
+  }
+
+  // 10. تنبيه التاجر عند تمرير أو بيع سلعة نفد مخزونها (كمية 0 أو غير كافية)
+  static bool get warnOnOutOfStockSale =>
+      HiveDatabase.settingsBox.get(_keyWarnOutOfStock, defaultValue: true) == true;
+
+  static Future<void> setWarnOnOutOfStockSale(bool value) async {
+    await HiveDatabase.settingsBox.put(_keyWarnOutOfStock, value);
+  }
+
+  // 11. السماح بالبيع بالسالب بعد تأكيد التاجر (إذا كان معطلاً يمنع البيع نهائياً)
+  static bool get allowNegativeStockSale =>
+      HiveDatabase.settingsBox.get(_keyAllowNegativeStock, defaultValue: true) == true;
+
+  static Future<void> setAllowNegativeStockSale(bool value) async {
+    await HiveDatabase.settingsBox.put(_keyAllowNegativeStock, value);
   }
 }
 

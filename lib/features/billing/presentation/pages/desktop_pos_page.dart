@@ -585,12 +585,216 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     );
   }
 
+  Future<bool> _checkStockOrWarn(
+    Product product, {
+    double requestedQty = 1.0,
+    double multiplier = 1.0,
+  }) async {
+    if (_isReturnMode || product.isUnlimitedStock) {
+      return true;
+    }
+
+    final existingDeduct = context.read<BillingBloc>().state.cartItems
+        .where((i) {
+          String bId = i.product.id;
+          for (final s in ['_carton_', '_pack_', '_pack', '_piece_', '_meter_', '_ml_', '_unit_', '_offer_']) {
+            if (bId.contains(s)) {
+              bId = bId.split(s).first;
+              break;
+            }
+          }
+          return bId == product.id || i.product.id == product.id;
+        })
+        .fold(0.0, (sum, i) => sum + i.totalStockDeduct);
+
+    final double totalDeduct = requestedQty * multiplier;
+    final double totalProposed = existingDeduct + totalDeduct;
+    final double currentStock = product.stock;
+
+    if (currentStock > 0 && totalProposed <= currentStock) {
+      return true;
+    }
+
+    final bool isZeroOrNegative = currentStock <= 0;
+
+    if (!StaffPermissionsService.warnOnOutOfStockSale) {
+      if (!StaffPermissionsService.allowNegativeStockSale) {
+        SoundService.playWarning();
+        SnackbarHelper.showError(
+          context,
+          'مخزون "${product.name}" نفد تماماً (0). غير مسموح بالبيع بالسالب.',
+        );
+        return false;
+      }
+      return true;
+    }
+
+    SoundService.playWarning();
+    final bool allowNegative = StaffPermissionsService.allowNegativeStockSale;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isZeroOrNegative ? Icons.remove_shopping_cart_rounded : Icons.warning_amber_rounded,
+                color: Colors.red.shade700,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isZeroOrNegative ? '⚠️ تنبيه: نفد مخزون السلعة (الرصيد 0)' : '⚠️ تنبيه: تجاوز المخزون المتوفر',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.inventory_2_outlined, size: 16, color: Colors.indigo),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (product.barcode.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'الباركود: ${product.barcode}',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontFamily: 'monospace'),
+                    ),
+                  ],
+                  const Divider(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('الرصيد الحالي في المخزون:', style: TextStyle(fontSize: 12)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isZeroOrNegative ? Colors.red.shade100 : Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isZeroOrNegative ? '0 (نفد المخزون)' : '$currentStock ${product.baseUnitName}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: isZeroOrNegative ? Colors.red.shade800 : Colors.orange.shade900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('الكمية الإجمالية المطلوبة بالسلة:', style: TextStyle(fontSize: 12)),
+                      Text(
+                        '$totalProposed ${product.baseUnitName}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.indigo),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (!allowNegative)
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.block, color: Colors.red, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'البيع بالسالب معطل في إعدادات النظام. لا يمكن إضافة المنتج حتى يتم توريد كميات جديدة.',
+                        style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Text(
+                'السلعة غير متوفرة في مخزون البرنامج. هل تريد السماح ببيعها بالسالب (سحب -${(totalProposed - currentStock).clamp(0.0, 99999.0).toStringAsFixed(1)} ${product.baseUnitName})؟',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              allowNegative ? 'إلغاء وعدم الإضافة' : 'إغلاق',
+              style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold),
+            ),
+          ),
+          if (allowNegative)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade800,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('متابعة البيع بالسالب ⚠️', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+        ],
+      ),
+    );
+
+    return result == true;
+  }
+
   Future<void> _addProductToCartWithPricing(
     Product product, {
     double quantity = 1.0,
     List<SelectedProductOption>? selectedOptions,
     String? itemNote,
   }) async {
+    if (!_isReturnMode) {
+      final canAdd = await _checkStockOrWarn(product, requestedQty: quantity);
+      if (!canAdd) return;
+    }
     if (product.isLiquidProduct && !_isReturnMode) {
       LiquidDecantDialog.show(context, product);
       return;
@@ -2711,7 +2915,12 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
                                     decoration: BoxDecoration(
                                       color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
                                       borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.grey.shade300),
+                                      border: Border.all(
+                                        color: prod.stock <= 0 && !prod.isUnlimitedStock
+                                            ? Colors.red.shade400
+                                            : (Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.grey.shade300),
+                                        width: prod.stock <= 0 && !prod.isUnlimitedStock ? 1.5 : 1.0,
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
@@ -2737,7 +2946,24 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
                                                 children: [
                                                   Text('${prod.price.toStringAsFixed(2)} DA',
                                                       style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
-                                                  Text('${context.tr("stock")}: ${prod.stock}',
+                                                  prod.stock <= 0 && !prod.isUnlimitedStock
+                                                      ? Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.red.shade100,
+                                                            borderRadius: BorderRadius.circular(4),
+                                                            border: Border.all(color: Colors.red.shade300, width: 0.8),
+                                                          ),
+                                                          child: Text(
+                                                            'نفد (0)',
+                                                            style: TextStyle(
+                                                              fontSize: 9.5,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Colors.red.shade800,
+                                                            ),
+                                                          ),
+                                                        )
+                                                      : Text('${context.tr("stock")}: ${prod.stock}',
                                                       style: TextStyle(
                                                           fontSize: 10,
                                                           fontWeight: FontWeight.w600,
@@ -3069,34 +3295,81 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
     }
   }
 
-  @override
-  void _showStockWarning(String productId, String productName) {
+  void _showStockWarning(String productId, String productName, {double? currentStock, double? requestedQty}) {
+    SoundService.playWarning();
+    final bool isZeroOrNegative = (currentStock ?? 0.0) <= 0;
+    final bool allowNegative = StaffPermissionsService.allowNegativeStockSale;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-            const SizedBox(width: 8),
-            Text('تنبيه نفاد المخزون', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isZeroOrNegative ? Icons.remove_shopping_cart_rounded : Icons.warning_amber_rounded,
+                color: Colors.red.shade700,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isZeroOrNegative ? '⚠️ تنبيه: نفد مخزون السلعة (الرصيد 0)' : '⚠️ تنبيه: تجاوز المخزون المتوفر',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+              ),
+            ),
           ],
         ),
-        content: Text('الكمية المطلوبة من المنتج ($productName) تتجاوز المخزون المتوفر حالياً.'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isZeroOrNegative
+                  ? 'المنتج ($productName) نفد من مخزون البرنامج تماماً (الرصيد: 0).'
+                  : 'الكمية المطلوبة من المنتج ($productName) تتجاوز المخزون المتوفر (${currentStock ?? 0}).',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Text(
+                allowNegative
+                    ? 'البيع بالسالب مفعّل في الإعدادات: إذا كانت السلعة موجودة في الرف فعلياً، يمكنك متابعة البيع وتعديل المخزون لاحقاً.'
+                    : 'البيع بالسالب معطّل في إعدادات النظام لحماية دقة الحسابات. يرجى توريد السلعة أولاً.',
+                style: TextStyle(fontSize: 11.5, color: Colors.grey.shade800),
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-            },
-            child: Text('تجاهل', style: const TextStyle(color: Colors.grey)),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('تجاهل / إغلاق', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               Navigator.pop(ctx);
-              // Navigate to manage stock or edit product
-              // Usually we might open EditProductPage or stock quick adjust
+              context.push('/products/stock-in');
             },
-            child: Text('إدارة المخزون', style: const TextStyle(color: Colors.white)),
+            child: const Text('توريد واستلام مخزون 📦'),
           ),
         ],
       ),
@@ -3110,7 +3383,12 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
       listener: (context, state) {
         if (state.stockWarning != null) {
           final parts = state.stockWarning!.split('|');
-          if (parts.length >= 2) {
+          if (parts.length >= 3) {
+            final pName = parts[1];
+            final stockVal = double.tryParse(parts[2]) ?? 0.0;
+            final reqVal = parts.length > 3 ? (double.tryParse(parts[3]) ?? 1.0) : 1.0;
+            _showStockWarning(parts[0], pName, currentStock: stockVal, requestedQty: reqVal);
+          } else if (parts.length >= 2 && parts[1].isNotEmpty) {
             _showStockWarning(parts[0], parts[1]);
           }
           context.read<BillingBloc>().add(ClearStockWarningEvent());

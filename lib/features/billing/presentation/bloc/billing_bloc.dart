@@ -198,8 +198,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final mult = event.customMultiplier ?? (existingItem.customMultiplier ?? (existingItem.selectedUnit?.multiplier ?? 1.0));
       final proposedDeduct = newQty * mult;
       String? warning;
-      if (proposedDeduct > event.product.stock && !event.product.isUnlimitedStock) {
-        warning = '|';
+      if (!event.product.isUnlimitedStock && (event.product.stock <= 0 || proposedDeduct > event.product.stock)) {
+        warning = '${event.product.id}|${event.product.name}|${event.product.stock}|$proposedDeduct';
       }
       
       backendItems[existingIndex] = existingItem.copyWith(
@@ -224,8 +224,13 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         itemNote: event.itemNote,
         selectedOptions: event.selectedOptions,
       );
+      final proposedDeduct = newItem.totalStockDeduct;
+      String? warning;
+      if (!event.product.isUnlimitedStock && (event.product.stock <= 0 || proposedDeduct > event.product.stock)) {
+        warning = '${event.product.id}|${event.product.name}|${event.product.stock}|$proposedDeduct';
+      }
       emit(cleanState.copyWith(
-          cartItems: [...cleanState.cartItems, newItem], error: null));
+          cartItems: [...cleanState.cartItems, newItem], error: null, stockWarning: warning));
     }
   }
 
@@ -316,8 +321,14 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     }
     if (index >= 0) {
       final items = List<CartItem>.from(state.cartItems);
-      items[index] = items[index].copyWith(quantity: event.quantity);
-      emit(state.copyWith(cartItems: items));
+      final currentItem = items[index];
+      items[index] = currentItem.copyWith(quantity: event.quantity);
+      final proposedDeduct = items[index].totalStockDeduct;
+      String? warning;
+      if (!currentItem.product.isUnlimitedStock && (currentItem.product.stock <= 0 || proposedDeduct > currentItem.product.stock)) {
+        warning = '${currentItem.product.id}|${currentItem.product.name}|${currentItem.product.stock}|$proposedDeduct';
+      }
+      emit(state.copyWith(cartItems: items, stockWarning: warning));
     }
   }
 

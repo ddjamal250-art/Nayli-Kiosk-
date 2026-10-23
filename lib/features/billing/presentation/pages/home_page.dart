@@ -1304,8 +1304,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Single
     return Scaffold(
       body: BlocListener<BillingBloc, BillingState>(
         listenWhen: (previous, current) =>
-            previous.error != current.error && current.error != null,
+            (previous.error != current.error && current.error != null) ||
+            (previous.stockWarning != current.stockWarning && current.stockWarning != null),
         listener: (context, state) {
+          if (state.stockWarning != null) {
+            final parts = state.stockWarning!.split('|');
+            if (parts.length >= 3) {
+              final pName = parts[1];
+              final stockVal = double.tryParse(parts[2]) ?? 0.0;
+              SoundService.playWarning();
+              context.showAppSnackBar(
+                stockVal <= 0
+                    ? '⚠️ تنبيه: ($pName) نفد من المخزون تماماً (0)!'
+                    : '⚠️ تنبيه: الكمية المطلوبة من ($pName) تتجاوز المخزون المتوفر ($stockVal)!',
+                backgroundColor: Colors.orange.shade900,
+              );
+            }
+            context.read<BillingBloc>().add(ClearStockWarningEvent());
+          }
           if (state.error != null && state.error!.startsWith('Product not found: ')) {
             final barcode = state.error!.replaceFirst('Product not found: ', '').trim();
             _handleQuickAddProduct(barcode);

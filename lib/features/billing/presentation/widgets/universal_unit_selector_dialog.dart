@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../../../core/utils/staff_permissions_service.dart';
 import '../../../../core/widgets/product_image_display.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../domain/entities/cart_item.dart';
@@ -290,6 +291,49 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
             );
         SnackbarHelper.showSuccess(context, 'تم تعديل العرض الترويجي: $customName');
       } else {
+        if (!p.isUnlimitedStock) {
+          final double reqDeduct = qty * tierMultiplier;
+          if (p.stock <= 0 || reqDeduct > p.stock) {
+            if (!StaffPermissionsService.allowNegativeStockSale) {
+              SoundService.playWarning();
+              SnackbarHelper.showError(context, 'مخزون "${p.name}" نفد تماماً (0). غير مسموح بالبيع بالسالب.');
+              return;
+            }
+            if (StaffPermissionsService.warnOnOutOfStockSale) {
+              SoundService.playWarning();
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+                      const SizedBox(width: 8),
+                      const Text('تنبيه نفاد المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
+                  ),
+                  content: Text(
+                    p.stock <= 0
+                        ? 'المنتج "${p.name}" نفد من المخزون (0). هل تريد تأكيد إضافة هذا العرض وبيعه بالسالب؟'
+                        : 'الكمية المطلوبة بالعرض ($reqDeduct) تتجاوز المخزون المتوفر (${p.stock}). هل تريد المتابعة بالسالب؟',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade800),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('متابعة بالسالب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+              if (ok != true) return;
+            }
+          }
+        }
         context.read<BillingBloc>().add(
               AddProductToCartEvent(
                 p,
@@ -336,6 +380,50 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
         '${context.tr("unit_switched_msg")}: "${p.name}" (${isWeighable ? '${(resolvedWeightKg! * 1000).toStringAsFixed(0)}غ' : '$posUnitLabel x$_quantity'})',
       );
     } else {
+      if (!p.isUnlimitedStock) {
+        final double mult = selectedUnit?.multiplier ?? 1.0;
+        final double reqDeduct = isWeighable ? (resolvedWeightKg ?? 1.0) : (_quantity * mult);
+        if (p.stock <= 0 || reqDeduct > p.stock) {
+          if (!StaffPermissionsService.allowNegativeStockSale) {
+            SoundService.playWarning();
+            SnackbarHelper.showError(context, 'مخزون "${p.name}" نفد تماماً (0). غير مسموح بالبيع بالسالب.');
+            return;
+          }
+          if (StaffPermissionsService.warnOnOutOfStockSale) {
+            SoundService.playWarning();
+            final ok = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+                    const SizedBox(width: 8),
+                    const Text('تنبيه نفاد المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                content: Text(
+                  p.stock <= 0
+                      ? 'المنتج "${p.name}" نفد من المخزون (0). هل تريد تأكيد إضافته وبيعه بالسالب؟'
+                      : 'الكمية المطلوبة ($reqDeduct) تتجاوز المخزون المتوفر (${p.stock}). هل تريد المتابعة بالسالب؟',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade800),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('متابعة بالسالب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+            if (ok != true) return;
+          }
+        }
+      }
       context.read<BillingBloc>().add(
             AddProductToCartEvent(
               p,
@@ -488,12 +576,30 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                'المخزون: ${p.stock} ${p.baseUnitName}',
-                                style: TextStyle(
-                                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w500,
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: p.stock <= 0 && !p.isUnlimitedStock
+                                      ? (isDark ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade50)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: p.stock <= 0 && !p.isUnlimitedStock
+                                        ? Colors.red.shade400
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                                child: Text(
+                                  p.stock <= 0 && !p.isUnlimitedStock
+                                      ? '⚠️ نفد المخزون: 0 ${p.baseUnitName}'
+                                      : 'المخزون: ${p.stock} ${p.baseUnitName}',
+                                  style: TextStyle(
+                                    color: p.stock <= 0 && !p.isUnlimitedStock
+                                        ? Colors.red.shade700
+                                        : (isDark ? Colors.grey.shade400 : Colors.grey.shade700),
+                                    fontSize: 11.5,
+                                    fontWeight: p.stock <= 0 && !p.isUnlimitedStock ? FontWeight.bold : FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -507,6 +613,35 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
                     ),
                   ],
                 ),
+                if (p.stock <= 0 && !p.isUnlimitedStock) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF450A0A) : const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.remove_shopping_cart_rounded, color: Colors.red.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'تنبيه: هذا المنتج نفد من المخزون تماماً (الرصيد: 0) في قاعدة البيانات!',
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFFFCA5A5) : Colors.red.shade900,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
