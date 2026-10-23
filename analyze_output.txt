@@ -675,7 +675,6 @@ warning - Unused import: '../../features/documents/presentation/widgets/receipt_
    info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:275:36 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:279:36 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:283:36 - prefer_const_constructors
-  error - The method 'normalize' isn't defined for the type 'BarcodeNormalizer' - lib\core\data\local_sync_server.dart:608:48 - undefined_method
 warning - Unnecessary type check; the result is always 'true' - lib\core\data\local_sync_server.dart:705:38 - unnecessary_type_check
 warning - Unnecessary type check; the result is always 'true' - lib\core\data\local_sync_server.dart:985:32 - unnecessary_type_check
 warning - Unused import: 'package:flutter/services.dart' - lib\core\data\master_catalog_service.dart:4:8 - unused_import
@@ -683,7 +682,6 @@ warning - Unused import: 'package:flutter/services.dart' - lib\core\data\master_
 warning - The left operand can't be null, so the right operand is never executed - lib\core\data\master_catalog_service.dart:134:38 - dead_null_aware_expression
 warning - The left operand can't be null, so the right operand is never executed - lib\core\data\master_catalog_service.dart:171:35 - dead_null_aware_expression
 warning - The value of the field '_cloudRoomKey' isn't used - lib\core\data\smart_sync_client.dart:47:23 - unused_field
-  error - The method 'normalize' isn't defined for the type 'BarcodeNormalizer' - lib\core\data\smart_sync_client.dart:412:37 - undefined_method
    info - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart' - lib\core\data\sync_message_protocol.dart:3:8 - unnecessary_import
    info - Convert 'message' to a super parameter - lib\core\error\failure.dart:12:9 - use_super_parameters
    info - Unnecessary escape in string literal - lib\core\localization\app_localizations.dart:1611:66 - unnecessary_string_escapes
@@ -737,8 +735,8 @@ warning - The value of the local variable 'amountStr' isn't used - lib\core\util
 warning - The value of the local variable 'timeStr' isn't used - lib\core\utils\audit_log_service.dart:102:17 - unused_local_variable
    info - Use 'const' for final variables initialized to a constant value - lib\core\utils\audit_log_service.dart:104:11 - prefer_const_declarations
    info - Use 'const' with the constructor to improve performance - lib\core\utils\backup_helper.dart:146:41 - prefer_const_constructors
-   info - Use interpolation to compose strings and values - lib\core\utils\barcode_normalizer.dart:202:47 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - lib\core\utils\barcode_normalizer.dart:203:47 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\core\utils\barcode_normalizer.dart:209:47 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\core\utils\barcode_normalizer.dart:210:47 - prefer_interpolation_to_compose_strings
 warning - Unused import: '../../features/product/data/models/product_model.dart' - lib\core\utils\expiry_tracker_service.dart:4:8 - unused_import
    info - Don't invoke 'print' in production code - lib\core\utils\invoice_gemini_service.dart:15:9 - avoid_print
    info - Statements in an if should be enclosed in a block - lib\core\utils\invoice_gemini_service.dart:22:53 - curly_braces_in_flow_control_structures
@@ -803,7 +801,6 @@ warning - Unused import: '../../../../core/widgets/primary_button.dart' - lib\fe
 warning - Unused import: '../../../../core/service_locator.dart' - lib\features\billing\presentation\pages\checkout_page.dart:7:8 - unused_import
 warning - Unused import: '../../../product/domain/repositories/product_repository.dart' - lib\features\billing\presentation\pages\checkout_page.dart:14:8 - unused_import
 warning - Unused import: '../../../product/data/models/product_model.dart' - lib\features\billing\presentation\pages\checkout_page.dart:15:8 - unused_import
-  error - Target of URI doesn't exist: '../../../product/domain/entities/purchase_batch.dart' - lib\features\billing\presentation\pages\checkout_page.dart:16:8 - uri_does_not_exist
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\billing\presentation\pages\checkout_page.dart:27:3 - prefer_const_constructors_in_immutables
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:52:14 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:53:23 - prefer_const_constructors
@@ -818,10 +815,6 @@ warning - Unused import: '../../../product/data/models/product_model.dart' - lib
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:95:44 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:99:62 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:111:71 - prefer_const_constructors
-  error - The name 'PurchaseBatch' isn't a type, so it can't be used as a type argument - lib\features\billing\presentation\pages\checkout_page.dart:163:37 - non_type_as_type_argument
-  error - The method 'PurchaseBatch' isn't defined for the type '_CheckoutPageState' - lib\features\billing\presentation\pages\checkout_page.dart:168:36 - undefined_method
-  error - The getter 'unitPriceEffective' isn't defined for the type 'CartItem' - lib\features\billing\presentation\pages\checkout_page.dart:204:23 - undefined_getter
-  error - The getter 'effectiveUnitCost' isn't defined for the type 'CartItem' - lib\features\billing\presentation\pages\checkout_page.dart:205:27 - undefined_getter
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\checkout_page.dart:247:15 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\checkout_page.dart:255:15 - use_build_context_synchronously
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:357:22 - prefer_const_constructors
@@ -1754,13 +1747,6 @@ warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\
    info - Field overrides a field inherited from 'ProductUnit' - lib\features\product\data\models\product_unit_model.dart:28:14 - overridden_fields
    info - Field overrides a field inherited from 'ProductUnit' - lib\features\product\data\models\product_unit_model.dart:32:14 - overridden_fields
 warning - Unused import: 'models/product_model.dart' - lib\features\product\data\product_integrity_service.dart:3:8 - unused_import
-  error - The name 'ProductUnit' isn't a type, so it can't be used as a type argument - lib\features\product\data\product_integrity_service.dart:75:14 - non_type_as_type_argument
-  error - The name 'ProductUnit' isn't a type, so it can't be used as a type argument - lib\features\product\data\product_integrity_service.dart:75:47 - non_type_as_type_argument
-  error - The property 'tier' can't be unconditionally accessed because the receiver can be 'null' - lib\features\product\data\product_integrity_service.dart:76:60 - unchecked_use_of_nullable_value
-  error - Undefined name 'UnitTier' - lib\features\product\data\product_integrity_service.dart:76:68 - undefined_identifier
-  error - The property 'tier' can't be unconditionally accessed because the receiver can be 'null' - lib\features\product\data\product_integrity_service.dart:77:59 - unchecked_use_of_nullable_value
-  error - Undefined name 'UnitTier' - lib\features\product\data\product_integrity_service.dart:77:67 - undefined_identifier
-  error - The method 'ProductUnit' isn't defined for the type 'ProductIntegrityService' - lib\features\product\data\product_integrity_service.dart:105:40 - undefined_method
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\product\data\repositories\product_repository_impl.dart:1:8 - depend_on_referenced_packages
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:90:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:108:13 - prefer_const_constructors
