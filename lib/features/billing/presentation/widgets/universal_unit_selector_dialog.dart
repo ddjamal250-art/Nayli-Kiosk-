@@ -251,7 +251,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     }
   }
 
-  void _applySelection() {
+  Future<void> _applySelection() async {
     SoundService.playScanBeep();
 
     if (_selectedUnit == 'custom') {
@@ -381,7 +381,7 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       );
     } else {
       if (!p.isUnlimitedStock) {
-        final double mult = selectedUnit?.multiplier ?? 1.0;
+        final double mult = _activeProductUnit?.multiplier ?? 1.0;
         final double reqDeduct = isWeighable ? (resolvedWeightKg ?? 1.0) : (_quantity * mult);
         if (p.stock <= 0 || reqDeduct > p.stock) {
           if (!StaffPermissionsService.allowNegativeStockSale) {

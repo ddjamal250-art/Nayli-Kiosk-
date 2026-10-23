@@ -16,7 +16,9 @@ rem = subprocess.check_output(['git', 'remote', 'get-url', 'origin']).decode().s
 m = re.search(r'gho_[a-zA-Z0-9]+', rem)
 token = m.group(0) if m else None
 
-run_id = 39877437306
+run_id = int(sys.argv[1]) if len(sys.argv) > 1 else 39882242448
+head_commit = sys.argv[2] if len(sys.argv) > 2 else '33e878e'
+
 print(f"Monitoring workflow run {run_id} (https://github.com/ddjamal250-art/Nayli-Kiosk-/actions/runs/{run_id})...", flush=True)
 
 def get_job_info():
@@ -65,7 +67,6 @@ while True:
             print(">>> ALL STEPS COMPLETED SUCCESSFULLY! Release is built and available! <<<", flush=True)
         else:
             print("Build failed. Checking annotations...", flush=True)
-            head_commit = 'fc2e2cf'
             areq = urllib.request.Request(f'https://api.github.com/repos/ddjamal250-art/Nayli-Kiosk-/commits/{head_commit}/check-runs')
             areq.add_header('User-Agent', 'Python-urllib')
             areq.add_header('Accept', 'application/vnd.github+json')
