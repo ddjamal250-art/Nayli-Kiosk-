@@ -1508,15 +1508,12 @@ warning - The value of the field '_currentStockKg' isn't used - lib\features\bil
 warning - The value of the local variable 'costPerKg' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:423:11 - unused_local_variable
 warning - The value of the local variable 'rawBarcode' isn't used - lib\features\billing\presentation\widgets\smart_scale_modal.dart:435:11 - unused_local_variable
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:1:8 - depend_on_referenced_packages
-  error - The await expression can only be used in an async function - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:304:26 - await_in_wrong_context
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:308:26 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:309:31 - prefer_const_literals_to_create_immutables
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:337:9 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:347:36 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:349:21 - use_build_context_synchronously
 warning - The operand can't be null, so the condition is always 'false' - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:363:28 - unnecessary_null_comparison
-  error - Undefined name 'selectedUnit' - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:384:29 - undefined_identifier
-  error - The await expression can only be used in an async function - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:394:24 - await_in_wrong_context
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:398:24 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:399:29 - prefer_const_literals_to_create_immutables
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\widgets\universal_unit_selector_dialog.dart:427:7 - use_build_context_synchronously
