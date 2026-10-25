@@ -1115,17 +1115,16 @@ warning - The value of the field '_categoryTabs' isn't used - lib\features\billi
    info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2664:41 - use_build_context_synchronously
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:2930:42 - prefer_const_constructors
    info - The declaration '_showPriceChecker' isn't referenced - lib\features\billing\presentation\pages\desktop_pos_page.dart:3066:8 - unused_element
-  error - The method '_calculateDiscount' isn't defined for the type '_DesktopPosPageState' - lib\features\billing\presentation\pages\desktop_pos_page.dart:3281:37 - undefined_method
-   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:4128:35 - prefer_interpolation_to_compose_strings
-warning - The value of the local variable 'isDark' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4855:11 - unused_local_variable
-warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4967:13 - unnecessary_type_check
-warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4975:13 - unnecessary_type_check
-warning - The value of the local variable 'effectivePiecesPerPack' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5031:11 - unused_local_variable
-warning - The value of the local variable 'singlePiecePrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5032:11 - unused_local_variable
-warning - The value of the local variable 'cartonPrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5034:11 - unused_local_variable
-warning - The value of the local variable 'cost' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5140:15 - unused_local_variable
-warning - The value of the local variable 'stock' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5141:15 - unused_local_variable
-warning - The '!' will have no effect because the receiver can't be null - lib\features\billing\presentation\pages\desktop_pos_page.dart:5212:48 - unnecessary_non_null_assertion
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:4133:35 - prefer_interpolation_to_compose_strings
+warning - The value of the local variable 'isDark' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4860:11 - unused_local_variable
+warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4972:13 - unnecessary_type_check
+warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4980:13 - unnecessary_type_check
+warning - The value of the local variable 'effectivePiecesPerPack' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5036:11 - unused_local_variable
+warning - The value of the local variable 'singlePiecePrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5037:11 - unused_local_variable
+warning - The value of the local variable 'cartonPrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5039:11 - unused_local_variable
+warning - The value of the local variable 'cost' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5145:15 - unused_local_variable
+warning - The value of the local variable 'stock' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5146:15 - unused_local_variable
+warning - The '!' will have no effect because the receiver can't be null - lib\features\billing\presentation\pages\desktop_pos_page.dart:5217:48 - unnecessary_non_null_assertion
 warning - Unused import: 'package:intl/intl.dart' - lib\features\billing\presentation\pages\home_page.dart:7:8 - unused_import
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\billing\presentation\pages\home_page.dart:72:3 - prefer_const_constructors_in_immutables
 warning - The value of the field '_dynamicTargetOffset' isn't used - lib\features\billing\presentation\pages\home_page.dart:82:11 - unused_field
