@@ -3278,7 +3278,12 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
 
     final bool isActuallyReturn = _isReturnMode || total < 0 || billingBloc.state.isRefund;
     final double posTotal = total.abs();
-    final double monetaryDiscount = _calculateDiscount(billingBloc.state.subTotalAmount.abs());
+    final double subTotalAbs = billingBloc.state.subTotalAmount.abs();
+    final double monetaryDiscount = _cartDiscountValue > 0
+        ? (_isDiscountPercentage
+            ? (subTotalAbs * (_cartDiscountValue / 100.0)).clamp(0.0, subTotalAbs)
+            : _cartDiscountValue.clamp(0.0, subTotalAbs))
+        : 0.0;
     final double tendered = receivedAmount != null ? receivedAmount.abs() : posTotal;
     final double change = (!isActuallyReturn && method == PosPaymentMethod.cash && tendered > posTotal) ? (tendered - posTotal) : 0.0;
 
@@ -3897,7 +3902,7 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
     return BlocBuilder<BillingBloc, BillingState>(
       builder: (context, state) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        double currentTotal = state.totalAmount;
+        double currentTotal = _cartDiscountValue > 0 ? state.subTotalAmount : state.totalAmount;
         if (_cartDiscountValue > 0) {
           if (_isDiscountPercentage) {
             currentTotal = currentTotal - (currentTotal * (_cartDiscountValue / 100));

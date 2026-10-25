@@ -39,7 +39,7 @@ class PosPaymentModal {
     final bool isReturnMode = state.isRefund || state.totalAmount < 0;
 
     // Calculate final total after discount
-    double calculatedTotal = state.totalAmount;
+    double calculatedTotal = cartDiscountValue > 0 ? state.subTotalAmount : state.totalAmount;
     if (cartDiscountValue > 0) {
       if (isDiscountPercentage) {
         calculatedTotal = isReturnMode 
