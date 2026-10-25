@@ -119,6 +119,7 @@ class CommercialDocument {
 
   // Financials
   final double globalDiscount;
+  final double timbreFiscal; // الطابع الجبائي الجزائري
   final double amountPaid; // المبلغ المدفوع حالياً
   final double previousBalance; // الرصيد القديم للزبون
   final String paymentMethod; // كاش، TPE، صك، تحويل
@@ -146,6 +147,7 @@ class CommercialDocument {
     this.entityArt = '',
     required this.items,
     this.globalDiscount = 0.0,
+    this.timbreFiscal = 0.0,
     this.amountPaid = 0.0,
     this.previousBalance = 0.0,
     this.paymentMethod = 'كاش',
@@ -157,9 +159,22 @@ class CommercialDocument {
 
   double get subtotalHT => items.fold(0.0, (sum, item) => sum + item.totalHT);
   double get totalTVA => items.fold(0.0, (sum, item) => sum + item.totalTVA);
-  double get netTotal => (subtotalHT - globalDiscount) + totalTVA;
+  double get netTotal => (subtotalHT - globalDiscount) + totalTVA + timbreFiscal;
   double get totalWithPreviousBalance => netTotal + previousBalance;
   double get remainingBalance => totalWithPreviousBalance - amountPaid;
+
+  static double calculateAlgerianTimbreFiscal(double amountAfterVat, {bool isCash = true}) {
+    if (!isCash || amountAfterVat <= 300.0) return 0.0;
+    final int hundreds = (amountAfterVat / 100.0).ceil();
+    double rate = 1.0;
+    if (amountAfterVat > 100000.0) {
+      rate = 2.0;
+    } else if (amountAfterVat > 30000.0) {
+      rate = 1.5;
+    }
+    final double duty = hundreds * rate;
+    return duty < 5.0 ? 5.0 : duty;
+  }
 
   String get typeLabelAr {
     switch (type) {
@@ -237,6 +252,7 @@ class CommercialDocument {
     String? entityArt,
     List<CommercialDocItem>? items,
     double? globalDiscount,
+    double? timbreFiscal,
     double? amountPaid,
     double? previousBalance,
     String? paymentMethod,
@@ -262,6 +278,7 @@ class CommercialDocument {
       entityArt: entityArt ?? this.entityArt,
       items: items ?? this.items,
       globalDiscount: globalDiscount ?? this.globalDiscount,
+      timbreFiscal: timbreFiscal ?? this.timbreFiscal,
       amountPaid: amountPaid ?? this.amountPaid,
       previousBalance: previousBalance ?? this.previousBalance,
       paymentMethod: paymentMethod ?? this.paymentMethod,
@@ -289,6 +306,7 @@ class CommercialDocument {
         'entityArt': entityArt,
         'items': items.map((e) => e.toMap()).toList(),
         'globalDiscount': globalDiscount,
+        'timbreFiscal': timbreFiscal,
         'amountPaid': amountPaid,
         'previousBalance': previousBalance,
         'paymentMethod': paymentMethod,
@@ -324,6 +342,7 @@ class CommercialDocument {
                 .toList() ??
             [],
         globalDiscount: (map['globalDiscount'] as num?)?.toDouble() ?? 0.0,
+        timbreFiscal: (map['timbreFiscal'] as num?)?.toDouble() ?? 0.0,
         amountPaid: (map['amountPaid'] as num?)?.toDouble() ?? 0.0,
         previousBalance: (map['previousBalance'] as num?)?.toDouble() ?? 0.0,
         paymentMethod: map['paymentMethod']?.toString() ?? 'كاش',

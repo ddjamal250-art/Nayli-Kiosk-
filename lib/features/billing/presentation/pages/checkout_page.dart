@@ -146,7 +146,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       // 1. Decrement product stock in database (supporting multi-unit suffixes & FIFO batches)
       final productBox = HiveDatabase.productBox;
-      for (final item in billingState.cartItems) {
+      final Map<int, double> fifoItemTotalCosts = {};
+      for (int idx = 0; idx < billingState.cartItems.length; idx++) {
+        final item = billingState.cartItems[idx];
         if (!item.product.id.startsWith('custom_') && !item.product.id.startsWith('direct_') && !item.product.id.startsWith('UNKNOWN_')) {
           String baseId = item.product.id;
           for (final suffix in ['_carton_', '_pack_', '_pack', '_piece_', '_meter_', '_ml_', '_unit_', '_offer_']) {
@@ -158,24 +160,41 @@ class _CheckoutPageState extends State<CheckoutPage> {
           final p = productBox.get(baseId) ?? productBox.get(item.product.id);
           if (p != null) {
             final double deductQty = item.totalStockDeduct;
-            final double newStock = (p.stock - deductQty).toDouble().clamp(0.0, 9999999.0);
+            final double newStock = (p.stock - deductQty).toDouble();
             double remainingToDeduct = deductQty;
+            double fifoCostSum = 0.0;
+            final sortedBatches = List<PurchaseBatch>.from(p.stockBatches)
+              ..sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
+            final PurchaseBatch? lastReferenceBatch = sortedBatches.isNotEmpty ? sortedBatches.last : null;
+            final double fallbackCost = lastReferenceBatch != null && lastReferenceBatch.costPrice > 0
+                ? lastReferenceBatch.costPrice
+                : p.effectiveCostPrice;
+
             final updatedBatches = <PurchaseBatch>[];
-            for (final batch in p.stockBatches) {
+            for (final batch in sortedBatches) {
               if (remainingToDeduct <= 0) {
-                updatedBatches.add(batch);
+                if (batch.remainingQuantity > 0) updatedBatches.add(batch);
               } else if (batch.remainingQuantity > remainingToDeduct) {
-                updatedBatches.add(PurchaseBatch(
-                  costPrice: batch.costPrice,
+                final double bCost = batch.costPrice > 0 ? batch.costPrice : fallbackCost;
+                fifoCostSum += remainingToDeduct * bCost;
+                updatedBatches.add(batch.copyWith(
                   remainingQuantity: batch.remainingQuantity - remainingToDeduct,
-                  dateAdded: batch.dateAdded,
-                  supplierName: batch.supplierName,
-                  supplierPhone: batch.supplierPhone,
                 ));
                 remainingToDeduct = 0;
-              } else {
+              } else if (batch.remainingQuantity > 0) {
+                final double bCost = batch.costPrice > 0 ? batch.costPrice : fallbackCost;
+                fifoCostSum += batch.remainingQuantity * bCost;
                 remainingToDeduct -= batch.remainingQuantity;
               }
+            }
+            if (remainingToDeduct > 0) {
+              fifoCostSum += remainingToDeduct * fallbackCost;
+            }
+            if (item.customUnitCost == null && fifoCostSum > 0) {
+              fifoItemTotalCosts[idx] = fifoCostSum;
+            }
+            if (updatedBatches.isEmpty && lastReferenceBatch != null) {
+              updatedBatches.add(lastReferenceBatch.copyWith(remainingQuantity: 0));
             }
             await productBox.put(
               p.id,
@@ -189,22 +208,30 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
 
       // 2. Calculate costs and save invoice in invoicesBox for Daily Reports & Profit
-      final totalCost = billingState.cartItems.fold<double>(
-        0.0,
-        (sum, i) => sum + i.totalCostForInvoice,
-      );
+      double totalCost = 0.0;
+      final items = <Map<String, dynamic>>[];
+      for (int idx = 0; idx < billingState.cartItems.length; idx++) {
+        final item = billingState.cartItems[idx];
+        final double itemTotalCost = fifoItemTotalCosts[idx] ?? item.totalCostForInvoice;
+        totalCost += itemTotalCost;
+        final double effQty = item.weightKg ?? item.quantity.abs();
+        items.add({
+          'id': item.product.id,
+          'barcode': item.product.barcode,
+          'name': item.selectedUnit != null ? '${item.product.name} (${item.selectedUnit!.name})' : item.product.name,
+          'unitLevel': item.unitLevel,
+          'qty': item.quantity,
+          'weightKg': item.weightKg,
+          'stockDeducted': item.totalStockDeduct,
+          'unitMultiplier': item.customMultiplier ?? item.selectedUnit?.multiplier ?? 1.0,
+          'price': item.unitPriceEffective,
+          'costPrice': effQty > 0 ? (itemTotalCost / effQty) : item.effectiveUnitCost,
+          'totalCost': itemTotalCost,
+          'category': item.product.category,
+          'total': item.total,
+        });
+      }
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
-      final items = billingState.cartItems.map((item) => {
-        'id': item.product.id,
-        'barcode': item.product.barcode,
-        'name': item.selectedUnit != null ? '${item.product.name} (${item.selectedUnit!.name})' : item.product.name,
-        'qty': item.quantity,
-        'stockDeducted': item.totalStockDeduct,
-        'unitMultiplier': item.selectedUnit?.multiplier ?? 1.0,
-        'price': item.unitPriceEffective,
-        'costPrice': item.effectiveUnitCost,
-        'total': item.total,
-      }).toList();
 
       final enteredCash = _paymentMode == PaymentMode.cash
           ? (double.tryParse(_paidController.text.trim()) ?? billingState.totalAmount)
@@ -227,9 +254,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
       await HiveDatabase.invoicesBox.put(invoiceId, {
         'id': invoiceId,
         'timestamp': DateTime.now().toIso8601String(),
+        'subTotalAmount': billingState.subTotalAmount,
+        'discountAmount': billingState.calculatedDiscount,
         'totalAmount': billingState.totalAmount,
         'totalCost': totalCost,
-        'netProfit': (billingState.totalAmount - totalCost).clamp(0.0, double.infinity),
+        'netProfit': billingState.totalAmount - totalCost,
         'itemCount': billingState.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity).toInt(),
         'items': items,
         'isCredit': _paymentMode != PaymentMode.cash,

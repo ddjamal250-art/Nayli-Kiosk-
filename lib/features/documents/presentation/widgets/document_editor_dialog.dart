@@ -61,6 +61,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
 
   // Financial Controllers
   final TextEditingController _globalDiscountCtrl = TextEditingController(text: '0');
+  final TextEditingController _timbreFiscalCtrl = TextEditingController(text: '0');
   final TextEditingController _amountPaidCtrl = TextEditingController(text: '0');
   final TextEditingController _previousBalanceCtrl = TextEditingController(text: '0');
   final TextEditingController _notesCtrl = TextEditingController();
@@ -91,6 +92,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
       _entityRcCtrl.text = doc.entityRc;
       _entityNifCtrl.text = doc.entityNif;
       _globalDiscountCtrl.text = doc.globalDiscount.toStringAsFixed(2);
+      _timbreFiscalCtrl.text = doc.timbreFiscal.toStringAsFixed(2);
       _amountPaidCtrl.text = doc.amountPaid.toStringAsFixed(2);
       _previousBalanceCtrl.text = doc.previousBalance.toStringAsFixed(2);
       _notesCtrl.text = doc.notes ?? '';
@@ -112,6 +114,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
     _entityRcCtrl.dispose();
     _entityNifCtrl.dispose();
     _globalDiscountCtrl.dispose();
+    _timbreFiscalCtrl.dispose();
     _amountPaidCtrl.dispose();
     _previousBalanceCtrl.dispose();
     _notesCtrl.dispose();
@@ -124,7 +127,8 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
   double get _subtotalHT => _items.fold(0.0, (sum, item) => sum + item.totalHT);
   double get _totalTVA => _items.fold(0.0, (sum, item) => sum + item.totalTVA);
   double get _globalDiscount => double.tryParse(_globalDiscountCtrl.text) ?? 0.0;
-  double get _netTotal => (_subtotalHT - _globalDiscount) + _totalTVA;
+  double get _timbreFiscal => double.tryParse(_timbreFiscalCtrl.text) ?? 0.0;
+  double get _netTotal => (_subtotalHT - _globalDiscount) + _totalTVA + _timbreFiscal;
   double get _previousBalance => double.tryParse(_previousBalanceCtrl.text) ?? 0.0;
   double get _amountPaid => double.tryParse(_amountPaidCtrl.text) ?? 0.0;
   double get _remainingBalance => (_netTotal + _previousBalance) - _amountPaid;
@@ -189,6 +193,7 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
       entityNif: _entityNifCtrl.text.trim(),
       items: List.from(_items),
       globalDiscount: _globalDiscount,
+      timbreFiscal: _timbreFiscal,
       amountPaid: _amountPaid,
       previousBalance: _previousBalance,
       paymentMethod: _paymentMethod,
@@ -523,6 +528,30 @@ class _DocumentEditorDialogState extends State<DocumentEditorDialog> {
                     controller: _globalDiscountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'تخفيض (DA)', border: OutlineInputBorder(), isDense: true),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _timbreFiscalCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'طابع جبائي (DA)',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                      suffixIcon: IconButton(
+                        tooltip: 'حساب الطابع الجبائي تلقائياً (قانون المالية الجزائري)',
+                        icon: const Icon(Icons.auto_fix_high_rounded, size: 18, color: Colors.teal),
+                        onPressed: () {
+                          final baseTtc = (_subtotalHT - _globalDiscount) + _totalTVA;
+                          final calculated = CommercialDocument.calculateAlgerianTimbreFiscal(baseTtc, isCash: _paymentMethod == 'كاش');
+                          setState(() {
+                            _timbreFiscalCtrl.text = calculated.toStringAsFixed(2);
+                          });
+                        },
+                      ),
+                    ),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),

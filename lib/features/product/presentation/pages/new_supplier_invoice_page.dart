@@ -232,6 +232,13 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
           : CategoryTaxonomy.smartDetect(name).titleAr;
 
       final existing = currentProducts.where((p) => p.barcode.trim() == barcode.trim()).firstOrNull;
+      final newBatch = PurchaseBatch(
+        costPrice: unitCost,
+        remainingQuantity: qty.toDouble(),
+        dateAdded: _invoiceDate,
+        supplierName: supplierName,
+        supplierPhone: _supplierPhoneController.text.trim(),
+      );
       if (existing != null) {
         final double effectiveCost;
         if (existing.stock > 0 && existing.costPrice > 0 && unitCost > 0) {
@@ -241,12 +248,14 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
         } else {
           effectiveCost = unitCost > 0 ? unitCost : existing.costPrice;
         }
+        final updatedBatches = List<PurchaseBatch>.from(existing.stockBatches)..add(newBatch);
         final p = existing.copyWith(
           name: name,
           category: existing.category.isNotEmpty && existing.category != 'عام' ? existing.category : category,
           price: sellPrice > 0 ? sellPrice : existing.price,
           costPrice: effectiveCost,
           stock: (existing.stock + qty).toDouble(),
+          stockBatches: updatedBatches,
         );
         productBloc.add(UpdateProduct(p));
         CatalogCrowdsourceHelper.silentHarvest(p, category: p.category);
@@ -259,6 +268,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
           price: sellPrice,
           costPrice: unitCost,
           stock: qty.toDouble(),
+          stockBatches: [newBatch],
         );
         productBloc.add(AddProduct(p));
         CatalogCrowdsourceHelper.silentHarvest(p, category: category);
@@ -273,7 +283,9 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
       'supplierPhone': _supplierPhoneController.text.trim(),
       'invoiceNumber': invoiceNum,
       'date': _invoiceDate.toIso8601String(),
+      'timestamp': _invoiceDate.toIso8601String(),
       'totalCost': totalCost,
+      'totalAmount': totalCost,
       'paidAmount': paidAmount,
       'remainingDebt': remainingDebt,
       'paymentMode': _paymentMode == 0 ? 'cash' : (_paymentMode == 1 ? 'credit' : 'partial'),

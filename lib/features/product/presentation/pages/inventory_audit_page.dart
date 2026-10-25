@@ -255,13 +255,48 @@ class _InventoryAuditPageState extends State<InventoryAuditPage> {
               for (final p in products) {
                 final counted = _countedStock[p.id] ?? p.stock;
                 if (counted != p.stock) {
-                  final updated = Product(
-                    id: p.id,
-                    name: p.name,
-                    barcode: p.barcode,
-                    price: p.price,
-                    costPrice: p.costPrice,
+                  final liveP = HiveDatabase.productBox.get(p.id) ?? p;
+                  final double diff = counted - liveP.stock;
+                  final updatedBatches = List<PurchaseBatch>.from(liveP.stockBatches);
+
+                  if (diff > 0) {
+                    if (updatedBatches.isNotEmpty) {
+                      updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+                      final newest = updatedBatches.first;
+                      updatedBatches[0] = newest.copyWith(
+                        remainingQuantity: (newest.remainingQuantity > 0 ? newest.remainingQuantity : 0.0) + diff,
+                      );
+                    } else {
+                      updatedBatches.add(PurchaseBatch(
+                        costPrice: liveP.effectiveCostPrice,
+                        remainingQuantity: diff,
+                        dateAdded: DateTime.now(),
+                      ));
+                    }
+                  } else if (diff < 0 && updatedBatches.isNotEmpty) {
+                    double toDeduct = diff.abs();
+                    updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
+                    final lastRef = updatedBatches.last;
+                    for (int i = 0; i < updatedBatches.length; i++) {
+                      if (toDeduct <= 0) break;
+                      final b = updatedBatches[i];
+                      if (b.remainingQuantity <= toDeduct) {
+                        toDeduct -= b.remainingQuantity.clamp(0.0, double.infinity);
+                        updatedBatches[i] = b.copyWith(remainingQuantity: 0);
+                      } else {
+                        updatedBatches[i] = b.copyWith(remainingQuantity: b.remainingQuantity - toDeduct);
+                        toDeduct = 0;
+                      }
+                    }
+                    updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
+                    if (updatedBatches.isEmpty) {
+                      updatedBatches.add(lastRef.copyWith(remainingQuantity: 0));
+                    }
+                  }
+
+                  final updated = liveP.copyWith(
                     stock: counted,
+                    stockBatches: updatedBatches,
                   );
                   context.read<ProductBloc>().add(UpdateProduct(updated));
                 }

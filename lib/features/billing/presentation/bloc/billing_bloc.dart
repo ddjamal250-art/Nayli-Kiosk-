@@ -15,6 +15,7 @@ import '../../../shifts/data/shift_service.dart';
 import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/scale_barcode_parser.dart';
 import '../../../../core/utils/barcode_normalizer.dart';
+import '../../../../core/utils/staff_permissions_service.dart';
 import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/local_sync_server.dart';
 
@@ -198,7 +199,9 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final mult = event.customMultiplier ?? (existingItem.customMultiplier ?? (existingItem.selectedUnit?.multiplier ?? 1.0));
       final proposedDeduct = newQty * mult;
       String? warning;
-      if (!event.product.isUnlimitedStock && (event.product.stock <= 0 || proposedDeduct > event.product.stock)) {
+      if (!event.suppressStockWarning &&
+          !event.product.isUnlimitedStock &&
+          (event.product.stock <= 0 || proposedDeduct > event.product.stock)) {
         warning = '${event.product.id}|${event.product.name}|${event.product.stock}|$proposedDeduct';
       }
       
@@ -226,7 +229,9 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       final proposedDeduct = newItem.totalStockDeduct;
       String? warning;
-      if (!event.product.isUnlimitedStock && (event.product.stock <= 0 || proposedDeduct > event.product.stock)) {
+      if (!event.suppressStockWarning &&
+          !event.product.isUnlimitedStock &&
+          (event.product.stock <= 0 || proposedDeduct > event.product.stock)) {
         warning = '${event.product.id}|${event.product.name}|${event.product.stock}|$proposedDeduct';
       }
       emit(cleanState.copyWith(
@@ -325,7 +330,9 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       items[index] = currentItem.copyWith(quantity: event.quantity);
       final proposedDeduct = items[index].totalStockDeduct;
       String? warning;
-      if (!currentItem.product.isUnlimitedStock && (currentItem.product.stock <= 0 || proposedDeduct > currentItem.product.stock)) {
+      if (!event.suppressStockWarning &&
+          !currentItem.product.isUnlimitedStock &&
+          (currentItem.product.stock <= 0 || proposedDeduct > currentItem.product.stock)) {
         warning = '${currentItem.product.id}|${currentItem.product.name}|${currentItem.product.stock}|$proposedDeduct';
       }
       emit(state.copyWith(cartItems: items, stockWarning: warning));
@@ -460,30 +467,15 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           ? event.explicitTotal!.abs()
           : (state.totalAmount != 0 ? state.totalAmount.abs() : snapSubtotal.abs());
       final double positiveTotal = magnitude;
+      final bool allowNegativeStock = StaffPermissionsService.allowNegativeStockSale;
 
-      final items = currentCartItems
-          .map((item) => {
-                'id': item.product.id,
-                'cartKey': item.cartKey,
-                'name': item.displayNameWithUnit,
-                'unitLevel': item.unitLevel,
-                'unitName': item.unitDisplayName,
-                'qty': item.quantity,
-                'weightKg': item.weightKg,
-                'price': item.unitPrice,
-                'costPrice': item.unitCost,
-                'category': item.product.category,
-                'total': item.total,
-                'profit': item.profit,
-                'itemNote': item.itemNote,
-                'selectedOptions': item.selectedOptions?.map((o) => o.toMap()).toList(),
-              })
-          .toList();
-
-      // 1. Auto-deduct or restock from Hive for all products
+      // 1. Auto-deduct or restock from Hive for all products & compute true FIFO cost per cart item
       final productBox = HiveDatabase.productBox;
       final modifiedInventoryItems = <Map<String, dynamic>>[];
-      for (final cartItem in currentCartItems) {
+      final Map<int, double> fifoItemTotalCosts = {};
+
+      for (int cartIdx = 0; cartIdx < currentCartItems.length; cartIdx++) {
+        final cartItem = currentCartItems[cartIdx];
         String originalId = cartItem.product.id;
         if (originalId.contains('_carton_')) {
           originalId = originalId.split('_carton_').first;
@@ -503,7 +495,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           double newStock = 0.0;
 
           if (productModel.coffeeRecipeJson != null) {
-            // Deduct or restock raw materials instead of this product's stock.
+            // Deduct or restock raw materials instead of this product's stock and calculate true FIFO recipe cost.
+            double recipeTotalCost = 0.0;
             try {
               final recipe = jsonDecode(productModel.coffeeRecipeJson!);
               if (recipe is List && recipe.isNotEmpty) {
@@ -512,45 +505,66 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                   final rawId = item['rawProductId']?.toString();
                   if (rawId == null) continue;
                   final double qtyPerCup = (item['qty'] as num?)?.toDouble() ?? 0.0;
+                  final String rawUnit = item['unit']?.toString() ?? 'غرام';
+                  final bool isPieceUnit = rawUnit == 'حبة' || rawUnit == 'قطعة';
                   final rawProduct = productBox.get(rawId);
                   if (rawProduct != null) {
-                    final deductUnits = (qtyPerCup * cartItem.quantity.abs()).round();
-                    final double newRawStock = isItemReturn 
-                        ? (rawProduct.stock + deductUnits).toDouble() 
-                        : (rawProduct.stock - deductUnits).toDouble().clamp(0.0, 9999999.0);
-                    
+                    final double deductUnits = qtyPerCup * cartItem.quantity.abs();
+                    final double newRawStock = isItemReturn
+                        ? (rawProduct.stock + deductUnits).toDouble()
+                        : (allowNegativeStock
+                            ? (rawProduct.stock - deductUnits).toDouble()
+                            : (rawProduct.stock - deductUnits).toDouble().clamp(0.0, 9999999.0));
+
+                    // Compute FIFO ingredient cost before mutating batches
+                    double baseRawCost = rawProduct.effectiveCostPrice;
+                    if (rawProduct.stockBatches.isNotEmpty) {
+                      final sortedBatches = List<PurchaseBatch>.from(rawProduct.stockBatches)
+                        ..sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
+                      if (sortedBatches.first.costPrice > 0) {
+                        baseRawCost = sortedBatches.first.costPrice;
+                      }
+                    }
+                    final double unitIngredientCost = isPieceUnit ? baseRawCost : (baseRawCost / 1000.0);
+                    recipeTotalCost += unitIngredientCost * deductUnits;
+
                     // FIFO Batch Deduction or Restock
                     List<PurchaseBatch> updatedBatches = List.from(rawProduct.stockBatches);
                     if (!isItemReturn && updatedBatches.isNotEmpty) {
-                       double remainingToDeduct = (rawProduct.stock - newRawStock).toDouble();
-                       updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
-                       
-                       for (int i = 0; i < updatedBatches.length; i++) {
-                           if (remainingToDeduct <= 0) break;
-                           
-                           final batch = updatedBatches[i];
-                           if (batch.remainingQuantity <= remainingToDeduct) {
-                               remainingToDeduct -= batch.remainingQuantity;
-                               updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
-                           } else {
-                               updatedBatches[i] = batch.copyWith(remainingQuantity: batch.remainingQuantity - remainingToDeduct);
-                               remainingToDeduct = 0;
-                           }
-                       }
-                       updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
+                      double remainingToDeduct = deductUnits;
+                      updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
+                      final PurchaseBatch lastReferenceBatch = updatedBatches.last;
+
+                      for (int i = 0; i < updatedBatches.length; i++) {
+                        if (remainingToDeduct <= 0) break;
+
+                        final batch = updatedBatches[i];
+                        if (batch.remainingQuantity <= remainingToDeduct) {
+                          remainingToDeduct -= batch.remainingQuantity.clamp(0.0, double.infinity);
+                          updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
+                        } else {
+                          updatedBatches[i] = batch.copyWith(
+                              remainingQuantity: batch.remainingQuantity - remainingToDeduct);
+                          remainingToDeduct = 0;
+                        }
+                      }
+                      updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
+                      if (updatedBatches.isEmpty) {
+                        updatedBatches.add(lastReferenceBatch.copyWith(remainingQuantity: 0));
+                      }
                     } else if (isItemReturn) {
-                       // On return, just add it to the newest batch or create one
-                       if (updatedBatches.isNotEmpty) {
-                           updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
-                           final newest = updatedBatches.first;
-                           updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + (newRawStock - rawProduct.stock).toDouble());
-                       } else {
-                           updatedBatches.add(PurchaseBatch(
-                             remainingQuantity: deductUnits.toDouble(),
-                             costPrice: rawProduct.costPrice,
-                             dateAdded: DateTime.now(),
-                           ));
-                       }
+                      if (updatedBatches.isNotEmpty) {
+                        updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
+                        final newest = updatedBatches.first;
+                        updatedBatches[0] = newest.copyWith(
+                            remainingQuantity: newest.remainingQuantity + deductUnits);
+                      } else {
+                        updatedBatches.add(PurchaseBatch(
+                          remainingQuantity: deductUnits,
+                          costPrice: rawProduct.costPrice,
+                          dateAdded: DateTime.now(),
+                        ));
+                      }
                     }
 
                     productBox.put(rawId, rawProduct.copyWith(stock: newRawStock, stockBatches: updatedBatches));
@@ -563,6 +577,9 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                 }
               }
             } catch (_) {}
+            if (recipeTotalCost > 0) {
+              fifoItemTotalCosts[cartIdx] = recipeTotalCost;
+            }
             continue; // Skip the rest of the deduction for the cup itself
           }
 
@@ -570,41 +587,71 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           final deductQty = cartItem.totalStockDeduct.abs();
           newStock = isItemReturn
               ? (productModel.stock + deductQty).toDouble()
-              : (productModel.stock - deductQty).toDouble().clamp(0.0, 9999999.0);
+              : (allowNegativeStock
+                  ? (productModel.stock - deductQty).toDouble()
+                  : (productModel.stock - deductQty).toDouble().clamp(0.0, 9999999.0));
 
-          // FIFO Batch Deduction or Restock
+          // FIFO Batch Deduction or Restock + True FIFO COGS Calculation (Graviola Section 5.1)
           List<PurchaseBatch> updatedBatches = List.from(productModel.stockBatches);
           if (!isItemReturn && updatedBatches.isNotEmpty) {
-             double remainingToDeduct = (productModel.stock - newStock).toDouble();
-             updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
-             
-             for (int i = 0; i < updatedBatches.length; i++) {
-                 if (remainingToDeduct <= 0) break;
-                 
-                 final batch = updatedBatches[i];
-                 if (batch.remainingQuantity <= remainingToDeduct) {
-                     remainingToDeduct -= batch.remainingQuantity;
-                     updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
-                 } else {
-                     updatedBatches[i] = batch.copyWith(remainingQuantity: batch.remainingQuantity - remainingToDeduct);
-                     remainingToDeduct = 0;
-                 }
-             }
-             updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
+            double remainingToDeduct = deductQty;
+            double fifoCostSum = 0.0;
+            updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
+            final PurchaseBatch lastReferenceBatch = updatedBatches.last;
+            final double fallbackBaseCost = lastReferenceBatch.costPrice > 0
+                ? lastReferenceBatch.costPrice
+                : productModel.effectiveCostPrice;
+
+            for (int i = 0; i < updatedBatches.length; i++) {
+              if (remainingToDeduct <= 0) break;
+
+              final batch = updatedBatches[i];
+              if (batch.remainingQuantity <= 0) continue;
+              final double batchUnitCost =
+                  batch.costPrice > 0 ? batch.costPrice : fallbackBaseCost;
+
+              if (batch.remainingQuantity <= remainingToDeduct) {
+                final double taken = batch.remainingQuantity;
+                fifoCostSum += taken * batchUnitCost;
+                remainingToDeduct -= taken;
+                updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
+              } else {
+                fifoCostSum += remainingToDeduct * batchUnitCost;
+                updatedBatches[i] = batch.copyWith(
+                    remainingQuantity: batch.remainingQuantity - remainingToDeduct);
+                remainingToDeduct = 0;
+              }
+            }
+
+            if (remainingToDeduct > 0) {
+              fifoCostSum += remainingToDeduct * fallbackBaseCost;
+            }
+
+            // If cartItem did not specify a custom unit cost override, use the exact FIFO batch cost
+            if (cartItem.customUnitCost == null && fifoCostSum > 0) {
+              fifoItemTotalCosts[cartIdx] = fifoCostSum;
+            }
+
+            updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
+            // الحفاظ على آخر دفعة مرجعية بكمية 0 عند نفاذ المخزون لعدم ضياع سعر الشراء المرجعي والمورد
+            if (updatedBatches.isEmpty) {
+              updatedBatches.add(lastReferenceBatch.copyWith(remainingQuantity: 0));
+            }
           } else if (isItemReturn) {
-             // On return, just add it to the newest batch or create one
-             final double returnedQty = (newStock - productModel.stock).toDouble();
-             if (updatedBatches.isNotEmpty) {
-                 updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
-                 final newest = updatedBatches.first;
-                 updatedBatches[0] = newest.copyWith(remainingQuantity: newest.remainingQuantity + returnedQty);
-             } else {
-                 updatedBatches.add(PurchaseBatch(
-                   remainingQuantity: returnedQty,
-                   costPrice: productModel.costPrice,
-                   dateAdded: DateTime.now(),
-                 ));
-             }
+            // On return, add returned quantity back to the newest batch or create one
+            final double returnedQty = deductQty;
+            if (updatedBatches.isNotEmpty) {
+              updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
+              final newest = updatedBatches.first;
+              updatedBatches[0] = newest.copyWith(
+                  remainingQuantity: (newest.remainingQuantity > 0 ? newest.remainingQuantity : 0.0) + returnedQty);
+            } else {
+              updatedBatches.add(PurchaseBatch(
+                remainingQuantity: returnedQty,
+                costPrice: productModel.effectiveCostPrice,
+                dateAdded: DateTime.now(),
+              ));
+            }
           }
 
           productBox.put(originalId, productModel.copyWith(stock: newStock, stockBatches: updatedBatches));
@@ -632,62 +679,98 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
                 'qtyToBuy': refillQty, // Suggested refill qty
               });
             } else if (existingList is Map) {
-               final updatedList = Map<String, dynamic>.from(existingList);
-               updatedList['currentStock'] = newStock;
-               shoppingList.put(originalId, updatedList);
+              final updatedList = Map<String, dynamic>.from(existingList);
+              updatedList['currentStock'] = newStock;
+              shoppingList.put(originalId, updatedList);
             }
           }
         }
       }
 
-      // 2. Record sale invoice in invoicesBox with separate Tobacco vs General analytics
+      // 2. Record sale invoice in invoicesBox with true FIFO cost & separate Tobacco vs General analytics
       final invoicesBox = HiveDatabase.invoicesBox;
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
-      // استخدم totalCostForInvoice لدعم المنتجات الميزانية (وزن × تكلفة/كغ)
-      // Recalculate true cost for invoice (especially for coffee recipes)
+      final subtotal = snapSubtotal;
+      final discountRatio = (subtotal > 0) ? (positiveTotal / subtotal) : 1.0;
+
       double totalCost = 0.0;
       double coffeeCost = 0.0;
       double tobaccoCost = 0.0;
-      
-      for (final i in state.cartItems) {
-         double itemCost = i.totalCostForInvoice;
-         
-         // Dynamic Coffee Cost Evaluation based on Raw Material's current FIFO batches
-         if (i.product.coffeeRecipeJson != null) {
+      final items = <Map<String, dynamic>>[];
+
+      for (int idx = 0; idx < currentCartItems.length; idx++) {
+        final i = currentCartItems[idx];
+        double itemCost = fifoItemTotalCosts[idx] ?? i.totalCostForInvoice.abs();
+
+        if (i.product.coffeeRecipeJson != null) {
+          if (!fifoItemTotalCosts.containsKey(idx)) {
             try {
               final recipe = jsonDecode(i.product.coffeeRecipeJson!);
               if (recipe is List && recipe.isNotEmpty) {
-                 double totalCupCost = 0.0;
-                 for (final rawEntry in recipe) {
-                   if (rawEntry is! Map) continue;
-                   final rawId = rawEntry['rawProductId']?.toString();
-                   if (rawId == null) continue;
-                   final double qtyPerCup = (rawEntry['qty'] as num?)?.toDouble() ?? 0.0;
-                   final rawProduct = productBox.get(rawId);
-                   if (rawProduct != null) {
-                     double costPerUnit = (rawProduct.costPrice / 1000.0);
-                     if (rawProduct.stockBatches.isNotEmpty) {
-                       final newestBatch = rawProduct.stockBatches.first;
-                       costPerUnit = newestBatch.costPrice / 1000.0;
-                     }
-                     totalCupCost += costPerUnit * qtyPerCup;
-                   }
-                 }
-                 if (totalCupCost > 0) {
-                   itemCost = totalCupCost * i.quantity;
-                 }
+                double totalCupCost = 0.0;
+                for (final rawEntry in recipe) {
+                  if (rawEntry is! Map) continue;
+                  final rawId = rawEntry['rawProductId']?.toString();
+                  if (rawId == null) continue;
+                  final double qtyPerCup = (rawEntry['qty'] as num?)?.toDouble() ?? 0.0;
+                  final String rawUnit = rawEntry['unit']?.toString() ?? 'غرام';
+                  final bool isPieceUnit = rawUnit == 'حبة' || rawUnit == 'قطعة';
+                  final rawProduct = productBox.get(rawId);
+                  if (rawProduct != null) {
+                    double baseCost = rawProduct.effectiveCostPrice;
+                    if (rawProduct.stockBatches.isNotEmpty) {
+                      final sorted = List<PurchaseBatch>.from(rawProduct.stockBatches)
+                        ..sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
+                      if (sorted.first.costPrice > 0) {
+                        baseCost = sorted.first.costPrice;
+                      }
+                    }
+                    final double costPerUnit = isPieceUnit ? baseCost : (baseCost / 1000.0);
+                    totalCupCost += costPerUnit * qtyPerCup;
+                  }
+                }
+                if (totalCupCost > 0) {
+                  itemCost = totalCupCost * i.quantity.abs();
+                }
               }
             } catch (_) {}
-            coffeeCost += itemCost;
-         } else if (i.product.category.toLowerCase().contains('تبغ') || i.product.category.toLowerCase().contains('سجائر')) {
-            tobaccoCost += itemCost;
-         }
-         
-         totalCost += itemCost;
-      }
+          }
+          coffeeCost += itemCost;
+        } else if (i.product.category.toLowerCase().contains('تبغ') ||
+            i.product.category.toLowerCase().contains('سجائر')) {
+          tobaccoCost += itemCost;
+        }
 
-      final subtotal = snapSubtotal;
-      final discountRatio = (subtotal > 0) ? (positiveTotal / subtotal) : 1.0;
+        totalCost += itemCost;
+
+        final double effectiveQty = i.weightKg ?? i.quantity.abs();
+        final double effectiveUnitCost = effectiveQty > 0 ? (itemCost / effectiveQty) : i.unitCost;
+        final double discountedItemTotal = i.total.abs() * discountRatio;
+        final double itemNetProfit = isReturn
+            ? -(discountedItemTotal - itemCost)
+            : (discountedItemTotal - itemCost);
+
+        items.add({
+          'id': i.product.id,
+          'barcode': i.product.barcode,
+          'cartKey': i.cartKey,
+          'name': i.displayNameWithUnit,
+          'unitLevel': i.unitLevel,
+          'unitName': i.unitDisplayName,
+          'unitMultiplier': i.customMultiplier ?? i.selectedUnit?.multiplier ?? 1.0,
+          'stockDeducted': i.totalStockDeduct,
+          'qty': i.quantity,
+          'weightKg': i.weightKg,
+          'price': i.unitPrice,
+          'costPrice': effectiveUnitCost,
+          'totalCost': itemCost,
+          'category': i.product.category,
+          'total': i.total,
+          'profit': itemNetProfit,
+          'itemNote': i.itemNote,
+          'selectedOptions': i.selectedOptions?.map((o) => o.toMap()).toList(),
+        });
+      }
 
       final tobaccoItems = currentCartItems.where(
         (i) => i.product.category.toLowerCase().contains('تبغ') || i.product.category.toLowerCase().contains('سجائر'),
@@ -728,6 +811,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'workerName': activeShift?.workerName ?? 'Unknown',
         'id': invoiceId,
         'timestamp': DateTime.now().toIso8601String(),
+        'subTotalAmount': isReturn ? -snapSubtotal.abs() : snapSubtotal.abs(),
+        'discountAmount': snapDiscount.abs(),
         'totalAmount': finalTotalAmount,
         'totalCost': finalTotalCost,
         'netProfit': finalNetProfit,

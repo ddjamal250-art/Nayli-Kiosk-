@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
+import '../../../../core/data/hive_database.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
+import '../../data/models/product_model.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
 import '../../domain/entities/liquid_decant_config.dart';
@@ -20,8 +22,8 @@ class QuickReceiveModal extends StatefulWidget {
     required this.onReceived,
   });
 
-  static Future<void> show(BuildContext context, Product product) async {
-    return showDialog(
+  static Future<bool> show(BuildContext context, Product product) async {
+    final res = await showDialog<bool>(
       context: context,
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -29,11 +31,12 @@ class QuickReceiveModal extends StatefulWidget {
           constraints: const BoxConstraints(maxWidth: 560),
           child: QuickReceiveModal(
             product: product,
-            onReceived: () => Navigator.pop(ctx),
+            onReceived: () => Navigator.pop(ctx, true),
           ),
         ),
       ),
     );
+    return res == true;
   }
 
   @override
@@ -260,6 +263,8 @@ class _QuickReceiveModalState extends State<QuickReceiveModal> {
       expiryDate: _expiryDate != null ? DateFormat('yyyy-MM-dd').format(_expiryDate!) : null,
     );
 
+    final model = ProductModel.fromEntity(updated);
+    HiveDatabase.productBox.put(model.id, model);
     context.read<ProductBloc>().add(UpdateProduct(updated));
     SoundService.playSaveSuccess();
     SnackbarHelper.showSuccess(

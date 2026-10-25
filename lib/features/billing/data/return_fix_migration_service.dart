@@ -169,12 +169,16 @@ class ReturnFixMigrationService {
               unitsToAdd = (weightKg * 2.0);
             } else {
               final double qty = ((item['qty'] as num?)?.toDouble() ?? 1.0).abs();
-              final int? unitLevel = (item['unitLevel'] as num?)?.toInt();
-              double multiplier = 1.0;
-              if (unitLevel != null) {
-                final u = product.units.where((x) => x.tierIndex == unitLevel).firstOrNull;
-                if (u != null && u.multiplier > 0) {
-                  multiplier = u.multiplier;
+              final double? savedMultiplier = (item['unitMultiplier'] as num?)?.toDouble();
+              final dynamic rawUnitLevel = item['unitLevel'];
+              double multiplier = savedMultiplier != null && savedMultiplier > 0 ? savedMultiplier : 1.0;
+              if (savedMultiplier == null && rawUnitLevel != null) {
+                if (rawUnitLevel is num) {
+                  final u = product.units.where((x) => x.tierIndex == rawUnitLevel.toInt()).firstOrNull;
+                  if (u != null && u.multiplier > 0) multiplier = u.multiplier;
+                } else if (rawUnitLevel is String) {
+                  final u = product.units.where((x) => x.name == rawUnitLevel || (rawUnitLevel == 'carton' && x.tierIndex == 2) || (rawUnitLevel == 'pack' && x.tierIndex == 1)).firstOrNull;
+                  if (u != null && u.multiplier > 0) multiplier = u.multiplier;
                 }
               }
               // كان مخصوماً بـ qty * multiplier، نعوض بـ 2x

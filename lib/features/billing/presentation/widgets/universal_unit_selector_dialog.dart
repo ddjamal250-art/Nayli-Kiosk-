@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../features/product/domain/entities/product_unit.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/data/hive_database.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/snackbar_helper.dart';
@@ -10,6 +12,7 @@ import '../../../../core/utils/sound_service.dart';
 import '../../../../core/utils/staff_permissions_service.dart';
 import '../../../../core/widgets/product_image_display.dart';
 import '../../../product/domain/entities/product.dart';
+import '../../../product/presentation/widgets/quick_receive_modal.dart';
 import '../../domain/entities/cart_item.dart';
 import '../bloc/billing_bloc.dart';
 import 'liquid_decant_dialog.dart';
@@ -294,54 +297,20 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
         if (!p.isUnlimitedStock) {
           final double reqDeduct = qty * tierMultiplier;
           if (p.stock <= 0 || reqDeduct > p.stock) {
-            if (!StaffPermissionsService.allowNegativeStockSale) {
-              SoundService.playWarning();
-              SnackbarHelper.showError(context, 'مخزون "${p.name}" نفد تماماً (0). غير مسموح بالبيع بالسالب.');
-              return;
-            }
-            if (StaffPermissionsService.warnOnOutOfStockSale) {
-              SoundService.playWarning();
-              final ok = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: Row(
-                    children: [
-                      const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-                      const SizedBox(width: 8),
-                      const Text('تنبيه نفاد المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ],
-                  ),
-                  content: Text(
-                    p.stock <= 0
-                        ? 'المنتج "${p.name}" نفد من المخزون (0). هل تريد تأكيد إضافة هذا العرض وبيعه بالسالب؟'
-                        : 'الكمية المطلوبة بالعرض ($reqDeduct) تتجاوز المخزون المتوفر (${p.stock}). هل تريد المتابعة بالسالب؟',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade800),
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('متابعة بالسالب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              );
-              if (ok != true) return;
-            }
+            final canProceed = await _confirmOutOfStockOrReceive(p, reqDeduct);
+            if (!canProceed || !mounted) return;
           }
         }
+        final liveProd = HiveDatabase.productBox.get(p.id) ?? p;
         context.read<BillingBloc>().add(
               AddProductToCartEvent(
-                p,
+                liveProd,
                 unitLevel: 'custom',
                 quantity: qty,
                 customPrice: unitEffectivePrice,
                 customUnitName: customName,
                 customMultiplier: tierMultiplier,
+                suppressStockWarning: true,
               ),
             );
         SnackbarHelper.showSuccess(context, 'تمت إضافة العرض الترويجي: $customName');
@@ -384,52 +353,18 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
         final double mult = _activeProductUnit?.multiplier ?? 1.0;
         final double reqDeduct = isWeighable ? (resolvedWeightKg ?? 1.0) : (_quantity * mult);
         if (p.stock <= 0 || reqDeduct > p.stock) {
-          if (!StaffPermissionsService.allowNegativeStockSale) {
-            SoundService.playWarning();
-            SnackbarHelper.showError(context, 'مخزون "${p.name}" نفد تماماً (0). غير مسموح بالبيع بالسالب.');
-            return;
-          }
-          if (StaffPermissionsService.warnOnOutOfStockSale) {
-            SoundService.playWarning();
-            final ok = await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                title: Row(
-                  children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-                    const SizedBox(width: 8),
-                    const Text('تنبيه نفاد المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ],
-                ),
-                content: Text(
-                  p.stock <= 0
-                      ? 'المنتج "${p.name}" نفد من المخزون (0). هل تريد تأكيد إضافته وبيعه بالسالب؟'
-                      : 'الكمية المطلوبة ($reqDeduct) تتجاوز المخزون المتوفر (${p.stock}). هل تريد المتابعة بالسالب؟',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade800),
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('متابعة بالسالب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            );
-            if (ok != true) return;
-          }
+          final canProceed = await _confirmOutOfStockOrReceive(p, reqDeduct);
+          if (!canProceed || !mounted) return;
         }
       }
+      final liveProd = HiveDatabase.productBox.get(p.id) ?? p;
       context.read<BillingBloc>().add(
             AddProductToCartEvent(
-              p,
+              liveProd,
               unitLevel: _selectedUnit,
               quantity: isWeighable ? 1.0 : _quantity,
               weightKg: resolvedWeightKg,
+              suppressStockWarning: true,
             ),
           );
       SnackbarHelper.showSuccess(
@@ -438,6 +373,87 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       );
     }
     Navigator.pop(context);
+  }
+
+  Future<bool> _confirmOutOfStockOrReceive(Product prod, double reqDeduct) async {
+    final allowNegative = StaffPermissionsService.allowNegativeStockSale;
+    if (!StaffPermissionsService.warnOnOutOfStockSale) {
+      if (!allowNegative) {
+        SoundService.playWarning();
+        SnackbarHelper.showError(context, 'مخزون "${prod.name}" نفد تماماً (0). غير مسموح بالبيع بالسالب.');
+        return false;
+      }
+      return true;
+    }
+
+    SoundService.playWarning();
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text('⚠️ تنبيه نفاد أو تجاوز المخزون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ],
+        ),
+        content: Text(
+          prod.stock <= 0
+              ? 'المنتج "${prod.name}" نفد من المخزون (0). اختر إما استلام وتوريد كمية جديدة أو متابعة البيع بالسالب:'
+              : 'الكمية المطلوبة ($reqDeduct) تتجاوز المخزون المتوفر (${prod.stock}). اختر إما توريد كمية جديدة أو المتابعة بالسالب:',
+        ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'cancel'),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.teal.shade800,
+                  side: BorderSide(color: Colors.teal.shade600, width: 1.3),
+                ),
+                onPressed: () => Navigator.pop(ctx, 'quick_receive'),
+                icon: const Icon(Icons.bolt_rounded, size: 18),
+                label: const Text('توريد سريع ⚡', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(ctx, 'stock_in_page'),
+                icon: const Icon(Icons.inventory_2_rounded, size: 17),
+                label: const Text('استلام السلعة 📦', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              if (allowNegative)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade800),
+                  onPressed: () => Navigator.pop(ctx, 'continue_negative'),
+                  child: const Text('متابعة بالسالب ⚠️', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return false;
+    if (action == 'quick_receive') {
+      return await QuickReceiveModal.show(context, prod);
+    } else if (action == 'stock_in_page') {
+      await context.push('/products/stock-in', extra: prod);
+      final refreshed = HiveDatabase.productBox.get(prod.id);
+      return refreshed != null && refreshed.stock >= reqDeduct;
+    }
+    return action == 'continue_negative';
   }
 
 

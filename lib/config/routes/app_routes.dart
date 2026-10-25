@@ -179,9 +179,16 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/stock-in',
-      builder: (context, state) => StockInPage(
-        initialReceiptResult: state.extra is ParsedReceiptResult ? state.extra as ParsedReceiptResult : null,
-      ),
+      builder: (context, state) {
+        final extra = state.extra;
+        return StockInPage(
+          initialReceiptResult: extra is ParsedReceiptResult ? extra : null,
+          initialProduct: extra is Product ? extra : (extra is Map ? extra['product'] as Product? : null),
+          initialBarcode: extra is String
+              ? extra
+              : (extra is Map ? extra['barcode']?.toString() : state.uri.queryParameters['barcode']),
+        );
+      },
     ),
     GoRoute(
       path: '/backups',
@@ -205,9 +212,16 @@ final router = GoRouter(
         ),
         GoRoute(
           path: 'stock-in',
-          builder: (context, state) => StockInPage(
-            initialReceiptResult: state.extra is ParsedReceiptResult ? state.extra as ParsedReceiptResult : null,
-          ),
+          builder: (context, state) {
+            final extra = state.extra;
+            return StockInPage(
+              initialReceiptResult: extra is ParsedReceiptResult ? extra : null,
+              initialProduct: extra is Product ? extra : (extra is Map ? extra['product'] as Product? : null),
+              initialBarcode: extra is String
+                  ? extra
+                  : (extra is Map ? extra['barcode']?.toString() : state.uri.queryParameters['barcode']),
+            );
+          },
         ),
         GoRoute(
           path: 'supplier-invoices',

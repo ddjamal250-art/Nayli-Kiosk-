@@ -98,9 +98,12 @@ class _DailyReportPageState extends State<DailyReportPage> {
       for (var key in box.keys) {
         final val = box.get(key);
         if (val is Map) {
-          final totalAmount = (val['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          final totalAmount = (val['totalCost'] as num?)?.toDouble() ??
+              (val['totalAmount'] as num?)?.toDouble() ??
+              0.0;
           final paidAmount = (val['paidAmount'] as num?)?.toDouble() ?? 0.0;
-          final remaining = totalAmount - paidAmount;
+          final remaining = (val['remainingDebt'] as num?)?.toDouble() ??
+              (totalAmount - paidAmount);
           if (remaining > 0) total += remaining;
         }
       }
@@ -492,14 +495,26 @@ class _DailyReportPageState extends State<DailyReportPage> {
             activeDepartments.add(cat);
 
             if (_selectedDepartment == cat) {
-              final itQty = (it['qty'] as num?)?.toInt() ?? 1;
-              final itTotal = (it['total'] as num?)?.toDouble() ??
-                  (((it['price'] as num?)?.toDouble() ?? 0.0) * itQty);
-              final itCost = (((it['costPrice'] as num?)?.toDouble() ?? 0.0) * itQty);
+              final double itQty = (it['qty'] as num?)?.toDouble() ?? 1.0;
+              final double weightKg = (it['weightKg'] as num?)?.toDouble() ?? itQty.abs();
+              final double invTotal = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+              final double invSub = (inv['subTotalAmount'] as num?)?.toDouble() ?? invTotal;
+              final double discRatio = (invSub.abs() > 0) ? (invTotal.abs() / invSub.abs()) : 1.0;
+              final bool isInvReturn = inv['isReturn'] == true || invTotal < 0;
 
-              deptRevenue += itTotal;
-              deptCost += itCost;
-              deptUnitsCount += itQty;
+              final double rawItTotal = ((it['total'] as num?)?.toDouble() ??
+                      (((it['price'] as num?)?.toDouble() ?? 0.0) * weightKg))
+                  .abs();
+              final double rawItCost = ((it['totalCost'] as num?)?.toDouble() ??
+                      (((it['costPrice'] as num?)?.toDouble() ?? 0.0) * weightKg))
+                  .abs();
+
+              final double signedTotal = (rawItTotal * discRatio) * (isInvReturn ? -1.0 : 1.0);
+              final double signedCost = rawItCost * (isInvReturn ? -1.0 : 1.0);
+
+              deptRevenue += signedTotal;
+              deptCost += signedCost;
+              deptUnitsCount += (isInvReturn ? -itQty.abs().ceil() : itQty.abs().ceil());
             }
           }
         }

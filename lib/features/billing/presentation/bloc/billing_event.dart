@@ -28,6 +28,7 @@ class AddProductToCartEvent extends BillingEvent {
   final String? itemNote;
   /// خيارات وإضافات المنتج المختارة
   final List<SelectedProductOption>? selectedOptions;
+  final bool suppressStockWarning;
 
   const AddProductToCartEvent(
     this.product, {
@@ -40,6 +41,7 @@ class AddProductToCartEvent extends BillingEvent {
     this.customMultiplier,
     this.itemNote,
     this.selectedOptions,
+    this.suppressStockWarning = false,
   });
 
   @override
@@ -54,6 +56,7 @@ class AddProductToCartEvent extends BillingEvent {
         customMultiplier ?? 1.0,
         itemNote ?? '',
         selectedOptions ?? const [],
+        suppressStockWarning,
       ];
 }
 
@@ -129,9 +132,10 @@ class RemoveProductFromCartEvent extends BillingEvent {
 class UpdateQuantityEvent extends BillingEvent {
   final String productId;
   final double quantity;
-  const UpdateQuantityEvent(this.productId, this.quantity);
+  final bool suppressStockWarning;
+  const UpdateQuantityEvent(this.productId, this.quantity, {this.suppressStockWarning = false});
   @override
-  List<Object> get props => [productId, quantity];
+  List<Object> get props => [productId, quantity, suppressStockWarning];
 }
 
 class ClearCartEvent extends BillingEvent {}

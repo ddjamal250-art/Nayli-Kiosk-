@@ -38,7 +38,14 @@ enum ArrivageUnitMode { cartons, vracSacs, singleUnits, coffeeMachine, liquidDec
 
 class StockInPage extends StatefulWidget {
   final ParsedReceiptResult? initialReceiptResult;
-  const StockInPage({super.key, this.initialReceiptResult});
+  final Product? initialProduct;
+  final String? initialBarcode;
+  const StockInPage({
+    super.key,
+    this.initialReceiptResult,
+    this.initialProduct,
+    this.initialBarcode,
+  });
 
   @override
   State<StockInPage> createState() => _StockInPageState();
@@ -187,6 +194,18 @@ class _StockInPageState extends State<StockInPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _applyOcrResult(widget.initialReceiptResult!);
       });
+    } else if (widget.initialProduct != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadExistingProductIntoForm(widget.initialProduct!);
+        }
+      });
+    } else if (widget.initialBarcode != null && widget.initialBarcode!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _processScannedBarcode(widget.initialBarcode!.trim());
+        }
+      });
     }
   }
 
@@ -329,6 +348,81 @@ class _StockInPageState extends State<StockInPage> {
     _processScannedBarcode(barcode.trim());
   }
 
+  void _loadExistingProductIntoForm(Product existing) {
+    final liveExisting = HiveDatabase.productBox.get(existing.id) ?? existing;
+    setState(() {
+      _activeBarcode = liveExisting.barcode;
+      _isExistingInShop = true;
+      _existingProductId = liveExisting.id;
+      _nameController.text = liveExisting.name;
+      _priceController.text = liveExisting.price.toStringAsFixed(2);
+      final effectiveCost = liveExisting.costPrice > 0
+          ? liveExisting.costPrice
+          : liveExisting.effectiveCostPrice;
+      _costPriceController.text = effectiveCost.toStringAsFixed(2);
+      _currentStock = liveExisting.stock;
+      _itemImageUrl = liveExisting.imageUrl;
+      _selectedCategory = liveExisting.category.isNotEmpty ? liveExisting.category : 'عام';
+      _isCategoryUserSelected = true;
+      if (liveExisting.isLiquidProduct || liveExisting.liquidConfigJson != null) {
+        _unitMode = ArrivageUnitMode.liquidDecant;
+        if (liveExisting.liquidConfig != null) {
+          _liquidConfig = liveExisting.liquidConfig!;
+        }
+      } else if (liveExisting.isCoffeeMachineProduct || liveExisting.coffeeRecipeJson != null) {
+        _unitMode = ArrivageUnitMode.coffeeMachine;
+      } else if (liveExisting.isWeighted || liveExisting.unitSystemType == UnitSystemType.weight || liveExisting.baseUnitName == 'كغ' || liveExisting.name.contains('كغ') || liveExisting.name.contains('ميزان') || liveExisting.name.contains('قهوة') || liveExisting.name.contains('سكر') || liveExisting.name.contains('سميد')) {
+        _unitMode = ArrivageUnitMode.vracSacs;
+        _isWeighableScaleProduct = true;
+      } else {
+        _isWeighableScaleProduct = false;
+        _unitMode = ArrivageUnitMode.cartons;
+        final largeUnit = liveExisting.units.where((u) => u.tier == UnitTier.large).firstOrNull;
+        if (largeUnit != null) {
+          _hasCarton = true;
+          _cartonsPriceController.text = largeUnit.price > 0 ? largeUnit.price.toStringAsFixed(2) : '';
+          _cartonCostController.text = largeUnit.cost > 0 ? largeUnit.cost.toStringAsFixed(2) : '';
+          _cartonBarcodeController.text = largeUnit.barcode ?? '';
+          _unitsPerCartonController.text = (largeUnit.multiplier == largeUnit.multiplier.roundToDouble() ? largeUnit.multiplier.toInt().toString() : largeUnit.multiplier.toString());
+        } else {
+          _hasCarton = false;
+        }
+        
+        final mediumUnit = liveExisting.units.where((u) => u.tier == UnitTier.medium).firstOrNull;
+        if (mediumUnit != null) {
+          _hasMiddleTier = true;
+          _packPriceController.text = mediumUnit.price > 0 ? mediumUnit.price.toStringAsFixed(2) : '';
+          _packCostController.text = mediumUnit.cost > 0 ? mediumUnit.cost.toStringAsFixed(2) : '';
+          _packBarcodeController.text = mediumUnit.barcode ?? '';
+          _unitsPerPackController.text = (mediumUnit.multiplier == mediumUnit.multiplier.roundToDouble() ? mediumUnit.multiplier.toInt().toString() : mediumUnit.multiplier.toString());
+          if (largeUnit != null && mediumUnit.multiplier > 0) {
+            _packsPerCartonController.text = (largeUnit.multiplier / mediumUnit.multiplier).toInt().toString();
+          }
+        } else {
+          _hasMiddleTier = false;
+        }
+
+        _specialOffers = List<SpecialOffer>.from(liveExisting.specialOffers);
+        if (_specialOffers.isEmpty && liveExisting.specialOffer != null && liveExisting.specialOffer!.isEnabled) {
+          _specialOffers = [liveExisting.specialOffer!];
+        }
+        if (_specialOffers.isNotEmpty) {
+          _hasSpecialOffer = _specialOffers.any((o) => o.isEnabled);
+          final first = _specialOffers.first;
+          _offerTier = first.targetTier;
+          _offerQtyController.text = (first.quantity == first.quantity.roundToDouble() ? first.quantity.toInt().toString() : first.quantity.toString());
+          _offerPriceController.text = first.offerPrice.toStringAsFixed(2);
+        } else {
+          _hasSpecialOffer = false;
+        }
+      }
+    });
+    SoundService.playScanBeep();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _costPriceFocusNode.requestFocus();
+    });
+  }
+
   void _processScannedBarcode(String barcode) {
     setState(() {
       _activeBarcode = barcode;
@@ -339,73 +433,7 @@ class _StockInPageState extends State<StockInPage> {
     final existing = BarcodeNormalizer.findProduct(products, barcode);
 
     if (existing != null) {
-      setState(() {
-        _isExistingInShop = true;
-        _existingProductId = existing.id;
-        _nameController.text = existing.name;
-        _priceController.text = existing.price.toStringAsFixed(2);
-        _costPriceController.text = existing.costPrice.toStringAsFixed(2);
-        _currentStock = existing.stock;
-        _itemImageUrl = existing.imageUrl;
-        _selectedCategory = existing.category.isNotEmpty ? existing.category : 'عام';
-        _isCategoryUserSelected = true;
-        if (existing.isLiquidProduct || existing.liquidConfigJson != null) {
-          _unitMode = ArrivageUnitMode.liquidDecant;
-          if (existing.liquidConfig != null) {
-            _liquidConfig = existing.liquidConfig!;
-          }
-        } else if (existing.isCoffeeMachineProduct || existing.coffeeRecipeJson != null) {
-          _unitMode = ArrivageUnitMode.coffeeMachine;
-        } else if (existing.isWeighted || existing.unitSystemType == UnitSystemType.weight || existing.baseUnitName == 'كغ' || existing.name.contains('كغ') || existing.name.contains('ميزان') || existing.name.contains('قهوة') || existing.name.contains('سكر') || existing.name.contains('سميد')) {
-          _unitMode = ArrivageUnitMode.vracSacs;
-          _isWeighableScaleProduct = true;
-        } else {
-          _isWeighableScaleProduct = false;
-          _unitMode = ArrivageUnitMode.cartons;
-          final largeUnit = existing.units.where((u) => u.tier == UnitTier.large).firstOrNull;
-          if (largeUnit != null) {
-            _hasCarton = true;
-            _cartonsPriceController.text = largeUnit.price > 0 ? largeUnit.price.toStringAsFixed(2) : '';
-            _cartonCostController.text = largeUnit.cost > 0 ? largeUnit.cost.toStringAsFixed(2) : '';
-            _cartonBarcodeController.text = largeUnit.barcode ?? '';
-            _unitsPerCartonController.text = (largeUnit.multiplier == largeUnit.multiplier.roundToDouble() ? largeUnit.multiplier.toInt().toString() : largeUnit.multiplier.toString());
-          } else {
-            _hasCarton = false;
-          }
-          
-          final mediumUnit = existing.units.where((u) => u.tier == UnitTier.medium).firstOrNull;
-          if (mediumUnit != null) {
-            _hasMiddleTier = true;
-            _packPriceController.text = mediumUnit.price > 0 ? mediumUnit.price.toStringAsFixed(2) : '';
-            _packCostController.text = mediumUnit.cost > 0 ? mediumUnit.cost.toStringAsFixed(2) : '';
-            _packBarcodeController.text = mediumUnit.barcode ?? '';
-            _unitsPerPackController.text = (mediumUnit.multiplier == mediumUnit.multiplier.roundToDouble() ? mediumUnit.multiplier.toInt().toString() : mediumUnit.multiplier.toString());
-            if (largeUnit != null && mediumUnit.multiplier > 0) {
-              _packsPerCartonController.text = (largeUnit.multiplier / mediumUnit.multiplier).toInt().toString();
-            }
-          } else {
-            _hasMiddleTier = false;
-          }
-
-          _specialOffers = List<SpecialOffer>.from(existing.specialOffers);
-          if (_specialOffers.isEmpty && existing.specialOffer != null && existing.specialOffer!.isEnabled) {
-            _specialOffers = [existing.specialOffer!];
-          }
-          if (_specialOffers.isNotEmpty) {
-            _hasSpecialOffer = _specialOffers.any((o) => o.isEnabled);
-            final first = _specialOffers.first;
-            _offerTier = first.targetTier;
-            _offerQtyController.text = (first.quantity == first.quantity.roundToDouble() ? first.quantity.toInt().toString() : first.quantity.toString());
-            _offerPriceController.text = first.offerPrice.toStringAsFixed(2);
-          } else {
-            _hasSpecialOffer = false;
-          }
-        }
-      });
-      SoundService.playScanBeep();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _costPriceFocusNode.requestFocus();
-      });
+      _loadExistingProductIntoForm(existing);
       return;
     }
 

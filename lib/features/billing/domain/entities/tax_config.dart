@@ -79,6 +79,26 @@ class TaxConfig {
     }
   }
 
+  /// حساب الطابع الجبائي الجزائري (Timbre Fiscal) وفق قانون المالية الجزائري (مرجع Graviola 4.2.6)
+  /// - يُعفى إذا كان الدفع غير نقدي أو كان المبلغ <= 300 دج
+  /// - يحسب على أساس شرائح كل 100 دج (أو جزء منها بالسقف الأعلى ceil):
+  ///   * من 300.01 إلى 30,000 دج: 1 دج لكل 100 دج (1%)
+  ///   * من 30,000.01 إلى 100,000 دج: 1.5 دج لكل 100 دج (1.5%)
+  ///   * أكثر من 100,000 دج: 2 دج لكل 100 دج (2%)
+  /// - الحد الأدنى للطابع الجبائي هو 5 دج
+  static double calculateAlgerianTimbreFiscal(double amountAfterVat, {bool isCash = true}) {
+    if (!isCash || amountAfterVat <= 300.0) return 0.0;
+    final int hundreds = (amountAfterVat / 100.0).ceil();
+    double rate = 1.0;
+    if (amountAfterVat > 100000.0) {
+      rate = 2.0;
+    } else if (amountAfterVat > 30000.0) {
+      rate = 1.5;
+    }
+    final double duty = hundreds * rate;
+    return duty < 5.0 ? 5.0 : duty;
+  }
+
   static TaxConfig fromSettings() {
     final box = HiveDatabase.settingsBox;
     return TaxConfig(

@@ -38,6 +38,7 @@ import '../../../product/data/models/product_model.dart';
 import '../../../product/data/models/product_unit_model.dart';
 import '../../../product/domain/entities/product_unit.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
+import '../../../product/presentation/widgets/quick_receive_modal.dart';
 import '../../../product/presentation/widgets/shared_category_bar.dart';
 import '../../../../core/widgets/product_image_display.dart';
 import '../../../shifts/data/shift_service.dart';
@@ -594,6 +595,8 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       return true;
     }
 
+    final liveProduct = HiveDatabase.productBox.get(product.id) ?? product;
+
     final existingDeduct = context.read<BillingBloc>().state.cartItems
         .where((i) {
           String bId = i.product.id;
@@ -603,13 +606,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               break;
             }
           }
-          return bId == product.id || i.product.id == product.id;
+          return bId == liveProduct.id || i.product.id == liveProduct.id;
         })
         .fold(0.0, (sum, i) => sum + i.totalStockDeduct);
 
     final double totalDeduct = requestedQty * multiplier;
     final double totalProposed = existingDeduct + totalDeduct;
-    final double currentStock = product.stock;
+    final double currentStock = liveProduct.stock;
 
     if (currentStock > 0 && totalProposed <= currentStock) {
       return true;
@@ -622,7 +625,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         SoundService.playWarning();
         SnackbarHelper.showError(
           context,
-          'مخزون "${product.name}" نفد تماماً (0). غير مسموح بالبيع بالسالب.',
+          'مخزون "${liveProduct.name}" نفد تماماً (0). غير مسموح بالبيع بالسالب.',
         );
         return false;
       }
@@ -632,7 +635,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     SoundService.playWarning();
     final bool allowNegative = StaffPermissionsService.allowNegativeStockSale;
 
-    final result = await showDialog<bool>(
+    final action = await showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
@@ -680,7 +683,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          product.name,
+                          liveProduct.name,
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -688,10 +691,10 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                       ),
                     ],
                   ),
-                  if (product.barcode.isNotEmpty) ...[
+                  if (liveProduct.barcode.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      'الباركود: ${product.barcode}',
+                      'الباركود: ${liveProduct.barcode}',
                       style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontFamily: 'monospace'),
                     ),
                   ],
@@ -707,7 +710,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          isZeroOrNegative ? '0 (نفد المخزون)' : '$currentStock ${product.baseUnitName}',
+                          isZeroOrNegative ? '$currentStock (نفد المخزون)' : '$currentStock ${liveProduct.baseUnitName}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -723,7 +726,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     children: [
                       const Text('الكمية الإجمالية المطلوبة بالسلة:', style: TextStyle(fontSize: 12)),
                       Text(
-                        '$totalProposed ${product.baseUnitName}',
+                        '$totalProposed ${liveProduct.baseUnitName}',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.indigo),
                       ),
                     ],
@@ -746,7 +749,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'البيع بالسالب معطل في إعدادات النظام. لا يمكن إضافة المنتج حتى يتم توريد كميات جديدة.',
+                        'البيع بالسالب معطل في إعدادات النظام. يمكنك استلام وتوريد كمية جديدة لهذه السلعة فوراً.',
                         style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -755,34 +758,75 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
               )
             else
               Text(
-                'السلعة غير متوفرة في مخزون البرنامج. هل تريد السماح ببيعها بالسالب (سحب -${(totalProposed - currentStock).clamp(0.0, 99999.0).toStringAsFixed(1)} ${product.baseUnitName})؟',
+                'السلعة غير متوفرة في مخزون البرنامج. اختر إما توريد كمية جديدة لهذه السلعة أو متابعة البيع بالسالب (سحب -${(totalProposed - currentStock).clamp(0.0, 99999.0).toStringAsFixed(1)} ${liveProduct.baseUnitName}):',
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
               ),
           ],
         ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(ctx, 'cancel'),
             child: Text(
-              allowNegative ? 'إلغاء وعدم الإضافة' : 'إغلاق',
+              'إلغاء',
               style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold),
             ),
           ),
-          if (allowNegative)
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade800,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.teal.shade800,
+                  side: BorderSide(color: Colors.teal.shade600, width: 1.3),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => Navigator.pop(ctx, 'quick_receive'),
+                icon: const Icon(Icons.bolt_rounded, size: 18),
+                label: const Text('توريد سريع ⚡', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('متابعة البيع بالسالب ⚠️', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => Navigator.pop(ctx, 'stock_in_page'),
+                icon: const Icon(Icons.inventory_2_rounded, size: 17),
+                label: const Text('استلام وتفاصيل السلعة 📦', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              if (allowNegative)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade800,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, 'continue_negative'),
+                  child: const Text('متابعة البيع بالسالب ⚠️', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
         ],
       ),
     );
 
-    return result == true;
+    if (!mounted) return false;
+
+    if (action == 'quick_receive') {
+      final received = await QuickReceiveModal.show(context, liveProduct);
+      return received;
+    } else if (action == 'stock_in_page') {
+      await context.push('/products/stock-in', extra: liveProduct);
+      final refreshed = HiveDatabase.productBox.get(liveProduct.id);
+      if (refreshed != null && refreshed.stock >= totalProposed) {
+        return true;
+      }
+      return false;
+    }
+
+    return action == 'continue_negative';
   }
 
   Future<void> _addProductToCartWithPricing(
@@ -795,49 +839,45 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       final canAdd = await _checkStockOrWarn(product, requestedQty: quantity);
       if (!canAdd) return;
     }
-    if (product.isLiquidProduct && !_isReturnMode) {
-      LiquidDecantDialog.show(context, product);
+    if (!mounted) return;
+    final liveProduct = HiveDatabase.productBox.get(product.id) ?? product;
+
+    if (liveProduct.isLiquidProduct && !_isReturnMode) {
+      LiquidDecantDialog.show(context, liveProduct);
       return;
     }
-    if (product.isCoffeeMachineProduct && !_isReturnMode) {
-      _showCoffeeSaleDialog(product, quantity.toInt());
+    if (liveProduct.isCoffeeMachineProduct && !_isReturnMode) {
+      _showCoffeeSaleDialog(liveProduct, quantity.toInt());
       return;
     }
 
     // Product Options / Modifiers Check
-    if (product.hasOptions && !_isReturnMode && selectedOptions == null) {
+    if (liveProduct.hasOptions && !_isReturnMode && selectedOptions == null) {
       final optRes = await ProductOptionsModal.show(
         context,
-        product: product,
+        product: liveProduct,
         quantity: quantity,
-        basePrice: product.price,
+        basePrice: liveProduct.price,
       );
       if (optRes == null) return;
       selectedOptions = optRes.selectedOptions;
       itemNote = optRes.itemNote;
     }
 
-    double effectivePrice = product.price;
-    if (_activePriceTier == PosPriceTier.gros && product.wholesalePrice > 0) {
-      effectivePrice = product.wholesalePrice;
-    } else if (_activePriceTier == PosPriceTier.demiGros && product.wholesalePrice > 0) {
-      effectivePrice = (product.price + product.wholesalePrice) / 2;
+    double effectivePrice = liveProduct.price;
+    if (_activePriceTier == PosPriceTier.gros && liveProduct.wholesalePrice > 0) {
+      effectivePrice = liveProduct.wholesalePrice;
+    } else if (_activePriceTier == PosPriceTier.demiGros && liveProduct.wholesalePrice > 0) {
+      effectivePrice = (liveProduct.price + liveProduct.wholesalePrice) / 2;
     }
 
     if (_isReturnMode) {
       effectivePrice = -effectivePrice.abs();
     }
 
-    final itemProduct = Product(
-      id: product.id,
-      name: _isReturnMode ? '[${context.tr('return_mode')}] ${product.name}' : product.name,
-      barcode: product.barcode,
+    final itemProduct = liveProduct.copyWith(
+      name: _isReturnMode ? '[${context.tr('return_mode')}] ${liveProduct.name}' : liveProduct.name,
       price: effectivePrice,
-      costPrice: product.costPrice,
-      stock: product.stock,
-      category: product.category,
-      imageUrl: product.imageUrl,
-      wholesalePrice: product.wholesalePrice,
     );
 
     context.read<BillingBloc>().add(AddProductToCartEvent(
@@ -845,6 +885,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
       quantity: quantity.toDouble(),
       selectedOptions: selectedOptions,
       itemNote: itemNote,
+      suppressStockWarning: true,
     ));
     _onItemScanned();
     if (mounted) {
@@ -1681,24 +1722,51 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         }
 
         // Regular or weighable item
-        final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
+        final qty = ((item['qty'] as num?)?.toDouble() ?? 1.0).abs();
         final weightKg = (item['weightKg'] as num?)?.toDouble();
-        final unitLevel = (item['unitLevel'] as num?)?.toInt();
+        final savedStockDeducted = (item['stockDeducted'] as num?)?.toDouble();
+        final savedUnitMultiplier = (item['unitMultiplier'] as num?)?.toDouble();
+        final rawUnitLevel = item['unitLevel'];
         final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled) || weightKg != null;
 
-        double unitMultiplier = 1.0;
-        if (unitLevel != null) {
-          final u = productModel.units.where((x) => x.tierIndex == unitLevel).firstOrNull;
-          if (u != null && u.multiplier > 0) {
-            unitMultiplier = u.multiplier;
+        double unitMultiplier = savedUnitMultiplier != null && savedUnitMultiplier > 0
+            ? savedUnitMultiplier
+            : 1.0;
+
+        if (savedUnitMultiplier == null && rawUnitLevel != null) {
+          if (rawUnitLevel is num) {
+            final u = productModel.units.where((x) => x.tierIndex == rawUnitLevel.toInt()).firstOrNull;
+            if (u != null && u.multiplier > 0) unitMultiplier = u.multiplier;
+          } else if (rawUnitLevel is String) {
+            final u = productModel.units.where((x) => x.name == rawUnitLevel || (rawUnitLevel == 'carton' && x.tierIndex == 2) || (rawUnitLevel == 'pack' && x.tierIndex == 1)).firstOrNull;
+            if (u != null && u.multiplier > 0) unitMultiplier = u.multiplier;
           }
         }
 
-        final double stockToAdd = hasWeighable && weightKg != null
-            ? weightKg.toDouble()
-            : (qty * unitMultiplier);
+        final double stockToAdd = savedStockDeducted != null && savedStockDeducted > 0
+            ? savedStockDeducted
+            : (hasWeighable && weightKg != null
+                ? weightKg.abs()
+                : (qty * unitMultiplier));
         final double newStock = (productModel.stock + stockToAdd).toDouble();
-        final updatedProd = productModel.copyWith(stock: newStock);
+
+        // Restore stockBatches as well
+        final updatedBatches = List<PurchaseBatch>.from(productModel.stockBatches);
+        if (updatedBatches.isNotEmpty) {
+          updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+          final newest = updatedBatches.first;
+          updatedBatches[0] = newest.copyWith(
+            remainingQuantity: (newest.remainingQuantity > 0 ? newest.remainingQuantity : 0.0) + stockToAdd,
+          );
+        } else {
+          updatedBatches.add(PurchaseBatch(
+            remainingQuantity: stockToAdd,
+            costPrice: productModel.effectiveCostPrice,
+            dateAdded: DateTime.now(),
+          ));
+        }
+
+        final updatedProd = productModel.copyWith(stock: newStock, stockBatches: updatedBatches);
         productBox.put(originalId, updatedProd);
         if (mounted) {
           context.read<ProductBloc>().add(UpdateProduct(updatedProd));
@@ -2164,6 +2232,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
                     _cartDiscountValue = val;
                     _isDiscountPercentage = isPercent;
                   });
+                  if (val > 0) {
+                    context.read<BillingBloc>().add(ApplyDiscountEvent(value: val, isPercentage: isPercent));
+                  } else {
+                    context.read<BillingBloc>().add(RemoveDiscountEvent());
+                  }
                   Navigator.pop(ctx);
                   SoundService.playSaveSuccess();
                   SnackbarHelper.showSuccess(context, context.tr('apply_discount'));
@@ -3205,6 +3278,7 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
 
     final bool isActuallyReturn = _isReturnMode || total < 0 || billingBloc.state.isRefund;
     final double posTotal = total.abs();
+    final double monetaryDiscount = _calculateDiscount(billingBloc.state.subTotalAmount.abs());
     final double tendered = receivedAmount != null ? receivedAmount.abs() : posTotal;
     final double change = (!isActuallyReturn && method == PosPaymentMethod.cash && tendered > posTotal) ? (tendered - posTotal) : 0.0;
 
@@ -3228,7 +3302,7 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
           : _customerCreditBalance,
       skipPhysicalPrint: !printReceipt,
       explicitTotal: posTotal,
-      explicitDiscount: _cartDiscountValue,
+      explicitDiscount: monetaryDiscount,
       splitPayments: splitPayments,
       orderNote: orderNote,
       isReturn: isActuallyReturn,
@@ -3300,6 +3374,17 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
     final bool isZeroOrNegative = (currentStock ?? 0.0) <= 0;
     final bool allowNegative = StaffPermissionsService.allowNegativeStockSale;
 
+    String baseId = productId;
+    for (final s in ['_carton_', '_pack_', '_pack', '_piece_', '_meter_', '_ml_', '_unit_', '_offer_']) {
+      if (baseId.contains(s)) {
+        baseId = baseId.split(s).first;
+        break;
+      }
+    }
+    final Product? resolvedProduct = HiveDatabase.productBox.get(baseId) ??
+        HiveDatabase.productBox.get(productId) ??
+        context.read<ProductBloc>().state.products.where((p) => p.id == baseId || p.id == productId).firstOrNull;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -3347,29 +3432,61 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
               ),
               child: Text(
                 allowNegative
-                    ? 'البيع بالسالب مفعّل في الإعدادات: إذا كانت السلعة موجودة في الرف فعلياً، يمكنك متابعة البيع وتعديل المخزون لاحقاً.'
+                    ? 'البيع بالسالب مفعّل في الإعدادات: يمكنك متابعة البيع بالسالب، أو توريد كمية جديدة لهذه السلعة مباشرة.'
                     : 'البيع بالسالب معطّل في إعدادات النظام لحماية دقة الحسابات. يرجى توريد السلعة أولاً.',
                 style: TextStyle(fontSize: 11.5, color: Colors.grey.shade800),
               ),
             ),
           ],
         ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('تجاهل / إغلاق', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            child: Text(
+              allowNegative ? 'متابعة البيع بالسالب ⚠️' : 'إغلاق',
+              style: TextStyle(
+                color: allowNegative ? Colors.orange.shade800 : Colors.grey.shade700,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.push('/products/stock-in');
-            },
-            child: const Text('توريد واستلام مخزون 📦'),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (resolvedProduct != null)
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.teal.shade800,
+                    side: BorderSide(color: Colors.teal.shade600, width: 1.3),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    QuickReceiveModal.show(context, resolvedProduct);
+                  },
+                  icon: const Icon(Icons.bolt_rounded, size: 18),
+                  label: const Text('توريد سريع ⚡', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  if (resolvedProduct != null) {
+                    context.push('/products/stock-in', extra: resolvedProduct);
+                  } else {
+                    context.push('/products/stock-in');
+                  }
+                },
+                icon: const Icon(Icons.inventory_2_rounded, size: 17),
+                label: const Text('استلام وتفاصيل السلعة 📦', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
