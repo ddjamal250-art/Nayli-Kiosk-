@@ -114,15 +114,13 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
             final pricePerKg = weighableUnit?.price ?? prod.price;
             final costPerKg = (weighableUnit != null && weighableUnit.cost > 0)
                 ? weighableUnit.cost : prod.costPrice;
-            final totalSale = weightKg * pricePerKg;
-            final totalCost = weightKg * costPerKg;
 
             add(AddProductToCartEvent(
               prod,
               unitLevel: weighableUnit?.name ?? 'base',
               quantity: 1,
-              customPrice: totalSale,
-              customUnitCost: totalCost,
+              customPrice: pricePerKg,
+              customUnitCost: costPerKg,
               customUnitName: '${weightGrams}غ',
               weightKg: weightKg,
             ));
@@ -261,12 +259,17 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
     // Direct update of custom price, custom name, or quantity on same unit
     if (currentItem.unitLevel == event.targetUnit) {
-      updatedCart[index] = currentItem.copyWith(
+      updatedCart[index] = CartItem(
+        product: currentItem.product,
         quantity: targetQuantity,
-        customUnitPrice: event.customUnitPrice ?? currentItem.customUnitPrice,
-        customUnitName: event.customUnitName ?? currentItem.customUnitName,
+        unitLevel: currentItem.unitLevel,
+        customUnitPrice: event.customUnitPrice ?? (event.targetUnit == 'custom' || isWeighableSwitch ? currentItem.customUnitPrice : null),
+        customUnitName: event.customUnitName ?? (event.targetUnit == 'custom' || isWeighableSwitch ? currentItem.customUnitName : null),
+        customUnitCost: currentItem.customUnitCost,
         weightKg: targetWeight,
-        customMultiplier: event.customMultiplier ?? currentItem.customMultiplier,
+        customMultiplier: event.customMultiplier ?? (event.targetUnit == 'custom' ? currentItem.customMultiplier : null),
+        itemNote: currentItem.itemNote,
+        selectedOptions: currentItem.selectedOptions,
       );
       emit(state.copyWith(cartItems: updatedCart, error: null));
       return;
@@ -798,11 +801,25 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final double finalTotalCost = isReturn ? -totalCost : totalCost;
       final double finalNetProfit = isReturn ? -netProfit : netProfit;
       
-      final double tenderedCash = event.receivedAmount ?? (event.paidAmount > 0 ? event.paidAmount : positiveTotal);
+      double nonCreditSplitTotal = 0.0;
+      if (event.splitPayments != null && event.splitPayments!.isNotEmpty) {
+        for (final sp in event.splitPayments!) {
+          final m = sp['method']?.toString() ?? '';
+          if (m != 'Crédit') {
+            nonCreditSplitTotal += ((sp['amount'] as num?)?.toDouble() ?? 0.0).abs();
+          }
+        }
+      }
+
+      final double tenderedCash = event.isCredit
+          ? (event.paidAmount > 0 && event.paidAmount < positiveTotal ? event.paidAmount : 0.0)
+          : (event.receivedAmount ?? (event.paidAmount > 0 ? event.paidAmount : positiveTotal));
       final double changeBack = event.changeAmount ?? ((tenderedCash > positiveTotal && !event.isCredit) ? (tenderedCash - positiveTotal) : 0.0);
-      final double effectiveCashPaid = event.isCredit
-          ? (event.paidAmount > positiveTotal ? positiveTotal : event.paidAmount)
-          : positiveTotal;
+      final double effectiveCashPaid = (event.splitPayments != null && event.splitPayments!.isNotEmpty)
+          ? nonCreditSplitTotal.clamp(0.0, positiveTotal)
+          : (event.isCredit
+              ? ((event.paidAmount > 0 && event.paidAmount < positiveTotal) ? event.paidAmount : 0.0)
+              : (isReturn ? -positiveTotal : positiveTotal));
 
       final activeShift = await ShiftService.getActiveShift();
 

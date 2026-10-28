@@ -98,17 +98,21 @@ class CartItem extends Equatable {
     return '${product.id}_${unitLevel}_${optionsKey}_$noteKey';
   }
 
+  static double _roundTo2(double val) => (val * 100.0).roundToDouble() / 100.0;
+
   /// المجموع الإجمالي للبيع مع دعم العروض الخاصة والتخفيضات والإرجاع
   double get total {
     if (weightKg != null) {
-      if (customUnitPrice != null) return customUnitPrice!;
-      return (weightKg! * unitPrice);
+      final isNegative = unitPrice < 0 || quantity < 0 || weightKg! < 0;
+      final rawTotal = weightKg!.abs() * unitPrice.abs() * quantity.abs();
+      final rounded = _roundTo2(rawTotal);
+      return isNegative ? -rounded : rounded;
     }
 
     // إذا تم تحديد عرض خاص أو سعر مخصص بالصفقة مباشرة
     if (unitLevel == 'custom' && customUnitPrice != null) {
       final isNegative = unitPrice < 0 || quantity < 0;
-      final t = (customUnitPrice!.abs() * quantity.abs());
+      final t = _roundTo2(customUnitPrice!.abs() * quantity.abs());
       return isNegative ? -t : t;
     }
 
@@ -133,10 +137,11 @@ class CartItem extends Equatable {
         }
       }
       totalAmount += (remainingQty * absPrice);
-      return isNegative ? -totalAmount : totalAmount;
+      final rounded = _roundTo2(totalAmount);
+      return isNegative ? -rounded : rounded;
     }
 
-    return unitPrice * quantity;
+    return _roundTo2(unitPrice * quantity);
   }
 
   bool get hasOfferApplied {
@@ -151,12 +156,12 @@ class CartItem extends Equatable {
     if (!hasOfferApplied) return 0.0;
     final normalTotal = unitPrice.abs() * quantity.abs();
     final offerTotal = total.abs();
-    return (normalTotal - offerTotal).clamp(0.0, double.infinity);
+    return _roundTo2((normalTotal - offerTotal).clamp(0.0, double.infinity));
   }
 
   /// الكمية الحقيقية للخصم من المخزون
   double get totalStockDeduct {
-    if (weightKg != null) return weightKg!;
+    if (weightKg != null) return weightKg! * quantity.abs();
     if (customMultiplier != null && customMultiplier! > 0) {
       return quantity * customMultiplier!;
     }
@@ -167,7 +172,7 @@ class CartItem extends Equatable {
 
   /// للتوافق مع الكود القديم
   double get totalBaseQuantity {
-    if (weightKg != null) return 1.0; 
+    if (weightKg != null) return weightKg! * quantity.abs();
     if (customMultiplier != null && customMultiplier! > 0) {
       return quantity * customMultiplier!;
     }
@@ -180,10 +185,12 @@ class CartItem extends Equatable {
   double get totalCostForInvoice {
     if (weightKg != null) {
       final unit = selectedUnit;
-      final costPerKg = (unit != null && unit.cost > 0) ? unit.cost : product.effectiveCostPrice;
-      return weightKg! * costPerKg;
+      final costPerKg = (customUnitCost != null && customUnitCost! > 0)
+          ? customUnitCost!
+          : ((unit != null && unit.cost > 0) ? unit.cost : product.effectiveCostPrice);
+      return _roundTo2(weightKg! * costPerKg * quantity.abs());
     }
-    return unitCost * quantity;
+    return _roundTo2(unitCost * quantity);
   }
 
   /// الربح = إجمالي البيع - إجمالي التكلفة

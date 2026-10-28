@@ -150,7 +150,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
     _initLocalServer();
     _startIpmCalculator();
-    _loadActiveShift();
+    ShiftService.repairHistoricalData().then((_) => _loadActiveShift());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _barcodeFocusNode.requestFocus();
       _restoreAutoSavedCart();
@@ -829,18 +829,45 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     return action == 'continue_negative';
   }
 
+  bool _isWeighableProduct(Product p) {
+    return p.isWeighted ||
+        p.unitSystemType == UnitSystemType.weight ||
+        p.barcode.startsWith('SCALE_') ||
+        p.baseUnitName.trim() == 'كغ' ||
+        p.baseUnitName.trim().toLowerCase() == 'kg' ||
+        p.units.any((u) => u.isWeighable && u.isEnabled);
+  }
+
   Future<void> _addProductToCartWithPricing(
     Product product, {
     double quantity = 1.0,
     List<SelectedProductOption>? selectedOptions,
     String? itemNote,
   }) async {
+    final liveProduct = HiveDatabase.productBox.get(product.id) ?? product;
+
+    if (_isWeighableProduct(liveProduct) && !_isReturnMode) {
+      if (mounted) {
+        setState(() {
+          _searchSuggestions = [];
+          _barcodeController.clear();
+        });
+      }
+      final weighUnit = liveProduct.units.where((u) => u.isWeighable && u.isEnabled).firstOrNull;
+      await UniversalUnitSelectorDialog.showForProduct(
+        context,
+        liveProduct,
+        initialUnit: weighUnit?.name ?? 'base',
+      );
+      if (mounted) _barcodeFocusNode.requestFocus();
+      return;
+    }
+
     if (!_isReturnMode) {
       final canAdd = await _checkStockOrWarn(product, requestedQty: quantity);
       if (!canAdd) return;
     }
     if (!mounted) return;
-    final liveProduct = HiveDatabase.productBox.get(product.id) ?? product;
 
     if (liveProduct.isLiquidProduct && !_isReturnMode) {
       LiquidDecantDialog.show(context, liveProduct);
@@ -1807,7 +1834,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     // Open drawer if cash payment to give money back
     if (invoiceData['paymentMethod'] == 'Espèces' || invoiceData['paymentMethod'] == 'كاش') {
       try {
-        unawaited(PrinterHelper.openCashDrawer());
+        final bool autoOpenDrawer = (HiveDatabase.settingsBox.get('pos_auto_open_drawer', defaultValue: false) as bool) &&
+            PrinterHelper.defaultThermalPrinter.isNotEmpty;
+        if (autoOpenDrawer) {
+          unawaited(PrinterHelper.openCashDrawer());
+        }
       } catch (_) {}
     }
 
@@ -2008,24 +2039,31 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
     if (!mounted || ModalRoute.of(context)?.isCurrent != true) return false;
     if (event is! KeyDownEvent) return false;
 
-    // Hardware Scanner Wedge rapid typing listener
+    final bool isEditableFocused = _barcodeFocusNode.hasFocus ||
+        (FocusManager.instance.primaryFocus?.context?.widget is EditableText);
+
+    // Hardware Scanner Wedge rapid typing listener (only when no text field is focused)
     final now = DateTime.now();
     final diffMs = now.difference(_lastHardwareKeyTime).inMilliseconds;
     _lastHardwareKeyTime = now;
 
-    if (event.character != null && event.character!.isNotEmpty && event.logicalKey != LogicalKeyboardKey.enter) {
-      if (diffMs < 50) {
-        _hardwareBarcodeBuffer += event.character!;
-      } else {
-        _hardwareBarcodeBuffer = event.character!;
-      }
-    }
-
-    if (event.logicalKey == LogicalKeyboardKey.enter && _hardwareBarcodeBuffer.length >= 4) {
-      final code = _hardwareBarcodeBuffer;
+    if (isEditableFocused) {
       _hardwareBarcodeBuffer = '';
-      _handleBarcodeSubmit(code);
-      return true;
+    } else {
+      if (event.character != null && event.character!.isNotEmpty && event.logicalKey != LogicalKeyboardKey.enter) {
+        if (diffMs < 50) {
+          _hardwareBarcodeBuffer += event.character!;
+        } else {
+          _hardwareBarcodeBuffer = event.character!;
+        }
+      }
+
+      if (event.logicalKey == LogicalKeyboardKey.enter && _hardwareBarcodeBuffer.length >= 4) {
+        final code = _hardwareBarcodeBuffer;
+        _hardwareBarcodeBuffer = '';
+        _handleBarcodeSubmit(code);
+        return true;
+      }
     }
 
     if (StaffPermissionsService.enableFastKeyboardShortcuts) {
@@ -3259,7 +3297,11 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
         (isSplit && splitPayments != null && splitPayments.any((p) => p['method'] == 'Espèces'));
     if (hasCash) {
       unawaited(SoundService.playDrawerKick());
-      unawaited(PrinterHelper.openCashDrawer());
+      final bool autoOpenDrawer = (HiveDatabase.settingsBox.get('pos_auto_open_drawer', defaultValue: false) as bool) &&
+          PrinterHelper.defaultThermalPrinter.isNotEmpty;
+      if (printReceipt && autoOpenDrawer) {
+        unawaited(PrinterHelper.openCashDrawer());
+      }
     }
 
     // 1. Dispatch PrintReceiptEvent to deduct stock and save invoice in invoicesBox
@@ -3284,7 +3326,9 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
             ? (subTotalAbs * (_cartDiscountValue / 100.0)).clamp(0.0, subTotalAbs)
             : _cartDiscountValue.clamp(0.0, subTotalAbs))
         : 0.0;
-    final double tendered = receivedAmount != null ? receivedAmount.abs() : posTotal;
+    final double tendered = isCredit
+        ? (receivedAmount != null && receivedAmount > 0 && receivedAmount < posTotal ? receivedAmount.abs() : 0.0)
+        : (receivedAmount != null ? receivedAmount.abs() : posTotal);
     final double change = (!isActuallyReturn && method == PosPaymentMethod.cash && tendered > posTotal) ? (tendered - posTotal) : 0.0;
 
     billingBloc.add(PrintReceiptEvent(
@@ -3296,7 +3340,7 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
       customerName: _selectedCustomerName,
       isCredit: isCredit,
       paymentMethod: paymentMethodStr,
-      paidAmount: tendered,
+      paidAmount: isCredit ? tendered : posTotal,
       receivedAmount: tendered,
       changeAmount: change,
       previousDebt: _customerCreditBalance,
@@ -3366,8 +3410,10 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
           context,
           '✅ تم تأكيد عملية الإرجاع وإعادة السلع إلى المخزون بنجاح! 🔄',
         );
-      } else {
+      } else if (printReceipt) {
         SnackbarHelper.showSuccess(context, context.tr('printed_success'));
+      } else {
+        SnackbarHelper.showSuccess(context, '✅ تم حفظ وتأكيد عملية البيع بنجاح ⚡');
       }
       _barcodeFocusNode.requestFocus();
       _loadActiveShift();
@@ -3501,8 +3547,13 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
   @override
   Widget build(BuildContext context) {
     return BlocListener<BillingBloc, BillingState>(
-      listenWhen: (previous, current) => current.stockWarning != previous.stockWarning && current.stockWarning != null,
+      listenWhen: (previous, current) =>
+          (current.stockWarning != previous.stockWarning && current.stockWarning != null) ||
+          (current.printSuccess && !previous.printSuccess),
       listener: (context, state) {
+        if (state.printSuccess) {
+          _loadActiveShift();
+        }
         if (state.stockWarning != null) {
           final parts = state.stockWarning!.split('|');
           if (parts.length >= 3) {
@@ -4059,11 +4110,11 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
                         separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
                         itemBuilder: (context, index) {
                           final item = state.cartItems[index];
-                          final hasMulti = item.product.units.isNotEmpty;
+                          final hasMulti = item.product.units.isNotEmpty || item.weightKg != null || _isWeighableProduct(item.product);
                           return ListTile(
                             tileColor: index.isEven ? Colors.transparent : (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02)),
                             dense: true,
-                            onTap: hasMulti ? () => UniversalUnitSelectorDialog.showForCartItem(context, item) : null,
+                            onTap: () => UniversalUnitSelectorDialog.showForCartItem(context, item),
                             leading: ProductImageDisplay(
                               imageUrl: item.product.imageUrl,
                               width: 36,
@@ -4542,7 +4593,9 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
       );
     }
 
-    await _finalizeSale(PosPaymentMethod.cash, currentTotal, '', printReceipt: true);
+    final bool shouldPrintFastPay = (HiveDatabase.settingsBox.get('pos_fast_pay_print', defaultValue: false) as bool) &&
+        PrinterHelper.defaultThermalPrinter.isNotEmpty;
+    await _finalizeSale(PosPaymentMethod.cash, currentTotal, '', printReceipt: shouldPrintFastPay);
   }
 
   Widget _buildCheckoutButton(BillingState state, double currentTotal) {

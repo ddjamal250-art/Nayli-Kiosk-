@@ -60,7 +60,8 @@ class PosPaymentModal {
     final baridiSplitController = TextEditingController();
     final creditSplitController = TextEditingController();
     final orderNoteController = TextEditingController();
-    bool shouldPrintReceipt = HiveDatabase.settingsBox.get('pos_auto_print_receipt', defaultValue: true) as bool;
+    bool shouldPrintReceipt = (HiveDatabase.settingsBox.get('pos_auto_print_receipt', defaultValue: false) as bool) &&
+        PrinterHelper.defaultThermalPrinter.isNotEmpty;
 
     showDialog(
       context: context,
@@ -609,10 +610,82 @@ class PosPaymentModal {
                 label: Text('${context.tr("whatsapp")} 💬', style: const TextStyle(fontWeight: FontWeight.bold)),
                 onPressed: () => onSendWhatsAppReceipt(total, state),
               ),
+              if (!isReturnMode)
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.teal.shade800,
+                    side: BorderSide(color: Colors.teal.shade600, width: 1.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.bolt_rounded, size: 20),
+                  label: const Text(
+                    'حفظ بدون طباعة ⚡',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  onPressed: () async {
+                    if (paymentMethod == PosPaymentMethod.customerCredit && selectedCustomerId != null) {
+                      final cData = HiveDatabase.customersBox.get(selectedCustomerId);
+                      double maxLimit = 50000.0;
+                      if (cData is Map) {
+                        maxLimit = (cData['maxDebtLimit'] as num?)?.toDouble() ?? 50000.0;
+                      }
+                      final projectedDebt = customerCreditBalance + total;
+                      if (projectedDebt > maxLimit) {
+                        final authorized = await SecurityPinHelper.authenticate(
+                          context,
+                          title: '${context.tr("debt_limit_exceeded")} (${maxLimit.toStringAsFixed(0)} DA)',
+                        );
+                        if (!authorized) {
+                          SnackbarHelper.showError(context, '❌ ' + context.tr('sale_cancelled_debt_refused'));
+                          return;
+                        }
+                      }
+                    }
+
+                    List<Map<String, dynamic>>? splitList;
+                    if (paymentMethod == PosPaymentMethod.split) {
+                      final double cashVal = double.tryParse(cashSplitController.text) ?? 0.0;
+                      final double cardVal = double.tryParse(cardSplitController.text) ?? 0.0;
+                      final double baridiVal = double.tryParse(baridiSplitController.text) ?? 0.0;
+                      final double creditVal = double.tryParse(creditSplitController.text) ?? 0.0;
+                      final double allocated = cashVal + cardVal + baridiVal + creditVal;
+                      if ((total - allocated).abs() > 0.05) {
+                        SnackbarHelper.showError(context, '❌ يجب أن يعادل مجموع أجزاء الدفع الإجمالي تماماً (${total.toStringAsFixed(2)} DA)');
+                        return;
+                      }
+                      splitList = [
+                        if (cashVal > 0) {'method': 'Espèces', 'amount': cashVal},
+                        if (cardVal > 0) {'method': 'TPE / Carte', 'amount': cardVal},
+                        if (baridiVal > 0) {'method': 'BaridiPay QR', 'amount': baridiVal},
+                        if (creditVal > 0) {'method': 'Crédit', 'amount': creditVal},
+                      ];
+                    }
+
+                    final noteText = orderNoteController.text.trim();
+                    final double effectiveReceived = isReturnMode
+                        ? -total
+                        : (paymentMethod == PosPaymentMethod.customerCredit
+                            ? 0.0
+                            : (paymentMethod == PosPaymentMethod.cash ? receivedAmount : total));
+
+                    Navigator.pop(ctx);
+                    await onFinalizeSale(
+                      paymentMethod,
+                      isReturnMode ? -total : total,
+                      manualTpeRefController.text,
+                      printReceipt: false,
+                      receivedAmount: effectiveReceived,
+                      splitPayments: splitList,
+                      orderNote: noteText.isNotEmpty ? noteText : null,
+                    );
+                  },
+                ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isReturnMode ? Colors.deepOrange.shade700 : Colors.teal,
+                  backgroundColor: isReturnMode ? Colors.deepOrange.shade700 : Colors.teal.shade700,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 icon: Icon(
                   isReturnMode
@@ -652,23 +725,12 @@ class PosPaymentModal {
                     if (detected == null) {
                       final chosen = await PrinterSelectionDialog.show(context, targetRole: PrinterRole.thermalReceipt);
                       if (chosen == null) {
-                        final proceed = await showDialog<bool>(
-                          context: context,
-                          builder: (c) => AlertDialog(
-                            title: Text(context.tr('no_printer_selected_title')),
-                            content: Text(context.tr('no_printer_selected_body')),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(c, false), child: Text(context.tr('cancel'))),
-                              ElevatedButton(onPressed: () => Navigator.pop(c, true), child: Text(context.tr('save_without_printing'))),
-                            ],
-                          ),
-                        );
-                        if (proceed != true) return;
                         shouldPrintReceipt = false;
                       }
                     }
                   }
 
+                  List<Map<String, dynamic>>? splitList;
                   if (paymentMethod == PosPaymentMethod.split) {
                     final double cashVal = double.tryParse(cashSplitController.text) ?? 0.0;
                     final double cardVal = double.tryParse(cardSplitController.text) ?? 0.0;
@@ -679,14 +741,6 @@ class PosPaymentModal {
                       SnackbarHelper.showError(context, '❌ يجب أن يعادل مجموع أجزاء الدفع الإجمالي تماماً (${total.toStringAsFixed(2)} DA)');
                       return;
                     }
-                  }
-
-                  List<Map<String, dynamic>>? splitList;
-                  if (paymentMethod == PosPaymentMethod.split) {
-                    final double cashVal = double.tryParse(cashSplitController.text) ?? 0.0;
-                    final double cardVal = double.tryParse(cardSplitController.text) ?? 0.0;
-                    final double baridiVal = double.tryParse(baridiSplitController.text) ?? 0.0;
-                    final double creditVal = double.tryParse(creditSplitController.text) ?? 0.0;
                     splitList = [
                       if (cashVal > 0) {'method': 'Espèces', 'amount': cashVal},
                       if (cardVal > 0) {'method': 'TPE / Carte', 'amount': cardVal},
@@ -696,6 +750,11 @@ class PosPaymentModal {
                   }
 
                   final noteText = orderNoteController.text.trim();
+                  final double effectiveReceived = isReturnMode
+                        ? -total
+                        : (paymentMethod == PosPaymentMethod.customerCredit
+                            ? 0.0
+                            : (paymentMethod == PosPaymentMethod.cash ? receivedAmount : total));
 
                   Navigator.pop(ctx);
                   await onFinalizeSale(
@@ -703,7 +762,7 @@ class PosPaymentModal {
                     isReturnMode ? -total : total,
                     manualTpeRefController.text,
                     printReceipt: shouldPrintReceipt,
-                    receivedAmount: isReturnMode ? -total : (paymentMethod == PosPaymentMethod.cash ? receivedAmount : total),
+                    receivedAmount: effectiveReceived,
                     splitPayments: splitList,
                     orderNote: noteText.isNotEmpty ? noteText : null,
                   );

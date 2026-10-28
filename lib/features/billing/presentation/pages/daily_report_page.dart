@@ -543,37 +543,55 @@ class _DailyReportPageState extends State<DailyReportPage> {
     final totalItemsCount = invoices.fold<int>(0, (sum, inv) => sum + ((inv['itemCount'] as num?)?.toInt() ?? 1));
     final averageBasket = invoices.isNotEmpty ? (totalRevenue / invoices.length) : 0.0;
 
-    final cashSales = invoices.where((i) {
+    double cashSales = 0.0;
+    double creditSales = 0.0;
+    for (final i in invoices) {
+      final tot = (i['totalAmount'] as num?)?.toDouble() ?? 0.0;
+      final rawPaid = (i['paidAmount'] as num?)?.toDouble();
       final method = i['paymentMethod']?.toString() ?? 'Espèces';
+      final isCredit = i['isCredit'] == true || method.contains('Crédit') || method.contains('آجل');
       final isCard = method.contains('TPE') || method.contains('Card') || method.contains('Carte') || method.contains('Baridi');
-      return i['isCredit'] != true && !isCard;
-    }).fold<double>(0.0, (sum, i) {
-      final tot = (i['totalAmount'] as num?)?.toDouble() ?? 0.0;
-      final p = (i['paidAmount'] as num?)?.toDouble() ?? 0.0;
       final isReturnReceipt = i['isReturn'] == true || tot < 0;
       final isReturned = i['isReturned'] == true;
-      if (isReturnReceipt) {
-        final absTot = tot.abs();
-        final absP = p.abs();
-        final effectiveRefund = (absP > 0 && absP < absTot) ? absP : absTot;
-        return sum - effectiveRefund;
-      }
-      final effective = (p > 0 && p < tot) ? p : tot;
-      return isReturned ? (sum - effective) : (sum + effective);
-    });
+      if (isReturned && !isReturnReceipt) continue;
 
-    final creditSales = invoices.where((i) => i['isCredit'] == true).fold<double>(0.0, (sum, i) {
-      final tot = (i['totalAmount'] as num?)?.toDouble() ?? 0.0;
-      final p = (i['paidAmount'] as num?)?.toDouble() ?? 0.0;
-      final isReturnReceipt = i['isReturn'] == true || tot < 0;
-      final isReturned = i['isReturned'] == true;
-      if (isReturnReceipt) {
-        return sum - tot.abs();
+      final rawSplits = i['splitPayments'];
+      if (rawSplits is List && rawSplits.isNotEmpty) {
+        final sign = isReturnReceipt ? -1.0 : 1.0;
+        for (final sp in rawSplits) {
+          if (sp is Map) {
+            final spMethod = sp['method']?.toString() ?? 'Espèces';
+            final spAmount = ((sp['amount'] as num?)?.toDouble() ?? 0.0).abs() * sign;
+            if (spMethod == 'Crédit') {
+              creditSales += spAmount;
+            } else if (!spMethod.contains('TPE') && !spMethod.contains('Carte') && !spMethod.contains('Baridi')) {
+              cashSales += spAmount;
+            }
+          }
+        }
+      } else if (isCredit) {
+        if (isReturnReceipt) {
+          creditSales -= tot.abs();
+        } else {
+          final paid = rawPaid ?? 0.0;
+          final cashPart = (paid > 0 && paid < tot) ? paid : 0.0;
+          final creditPart = (tot - cashPart).clamp(0.0, double.infinity);
+          cashSales += cashPart;
+          creditSales += creditPart;
+        }
+      } else if (!isCard) {
+        final p = rawPaid ?? tot;
+        if (isReturnReceipt) {
+          final absTot = tot.abs();
+          final absP = p.abs();
+          final effectiveRefund = (absP > 0 && absP < absTot) ? absP : absTot;
+          cashSales -= effectiveRefund;
+        } else {
+          final effective = (p > 0 && p < tot) ? p : tot;
+          cashSales += effective;
+        }
       }
-      final cashPart = (p > 0) ? (p > tot ? tot : p) : 0.0;
-      final creditPart = (tot - cashPart).clamp(0.0, double.infinity);
-      return isReturned ? (sum - creditPart) : (sum + creditPart);
-    });
+    }
 
     final supplierCashOut = _getSupplierPayments();
 

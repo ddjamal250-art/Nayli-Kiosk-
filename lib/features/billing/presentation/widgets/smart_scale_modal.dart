@@ -438,10 +438,12 @@ class _SmartScaleModalState extends State<SmartScaleModal> {
     final matching = pBox.values.where((p) => p.name.trim() == name.trim() || p.id == _selectedProductId).firstOrNull;
 
     if (matching != null) {
+      final effectivePricePerKg = weightKg > 0 ? (finalTotal / weightKg) : matching.price;
       context.read<BillingBloc>().add(AddProductToCartEvent(
         matching,
         weightKg: weightKg,
-        customPrice: finalTotal,
+        customPrice: effectivePricePerKg,
+        customUnitName: weightLabel,
       ));
     } else {
       context.showAppSnackBar(

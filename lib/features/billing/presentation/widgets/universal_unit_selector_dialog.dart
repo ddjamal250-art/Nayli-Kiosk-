@@ -99,11 +99,24 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
     }
 
     _quantity = widget.initialQuantity;
-    _qtyController = TextEditingController(text: _quantity.toString());
+    _qtyController = TextEditingController(
+      text: _quantity == _quantity.roundToDouble()
+          ? _quantity.toInt().toString()
+          : _quantity.toString(),
+    );
+
+    if (widget.cartItem?.weightKg != null && widget.cartItem!.weightKg! > 0) {
+      final wKg = widget.cartItem!.weightKg!;
+      _weightKgController.text = wKg.toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '');
+      final itemTotal = widget.cartItem!.total.abs();
+      _weightPriceController.text = itemTotal == itemTotal.roundToDouble()
+          ? itemTotal.toInt().toString()
+          : itemTotal.toStringAsFixed(2);
+    }
 
     final validOffers = p.specialOffers.where((o) => o.isValid).toList();
     final firstOffer = validOffers.firstOrNull;
-    final double initialCustomQty = firstOffer?.quantity ?? 3.0;
+    final double initialCustomQty = firstOffer?.quantity ?? 1.0;
     final initialCustomPrice = firstOffer?.offerPrice ?? (p.price * initialCustomQty);
 
     if (firstOffer != null) {
@@ -220,6 +233,20 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
 
+    if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      _applySelection();
+      return;
+    } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+      Navigator.pop(context);
+      return;
+    }
+
+    // لا تختطف ضغطات الأرقام أو الأحرف إذا كان التاجر يكتب داخل حقل الكمية أو الوزن أو السعر
+    final focusedWidget = FocusManager.instance.primaryFocus?.context?.widget;
+    if (focusedWidget is EditableText) {
+      return;
+    }
+
     final secondary = _filteredSecondaryUnits;
     final customShortcut = secondary.length + 2;
 
@@ -243,14 +270,8 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
       if (unitIdx < secondary.length) {
         _selectUnit(secondary[unitIdx].name);
       }
-    } else if (digit == customShortcut ||
-        event.logicalKey == LogicalKeyboardKey.keyB ||
-        (digit != null && digit >= customShortcut)) {
+    } else if (digit == customShortcut || event.logicalKey == LogicalKeyboardKey.keyB) {
       _selectUnit('custom');
-    } else if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-      _applySelection();
-    } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-      Navigator.pop(context);
     }
   }
 
@@ -321,18 +342,28 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
 
     final isWeighable = _isCurrentWeighable;
     double? resolvedWeightKg;
+    double? resolvedWeighableUnitPrice;
+    String? resolvedWeighableUnitName;
 
     if (isWeighable) {
       if (_weightByPrice) {
-        final total = double.tryParse(_weightPriceController.text.trim()) ?? 0.0;
-        resolvedWeightKg = _currentUnitPrice > 0 ? (total / _currentUnitPrice) : 0.0;
+        final targetTotal = double.tryParse(_weightPriceController.text.trim()) ?? 0.0;
+        resolvedWeightKg = _currentUnitPrice > 0 ? (targetTotal / _currentUnitPrice) : 0.0;
+        if (resolvedWeightKg > 0) {
+          resolvedWeighableUnitPrice = targetTotal / resolvedWeightKg;
+        }
       } else {
         resolvedWeightKg = double.tryParse(_weightKgController.text.trim()) ?? 0.0;
+        resolvedWeighableUnitPrice = _currentUnitPrice;
       }
       if (resolvedWeightKg == null || resolvedWeightKg <= 0) {
         SnackbarHelper.showError(context, 'الرجاء إدخال وزن أو سعر صحيح للميزان');
         return;
       }
+      final grams = (resolvedWeightKg * 1000).round();
+      resolvedWeighableUnitName = grams >= 1000
+          ? '${resolvedWeightKg.toStringAsFixed(2)} كغ'
+          : '${grams}غ';
     }
 
     if (widget.cartItem != null) {
@@ -342,11 +373,13 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
               targetUnit: _selectedUnit,
               newQuantity: isWeighable ? 1.0 : _quantity,
               weightKg: resolvedWeightKg,
+              customUnitPrice: isWeighable ? resolvedWeighableUnitPrice : null,
+              customUnitName: isWeighable ? resolvedWeighableUnitName : null,
             ),
           );
       SnackbarHelper.showSuccess(
         context,
-        '${context.tr("unit_switched_msg")}: "${p.name}" (${isWeighable ? '${(resolvedWeightKg! * 1000).toStringAsFixed(0)}غ' : '$posUnitLabel x$_quantity'})',
+        '${context.tr("unit_switched_msg")}: "${p.name}" (${isWeighable ? resolvedWeighableUnitName! : '$posUnitLabel x$_quantity'})',
       );
     } else {
       if (!p.isUnlimitedStock) {
@@ -364,12 +397,14 @@ class _UniversalUnitSelectorDialogState extends State<UniversalUnitSelectorDialo
               unitLevel: _selectedUnit,
               quantity: isWeighable ? 1.0 : _quantity,
               weightKg: resolvedWeightKg,
+              customPrice: isWeighable ? resolvedWeighableUnitPrice : null,
+              customUnitName: isWeighable ? resolvedWeighableUnitName : null,
               suppressStockWarning: true,
             ),
           );
       SnackbarHelper.showSuccess(
         context,
-        '${context.tr("added_to_cart")}: ${isWeighable ? '${(resolvedWeightKg! * 1000).toStringAsFixed(0)}غ' : '$_quantity $posUnitLabel'} (${p.name})',
+        '${context.tr("added_to_cart")}: ${isWeighable ? resolvedWeighableUnitName! : '$_quantity $posUnitLabel'} (${p.name})',
       );
     }
     Navigator.pop(context);

@@ -185,20 +185,36 @@ class ShiftService {
               method.contains('Baridi');
 
           final bool isReturnReceipt = inv['isReturn'] == true || total < 0;
+          final rawSplits = inv['splitPayments'];
           double saleCash = 0.0;
           double saleTpe = 0.0;
           double saleCredit = 0.0;
 
-          if (isCardOrDigital) {
+          if (rawSplits is List && rawSplits.isNotEmpty) {
+            final sign = isReturnReceipt ? -1.0 : 1.0;
+            for (final sp in rawSplits) {
+              if (sp is Map) {
+                final spMethod = sp['method']?.toString() ?? 'Espèces';
+                final spAmount = ((sp['amount'] as num?)?.toDouble() ?? 0.0).abs() * sign;
+                if (spMethod == 'Crédit') {
+                  saleCredit += spAmount;
+                } else if (spMethod.contains('TPE') || spMethod.contains('Carte') || spMethod.contains('Baridi')) {
+                  saleTpe += spAmount;
+                } else {
+                  saleCash += spAmount;
+                }
+              }
+            }
+          } else if (isCardOrDigital) {
             saleTpe = total;
-          } else if (isCredit) {
+          } else if (isCredit || method.contains('Crédit') || method.contains('آجل')) {
             if (isReturnReceipt) {
               saleCredit = -total.abs();
               saleCash = 0.0;
             } else {
-              // الدفع بالكريدي (آجل) مع إمكانية تسبيق نقدي (Acompte)
+              // الدفع بالكريدي (آجل) مع إمكانية تسبيق نقدي جزئي فقط (أقل من إجمالي الفاتورة)
               final paid = rawPaid ?? 0.0;
-              final cashPart = (paid > 0) ? (paid > total ? total : paid) : 0.0;
+              final cashPart = (paid > 0 && paid < total) ? paid : 0.0;
               final creditPart = (total - cashPart).clamp(0.0, double.infinity);
               saleCash = cashPart;
               saleCredit = creditPart;
@@ -361,14 +377,12 @@ class ShiftService {
                 changed = true;
               }
             }
-          } else if (isCredit) {
-            // فاتورة كريدي
-            if (rawPaid != null && rawPaid > total.abs() && total.abs() > 0) {
-              final received = rawPaid;
-              final change = (rawPaid - total.abs()).clamp(0.0, double.infinity);
-              updated['receivedAmount'] = received;
-              updated['changeAmount'] = change;
-              updated['paidAmount'] = total;
+          } else if (isCredit || method.contains('Crédit') || method.contains('آجل')) {
+            // فاتورة كريدي: إذا كان المبلغ المدفوع مساوياً أو أكبر من إجمالي الفاتورة فهذا خطأ سابق ويجب تصفيره
+            if (rawPaid != null && rawPaid >= total.abs() && total.abs() > 0) {
+              updated['receivedAmount'] = 0.0;
+              updated['changeAmount'] = 0.0;
+              updated['paidAmount'] = 0.0;
               changed = true;
             }
           }

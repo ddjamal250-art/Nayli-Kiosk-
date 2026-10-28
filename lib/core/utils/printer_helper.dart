@@ -104,15 +104,9 @@ class PrinterHelper {
     // 2. Windows Desktop: Winspool RAW printer spooler
     if (Platform.isWindows) {
       try {
-        final printerName = defaultThermalPrinter.isNotEmpty ? defaultThermalPrinter : '';
+        final printerName = defaultThermalPrinter.trim();
         if (printerName.isNotEmpty) {
           await _sendRawBytesToWindowsPrinter(printerName, drawerCommand);
-        } else {
-          final printers = await Printing.listPrinters();
-          final best = findBestThermalPrinter(printers);
-          if (best != null) {
-            await _sendRawBytesToWindowsPrinter(best.name, drawerCommand);
-          }
         }
       } catch (e) {
         debugPrint('Windows drawer kick error: $e');
@@ -959,15 +953,19 @@ public class RawPrinterHelper {
       final printers = await Printing.listPrinters();
       
       Printer? target;
-      if (specificPrinterName != null && specificPrinterName.isNotEmpty) {
-        target = printers.where((p) => p.name == specificPrinterName).firstOrNull;
+      final preferredName = (specificPrinterName != null && specificPrinterName.trim().isNotEmpty)
+          ? specificPrinterName.trim()
+          : defaultThermalPrinter.trim();
+      if (preferredName.isNotEmpty) {
+        target = printers.where((p) => p.name == preferredName).firstOrNull;
       }
       target ??= findBestThermalPrinter(printers);
 
       if (target != null) {
         return await Printing.directPrintPdf(printer: target, onLayout: (_) => bytes, usePrinterSettings: true);
       } else {
-        return await Printing.layoutPdf(onLayout: (_) => bytes, name: 'Nayli_Receipt_$displayInvoiceNumber');
+        debugPrint('Print Notice: No thermal receipt printer configured. Skipping physical print to prevent modal interruption.');
+        return false;
       }
     } catch (e) {
       debugPrint('Print Error: $e');
