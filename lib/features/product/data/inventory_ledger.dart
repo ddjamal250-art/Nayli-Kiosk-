@@ -94,6 +94,28 @@ class InventoryLedger {
     return rawBatchCost;
   }
 
+  /// كشف وتصحيح التكلفة الشاذة عندما لا يتوفر كائن Product كامل (كما في شاشات الإدخال الجديدة)
+  static double sanitizeRawCost({
+    required double rawCost,
+    required double cartonMultiplier,
+    required double sellingPrice,
+    double? fallbackCost,
+  }) {
+    if (rawCost <= 0) return fallbackCost ?? 0.0;
+    if (sellingPrice > 0 && rawCost > sellingPrice) {
+      if (cartonMultiplier > 1) {
+        final derived = rawCost / cartonMultiplier;
+        if (derived <= sellingPrice * 1.05) {
+          return derived;
+        }
+      }
+      if (fallbackCost != null && fallbackCost > 0 && fallbackCost <= sellingPrice) {
+        return fallbackCost;
+      }
+    }
+    return rawCost;
+  }
+
   /// استهلاك كمية من المخزون بنظام FIFO وحساب التكلفة الحقيقية للبضاعة المباعة
   static LedgerResult consume(
     Product p,

@@ -722,12 +722,13 @@ class _StockInPageState extends State<StockInPage> {
 
     final supplierName = _supplierNameController.text.trim();
     final supplierPhone = _supplierPhoneController.text.trim();
-    final sanitizedBatchCost = InventoryLedger.sanitizeBatchUnitCost(
-      effectiveCost,
+    final sanitizedBatchCost = InventoryLedger.sanitizeRawCost(
+      rawCost: effectiveCost,
       cartonMultiplier: _unitMode == ArrivageUnitMode.cartons
           ? ((int.tryParse(_unitsPerCartonController.text.trim()) ?? 1) > 0 ? (int.tryParse(_unitsPerCartonController.text.trim()) ?? 1).toDouble() : 1.0)
           : 1.0,
       sellingPrice: effectivePrice,
+      fallbackCost: existingProduct?.effectiveCostPrice,
     );
     final newBatch = PurchaseBatch(
       costPrice: sanitizedBatchCost,

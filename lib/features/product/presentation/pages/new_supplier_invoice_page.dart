@@ -161,8 +161,8 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
         resolvedUnitCost = unitCost / perCarton;
       }
     }
-    resolvedUnitCost = InventoryLedger.sanitizeBatchUnitCost(
-      resolvedUnitCost,
+    resolvedUnitCost = InventoryLedger.sanitizeRawCost(
+      rawCost: resolvedUnitCost,
       cartonMultiplier: perCarton.toDouble(),
       sellingPrice: sellPrice,
     );

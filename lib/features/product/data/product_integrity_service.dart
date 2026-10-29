@@ -218,9 +218,8 @@ class ProductIntegrityService {
           double batchCost = batch.costPrice;
           if (batchCost > 0 && product.price > 0 && batchCost > product.price) {
             final sanitized = InventoryLedger.sanitizeBatchUnitCost(
+              product,
               batchCost,
-              cartonMultiplier: cartonMult,
-              sellingPrice: product.price,
             );
             if (sanitized != batchCost) {
               batchCost = sanitized;
