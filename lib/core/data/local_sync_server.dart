@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'hive_database.dart';
 import '../../features/billing/data/kiosk_service.dart';
 import '../../features/product/data/models/product_model.dart';
+import '../../features/product/data/inventory_ledger.dart';
 import '../utils/barcode_normalizer.dart';
 import '../utils/license_service.dart';
 import '../utils/merchant_context_service.dart';
@@ -703,13 +704,16 @@ class LocalSyncServer {
                   .firstOrNull;
 
               if (product != null && product is ProductModel) {
-                final double newStock = (product.stock - qty.toDouble()).toDouble().clamp(0.0, 999999.0);
-                final updatedProduct = product.copyWith(stock: newStock);
-                await HiveDatabase.productBox.put(product.id, updatedProduct);
+                final consumeRes = InventoryLedger.consume(
+                  product,
+                  qty.toDouble(),
+                  allowNegative: true,
+                );
+                await HiveDatabase.productBox.put(product.id, ProductModel.fromEntity(consumeRes.product));
                 updatedItems.add({
                   'id': product.id,
                   'barcode': product.barcode,
-                  'newStock': newStock,
+                  'newStock': consumeRes.product.stock,
                 });
               }
             }
@@ -983,9 +987,12 @@ class LocalSyncServer {
             .firstOrNull;
 
         if (product != null && product is ProductModel) {
-          final double newStock = (product.stock - qty.toDouble()).toDouble().clamp(0.0, 999999.0);
-          final updatedProduct = product.copyWith(stock: newStock);
-          await HiveDatabase.productBox.put(product.id, updatedProduct);
+          final consumeRes = InventoryLedger.consume(
+            product,
+            qty.toDouble(),
+            allowNegative: true,
+          );
+          await HiveDatabase.productBox.put(product.id, ProductModel.fromEntity(consumeRes.product));
         }
       }
     }

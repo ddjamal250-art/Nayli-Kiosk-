@@ -119,6 +119,13 @@ class HiveDatabase {
     } catch (e) {
       debugPrint('Product integrity repair failed: $e');
     }
+
+    // استصلاح وإصلاح دفعات المخزون وتكاليف الفواتير السابقة بأثر رجعي لإنقاذ أرباح التجار
+    try {
+      await ProductIntegrityService.repairCorruptedBatchesAndInvoicesRetroactively();
+    } catch (e) {
+      debugPrint('Retroactive COGS repair failed: $e');
+    }
   }
 
   static Box<ProductModel> get productBox =>

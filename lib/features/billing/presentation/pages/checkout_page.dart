@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/data/hive_database.dart';
+import '../../../../core/data/local_sync_server.dart';
+import '../../../product/data/inventory_ledger.dart';
 import '../../../../core/service_locator.dart';
 import '../../../../core/utils/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -144,67 +146,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
 
     try {
-      // 1. Decrement product stock in database (supporting multi-unit suffixes & FIFO batches)
-      final productBox = HiveDatabase.productBox;
-      final Map<int, double> fifoItemTotalCosts = {};
-      for (int idx = 0; idx < billingState.cartItems.length; idx++) {
-        final item = billingState.cartItems[idx];
-        if (!item.product.id.startsWith('custom_') && !item.product.id.startsWith('direct_') && !item.product.id.startsWith('UNKNOWN_')) {
-          String baseId = item.product.id;
-          for (final suffix in ['_carton_', '_pack_', '_pack', '_piece_', '_meter_', '_ml_', '_unit_', '_offer_']) {
-            if (baseId.contains(suffix)) {
-              baseId = baseId.split(suffix).first;
-              break;
-            }
-          }
-          final p = productBox.get(baseId) ?? productBox.get(item.product.id);
-          if (p != null) {
-            final double deductQty = item.totalStockDeduct;
-            final double newStock = (p.stock - deductQty).toDouble();
-            double remainingToDeduct = deductQty;
-            double fifoCostSum = 0.0;
-            final sortedBatches = List<PurchaseBatch>.from(p.stockBatches)
-              ..sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
-            final PurchaseBatch? lastReferenceBatch = sortedBatches.isNotEmpty ? sortedBatches.last : null;
-            final double fallbackCost = lastReferenceBatch != null && lastReferenceBatch.costPrice > 0
-                ? lastReferenceBatch.costPrice
-                : p.effectiveCostPrice;
-
-            final updatedBatches = <PurchaseBatch>[];
-            for (final batch in sortedBatches) {
-              if (remainingToDeduct <= 0) {
-                if (batch.remainingQuantity > 0) updatedBatches.add(batch);
-              } else if (batch.remainingQuantity > remainingToDeduct) {
-                final double bCost = batch.costPrice > 0 ? batch.costPrice : fallbackCost;
-                fifoCostSum += remainingToDeduct * bCost;
-                updatedBatches.add(batch.copyWith(
-                  remainingQuantity: batch.remainingQuantity - remainingToDeduct,
-                ));
-                remainingToDeduct = 0;
-              } else if (batch.remainingQuantity > 0) {
-                final double bCost = batch.costPrice > 0 ? batch.costPrice : fallbackCost;
-                fifoCostSum += batch.remainingQuantity * bCost;
-                remainingToDeduct -= batch.remainingQuantity;
-              }
-            }
-            if (remainingToDeduct > 0) {
-              fifoCostSum += remainingToDeduct * fallbackCost;
-            }
-            if (item.customUnitCost == null && fifoCostSum > 0) {
-              fifoItemTotalCosts[idx] = fifoCostSum;
-            }
-            if (updatedBatches.isEmpty && lastReferenceBatch != null) {
-              updatedBatches.add(lastReferenceBatch.copyWith(remainingQuantity: 0));
-            }
-            await productBox.put(
-              p.id,
-              p.copyWith(
-                stock: newStock,
-                stockBatches: updatedBatches,
-              ),
-            );
-          }
-        }
+      // 1. Decrement product stock in database via central InventoryRepository
+      final saleExecution = await InventoryRepository.applySale(
+        billingState.cartItems,
+        isReturn: false,
+        allowNegativeStock: true,
+      );
+      final fifoItemTotalCosts = saleExecution.itemTotalCosts;
+      if (saleExecution.modifiedInventoryItems.isNotEmpty) {
+        LocalSyncServer.broadcastInventoryChange(saleExecution.modifiedInventoryItems);
       }
 
       // 2. Calculate costs and save invoice in invoicesBox for Daily Reports & Profit

@@ -14,6 +14,7 @@ import '../../../../core/data/hive_database.dart';
 import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/utils/product_image_search_service.dart';
 import '../../data/models/product_model.dart';
+import '../../data/inventory_ledger.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_unit.dart';
 import '../../domain/entities/special_offer.dart';
@@ -53,6 +54,7 @@ class _EditProductPageState extends State<EditProductPage> {
   late TextEditingController _stockCtrl;
   late TextEditingController _baseUnitNameCtrl;
   late TextEditingController _pluCodeCtrl;
+  bool _revalueExistingBatches = true;
 
   // --- تركيبة ووصفة القهوة الجاهزة ---
   String? _coffeeRecipeJson;
@@ -570,7 +572,6 @@ class _EditProductPageState extends State<EditProductPage> {
       price: _parsePrice(_priceCtrl.text),
       costPrice: effectiveCost,
       stock: _parsePrice(_stockCtrl.text),
-      stockBatches: liveProduct.stockBatches,
       category: _selectedCategory,
       imageUrl: _imageUrl,
       baseUnitName: effectiveBaseUnit,
@@ -588,12 +589,20 @@ class _EditProductPageState extends State<EditProductPage> {
       hasMultiUnit: _hasCarton || _hasPack,
     );
 
+    // تسوية المخزون والدفعات مع إمكانية إعادة تقييم التكلفة حسب رغبة التاجر
+    final targetStock = _parsePrice(_stockCtrl.text);
+    final reconciledProduct = InventoryLedger.reconcile(
+      updatedProduct,
+      newStock: targetStock,
+      repriceTo: (_revalueExistingBatches && effectiveCost > 0) ? effectiveCost : null,
+    );
+
     // الحفظ المباشر والفوري في قاعدة بيانات Hive لمنع أي تأخير أو تزامن غير مكتمل
-    final model = ProductModel.fromEntity(updatedProduct);
+    final model = ProductModel.fromEntity(reconciledProduct);
     await HiveDatabase.productBox.put(model.id, model);
 
     if (mounted) {
-      context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
+      context.read<ProductBloc>().add(UpdateProduct(reconciledProduct));
       SnackbarHelper.showSuccess(context, 'تم تعديل المنتج بنجاح');
       context.pop();
     }
@@ -1213,6 +1222,27 @@ class _EditProductPageState extends State<EditProductPage> {
               offerPriceCtrl: _offerPriceCtrl,
               specialOffers: _specialOffers,
               onSpecialOffersChange: (v) => setState(() => _specialOffers = v),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade200),
+              ),
+              child: SwitchListTile(
+                value: _revalueExistingBatches,
+                onChanged: (val) => setState(() => _revalueExistingBatches = val),
+                title: const Text(
+                  'تحديث تكلفة المخزون الحالي (إعادة تقييم الدفعات السابقة)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                subtitle: const Text(
+                  'تطبيق سعر التكلفة الجديد على الدفعات المتوفرة بالمخزن لتفادي الأرباح السالبة وضمان دقة حساب الأرباح.',
+                  style: TextStyle(fontSize: 11, color: Colors.black87),
+                ),
+                activeColor: AppTheme.primaryColor,
+              ),
             ),
             const SizedBox(height: 16),
 

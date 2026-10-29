@@ -21,6 +21,7 @@ import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/utils/category_taxonomy.dart';
 import '../../domain/entities/product.dart';
 import '../../data/models/product_model.dart';
+import '../../data/inventory_ledger.dart';
 import '../bloc/product_bloc.dart';
 import '../../../documents/domain/entities/commercial_document.dart';
 import '../../../documents/presentation/widgets/receipt_ocr_scanner_dialog.dart';
@@ -561,14 +562,16 @@ class _StockInPageState extends State<StockInPage> {
         effectiveQty = totalReceivedPieces.toDouble();
         _qtyController.text = totalReceivedPieces.toString();
       }
-      if (effectiveCost <= 0) {
-        final cCostVal = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
-        final pCostVal = double.tryParse(_packCostController.text.trim()) ?? 0.0;
-        if (_hasCarton && cCostVal > 0 && cartonMultiplier > 0) {
-          effectiveCost = cCostVal / cartonMultiplier;
-        } else if (_hasMiddleTier && pCostVal > 0 && pCap > 0) {
-          effectiveCost = pCostVal / pCap;
-        }
+      final cCostVal = double.tryParse(_cartonCostController.text.trim()) ?? 0.0;
+      final pCostVal = double.tryParse(_packCostController.text.trim()) ?? 0.0;
+      if (_hasCarton && cCostVal > 0 && cartonMultiplier > 0) {
+        // إذا تم تحديد سعر الكرتونة، فإن تكلفة الحبة الأساسية دائماً هي سعر الكرتونة مقسوماً على سعتها
+        effectiveCost = cCostVal / cartonMultiplier;
+      } else if (_hasMiddleTier && pCostVal > 0 && pCap > 0) {
+        effectiveCost = pCostVal / pCap;
+      } else if (costPrice > 0 && cartonMultiplier > 1 && price > 0 && costPrice >= price) {
+        // حماية دفاعية: إذا أدخل التاجر سعر الكرتونة في خانة سعر التكلفة بالخطأ
+        effectiveCost = costPrice / cartonMultiplier;
       }
     }
 
@@ -719,8 +722,15 @@ class _StockInPageState extends State<StockInPage> {
 
     final supplierName = _supplierNameController.text.trim();
     final supplierPhone = _supplierPhoneController.text.trim();
+    final sanitizedBatchCost = InventoryLedger.sanitizeBatchUnitCost(
+      effectiveCost,
+      cartonMultiplier: _unitMode == ArrivageUnitMode.cartons
+          ? ((int.tryParse(_unitsPerCartonController.text.trim()) ?? 1) > 0 ? (int.tryParse(_unitsPerCartonController.text.trim()) ?? 1).toDouble() : 1.0)
+          : 1.0,
+      sellingPrice: effectivePrice,
+    );
     final newBatch = PurchaseBatch(
-      costPrice: effectiveCost,
+      costPrice: sanitizedBatchCost,
       remainingQuantity: effectiveQty, // Used as received quantity for archive
       dateAdded: _receiptDate,
       supplierName: supplierName.isEmpty ? null : supplierName,

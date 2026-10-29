@@ -12,6 +12,7 @@ import '../../../../core/utils/printer_helper.dart';
 import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/utils/sound_service.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
+import '../../../product/data/inventory_ledger.dart';
 import '../../data/commercial_document_service.dart';
 import '../../domain/entities/commercial_document.dart';
 import '../widgets/document_editor_dialog.dart';
@@ -246,68 +247,13 @@ class _DocumentsHubPageState extends State<DocumentsHubPage> with SingleTickerPr
 
     if (confirmed != true) return;
 
-    final productBox = HiveDatabase.productBox;
-    final rawItems = (inv['items'] as List?) ?? [];
-
-    for (final item in rawItems) {
-      if (item is! Map) continue;
-      String originalId = item['id']?.toString() ?? '';
-      if (originalId.contains('_carton_')) {
-        originalId = originalId.split('_carton_').first;
-      } else if (originalId.contains('_piece_')) {
-        originalId = originalId.split('_piece_').first;
-      } else if (originalId.contains('_meter_')) {
-        originalId = originalId.split('_meter_').first;
-      } else if (originalId.contains('_ml_')) {
-        originalId = originalId.split('_ml_').first;
-      } else if (originalId.endsWith('_pack')) {
-        originalId = originalId.replaceAll('_pack', '');
-      }
-
-      final productModel = productBox.get(originalId);
-      if (productModel != null) {
-        if (productModel.coffeeRecipeJson != null) {
-          try {
-            final recipe = jsonDecode(productModel.coffeeRecipeJson!);
-            if (recipe is List && recipe.isNotEmpty) {
-              for (final rawEntry in recipe) {
-                if (rawEntry is! Map) continue;
-                final rawId = rawEntry['rawProductId']?.toString();
-                final gramsPerCup = (rawEntry['qty'] as num?)?.toDouble() ?? 0.0;
-                if (rawId == null) continue;
-                final rawProduct = productBox.get(rawId);
-                if (rawProduct != null) {
-                  final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
-                  final addGrams = (gramsPerCup * qty).round();
-                  final newRawStock = (rawProduct.stock + addGrams).toDouble();
-                  productBox.put(rawId, rawProduct.copyWith(stock: newRawStock));
-                  if (context.mounted) {
-                    context.read<ProductBloc>().add(UpdateProduct(rawProduct.copyWith(stock: newRawStock)));
-                  }
-                }
-              }
-            }
-          } catch (_) {}
-          continue;
-        }
-
-        final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
-        final weightKg = (item['weightKg'] as num?)?.toDouble();
-        final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled) || weightKg != null;
-
-        final double stockToAdd = hasWeighable && weightKg != null
-            ? weightKg.toDouble()
-            : qty;
-        final double newStock = (productModel.stock + stockToAdd).toDouble();
-        final updatedProd = productModel.copyWith(stock: newStock);
-        productBox.put(originalId, updatedProd);
-        if (context.mounted) {
-          context.read<ProductBloc>().add(UpdateProduct(updatedProd));
-        }
-      }
+    // Restore inventory and FIFO batches via central InventoryRepository
+    await InventoryRepository.restoreInvoice(inv);
+    if (context.mounted) {
+      context.read<ProductBloc>().add(LoadProducts());
     }
 
-    // Customer credit deduction if credit sale
+        // Customer credit deduction if credit sale
     final isCredit = inv['isCredit'] == true;
     final totalAmount = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
     final customerId = inv['customerId']?.toString();

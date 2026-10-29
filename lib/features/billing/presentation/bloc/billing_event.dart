@@ -32,7 +32,7 @@ class AddProductToCartEvent extends BillingEvent {
 
   const AddProductToCartEvent(
     this.product, {
-    this.unitLevel = 'pack',
+    this.unitLevel = 'base',
     this.quantity = 1.0,
     this.customPrice,
     this.customUnitName,

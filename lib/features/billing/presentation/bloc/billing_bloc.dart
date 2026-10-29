@@ -8,6 +8,7 @@ import 'package:equatable/equatable.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/held_cart.dart';
 import '../../../product/domain/entities/product.dart';
+import '../../../product/data/inventory_ledger.dart';
 import '../../../product/domain/entities/product_option.dart';
 import '../../../product/data/models/product_model.dart';
 import '../../../product/domain/usecases/product_usecases.dart';
@@ -472,223 +473,15 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final double positiveTotal = magnitude;
       final bool allowNegativeStock = StaffPermissionsService.allowNegativeStockSale;
 
-      // 1. Auto-deduct or restock from Hive for all products & compute true FIFO cost per cart item
+      // 1. Auto-deduct or restock from Hive for all products via central InventoryRepository
+      final saleExecution = await InventoryRepository.applySale(
+        currentCartItems,
+        isReturn: isReturn,
+        allowNegativeStock: allowNegativeStock,
+      );
+      final fifoItemTotalCosts = saleExecution.itemTotalCosts;
+      final modifiedInventoryItems = saleExecution.modifiedInventoryItems;
       final productBox = HiveDatabase.productBox;
-      final modifiedInventoryItems = <Map<String, dynamic>>[];
-      final Map<int, double> fifoItemTotalCosts = {};
-
-      for (int cartIdx = 0; cartIdx < currentCartItems.length; cartIdx++) {
-        final cartItem = currentCartItems[cartIdx];
-        String originalId = cartItem.product.id;
-        if (originalId.contains('_carton_')) {
-          originalId = originalId.split('_carton_').first;
-        } else if (originalId.contains('_piece_')) {
-          originalId = originalId.split('_piece_').first;
-        } else if (originalId.contains('_meter_')) {
-          originalId = originalId.split('_meter_').first;
-        } else if (originalId.contains('_ml_')) {
-          originalId = originalId.split('_ml_').first;
-        } else if (originalId.endsWith('_pack')) {
-          originalId = originalId.replaceAll('_pack', '');
-        }
-
-        final productModel = productBox.get(originalId);
-        if (productModel != null) {
-          final bool isItemReturn = isReturn || cartItem.isReturnItem || cartItem.total < 0;
-          double newStock = 0.0;
-
-          if (productModel.coffeeRecipeJson != null) {
-            // Deduct or restock raw materials instead of this product's stock and calculate true FIFO recipe cost.
-            double recipeTotalCost = 0.0;
-            try {
-              final recipe = jsonDecode(productModel.coffeeRecipeJson!);
-              if (recipe is List && recipe.isNotEmpty) {
-                for (final item in recipe) {
-                  if (item is! Map) continue;
-                  final rawId = item['rawProductId']?.toString();
-                  if (rawId == null) continue;
-                  final double qtyPerCup = (item['qty'] as num?)?.toDouble() ?? 0.0;
-                  final String rawUnit = item['unit']?.toString() ?? 'غرام';
-                  final bool isPieceUnit = rawUnit == 'حبة' || rawUnit == 'قطعة';
-                  final rawProduct = productBox.get(rawId);
-                  if (rawProduct != null) {
-                    final double deductUnits = qtyPerCup * cartItem.quantity.abs();
-                    final double newRawStock = isItemReturn
-                        ? (rawProduct.stock + deductUnits).toDouble()
-                        : (allowNegativeStock
-                            ? (rawProduct.stock - deductUnits).toDouble()
-                            : (rawProduct.stock - deductUnits).toDouble().clamp(0.0, 9999999.0));
-
-                    // Compute FIFO ingredient cost before mutating batches
-                    double baseRawCost = rawProduct.effectiveCostPrice;
-                    if (rawProduct.stockBatches.isNotEmpty) {
-                      final sortedBatches = List<PurchaseBatch>.from(rawProduct.stockBatches)
-                        ..sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
-                      if (sortedBatches.first.costPrice > 0) {
-                        baseRawCost = sortedBatches.first.costPrice;
-                      }
-                    }
-                    final double unitIngredientCost = isPieceUnit ? baseRawCost : (baseRawCost / 1000.0);
-                    recipeTotalCost += unitIngredientCost * deductUnits;
-
-                    // FIFO Batch Deduction or Restock
-                    List<PurchaseBatch> updatedBatches = List.from(rawProduct.stockBatches);
-                    if (!isItemReturn && updatedBatches.isNotEmpty) {
-                      double remainingToDeduct = deductUnits;
-                      updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
-                      final PurchaseBatch lastReferenceBatch = updatedBatches.last;
-
-                      for (int i = 0; i < updatedBatches.length; i++) {
-                        if (remainingToDeduct <= 0) break;
-
-                        final batch = updatedBatches[i];
-                        if (batch.remainingQuantity <= remainingToDeduct) {
-                          remainingToDeduct -= batch.remainingQuantity.clamp(0.0, double.infinity);
-                          updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
-                        } else {
-                          updatedBatches[i] = batch.copyWith(
-                              remainingQuantity: batch.remainingQuantity - remainingToDeduct);
-                          remainingToDeduct = 0;
-                        }
-                      }
-                      updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
-                      if (updatedBatches.isEmpty) {
-                        updatedBatches.add(lastReferenceBatch.copyWith(remainingQuantity: 0));
-                      }
-                    } else if (isItemReturn) {
-                      if (updatedBatches.isNotEmpty) {
-                        updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
-                        final newest = updatedBatches.first;
-                        updatedBatches[0] = newest.copyWith(
-                            remainingQuantity: newest.remainingQuantity + deductUnits);
-                      } else {
-                        updatedBatches.add(PurchaseBatch(
-                          remainingQuantity: deductUnits,
-                          costPrice: rawProduct.costPrice,
-                          dateAdded: DateTime.now(),
-                        ));
-                      }
-                    }
-
-                    productBox.put(rawId, rawProduct.copyWith(stock: newRawStock, stockBatches: updatedBatches));
-                    modifiedInventoryItems.add({
-                      'id': rawId,
-                      'barcode': rawProduct.barcode,
-                      'newStock': newRawStock,
-                    });
-                  }
-                }
-              }
-            } catch (_) {}
-            if (recipeTotalCost > 0) {
-              fifoItemTotalCosts[cartIdx] = recipeTotalCost;
-            }
-            continue; // Skip the rest of the deduction for the cup itself
-          }
-
-          // الخصم أو الاسترجاع الحقيقي للمخزون (يدعم القطع، المقاسات، والمنتجات الموزونة بالكيلوغرام مباشرة)
-          final deductQty = cartItem.totalStockDeduct.abs();
-          newStock = isItemReturn
-              ? (productModel.stock + deductQty).toDouble()
-              : (allowNegativeStock
-                  ? (productModel.stock - deductQty).toDouble()
-                  : (productModel.stock - deductQty).toDouble().clamp(0.0, 9999999.0));
-
-          // FIFO Batch Deduction or Restock + True FIFO COGS Calculation (Graviola Section 5.1)
-          List<PurchaseBatch> updatedBatches = List.from(productModel.stockBatches);
-          if (!isItemReturn && updatedBatches.isNotEmpty) {
-            double remainingToDeduct = deductQty;
-            double fifoCostSum = 0.0;
-            updatedBatches.sort((a, b) => a.dateAdded.compareTo(b.dateAdded)); // Oldest first
-            final PurchaseBatch lastReferenceBatch = updatedBatches.last;
-            final double fallbackBaseCost = lastReferenceBatch.costPrice > 0
-                ? lastReferenceBatch.costPrice
-                : productModel.effectiveCostPrice;
-
-            for (int i = 0; i < updatedBatches.length; i++) {
-              if (remainingToDeduct <= 0) break;
-
-              final batch = updatedBatches[i];
-              if (batch.remainingQuantity <= 0) continue;
-              final double batchUnitCost =
-                  batch.costPrice > 0 ? batch.costPrice : fallbackBaseCost;
-
-              if (batch.remainingQuantity <= remainingToDeduct) {
-                final double taken = batch.remainingQuantity;
-                fifoCostSum += taken * batchUnitCost;
-                remainingToDeduct -= taken;
-                updatedBatches[i] = batch.copyWith(remainingQuantity: 0);
-              } else {
-                fifoCostSum += remainingToDeduct * batchUnitCost;
-                updatedBatches[i] = batch.copyWith(
-                    remainingQuantity: batch.remainingQuantity - remainingToDeduct);
-                remainingToDeduct = 0;
-              }
-            }
-
-            if (remainingToDeduct > 0) {
-              fifoCostSum += remainingToDeduct * fallbackBaseCost;
-            }
-
-            // If cartItem did not specify a custom unit cost override, use the exact FIFO batch cost
-            if (cartItem.customUnitCost == null && fifoCostSum > 0) {
-              fifoItemTotalCosts[cartIdx] = fifoCostSum;
-            }
-
-            updatedBatches.removeWhere((b) => b.remainingQuantity <= 0);
-            // الحفاظ على آخر دفعة مرجعية بكمية 0 عند نفاذ المخزون لعدم ضياع سعر الشراء المرجعي والمورد
-            if (updatedBatches.isEmpty) {
-              updatedBatches.add(lastReferenceBatch.copyWith(remainingQuantity: 0));
-            }
-          } else if (isItemReturn) {
-            // On return, add returned quantity back to the newest batch or create one
-            final double returnedQty = deductQty;
-            if (updatedBatches.isNotEmpty) {
-              updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded)); // Newest first
-              final newest = updatedBatches.first;
-              updatedBatches[0] = newest.copyWith(
-                  remainingQuantity: (newest.remainingQuantity > 0 ? newest.remainingQuantity : 0.0) + returnedQty);
-            } else {
-              updatedBatches.add(PurchaseBatch(
-                remainingQuantity: returnedQty,
-                costPrice: productModel.effectiveCostPrice,
-                dateAdded: DateTime.now(),
-              ));
-            }
-          }
-
-          productBox.put(originalId, productModel.copyWith(stock: newStock, stockBatches: updatedBatches));
-          modifiedInventoryItems.add({
-            'id': originalId,
-            'barcode': productModel.barcode,
-            'newStock': newStock,
-          });
-
-          // SMART SHOPPING LIST AUTOMATION
-          final bool isLiquid = productModel.liquidConfigJson != null || productModel.isLiquidProduct;
-          final double lowStockThreshold = isLiquid
-              ? (productModel.liquidConfig?.containerVolume ?? 100.0) * 0.15
-              : 5.0;
-
-          if (newStock <= lowStockThreshold) {
-            final shoppingList = HiveDatabase.shoppingListBox;
-            final existingList = shoppingList.get(originalId);
-            final double refillQty = isLiquid ? (productModel.liquidConfig?.containerVolume ?? 100.0) : 10.0;
-            if (existingList == null) {
-              shoppingList.put(originalId, {
-                'id': originalId,
-                'name': productModel.name,
-                'currentStock': newStock,
-                'qtyToBuy': refillQty, // Suggested refill qty
-              });
-            } else if (existingList is Map) {
-              final updatedList = Map<String, dynamic>.from(existingList);
-              updatedList['currentStock'] = newStock;
-              shoppingList.put(originalId, updatedList);
-            }
-          }
-        }
-      }
 
       // 2. Record sale invoice in invoicesBox with true FIFO cost & separate Tobacco vs General analytics
       final invoicesBox = HiveDatabase.invoicesBox;

@@ -47,3 +47,5 @@ app.*.map.json
 *.mp4
 scratch/
 graphify-out/
+
+error_logs/

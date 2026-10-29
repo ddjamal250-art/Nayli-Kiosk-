@@ -119,8 +119,25 @@ class Product extends Equatable {
 
   /// سعر التكلفة الفعلي للوحدة الأساسية (الحبة)، مع الحساب التلقائي من الكرتونة أو العلبة إذا كان غير محدد
   double get effectiveCostPrice {
-    if (costPrice > 0) return costPrice;
     final small = units.where((u) => u.tier == UnitTier.small).firstOrNull;
+    if (small != null && small.cost > 0 && (price <= 0 || small.cost <= price)) {
+      return small.cost;
+    }
+
+    if (costPrice > 0) {
+      if (price > 0 && costPrice > price) {
+        final large = units.where((u) => u.tier == UnitTier.large && u.multiplier > 1).firstOrNull;
+        if (large != null && (costPrice / large.multiplier) <= price * 1.05) {
+          return costPrice / large.multiplier;
+        }
+        final medium = units.where((u) => u.tier == UnitTier.medium && u.multiplier > 1).firstOrNull;
+        if (medium != null && (costPrice / medium.multiplier) <= price * 1.05) {
+          return costPrice / medium.multiplier;
+        }
+      }
+      return costPrice;
+    }
+
     if (small != null && small.cost > 0) return small.cost;
     final medium = units.where((u) => u.tier == UnitTier.medium).firstOrNull;
     if (medium != null && medium.cost > 0 && medium.multiplier > 0) return medium.cost / medium.multiplier;

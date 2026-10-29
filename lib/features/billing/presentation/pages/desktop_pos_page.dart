@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/kiosk_service.dart';
 
 import '../../../../core/data/hive_database.dart';
+import '../../../product/data/inventory_ledger.dart';
 import '../../../../core/data/local_sync_server.dart';
 import '../../../../core/data/master_catalog_service.dart';
 import '../../../../core/data/master_catalog_seed.dart';
@@ -1716,92 +1717,13 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
 
     if (confirmed != true || !mounted) return;
 
-    final productBox = HiveDatabase.productBox;
-    final rawItems = (invoiceData['items'] as List?) ?? [];
-
-    for (final item in rawItems) {
-      if (item is! Map) continue;
-      String originalId = item['id']?.toString() ?? '';
-
-      final productModel = productBox.get(originalId);
-      if (productModel != null) {
-        // If coffee recipe product, restore raw materials (e.g. coffee beans)
-        if (productModel.coffeeRecipeJson != null) {
-          try {
-            final recipe = jsonDecode(productModel.coffeeRecipeJson!);
-            if (recipe is List && recipe.isNotEmpty) {
-              final rawEntry = recipe.first;
-              final rawId = rawEntry['rawProductId'];
-              final gramsPerCup = (rawEntry['qty'] as num?)?.toDouble() ?? 0.0;
-              final rawProduct = productBox.get(rawId);
-              if (rawProduct != null) {
-                final qty = (item['qty'] as num?)?.toDouble() ?? 1.0;
-                final addGrams = (gramsPerCup * qty).round();
-                final newRawStock = (rawProduct.stock + addGrams).toDouble();
-                productBox.put(rawId, rawProduct.copyWith(stock: newRawStock));
-                if (mounted) {
-                  context.read<ProductBloc>().add(UpdateProduct(rawProduct.copyWith(stock: newRawStock)));
-                }
-              }
-            }
-          } catch (_) {}
-          continue;
-        }
-
-        // Regular or weighable item
-        final qty = ((item['qty'] as num?)?.toDouble() ?? 1.0).abs();
-        final weightKg = (item['weightKg'] as num?)?.toDouble();
-        final savedStockDeducted = (item['stockDeducted'] as num?)?.toDouble();
-        final savedUnitMultiplier = (item['unitMultiplier'] as num?)?.toDouble();
-        final rawUnitLevel = item['unitLevel'];
-        final hasWeighable = productModel.units.any((u) => u.isWeighable && u.isEnabled) || weightKg != null;
-
-        double unitMultiplier = savedUnitMultiplier != null && savedUnitMultiplier > 0
-            ? savedUnitMultiplier
-            : 1.0;
-
-        if (savedUnitMultiplier == null && rawUnitLevel != null) {
-          if (rawUnitLevel is num) {
-            final u = productModel.units.where((x) => x.tierIndex == rawUnitLevel.toInt()).firstOrNull;
-            if (u != null && u.multiplier > 0) unitMultiplier = u.multiplier;
-          } else if (rawUnitLevel is String) {
-            final u = productModel.units.where((x) => x.name == rawUnitLevel || (rawUnitLevel == 'carton' && x.tierIndex == 2) || (rawUnitLevel == 'pack' && x.tierIndex == 1)).firstOrNull;
-            if (u != null && u.multiplier > 0) unitMultiplier = u.multiplier;
-          }
-        }
-
-        final double stockToAdd = savedStockDeducted != null && savedStockDeducted > 0
-            ? savedStockDeducted
-            : (hasWeighable && weightKg != null
-                ? weightKg.abs()
-                : (qty * unitMultiplier));
-        final double newStock = (productModel.stock + stockToAdd).toDouble();
-
-        // Restore stockBatches as well
-        final updatedBatches = List<PurchaseBatch>.from(productModel.stockBatches);
-        if (updatedBatches.isNotEmpty) {
-          updatedBatches.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
-          final newest = updatedBatches.first;
-          updatedBatches[0] = newest.copyWith(
-            remainingQuantity: (newest.remainingQuantity > 0 ? newest.remainingQuantity : 0.0) + stockToAdd,
-          );
-        } else {
-          updatedBatches.add(PurchaseBatch(
-            remainingQuantity: stockToAdd,
-            costPrice: productModel.effectiveCostPrice,
-            dateAdded: DateTime.now(),
-          ));
-        }
-
-        final updatedProd = productModel.copyWith(stock: newStock, stockBatches: updatedBatches);
-        productBox.put(originalId, updatedProd);
-        if (mounted) {
-          context.read<ProductBloc>().add(UpdateProduct(updatedProd));
-        }
-      }
+    // Restore inventory and FIFO batches via central InventoryRepository
+    await InventoryRepository.restoreInvoice(invoiceData);
+    if (mounted) {
+      context.read<ProductBloc>().add(LoadProducts());
     }
 
-    // Customer credit deduction if credit sale
+        // Customer credit deduction if credit sale
     final isCredit = invoiceData['isCredit'] == true;
     final totalAmount = (invoiceData['totalAmount'] as num?)?.toDouble() ?? 0.0;
     final customerId = invoiceData['customerId']?.toString();

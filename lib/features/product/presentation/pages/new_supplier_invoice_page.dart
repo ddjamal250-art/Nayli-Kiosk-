@@ -13,6 +13,7 @@ import '../../../../core/utils/snackbar_helper.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../product/domain/entities/product.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
+import '../../data/inventory_ledger.dart';
 
 class NewSupplierInvoicePage extends StatefulWidget {
   NewSupplierInvoicePage({super.key});
@@ -151,9 +152,24 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
     final perCarton = _isCartonMode ? (int.tryParse(_unitsPerCartonController.text.trim()) ?? 24) : 1;
     final totalUnits = _isCartonMode ? (cartons * perCarton) : (int.tryParse(_unitQtyController.text.trim()) ?? 1);
     final parsedCartonCost = double.tryParse(_cartonCostController.text.trim().replaceAll(',', '.').replaceAll('،', '.'));
+
+    double resolvedUnitCost = unitCost;
+    if (_isCartonMode) {
+      if (parsedCartonCost != null && parsedCartonCost > 0 && perCarton > 0) {
+        resolvedUnitCost = parsedCartonCost / perCarton;
+      } else if (unitCost > 0 && perCarton > 1 && sellPrice > 0 && unitCost >= sellPrice) {
+        resolvedUnitCost = unitCost / perCarton;
+      }
+    }
+    resolvedUnitCost = InventoryLedger.sanitizeBatchUnitCost(
+      resolvedUnitCost,
+      cartonMultiplier: perCarton.toDouble(),
+      sellingPrice: sellPrice,
+    );
+
     final itemTotalCost = _isCartonMode
-        ? (cartons * (parsedCartonCost ?? (unitCost * perCarton)))
-        : (totalUnits * unitCost);
+        ? (cartons * (parsedCartonCost ?? (resolvedUnitCost * perCarton)))
+        : (totalUnits * resolvedUnitCost);
 
     final itemCategory = _activeCategory.isNotEmpty ? _activeCategory : CategoryTaxonomy.smartDetect(name).titleAr;
 
@@ -166,7 +182,7 @@ class _NewSupplierInvoicePageState extends State<NewSupplierInvoicePage> {
         'cartons': cartons,
         'perCarton': perCarton,
         'totalUnits': totalUnits,
-        'unitCost': unitCost,
+        'unitCost': resolvedUnitCost,
         'sellPrice': sellPrice,
         'totalCost': itemTotalCost,
       });
