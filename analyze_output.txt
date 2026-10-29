@@ -1714,8 +1714,8 @@ warning - Unused import: '../../../product/presentation/bloc/product_bloc.dart' 
    info - The declaration '_onCustomerSelected' isn't referenced - lib\features\documents\presentation\widgets\document_editor_dialog.dart:136:8 - unused_element
    info - The declaration '_onProductSelected' isn't referenced - lib\features\documents\presentation\widgets\document_editor_dialog.dart:145:8 - unused_element
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\documents\presentation\widgets\receipt_ocr_scanner_dialog.dart:6:8 - unused_import
-warning - The receiver can't be null because of short-circuiting, so the null-aware operator '?.' can't be used - lib\features\product\data\inventory_ledger.dart:529:70 - invalid_null_aware_operator
-warning - The receiver can't be null because of short-circuiting, so the null-aware operator '?.' can't be used - lib\features\product\data\inventory_ledger.dart:530:85 - invalid_null_aware_operator
+warning - The receiver can't be null because of short-circuiting, so the null-aware operator '?.' can't be used - lib\features\product\data\inventory_ledger.dart:551:70 - invalid_null_aware_operator
+warning - The receiver can't be null because of short-circuiting, so the null-aware operator '?.' can't be used - lib\features\product\data\inventory_ledger.dart:552:85 - invalid_null_aware_operator
    info - Field overrides a field inherited from 'PurchaseBatch' - lib\features\product\data\models\product_model.dart:12:16 - overridden_fields
    info - Field overrides a field inherited from 'PurchaseBatch' - lib\features\product\data\models\product_model.dart:16:16 - overridden_fields
    info - Field overrides a field inherited from 'PurchaseBatch' - lib\features\product\data\models\product_model.dart:20:18 - overridden_fields
@@ -1751,10 +1751,6 @@ warning - The receiver can't be null because of short-circuiting, so the null-aw
    info - Field overrides a field inherited from 'ProductUnit' - lib\features\product\data\models\product_unit_model.dart:28:14 - overridden_fields
    info - Field overrides a field inherited from 'ProductUnit' - lib\features\product\data\models\product_unit_model.dart:32:14 - overridden_fields
 warning - Unused import: 'models/product_model.dart' - lib\features\product\data\product_integrity_service.dart:3:8 - unused_import
-  error - The argument type 'double' can't be assigned to the parameter type 'Product'.  - lib\features\product\data\product_integrity_service.dart:221:15 - argument_type_not_assignable
-  error - 2 positional arguments expected by 'sanitizeBatchUnitCost', but 1 found - lib\features\product\data\product_integrity_service.dart:221:24 - not_enough_positional_arguments
-  error - The named parameter 'cartonMultiplier' isn't defined - lib\features\product\data\product_integrity_service.dart:222:15 - undefined_named_parameter
-  error - The named parameter 'sellingPrice' isn't defined - lib\features\product\data\product_integrity_service.dart:223:15 - undefined_named_parameter
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\product\data\repositories\product_repository_impl.dart:1:8 - depend_on_referenced_packages
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:90:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:108:13 - prefer_const_constructors
@@ -1785,10 +1781,6 @@ warning - Unused import: '../../../../core/utils/app_constants.dart' - lib\featu
 warning - The value of the local variable 'totalItemsCount' isn't used - lib\features\product\presentation\pages\losses_page.dart:399:9 - unused_local_variable
 warning - Unused import: '../../../../core/localization/app_localizations.dart' - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:13:8 - unused_import
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:19:3 - prefer_const_constructors_in_immutables
-  error - The argument type 'double' can't be assigned to the parameter type 'Product'.  - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:165:7 - argument_type_not_assignable
-  error - 2 positional arguments expected by 'sanitizeBatchUnitCost', but 1 found - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:165:23 - not_enough_positional_arguments
-  error - The named parameter 'cartonMultiplier' isn't defined - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:166:7 - undefined_named_parameter
-  error - The named parameter 'sellingPrice' isn't defined - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:167:7 - undefined_named_parameter
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:280:15 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:326:16 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:326:60 - prefer_const_constructors
@@ -2160,15 +2152,11 @@ warning - The value of the local variable 'copies' isn't used - lib\features\pro
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\shopping_list_page.dart:91:7 - use_build_context_synchronously
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\product\presentation\pages\stock_in_page.dart:9:8 - depend_on_referenced_packages
    info - The declaration '_mergeUnitsWithNewPrices' isn't referenced - lib\features\product\presentation\pages\stock_in_page.dart:496:21 - unused_element
-  error - The argument type 'double' can't be assigned to the parameter type 'Product'.  - lib\features\product\presentation\pages\stock_in_page.dart:726:7 - argument_type_not_assignable
-  error - 2 positional arguments expected by 'sanitizeBatchUnitCost', but 1 found - lib\features\product\presentation\pages\stock_in_page.dart:726:20 - not_enough_positional_arguments
-  error - The named parameter 'cartonMultiplier' isn't defined - lib\features\product\presentation\pages\stock_in_page.dart:727:7 - undefined_named_parameter
-  error - The named parameter 'sellingPrice' isn't defined - lib\features\product\presentation\pages\stock_in_page.dart:730:7 - undefined_named_parameter
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:886:11 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:893:11 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:900:32 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1059:25 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1128:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:887:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:894:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:901:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1060:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1129:32 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\product\presentation\pages\supplier_invoices_page.dart:134:19 - use_build_context_synchronously
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\widgets\liquid_decant_calculator_card.dart:74:21 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\product\presentation\widgets\liquid_decant_calculator_card.dart:81:20 - prefer_const_literals_to_create_immutables
