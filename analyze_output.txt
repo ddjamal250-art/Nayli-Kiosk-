@@ -649,32 +649,32 @@ warning - The value of the local variable 'vqd' isn't used - duck_test.dart:10:1
   error - Local variable 'req2' can't be referenced before it is declared - duck_test.dart:12:5 - referenced_before_declaration
   error - Expected to find ')' - duck_test.dart:12:50 - expected_token
    info - Don't invoke 'print' in production code - duck_test.dart:16:5 - avoid_print
-warning - Unused import: '../../features/billing/presentation/pages/cashier_shifts_page.dart' - lib\config\routes\app_routes.dart:17:8 - unused_import
-warning - Unused import: '../../features/documents/presentation/widgets/receipt_ocr_scanner_dialog.dart' - lib\config\routes\app_routes.dart:43:8 - unused_import
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:114:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:118:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:125:18 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:133:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:141:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:151:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:170:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:174:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:178:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:195:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:199:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:203:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:211:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:228:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:241:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:245:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:249:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:253:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:257:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:281:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:285:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:289:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:293:36 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:297:36 - prefer_const_constructors
+warning - Unused import: '../../features/billing/presentation/pages/cashier_shifts_page.dart' - lib\config\routes\app_routes.dart:18:8 - unused_import
+warning - Unused import: '../../features/documents/presentation/widgets/receipt_ocr_scanner_dialog.dart' - lib\config\routes\app_routes.dart:44:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:125:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:129:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:136:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:144:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:152:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:162:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:181:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:185:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:189:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:206:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:210:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:214:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:222:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:239:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:252:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:256:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:260:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:264:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:268:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:292:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:296:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:300:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:304:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\config\routes\app_routes.dart:308:36 - prefer_const_constructors
 warning - Unnecessary type check; the result is always 'true' - lib\core\data\local_sync_server.dart:706:38 - unnecessary_type_check
 warning - Unnecessary type check; the result is always 'true' - lib\core\data\local_sync_server.dart:989:32 - unnecessary_type_check
 warning - Unused import: 'package:flutter/services.dart' - lib\core\data\master_catalog_service.dart:4:8 - unused_import
@@ -703,30 +703,30 @@ warning - Two keys in a map literal shouldn't be equal - lib\core\localization\a
    info - Unnecessary braces in a string interpolation - lib\core\services\github_update_service.dart:595:33 - unnecessary_brace_in_string_interps
 warning - Unused import: 'package:google_fonts/google_fonts.dart' - lib\core\theme\app_theme.dart:2:8 - unused_import
    info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:5:31 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:53:25 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:76:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:102:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:104:25 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:112:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:127:25 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:132:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:134:16 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:137:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:141:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:153:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:159:17 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:163:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:166:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:173:20 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:173:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:176:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:180:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:184:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:184:41 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:188:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:188:41 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:190:25 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:197:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:55:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:78:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:104:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:106:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:114:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:129:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:134:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:136:16 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:139:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:143:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:155:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:161:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:165:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:168:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:175:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:175:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:178:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:182:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:186:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:186:41 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:190:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:190:41 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:192:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\core\theme\app_theme.dart:199:20 - prefer_const_constructors
 warning - Unused import: '../data/hive_database.dart' - lib\core\theme\theme_cubit.dart:3:8 - unused_import
 warning - Unused import: 'dart:convert' - lib\core\utils\audit_log_service.dart:1:8 - unused_import
 warning - The value of the local variable 'icon' isn't used - lib\core\utils\audit_log_service.dart:85:18 - unused_local_variable
@@ -737,6 +737,8 @@ warning - The value of the local variable 'timeStr' isn't used - lib\core\utils\
    info - Use 'const' with the constructor to improve performance - lib\core\utils\backup_helper.dart:146:41 - prefer_const_constructors
    info - Use interpolation to compose strings and values - lib\core\utils\barcode_normalizer.dart:209:47 - prefer_interpolation_to_compose_strings
    info - Use interpolation to compose strings and values - lib\core\utils\barcode_normalizer.dart:210:47 - prefer_interpolation_to_compose_strings
+  error - The getter 'productsBox' isn't defined for the type 'HiveDatabase' - lib\core\utils\excel_export_helper.dart:159:38 - undefined_getter
+warning - The left operand can't be null, so the right operand is never executed - lib\core\utils\excel_export_helper.dart:165:42 - dead_null_aware_expression
 warning - Unused import: '../../features/product/data/models/product_model.dart' - lib\core\utils\expiry_tracker_service.dart:4:8 - unused_import
    info - Don't invoke 'print' in production code - lib\core\utils\invoice_gemini_service.dart:15:9 - avoid_print
    info - Statements in an if should be enclosed in a block - lib\core\utils\invoice_gemini_service.dart:22:53 - curly_braces_in_flow_control_structures
@@ -793,10 +795,9 @@ warning - The receiver can't be null because of short-circuiting, so the null-aw
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\billing\domain\entities\cart_item.dart:2:8 - depend_on_referenced_packages
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\billing\presentation\bloc\billing_bloc.dart:6:8 - depend_on_referenced_packages
 warning - Unused import: '../../../product/data/models/product_model.dart' - lib\features\billing\presentation\bloc\billing_bloc.dart:13:8 - unused_import
-   info - Unnecessary braces in a string interpolation - lib\features\billing\presentation\bloc\billing_bloc.dart:104:31 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\features\billing\presentation\bloc\billing_bloc.dart:104:69 - unnecessary_brace_in_string_interps
    info - Unnecessary braces in a string interpolation - lib\features\billing\presentation\bloc\billing_bloc.dart:125:32 - unnecessary_brace_in_string_interps
-   info - The declaration '_onCleanExpiredHeldCarts' isn't referenced - lib\features\billing\presentation\bloc\billing_bloc.dart:414:8 - unused_element
-warning - The left operand can't be null, so the right operand is never executed - lib\features\billing\presentation\bloc\billing_bloc.dart:467:69 - dead_null_aware_expression
+   info - The declaration '_onCleanExpiredHeldCarts' isn't referenced - lib\features\billing\presentation\bloc\billing_bloc.dart:420:8 - unused_element
 warning - Unused import: '../../../../core/utils/printer_helper.dart' - lib\features\billing\presentation\pages\cashier_shifts_page.dart:8:8 - unused_import
 warning - Unused import: '../../../../core/widgets/primary_button.dart' - lib\features\billing\presentation\pages\checkout_page.dart:1:8 - unused_import
 warning - Unused import: '../../../../core/service_locator.dart' - lib\features\billing\presentation\pages\checkout_page.dart:9:8 - unused_import
@@ -817,255 +818,253 @@ warning - Unused import: '../../../product/domain/entities/product.dart' - lib\f
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:97:44 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:101:62 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:113:71 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\checkout_page.dart:226:15 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\checkout_page.dart:234:15 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:336:22 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:363:34 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:369:41 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:370:42 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:378:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:379:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:385:54 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:387:54 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:405:45 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:420:48 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:474:29 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:478:40 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:489:44 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:491:35 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:501:39 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:509:39 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:523:29 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:528:42 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:540:41 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:542:52 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:545:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:556:63 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:564:41 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:568:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:572:41 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:574:41 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:579:39 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:581:50 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:629:42 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:640:46 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:642:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:647:50 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:660:49 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:672:45 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:678:39 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:680:50 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:689:56 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:692:54 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:699:39 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:710:39 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:716:50 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:725:29 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:735:39 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:735:66 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:740:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:748:38 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:754:42 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:758:42 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:761:44 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:768:38 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:778:48 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:781:43 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:782:44 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:784:46 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:789:33 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:797:52 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\billing\presentation\pages\checkout_page.dart:848:45 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:868:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:872:52 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:876:47 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:877:48 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:879:50 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:884:37 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:888:52 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:892:47 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:893:48 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:895:50 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:926:18 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:938:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:962:18 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:982:16 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:986:16 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:998:16 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\checkout_page.dart:279:15 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\checkout_page.dart:288:15 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:391:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:418:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:424:41 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:425:42 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:433:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:434:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:440:54 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:442:54 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:460:45 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:475:48 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:529:29 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:533:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:544:44 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:546:35 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:556:39 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:564:39 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:578:29 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:583:42 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:595:41 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:597:52 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:600:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:611:63 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:619:41 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:623:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:627:41 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:629:41 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:634:39 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:636:50 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:684:42 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:695:46 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:697:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:702:50 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:715:49 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:727:45 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:733:39 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:735:50 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:744:56 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:747:54 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:754:39 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:765:39 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:771:50 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:780:29 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:790:39 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:790:66 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:795:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:803:38 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:809:42 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:813:42 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:816:44 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:823:38 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:833:48 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:836:43 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:837:44 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:839:46 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:844:33 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:852:52 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\billing\presentation\pages\checkout_page.dart:903:45 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:923:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:927:52 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:931:47 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:932:48 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:934:50 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:939:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:943:52 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:947:47 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:948:48 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:950:50 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:981:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:993:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:1017:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:1037:16 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:1041:16 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\checkout_page.dart:1053:16 - prefer_const_constructors
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\billing\presentation\pages\daily_report_page.dart:19:3 - prefer_const_constructors_in_immutables
 warning - The value of the field '_isPrinting' isn't used - lib\features\billing\presentation\pages\daily_report_page.dart:31:8 - unused_field
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:63:36 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:272:32 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:273:36 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:326:22 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:334:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:335:32 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:338:28 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:357:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:358:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:358:50 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:374:31 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:386:17 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:388:28 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:393:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:393:53 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:394:76 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:398:17 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:403:31 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:411:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:413:30 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:425:25 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:439:66 - prefer_const_constructors
-   info - Statements in an if should be enclosed in a block - lib\features\billing\presentation\pages\daily_report_page.dart:492:24 - curly_braces_in_flow_control_structures
-   info - Statements in an if should be enclosed in a block - lib\features\billing\presentation\pages\daily_report_page.dart:493:32 - curly_braces_in_flow_control_structures
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:627:15 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:628:55 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:635:60 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:636:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:638:24 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:647:62 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:648:19 - prefer_const_constructors
-   info - Unnecessary braces in a string interpolation - lib\features\billing\presentation\pages\daily_report_page.dart:649:25 - unnecessary_brace_in_string_interps
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:649:56 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:674:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:694:18 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:700:24 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:706:91 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:718:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:719:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:720:38 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:731:29 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:732:29 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:733:73 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:739:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:751:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:763:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:775:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:790:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:799:61 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:804:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:806:62 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:811:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:813:62 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:818:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:820:65 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:825:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:827:60 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:835:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:851:28 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:863:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:864:105 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:872:15 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:877:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:878:24 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:892:57 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:908:26 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:912:30 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:924:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:935:17 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:946:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:957:17 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:970:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1015:24 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1020:26 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1020:45 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1024:91 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1035:32 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1037:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1040:32 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1045:30 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1054:30 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1062:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1094:105 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1095:103 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1112:75 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1113:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1115:24 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1126:23 - prefer_const_constructors
-   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\pages\daily_report_page.dart:1127:35 - prefer_const_literals_to_create_immutables
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1128:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1129:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1130:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1130:62 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1133:71 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1136:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1140:23 - prefer_const_constructors
-   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\pages\daily_report_page.dart:1141:35 - prefer_const_literals_to_create_immutables
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1142:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1143:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1144:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1144:70 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1147:72 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1150:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1152:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1168:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1184:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1199:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1203:78 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1238:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1242:24 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1251:30 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1256:28 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1258:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1262:86 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1263:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1264:123 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1270:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1276:83 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1277:80 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:309:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:310:36 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:363:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:371:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:372:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\daily_report_page.dart:375:28 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:394:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:395:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:395:50 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:411:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:423:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:425:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:430:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:430:53 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:431:76 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:435:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:440:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:448:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:450:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:462:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:476:66 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\features\billing\presentation\pages\daily_report_page.dart:534:24 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\features\billing\presentation\pages\daily_report_page.dart:535:32 - curly_braces_in_flow_control_structures
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:669:15 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:670:55 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:677:60 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:678:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:680:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:689:62 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:690:19 - prefer_const_constructors
+   info - Unnecessary braces in a string interpolation - lib\features\billing\presentation\pages\daily_report_page.dart:691:25 - unnecessary_brace_in_string_interps
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:691:56 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:716:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:736:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:742:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:748:91 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:760:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:761:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:762:38 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:773:29 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:774:29 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:775:73 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:781:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:793:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:805:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:817:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:832:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:841:61 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:846:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:848:62 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:853:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:855:62 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:860:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:862:65 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:867:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:869:60 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:877:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:893:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:905:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:906:105 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:914:15 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:919:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:920:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:934:57 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:950:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:954:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:966:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:977:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:988:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:999:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1012:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1057:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1062:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1062:45 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1066:91 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1077:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1079:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1082:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1087:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1096:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1104:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1136:105 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1137:103 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1154:75 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1155:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1157:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1168:23 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\pages\daily_report_page.dart:1169:35 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1170:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1171:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1172:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1172:62 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1175:71 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1178:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1182:23 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\billing\presentation\pages\daily_report_page.dart:1183:35 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1184:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1185:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1186:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1186:70 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1189:72 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1192:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1194:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1210:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1226:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1241:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1245:78 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1280:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1284:26 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1290:86 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1295:26 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1297:46 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1315:32 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1319:32 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1328:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1329:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1359:18 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1360:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1362:25 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1362:52 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1374:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1375:81 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1378:34 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1381:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1383:24 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1392:78 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1393:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1394:135 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1396:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1397:78 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1402:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1403:60 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1404:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1406:28 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1410:46 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1420:60 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1422:77 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1428:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1432:62 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1436:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1442:32 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1445:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1446:69 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1469:17 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1475:32 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1478:27 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1479:73 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\billing\presentation\pages\daily_report_page.dart:1505:25 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1522:16 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1534:15 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1538:11 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1550:18 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1559:24 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1563:13 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1569:19 - prefer_const_constructors
-warning - The value of the local variable 'name' isn't used - lib\features\billing\presentation\pages\daily_report_page.dart:1589:19 - unused_local_variable
-   info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1833:5 - prefer_const_declarations
-   info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1834:5 - prefer_const_declarations
-   info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1835:5 - prefer_const_declarations
-   info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1836:5 - prefer_const_declarations
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1284:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1293:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1298:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1300:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1304:86 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1305:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1306:123 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1312:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1318:83 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1319:80 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1322:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1326:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1332:86 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1337:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1339:46 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1361:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1365:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1374:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1375:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1405:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1406:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1408:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1408:52 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1420:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1421:81 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1424:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1427:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1429:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1438:78 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1439:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1440:135 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1442:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1443:78 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1448:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1449:60 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1450:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1452:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1456:46 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1476:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1480:62 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1484:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1490:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1493:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1494:69 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1517:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1523:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1526:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1527:73 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\billing\presentation\pages\daily_report_page.dart:1553:25 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1570:16 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1582:15 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1586:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1598:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1607:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1611:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1617:19 - prefer_const_constructors
+  error - The getter 'productsBox' isn't defined for the type 'HiveDatabase' - lib\features\billing\presentation\pages\daily_report_page.dart:1670:40 - undefined_getter
+   info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1917:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1918:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1919:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1920:5 - prefer_const_declarations
 warning - Unused import: 'dart:convert' - lib\features\billing\presentation\pages\desktop_pos_page.dart:2:8 - unused_import
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\billing\presentation\pages\desktop_pos_page.dart:4:8 - depend_on_referenced_packages
 warning - Unused import: 'package:qr_flutter/qr_flutter.dart' - lib\features\billing\presentation\pages\desktop_pos_page.dart:10:8 - unused_import
@@ -1079,56 +1078,56 @@ warning - Unused import: '../../../product/domain/entities/product_unit.dart' - 
    info - The import of '../widgets/quick_item_add_edit_dialog.dart' is unnecessary because all of the used elements are also provided by the import of '../widgets/quick_items_manager_dialog.dart' - lib\features\billing\presentation\pages\desktop_pos_page.dart:53:8 - unnecessary_import
 warning - Unused import: '../widgets/printer_selection_dialog.dart' - lib\features\billing\presentation\pages\desktop_pos_page.dart:54:8 - unused_import
    info - The private field _selectedCategoryKey could be 'final' - lib\features\billing\presentation\pages\desktop_pos_page.dart:78:10 - prefer_final_fields
-warning - The value of the field '_currentIpm' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:120:10 - unused_field
-warning - The value of the field '_categoryTabs' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:145:16 - unused_field
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:372:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:373:19 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:374:96 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:383:32 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:388:70 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:398:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:399:61 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:403:119 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:415:115 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:433:66 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:488:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:489:108 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:490:23 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:515:21 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:517:32 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:522:136 - prefer_const_constructors
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:528:21 - prefer_const_constructors
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:907:33 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:911:5 - use_build_context_synchronously
-   info - Use a 'SizedBox' to add whitespace to a layout - lib\features\billing\presentation\pages\desktop_pos_page.dart:1530:18 - sized_box_for_whitespace
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:1723:39 - prefer_const_constructors
-   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:1873:61 - prefer_interpolation_to_compose_strings
-   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:2079:38 - prefer_interpolation_to_compose_strings
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:2397:30 - prefer_const_constructors
-   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:2449:41 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2519:29 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2525:32 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2544:17 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2549:44 - use_build_context_synchronously
-   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:2549:53 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2549:60 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2552:42 - use_build_context_synchronously
-   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:2552:51 - prefer_interpolation_to_compose_strings
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2552:58 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2624:32 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2624:41 - use_build_context_synchronously
-   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:2890:42 - prefer_const_constructors
-   info - The declaration '_showPriceChecker' isn't referenced - lib\features\billing\presentation\pages\desktop_pos_page.dart:3026:8 - unused_element
-   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:4106:35 - prefer_interpolation_to_compose_strings
-warning - The value of the local variable 'isDark' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4835:11 - unused_local_variable
-warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4947:13 - unnecessary_type_check
-warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4955:13 - unnecessary_type_check
-warning - The value of the local variable 'effectivePiecesPerPack' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5011:11 - unused_local_variable
-warning - The value of the local variable 'singlePiecePrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5012:11 - unused_local_variable
-warning - The value of the local variable 'cartonPrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5014:11 - unused_local_variable
-warning - The value of the local variable 'cost' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5120:15 - unused_local_variable
-warning - The value of the local variable 'stock' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5121:15 - unused_local_variable
-warning - The '!' will have no effect because the receiver can't be null - lib\features\billing\presentation\pages\desktop_pos_page.dart:5192:48 - unnecessary_non_null_assertion
+warning - The value of the field '_currentIpm' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:123:10 - unused_field
+warning - The value of the field '_categoryTabs' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:156:16 - unused_field
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:383:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:384:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:385:96 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:394:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:399:70 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:409:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:410:61 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:414:119 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:426:115 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:444:66 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:499:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:500:108 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:501:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:526:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:528:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:533:136 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:539:21 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:918:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:922:5 - use_build_context_synchronously
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\features\billing\presentation\pages\desktop_pos_page.dart:1541:18 - sized_box_for_whitespace
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:1734:39 - prefer_const_constructors
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:1884:61 - prefer_interpolation_to_compose_strings
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:2090:38 - prefer_interpolation_to_compose_strings
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:2408:30 - prefer_const_constructors
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:2460:41 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2530:29 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2536:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2555:17 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2560:44 - use_build_context_synchronously
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:2560:53 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2560:60 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2563:42 - use_build_context_synchronously
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:2563:51 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2563:58 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2635:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\billing\presentation\pages\desktop_pos_page.dart:2635:41 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\desktop_pos_page.dart:2901:42 - prefer_const_constructors
+   info - The declaration '_showPriceChecker' isn't referenced - lib\features\billing\presentation\pages\desktop_pos_page.dart:3037:8 - unused_element
+   info - Use interpolation to compose strings and values - lib\features\billing\presentation\pages\desktop_pos_page.dart:4135:35 - prefer_interpolation_to_compose_strings
+warning - The value of the local variable 'isDark' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:4864:11 - unused_local_variable
+warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4976:13 - unnecessary_type_check
+warning - Unnecessary type check; the result is always 'true' - lib\features\billing\presentation\pages\desktop_pos_page.dart:4984:13 - unnecessary_type_check
+warning - The value of the local variable 'effectivePiecesPerPack' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5040:11 - unused_local_variable
+warning - The value of the local variable 'singlePiecePrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5041:11 - unused_local_variable
+warning - The value of the local variable 'cartonPrice' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5043:11 - unused_local_variable
+warning - The value of the local variable 'cost' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5149:15 - unused_local_variable
+warning - The value of the local variable 'stock' isn't used - lib\features\billing\presentation\pages\desktop_pos_page.dart:5150:15 - unused_local_variable
+warning - The '!' will have no effect because the receiver can't be null - lib\features\billing\presentation\pages\desktop_pos_page.dart:5221:48 - unnecessary_non_null_assertion
 warning - Unused import: 'package:intl/intl.dart' - lib\features\billing\presentation\pages\home_page.dart:7:8 - unused_import
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\billing\presentation\pages\home_page.dart:72:3 - prefer_const_constructors_in_immutables
 warning - The value of the field '_dynamicTargetOffset' isn't used - lib\features\billing\presentation\pages\home_page.dart:82:11 - unused_field
@@ -1522,6 +1521,7 @@ warning - The operand can't be null, so the condition is always 'false' - lib\fe
 warning - Unused import: '../../domain/entities/debt_record.dart' - lib\features\customer\presentation\cubit\customer_state.dart:3:8 - unused_import
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\customer\presentation\pages\customers_page.dart:147:48 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\customer\presentation\pages\customers_page.dart:247:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\customer\presentation\pages\customers_page.dart:350:38 - use_build_context_synchronously
 warning - Unused import: 'package:flutter/foundation.dart' - lib\features\data_import\data\analysis_engine.dart:4:8 - unused_import
    info - Use 'const' with the constructor to improve performance - lib\features\data_import\data\analysis_engine.dart:16:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\data_import\data\analysis_engine.dart:34:13 - prefer_const_constructors
@@ -1757,12 +1757,176 @@ warning - Unused import: 'models/product_model.dart' - lib\features\product\data
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:124:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:142:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:157:9 - prefer_const_constructors
+warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\product\presentation\pages\add_product_page.dart:3:8 - unused_import
+  error - Missing concrete implementation of 'State.build' - lib\features\product\presentation\pages\add_product_page.dart:32:7 - non_abstract_class_inherits_abstract_member
+   info - The private field _hasCarton could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:43:8 - prefer_final_fields
+   info - The private field _hasPack could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:50:8 - prefer_final_fields
+   info - The private field _hasSpecialOffer could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:57:8 - prefer_final_fields
+   info - The private field _offerTier could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:58:12 - prefer_final_fields
+   info - The private field _specialOffers could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:61:22 - prefer_final_fields
+   info - The private field _isSaving could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:65:8 - prefer_final_fields
 warning - The operand can't be null, so the condition is always 'true' - lib\features\product\presentation\pages\add_product_page.dart:108:32 - unnecessary_null_comparison
 warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:108:63 - unnecessary_non_null_assertion
 warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:109:63 - unnecessary_non_null_assertion
 warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:110:51 - unnecessary_non_null_assertion
-   info - The declaration '_formatDouble' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:191:10 - unused_element
-   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\add_product_page.dart:842:93 - unused_element
+   info - The declaration '_scanBarcode' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:149:8 - unused_element
+   info - The declaration '_addCustomCategoryDialog' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:158:8 - unused_element
+   info - The declaration '_formatDouble' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:192:10 - unused_element
+   info - The declaration '_showMultiUnitStockCalculator' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:201:8 - unused_element
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:324:10 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:324:25 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:325:24 - undefined_function
+  error - Undefined name '_stockCtrl' - lib\features\product\presentation\pages\add_product_page.dart:325:36 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:326:18 - undefined_function
+  error - Undefined name '_cartonCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:326:30 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:327:18 - undefined_function
+  error - Undefined name '_packCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:327:30 - undefined_identifier
+  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:328:22 - undefined_identifier
+  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:328:65 - undefined_identifier
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:331:22 - undefined_identifier
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:332:9 - undefined_identifier
+  error - A value of type 'double' can't be assigned to a variable of type 'int' - lib\features\product\presentation\pages\add_product_page.dart:332:39 - invalid_assignment
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:333:20 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:334:9 - undefined_identifier
+  error - A value of type 'double' can't be assigned to a variable of type 'int' - lib\features\product\presentation\pages\add_product_page.dart:334:37 - invalid_assignment
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:338:9 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:339:9 - undefined_identifier
+  error - Undefined name '_showMultiUnitStockCalculator' - lib\features\product\presentation\pages\add_product_page.dart:377:26 - undefined_identifier
+  error - Undefined name '_formKey' - lib\features\product\presentation\pages\add_product_page.dart:388:10 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:389:5 - undefined_function
+  error - Undefined name '_isSaving' - lib\features\product\presentation\pages\add_product_page.dart:389:20 - undefined_identifier
+  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:391:21 - undefined_identifier
+  error - Undefined name '_pluCodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:392:17 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:394:25 - undefined_function
+  error - Undefined name '_cartonCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:394:37 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:395:23 - undefined_function
+  error - Undefined name '_packCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:395:35 - undefined_identifier
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:401:9 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:402:18 - undefined_function
+  error - Undefined name '_cartonPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:402:30 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:403:19 - undefined_function
+  error - Undefined name '_cartonCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:403:31 - undefined_identifier
+  error - Undefined name '_cartonBarcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:404:18 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:415:9 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:417:18 - undefined_function
+  error - Undefined name '_packPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:417:30 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:418:19 - undefined_function
+  error - Undefined name '_packCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:418:31 - undefined_identifier
+  error - Undefined name '_packBarcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:419:18 - undefined_identifier
+  error - Undefined name '_hasSpecialOffer' - lib\features\product\presentation\pages\add_product_page.dart:432:9 - undefined_identifier
+  error - Undefined name '_specialOffers' - lib\features\product\presentation\pages\add_product_page.dart:433:11 - undefined_identifier
+  error - Undefined name '_specialOffers' - lib\features\product\presentation\pages\add_product_page.dart:434:26 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:437:19 - undefined_function
+  error - Undefined name '_offerQtyCtrl' - lib\features\product\presentation\pages\add_product_page.dart:437:31 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:438:19 - undefined_function
+  error - Undefined name '_offerPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:438:31 - undefined_identifier
+  error - Undefined name '_offerTier' - lib\features\product\presentation\pages\add_product_page.dart:442:27 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:452:25 - undefined_function
+  error - Undefined name '_costPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:452:37 - undefined_identifier
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:453:24 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:453:37 - undefined_function
+  error - Undefined name '_cartonCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:453:49 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:454:22 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:454:33 - undefined_function
+  error - Undefined name '_packCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:454:45 - undefined_identifier
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:457:12 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:459:16 - undefined_identifier
+  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:466:22 - undefined_identifier
+  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:466:65 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:473:14 - undefined_function
+  error - Undefined name '_priceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:473:26 - undefined_identifier
+  error - Undefined name '_nameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:480:13 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:482:14 - undefined_function
+  error - Undefined name '_priceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:482:26 - undefined_identifier
+  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:485:14 - undefined_function
+  error - Undefined name '_stockCtrl' - lib\features\product\presentation\pages\add_product_page.dart:485:26 - undefined_identifier
+  error - Undefined name '_selectedCategory' - lib\features\product\presentation\pages\add_product_page.dart:486:17 - undefined_identifier
+  error - Undefined name '_imageUrl' - lib\features\product\presentation\pages\add_product_page.dart:487:17 - undefined_identifier
+  error - Undefined name '_unitSystemType' - lib\features\product\presentation\pages\add_product_page.dart:492:23 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:493:23 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:494:24 - undefined_identifier
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:497:21 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:497:35 - undefined_identifier
+  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:498:26 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:505:7 - undefined_function
+  error - Undefined name '_isSaving' - lib\features\product\presentation\pages\add_product_page.dart:505:22 - undefined_identifier
+  error - Undefined name 'mounted' - lib\features\product\presentation\pages\add_product_page.dart:506:11 - undefined_identifier
+  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:507:36 - undefined_identifier
+  error - Undefined name 'mounted' - lib\features\product\presentation\pages\add_product_page.dart:516:9 - undefined_identifier
+  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:517:7 - undefined_identifier
+  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:518:34 - undefined_identifier
+  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:519:7 - undefined_identifier
+  error - Undefined name '_isSaving' - lib\features\product\presentation\pages\add_product_page.dart:529:15 - undefined_identifier
+   info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\add_product_page.dart:532:13 - prefer_const_constructors
+  error - Undefined name '_formKey' - lib\features\product\presentation\pages\add_product_page.dart:536:14 - undefined_identifier
+  error - Undefined name '_imageUrl' - lib\features\product\presentation\pages\add_product_page.dart:546:37 - undefined_identifier
+  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:547:28 - undefined_identifier
+  error - Undefined name '_nameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:548:32 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:549:45 - undefined_function
+  error - Undefined name '_imageUrl' - lib\features\product\presentation\pages\add_product_page.dart:549:60 - undefined_identifier
+  error - Undefined name '_nameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:554:31 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:556:37 - undefined_function
+  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:564:37 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:568:43 - undefined_function
+  error - The function '_tryAutoFetchProductInfo' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:569:50 - undefined_function
+  error - The function '_tryAutoFetchProductInfo' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:576:40 - undefined_function
+  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:576:65 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:582:25 - undefined_function
+  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:583:27 - undefined_identifier
+  error - Undefined name '_scanBarcode' - lib\features\product\presentation\pages\add_product_page.dart:591:34 - undefined_identifier
+  error - Undefined name '_pluCodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:598:31 - undefined_identifier
+  error - Undefined name '_addCustomCategoryDialog' - lib\features\product\presentation\pages\add_product_page.dart:611:34 - undefined_identifier
+  error - Undefined name '_availableCategories' - lib\features\product\presentation\pages\add_product_page.dart:618:26 - undefined_identifier
+  error - Undefined name '_selectedCategory' - lib\features\product\presentation\pages\add_product_page.dart:618:56 - undefined_identifier
+  error - Undefined name '_selectedCategory' - lib\features\product\presentation\pages\add_product_page.dart:618:77 - undefined_identifier
+  error - Undefined name '_availableCategories' - lib\features\product\presentation\pages\add_product_page.dart:620:26 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:621:51 - undefined_function
+  error - Undefined name '_selectedCategory' - lib\features\product\presentation\pages\add_product_page.dart:621:66 - undefined_identifier
+  error - Undefined name '_stockCtrl' - lib\features\product\presentation\pages\add_product_page.dart:633:31 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:635:37 - undefined_function
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:644:38 - undefined_function
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:645:26 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:646:41 - undefined_function
+  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:646:56 - undefined_identifier
+  error - Undefined name '_cartonBarcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:647:34 - undefined_identifier
+  error - Undefined name '_cartonCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:648:35 - undefined_identifier
+  error - Undefined name '_cartonCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:649:31 - undefined_identifier
+  error - Undefined name '_cartonPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:650:32 - undefined_identifier
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:652:24 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:653:39 - undefined_function
+  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:653:54 - undefined_identifier
+  error - Undefined name '_packBarcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:654:32 - undefined_identifier
+  error - Undefined name '_packCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:655:33 - undefined_identifier
+  error - Undefined name '_packCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:656:29 - undefined_identifier
+  error - Undefined name '_packPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:657:30 - undefined_identifier
+  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:659:33 - undefined_identifier
+  error - Undefined name '_costPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:660:30 - undefined_identifier
+  error - Undefined name '_priceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:661:31 - undefined_identifier
+  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:662:33 - undefined_identifier
+  error - Undefined name '_hasSpecialOffer' - lib\features\product\presentation\pages\add_product_page.dart:664:32 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:665:47 - undefined_function
+  error - Undefined name '_hasSpecialOffer' - lib\features\product\presentation\pages\add_product_page.dart:665:62 - undefined_identifier
+  error - Undefined name '_offerTier' - lib\features\product\presentation\pages\add_product_page.dart:666:26 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:668:35 - undefined_function
+  error - Undefined name '_offerTier' - lib\features\product\presentation\pages\add_product_page.dart:668:50 - undefined_identifier
+  error - Undefined name '_offerQtyCtrl' - lib\features\product\presentation\pages\add_product_page.dart:670:29 - undefined_identifier
+  error - Undefined name '_offerPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:671:31 - undefined_identifier
+  error - Undefined name '_specialOffers' - lib\features\product\presentation\pages\add_product_page.dart:672:30 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:673:45 - undefined_function
+  error - Undefined name '_specialOffers' - lib\features\product\presentation\pages\add_product_page.dart:673:60 - undefined_identifier
+  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:681:26 - undefined_identifier
+  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:681:56 - undefined_identifier
+  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:689:69 - undefined_identifier
+  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:713:7 - undefined_identifier
+  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:714:27 - undefined_identifier
+  error - Undefined name 'mounted' - lib\features\product\presentation\pages\add_product_page.dart:716:10 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:717:5 - undefined_function
+  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:718:7 - undefined_identifier
+  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:723:53 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:842:32 - undefined_function
+  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:842:47 - undefined_identifier
+  error - Expected a method, getter, setter or operator declaration - lib\features\product\presentation\pages\add_product_page.dart:849:1 - expected_executable
+   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\add_product_page.dart:858:93 - unused_element
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:324:29 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:30 - prefer_const_literals_to_create_immutables
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:31 - prefer_const_constructors
@@ -1777,8 +1941,8 @@ warning - The value of the local variable 'totalItemsCount' isn't used - lib\fea
    info - The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\features\product\presentation\pages\losses_page.dart:2:8 - unnecessary_import
 warning - Unused import: '../../../../core/theme/app_theme.dart' - lib\features\product\presentation\pages\losses_page.dart:8:8 - unused_import
 warning - Unused import: '../../../../core/utils/app_constants.dart' - lib\features\product\presentation\pages\losses_page.dart:9:8 - unused_import
-   info - The private field _selectedReasonFilter could be 'final' - lib\features\product\presentation\pages\losses_page.dart:85:10 - prefer_final_fields
-warning - The value of the local variable 'totalItemsCount' isn't used - lib\features\product\presentation\pages\losses_page.dart:399:9 - unused_local_variable
+   info - The private field _selectedReasonFilter could be 'final' - lib\features\product\presentation\pages\losses_page.dart:94:10 - prefer_final_fields
+warning - The value of the local variable 'totalItemsCount' isn't used - lib\features\product\presentation\pages\losses_page.dart:403:9 - unused_local_variable
 warning - Unused import: '../../../../core/localization/app_localizations.dart' - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:13:8 - unused_import
    info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:19:3 - prefer_const_constructors_in_immutables
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\new_supplier_invoice_page.dart:280:15 - prefer_const_constructors
@@ -2151,12 +2315,12 @@ warning - The value of the local variable 'copies' isn't used - lib\features\pro
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\shopping_list_page.dart:88:9 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\shopping_list_page.dart:91:7 - use_build_context_synchronously
    info - The imported package 'collection' isn't a dependency of the importing package - lib\features\product\presentation\pages\stock_in_page.dart:9:8 - depend_on_referenced_packages
-   info - The declaration '_mergeUnitsWithNewPrices' isn't referenced - lib\features\product\presentation\pages\stock_in_page.dart:496:21 - unused_element
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:887:11 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:894:11 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:901:32 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1060:25 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1129:32 - use_build_context_synchronously
+   info - The declaration '_mergeUnitsWithNewPrices' isn't referenced - lib\features\product\presentation\pages\stock_in_page.dart:505:21 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:896:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:903:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:910:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1069:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\product\presentation\pages\stock_in_page.dart:1138:32 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\product\presentation\pages\supplier_invoices_page.dart:134:19 - use_build_context_synchronously
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\widgets\liquid_decant_calculator_card.dart:74:21 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\product\presentation\widgets\liquid_decant_calculator_card.dart:81:20 - prefer_const_literals_to_create_immutables
@@ -2617,10 +2781,10 @@ warning - Unused import: '../../../product/domain/entities/product.dart' - lib\f
    info - Use interpolation to compose strings and values - lib\features\shifts\data\payroll_service.dart:217:12 - prefer_interpolation_to_compose_strings
    info - String literals shouldn't be concatenated by the '+' operator - lib\features\shifts\data\payroll_service.dart:217:49 - prefer_adjacent_string_concatenation
    info - The local variable '_isTimeInShift' starts with an underscore - lib\features\shifts\data\shift_service.dart:150:10 - no_leading_underscores_for_local_identifiers
-   info - 'WillPopScope' is deprecated and shouldn't be used. Use PopScope instead. This feature was deprecated after v3.12.0-1.0.pre - lib\features\shifts\data\shift_service.dart:667:12 - deprecated_member_use
-   info - 'WillPopScope.new' is deprecated and shouldn't be used. Use PopScope instead. This feature was deprecated after v3.12.0-1.0.pre - lib\features\shifts\data\shift_service.dart:667:12 - deprecated_member_use
-   info - Don't use 'BuildContext's across async gaps - lib\features\shifts\data\shift_service.dart:852:35 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\shifts\data\shift_service.dart:854:35 - use_build_context_synchronously
+   info - 'WillPopScope' is deprecated and shouldn't be used. Use PopScope instead. This feature was deprecated after v3.12.0-1.0.pre - lib\features\shifts\data\shift_service.dart:707:12 - deprecated_member_use
+   info - 'WillPopScope.new' is deprecated and shouldn't be used. Use PopScope instead. This feature was deprecated after v3.12.0-1.0.pre - lib\features\shifts\data\shift_service.dart:707:12 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\features\shifts\data\shift_service.dart:892:35 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\features\shifts\data\shift_service.dart:894:35 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\shifts\presentation\pages\cashier_login_page.dart:438:31 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps - lib\features\shifts\presentation\pages\cashier_login_page.dart:442:38 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\shifts\presentation\pages\cashier_login_page.dart:664:31 - use_build_context_synchronously
