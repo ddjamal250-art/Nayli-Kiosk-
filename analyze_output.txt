@@ -737,7 +737,6 @@ warning - The value of the local variable 'timeStr' isn't used - lib\core\utils\
    info - Use 'const' with the constructor to improve performance - lib\core\utils\backup_helper.dart:146:41 - prefer_const_constructors
    info - Use interpolation to compose strings and values - lib\core\utils\barcode_normalizer.dart:209:47 - prefer_interpolation_to_compose_strings
    info - Use interpolation to compose strings and values - lib\core\utils\barcode_normalizer.dart:210:47 - prefer_interpolation_to_compose_strings
-  error - The getter 'productsBox' isn't defined for the type 'HiveDatabase' - lib\core\utils\excel_export_helper.dart:159:38 - undefined_getter
 warning - The left operand can't be null, so the right operand is never executed - lib\core\utils\excel_export_helper.dart:165:42 - dead_null_aware_expression
 warning - Unused import: '../../features/product/data/models/product_model.dart' - lib\core\utils\expiry_tracker_service.dart:4:8 - unused_import
    info - Don't invoke 'print' in production code - lib\core\utils\invoice_gemini_service.dart:15:9 - avoid_print
@@ -1060,7 +1059,7 @@ warning - The value of the field '_isPrinting' isn't used - lib\features\billing
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1607:24 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1611:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\billing\presentation\pages\daily_report_page.dart:1617:19 - prefer_const_constructors
-  error - The getter 'productsBox' isn't defined for the type 'HiveDatabase' - lib\features\billing\presentation\pages\daily_report_page.dart:1670:40 - undefined_getter
+warning - The left operand can't be null, so the right operand is never executed - lib\features\billing\presentation\pages\daily_report_page.dart:1676:75 - dead_null_aware_expression
    info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1917:5 - prefer_const_declarations
    info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1918:5 - prefer_const_declarations
    info - Use 'const' for final variables initialized to a constant value - lib\features\billing\presentation\pages\daily_report_page.dart:1919:5 - prefer_const_declarations
@@ -1757,176 +1756,12 @@ warning - Unused import: 'models/product_model.dart' - lib\features\product\data
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:124:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:142:13 - prefer_const_constructors
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\bloc\product_bloc.dart:157:9 - prefer_const_constructors
-warning - Unused import: 'package:flutter_bloc/flutter_bloc.dart' - lib\features\product\presentation\pages\add_product_page.dart:3:8 - unused_import
-  error - Missing concrete implementation of 'State.build' - lib\features\product\presentation\pages\add_product_page.dart:32:7 - non_abstract_class_inherits_abstract_member
-   info - The private field _hasCarton could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:43:8 - prefer_final_fields
-   info - The private field _hasPack could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:50:8 - prefer_final_fields
-   info - The private field _hasSpecialOffer could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:57:8 - prefer_final_fields
-   info - The private field _offerTier could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:58:12 - prefer_final_fields
-   info - The private field _specialOffers could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:61:22 - prefer_final_fields
-   info - The private field _isSaving could be 'final' - lib\features\product\presentation\pages\add_product_page.dart:65:8 - prefer_final_fields
 warning - The operand can't be null, so the condition is always 'true' - lib\features\product\presentation\pages\add_product_page.dart:108:32 - unnecessary_null_comparison
 warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:108:63 - unnecessary_non_null_assertion
 warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:109:63 - unnecessary_non_null_assertion
 warning - The '!' will have no effect because the receiver can't be null - lib\features\product\presentation\pages\add_product_page.dart:110:51 - unnecessary_non_null_assertion
-   info - The declaration '_scanBarcode' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:149:8 - unused_element
-   info - The declaration '_addCustomCategoryDialog' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:158:8 - unused_element
    info - The declaration '_formatDouble' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:192:10 - unused_element
-   info - The declaration '_showMultiUnitStockCalculator' isn't referenced - lib\features\product\presentation\pages\add_product_page.dart:201:8 - unused_element
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:324:10 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:324:25 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:325:24 - undefined_function
-  error - Undefined name '_stockCtrl' - lib\features\product\presentation\pages\add_product_page.dart:325:36 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:326:18 - undefined_function
-  error - Undefined name '_cartonCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:326:30 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:327:18 - undefined_function
-  error - Undefined name '_packCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:327:30 - undefined_identifier
-  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:328:22 - undefined_identifier
-  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:328:65 - undefined_identifier
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:331:22 - undefined_identifier
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:332:9 - undefined_identifier
-  error - A value of type 'double' can't be assigned to a variable of type 'int' - lib\features\product\presentation\pages\add_product_page.dart:332:39 - invalid_assignment
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:333:20 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:334:9 - undefined_identifier
-  error - A value of type 'double' can't be assigned to a variable of type 'int' - lib\features\product\presentation\pages\add_product_page.dart:334:37 - invalid_assignment
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:338:9 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:339:9 - undefined_identifier
-  error - Undefined name '_showMultiUnitStockCalculator' - lib\features\product\presentation\pages\add_product_page.dart:377:26 - undefined_identifier
-  error - Undefined name '_formKey' - lib\features\product\presentation\pages\add_product_page.dart:388:10 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:389:5 - undefined_function
-  error - Undefined name '_isSaving' - lib\features\product\presentation\pages\add_product_page.dart:389:20 - undefined_identifier
-  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:391:21 - undefined_identifier
-  error - Undefined name '_pluCodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:392:17 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:394:25 - undefined_function
-  error - Undefined name '_cartonCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:394:37 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:395:23 - undefined_function
-  error - Undefined name '_packCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:395:35 - undefined_identifier
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:401:9 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:402:18 - undefined_function
-  error - Undefined name '_cartonPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:402:30 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:403:19 - undefined_function
-  error - Undefined name '_cartonCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:403:31 - undefined_identifier
-  error - Undefined name '_cartonBarcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:404:18 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:415:9 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:417:18 - undefined_function
-  error - Undefined name '_packPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:417:30 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:418:19 - undefined_function
-  error - Undefined name '_packCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:418:31 - undefined_identifier
-  error - Undefined name '_packBarcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:419:18 - undefined_identifier
-  error - Undefined name '_hasSpecialOffer' - lib\features\product\presentation\pages\add_product_page.dart:432:9 - undefined_identifier
-  error - Undefined name '_specialOffers' - lib\features\product\presentation\pages\add_product_page.dart:433:11 - undefined_identifier
-  error - Undefined name '_specialOffers' - lib\features\product\presentation\pages\add_product_page.dart:434:26 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:437:19 - undefined_function
-  error - Undefined name '_offerQtyCtrl' - lib\features\product\presentation\pages\add_product_page.dart:437:31 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:438:19 - undefined_function
-  error - Undefined name '_offerPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:438:31 - undefined_identifier
-  error - Undefined name '_offerTier' - lib\features\product\presentation\pages\add_product_page.dart:442:27 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:452:25 - undefined_function
-  error - Undefined name '_costPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:452:37 - undefined_identifier
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:453:24 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:453:37 - undefined_function
-  error - Undefined name '_cartonCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:453:49 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:454:22 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:454:33 - undefined_function
-  error - Undefined name '_packCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:454:45 - undefined_identifier
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:457:12 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:459:16 - undefined_identifier
-  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:466:22 - undefined_identifier
-  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:466:65 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:473:14 - undefined_function
-  error - Undefined name '_priceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:473:26 - undefined_identifier
-  error - Undefined name '_nameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:480:13 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:482:14 - undefined_function
-  error - Undefined name '_priceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:482:26 - undefined_identifier
-  error - The function '_parsePrice' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:485:14 - undefined_function
-  error - Undefined name '_stockCtrl' - lib\features\product\presentation\pages\add_product_page.dart:485:26 - undefined_identifier
-  error - Undefined name '_selectedCategory' - lib\features\product\presentation\pages\add_product_page.dart:486:17 - undefined_identifier
-  error - Undefined name '_imageUrl' - lib\features\product\presentation\pages\add_product_page.dart:487:17 - undefined_identifier
-  error - Undefined name '_unitSystemType' - lib\features\product\presentation\pages\add_product_page.dart:492:23 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:493:23 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:494:24 - undefined_identifier
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:497:21 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:497:35 - undefined_identifier
-  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:498:26 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:505:7 - undefined_function
-  error - Undefined name '_isSaving' - lib\features\product\presentation\pages\add_product_page.dart:505:22 - undefined_identifier
-  error - Undefined name 'mounted' - lib\features\product\presentation\pages\add_product_page.dart:506:11 - undefined_identifier
-  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:507:36 - undefined_identifier
-  error - Undefined name 'mounted' - lib\features\product\presentation\pages\add_product_page.dart:516:9 - undefined_identifier
-  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:517:7 - undefined_identifier
-  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:518:34 - undefined_identifier
-  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:519:7 - undefined_identifier
-  error - Undefined name '_isSaving' - lib\features\product\presentation\pages\add_product_page.dart:529:15 - undefined_identifier
-   info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\add_product_page.dart:532:13 - prefer_const_constructors
-  error - Undefined name '_formKey' - lib\features\product\presentation\pages\add_product_page.dart:536:14 - undefined_identifier
-  error - Undefined name '_imageUrl' - lib\features\product\presentation\pages\add_product_page.dart:546:37 - undefined_identifier
-  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:547:28 - undefined_identifier
-  error - Undefined name '_nameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:548:32 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:549:45 - undefined_function
-  error - Undefined name '_imageUrl' - lib\features\product\presentation\pages\add_product_page.dart:549:60 - undefined_identifier
-  error - Undefined name '_nameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:554:31 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:556:37 - undefined_function
-  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:564:37 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:568:43 - undefined_function
-  error - The function '_tryAutoFetchProductInfo' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:569:50 - undefined_function
-  error - The function '_tryAutoFetchProductInfo' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:576:40 - undefined_function
-  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:576:65 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:582:25 - undefined_function
-  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:583:27 - undefined_identifier
-  error - Undefined name '_scanBarcode' - lib\features\product\presentation\pages\add_product_page.dart:591:34 - undefined_identifier
-  error - Undefined name '_pluCodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:598:31 - undefined_identifier
-  error - Undefined name '_addCustomCategoryDialog' - lib\features\product\presentation\pages\add_product_page.dart:611:34 - undefined_identifier
-  error - Undefined name '_availableCategories' - lib\features\product\presentation\pages\add_product_page.dart:618:26 - undefined_identifier
-  error - Undefined name '_selectedCategory' - lib\features\product\presentation\pages\add_product_page.dart:618:56 - undefined_identifier
-  error - Undefined name '_selectedCategory' - lib\features\product\presentation\pages\add_product_page.dart:618:77 - undefined_identifier
-  error - Undefined name '_availableCategories' - lib\features\product\presentation\pages\add_product_page.dart:620:26 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:621:51 - undefined_function
-  error - Undefined name '_selectedCategory' - lib\features\product\presentation\pages\add_product_page.dart:621:66 - undefined_identifier
-  error - Undefined name '_stockCtrl' - lib\features\product\presentation\pages\add_product_page.dart:633:31 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:635:37 - undefined_function
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:644:38 - undefined_function
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:645:26 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:646:41 - undefined_function
-  error - Undefined name '_hasCarton' - lib\features\product\presentation\pages\add_product_page.dart:646:56 - undefined_identifier
-  error - Undefined name '_cartonBarcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:647:34 - undefined_identifier
-  error - Undefined name '_cartonCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:648:35 - undefined_identifier
-  error - Undefined name '_cartonCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:649:31 - undefined_identifier
-  error - Undefined name '_cartonPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:650:32 - undefined_identifier
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:652:24 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:653:39 - undefined_function
-  error - Undefined name '_hasPack' - lib\features\product\presentation\pages\add_product_page.dart:653:54 - undefined_identifier
-  error - Undefined name '_packBarcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:654:32 - undefined_identifier
-  error - Undefined name '_packCapacityCtrl' - lib\features\product\presentation\pages\add_product_page.dart:655:33 - undefined_identifier
-  error - Undefined name '_packCostCtrl' - lib\features\product\presentation\pages\add_product_page.dart:656:29 - undefined_identifier
-  error - Undefined name '_packPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:657:30 - undefined_identifier
-  error - Undefined name '_barcodeCtrl' - lib\features\product\presentation\pages\add_product_page.dart:659:33 - undefined_identifier
-  error - Undefined name '_costPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:660:30 - undefined_identifier
-  error - Undefined name '_priceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:661:31 - undefined_identifier
-  error - Undefined name '_baseUnitNameCtrl' - lib\features\product\presentation\pages\add_product_page.dart:662:33 - undefined_identifier
-  error - Undefined name '_hasSpecialOffer' - lib\features\product\presentation\pages\add_product_page.dart:664:32 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:665:47 - undefined_function
-  error - Undefined name '_hasSpecialOffer' - lib\features\product\presentation\pages\add_product_page.dart:665:62 - undefined_identifier
-  error - Undefined name '_offerTier' - lib\features\product\presentation\pages\add_product_page.dart:666:26 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:668:35 - undefined_function
-  error - Undefined name '_offerTier' - lib\features\product\presentation\pages\add_product_page.dart:668:50 - undefined_identifier
-  error - Undefined name '_offerQtyCtrl' - lib\features\product\presentation\pages\add_product_page.dart:670:29 - undefined_identifier
-  error - Undefined name '_offerPriceCtrl' - lib\features\product\presentation\pages\add_product_page.dart:671:31 - undefined_identifier
-  error - Undefined name '_specialOffers' - lib\features\product\presentation\pages\add_product_page.dart:672:30 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:673:45 - undefined_function
-  error - Undefined name '_specialOffers' - lib\features\product\presentation\pages\add_product_page.dart:673:60 - undefined_identifier
-  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:681:26 - undefined_identifier
-  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:681:56 - undefined_identifier
-  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:689:69 - undefined_identifier
-  error - Undefined name 'context' - lib\features\product\presentation\pages\add_product_page.dart:713:7 - undefined_identifier
-  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:714:27 - undefined_identifier
-  error - Undefined name 'mounted' - lib\features\product\presentation\pages\add_product_page.dart:716:10 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:717:5 - undefined_function
-  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:718:7 - undefined_identifier
-  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:723:53 - undefined_identifier
-  error - The function 'setState' isn't defined - lib\features\product\presentation\pages\add_product_page.dart:842:32 - undefined_function
-  error - Undefined name '_optionsConfigJson' - lib\features\product\presentation\pages\add_product_page.dart:842:47 - undefined_identifier
-  error - Expected a method, getter, setter or operator declaration - lib\features\product\presentation\pages\add_product_page.dart:849:1 - expected_executable
-   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\add_product_page.dart:858:93 - unused_element
+   info - A value for optional parameter 'borderColor' isn't ever given - lib\features\product\presentation\pages\add_product_page.dart:857:93 - unused_element
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:324:29 - prefer_const_constructors
    info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:30 - prefer_const_literals_to_create_immutables
    info - Use 'const' with the constructor to improve performance - lib\features\product\presentation\pages\bulk_price_update_page.dart:326:31 - prefer_const_constructors
