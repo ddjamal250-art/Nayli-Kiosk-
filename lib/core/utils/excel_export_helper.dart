@@ -140,6 +140,36 @@ class ExcelExportHelper {
     return buffer.toString();
   }
 
+  /// Helper to accurately compute cost from invoice items
+  static double _computeInvoiceCost(Map<String, dynamic> inv) {
+    double computedCost = 0.0;
+    if (inv['items'] is List) {
+      for (final it in (inv['items'] as List)) {
+        if (it is Map) {
+          final isReturnItem = it['isReturnItem'] == true || inv['isReturn'] == true || inv['status'] == 'returned';
+          final qtyRaw = (it['qty'] as num?)?.toDouble() ?? (it['weightKg'] as num?)?.toDouble() ?? 1.0;
+          final qty = qtyRaw.abs();
+          var costPrice = (it['costPrice'] as num?)?.toDouble();
+          if (costPrice == null || costPrice <= 0) {
+            costPrice = (it['buyPrice'] as num?)?.toDouble() ?? 0.0;
+          }
+          if (costPrice <= 0) {
+            final prodId = it['id']?.toString() ?? it['productId']?.toString();
+            if (prodId != null) {
+              final p = HiveDatabase.productsBox.get(prodId);
+              if (p != null) {
+                costPrice = p.effectiveCostPrice;
+              }
+            }
+          }
+          final lineCost = (costPrice ?? 0.0) * qty;
+          computedCost += (isReturnItem ? -lineCost : lineCost);
+        }
+      }
+    }
+    return computedCost;
+  }
+
   /// 4. Official Sales & Profit Daily/Monthly Log (سجل المبيعات والأرباح التفصيلي)
   static String exportSalesLogToCsv(List<Map<String, dynamic>> invoices) {
     final buffer = StringBuffer();
@@ -148,27 +178,46 @@ class ExcelExportHelper {
     buffer.writeln('رقم الفاتورة,التاريخ والوقت,نوع الدفع,اسم الزبون,عدد السلع,إجمالي الفاتورة (دج),التكلفة (دج),صافي الربح (دج)');
 
     double totalSales = 0.0;
+    double totalCosts = 0.0;
     double totalProfits = 0.0;
+    int countedInvoices = 0;
 
     for (var inv in invoices) {
+      if (inv['isReturned'] == true && (inv['isReturn'] != true && (inv['totalAmount'] as num? ?? 0) >= 0)) {
+        // Skip cancelled invoices from sales calculations
+        continue;
+      }
+      countedInvoices++;
       final id = inv['id']?.toString() ?? '-';
       final time = inv['timestamp']?.toString() ?? '';
+      final isReturn = inv['isReturn'] == true || inv['status'] == 'returned';
       final isCredit = inv['isCredit'] == true;
-      final payMode = isCredit ? 'كريدي (دين)' : 'كاش (نقداً)';
+      final payMode = isReturn
+          ? 'إرجاع (مرتجع)'
+          : (isCredit ? 'كريدي (دين)' : 'كاش (نقداً)');
       final customer = '"${(inv['customerName'] ?? '').toString().replaceAll('"', '""')}"';
       final count = inv['itemCount'] ?? 1;
       final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
-      final cost = (inv['totalCost'] as num?)?.toDouble() ?? (total * 0.8);
+
+      double cost = (inv['totalCost'] as num?)?.toDouble() ?? 0.0;
+      if (cost == 0.0 && inv['items'] is List && (inv['items'] as List).isNotEmpty) {
+        cost = _computeInvoiceCost(inv);
+      }
+      if (isReturn && cost > 0) {
+        cost = -cost.abs();
+      }
+
       final profit = (inv['netProfit'] as num?)?.toDouble() ?? (total - cost);
 
       totalSales += total;
+      totalCosts += cost;
       totalProfits += profit;
 
       buffer.writeln('$id,$time,$payMode,$customer,$count,${total.toStringAsFixed(2)},${cost.toStringAsFixed(2)},${profit.toStringAsFixed(2)}');
     }
 
     buffer.writeln('------------------------------------------------------------');
-    buffer.writeln('المجموع الإجمالي,,,,${invoices.length} فاتورة,${totalSales.toStringAsFixed(2)},,${totalProfits.toStringAsFixed(2)}');
+    buffer.writeln('المجموع الإجمالي,,,,$countedInvoices فاتورة,${totalSales.toStringAsFixed(2)},${totalCosts.toStringAsFixed(2)},${totalProfits.toStringAsFixed(2)}');
 
     return buffer.toString();
   }

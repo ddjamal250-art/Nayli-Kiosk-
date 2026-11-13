@@ -262,6 +262,43 @@ class _DailyReportPageState extends State<DailyReportPage> {
     return capital;
   }
 
+  /// احتساب تكلفة الفاتورة ديناميكياً من سلعها وكتالوج المنتجات بأثر رجعي
+  double _computeInvoiceCostFromItems(Map<dynamic, dynamic> inv) {
+    double costSum = 0.0;
+    final items = inv['items'] as List?;
+    if (items == null || items.isEmpty) return 0.0;
+    final productBox = HiveDatabase.productBox;
+
+    for (final it in items) {
+      if (it is! Map) continue;
+      double itCost = (it['totalCost'] as num?)?.toDouble() ?? 0.0;
+      final double qty = ((it['qty'] as num?)?.toDouble() ?? (it['quantity'] as num?)?.toDouble() ?? 1.0).abs();
+      final double? weightKg = (it['weightKg'] as num?)?.toDouble();
+      final double effQty = (weightKg != null && weightKg > 0) ? weightKg.abs() : qty;
+
+      if (itCost == 0.0) {
+        final double unitCost = (it['costPrice'] as num?)?.toDouble() ?? 0.0;
+        if (unitCost > 0.0) {
+          itCost = unitCost * effQty;
+        } else {
+          final prodId = it['id']?.toString() ?? '';
+          if (prodId.isNotEmpty) {
+            final p = productBox.get(prodId);
+            if (p != null && p.effectiveCostPrice > 0) {
+              itCost = p.effectiveCostPrice * effQty;
+            }
+          }
+        }
+      }
+      final bool isItemReturn = it['isReturn'] == true ||
+          (it['price'] as num? ?? 0) < 0 ||
+          (it['total'] as num? ?? 0) < 0;
+      costSum += isItemReturn ? -itCost.abs() : itCost.abs();
+    }
+    final bool isInvReturn = inv['isReturn'] == true || ((inv['totalAmount'] as num?)?.toDouble() ?? 0.0) < 0;
+    return isInvReturn ? -costSum.abs() : costSum;
+  }
+
   Future<void> _printZReport(List<Map<String, dynamic>> invoices, double revenue, double grossProfit, double expenses, double netProfit, int itemsCount, double cashTotal, double creditTotal) async {
     final printer = PrinterHelper();
     if (!printer.isConnected) {
@@ -452,10 +489,14 @@ class _DailyReportPageState extends State<DailyReportPage> {
       return sum + ((inv['totalAmount'] as num?)?.toDouble() ?? 0.0);
     });
     final totalCost = invoices.fold<double>(0.0, (sum, inv) {
-      if (inv['isReturned'] == true && (inv['isReturn'] != true && (inv['totalCost'] as num? ?? 0) >= 0)) {
+      if (inv['isReturned'] == true && (inv['isReturn'] != true && (inv['totalAmount'] as num? ?? 0) >= 0)) {
         return sum;
       }
-      return sum + ((inv['totalCost'] as num?)?.toDouble() ?? 0.0);
+      double cost = (inv['totalCost'] as num?)?.toDouble() ?? 0.0;
+      if (cost == 0.0 && inv['items'] is List && (inv['items'] as List).isNotEmpty) {
+        cost = _computeInvoiceCostFromItems(inv);
+      }
+      return sum + cost;
     });
     final grossProfit = (totalRevenue - totalCost);
     final expenses = _getFilteredExpenses();
@@ -483,7 +524,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 (it['name']?.toString().contains('معسل') ?? false) ||
                 (it['name']?.toString().contains('ال ام') ?? false) ||
                 (it['name']?.toString().contains('L&M') ?? false) ||
-                (it['category']?.toString().contains('تبغ') ?? false);
+                (it['category']?.toString().contains('تبغ') ?? false) ||
+                (it['category']?.toString().contains('سجائر') ?? false);
 
             final isCoffee = it['isCoffeeMachine'] == true ||
                 (it['category']?.toString().contains('قهوة') ?? false) ||
@@ -495,8 +537,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
             activeDepartments.add(cat);
 
             if (_selectedDepartment == cat) {
-              final double itQty = (it['qty'] as num?)?.toDouble() ?? 1.0;
-              final double weightKg = (it['weightKg'] as num?)?.toDouble() ?? itQty.abs();
+              final double itQty = ((it['qty'] as num?)?.toDouble() ?? (it['quantity'] as num?)?.toDouble() ?? 1.0).abs();
+              final double weightKg = (it['weightKg'] as num?)?.toDouble() ?? itQty;
               final double invTotal = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
               final double invSub = (inv['subTotalAmount'] as num?)?.toDouble() ?? invTotal;
               final double discRatio = (invSub.abs() > 0) ? (invTotal.abs() / invSub.abs()) : 1.0;
@@ -514,7 +556,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
 
               deptRevenue += signedTotal;
               deptCost += signedCost;
-              deptUnitsCount += (isInvReturn ? -itQty.abs().ceil() : itQty.abs().ceil());
+              deptUnitsCount += (isInvReturn ? -itQty.ceil() : itQty.ceil());
             }
           }
         }
@@ -538,7 +580,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
       }
     }
 
-    final deptProfit = (deptRevenue - deptCost).clamp(0.0, double.infinity);
+    final deptProfit = (deptRevenue - deptCost);
 
     final totalItemsCount = invoices.fold<int>(0, (sum, inv) => sum + ((inv['itemCount'] as num?)?.toInt() ?? 1));
     final averageBasket = invoices.isNotEmpty ? (totalRevenue / invoices.length) : 0.0;
@@ -1298,7 +1340,11 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 itemBuilder: (ctx, i) {
                   final inv = invoices[i];
                   final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
-                  final profit = (inv['netProfit'] as num?)?.toDouble() ?? (total * 0.2);
+                  double profit = (inv['netProfit'] as num?)?.toDouble() ?? 0.0;
+                  if (profit == 0.0 && total != 0.0) {
+                    final computedCost = _computeInvoiceCostFromItems(inv);
+                    profit = total - computedCost;
+                  }
                   final isCredit = inv['isCredit'] == true;
                   final timeStr = (inv['timestamp'] as String? ?? '').split('T').lastOrNull?.substring(0, 5) ?? '';
 
@@ -1315,7 +1361,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       subtitle: Text(
-                        'الوقت: $timeStr • ${inv['itemCount'] ?? 1} سلع • فائدة: +${profit.toStringAsFixed(0)} دج',
+                        'الوقت: $timeStr • ${inv['itemCount'] ?? 1} سلع • فائدة: ${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(0)} دج',
                         style: TextStyle(fontSize: 11),
                       ),
                       trailing: Row(
@@ -1411,15 +1457,17 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 itemBuilder: (_, idx) {
                   final it = rawItems[idx] as Map;
                   final name = it['name']?.toString() ?? 'سلعة';
-                  final qty = it['quantity'] ?? 1;
-                  final price = (it['price'] as num?)?.toDouble() ?? 0.0;
+                  final double qty = ((it['qty'] as num?)?.toDouble() ?? (it['quantity'] as num?)?.toDouble() ?? 1.0);
+                  final double price = (it['price'] as num?)?.toDouble() ?? 0.0;
+                  final double lineTotal = (it['total'] as num?)?.toDouble() ?? (price * qty);
+                  final String qtyDisplay = qty % 1 == 0 ? qty.toInt().toString() : qty.toStringAsFixed(2);
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text('$name × $qty', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        child: Text('$name × $qtyDisplay', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
-                      Text('${(price * qty).toStringAsFixed(0)} دج', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('${lineTotal.toStringAsFixed(0)} دج', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   );
                 },
@@ -1582,30 +1630,54 @@ class _DailyReportPageState extends State<DailyReportPage> {
     final Map<String, Map<String, dynamic>> catMap = {};
 
     for (final inv in invoices) {
+      final isInvReturn = inv['isReturn'] == true || inv['status'] == 'returned';
+      final invTotal = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+      final invSubtotal = (inv['subtotal'] as num?)?.toDouble() ?? invTotal;
+      final discRatio = (invSubtotal > 0 && invTotal > 0 && invTotal < invSubtotal)
+          ? (invTotal / invSubtotal)
+          : 1.0;
+
       if (inv['items'] is List) {
         for (final it in inv['items']) {
           if (it is Map) {
             final rawCat = (it['category']?.toString() ?? '').trim();
-            final name = (it['name']?.toString() ?? '').toLowerCase();
             String cat = rawCat.isNotEmpty ? rawCat : 'أخرى';
 
             if (!catMap.containsKey(cat)) {
               catMap[cat] = {
                 'sales': 0.0,
                 'cost': 0.0,
-                'qty': 0,
+                'qty': 0.0,
                 'losses': 0.0,
               };
             }
 
-            final itQty = (it['qty'] as num?)?.toInt() ?? 1;
-            final itTotal = (it['total'] as num?)?.toDouble() ??
-                (((it['price'] as num?)?.toDouble() ?? 0.0) * itQty);
-            final itCost = (((it['costPrice'] as num?)?.toDouble() ?? 0.0) * itQty);
+            final isItemReturn = it['isReturnItem'] == true || isInvReturn;
+            final itQtyRaw = (it['qty'] as num?)?.toDouble() ?? (it['weightKg'] as num?)?.toDouble() ?? 1.0;
+            final itQty = isItemReturn ? -itQtyRaw.abs() : itQtyRaw.abs();
+
+            final rawTotal = (it['total'] as num?)?.toDouble() ??
+                (((it['price'] as num?)?.toDouble() ?? 0.0) * itQtyRaw);
+            final itTotal = (isItemReturn ? -rawTotal.abs() : rawTotal.abs()) * discRatio;
+
+            var itCostPrice = (it['costPrice'] as num?)?.toDouble();
+            if (itCostPrice == null || itCostPrice <= 0) {
+              itCostPrice = (it['buyPrice'] as num?)?.toDouble() ?? 0.0;
+            }
+            if (itCostPrice <= 0) {
+              final prodId = it['id']?.toString() ?? it['productId']?.toString();
+              if (prodId != null) {
+                final p = HiveDatabase.productsBox.get(prodId);
+                if (p != null) {
+                  itCostPrice = p.effectiveCostPrice;
+                }
+              }
+            }
+            final itCost = (isItemReturn ? -1.0 : 1.0) * (itCostPrice * itQtyRaw.abs());
 
             catMap[cat]!['sales'] = ((catMap[cat]!['sales'] as num?)?.toDouble() ?? 0.0) + itTotal;
             catMap[cat]!['cost'] = ((catMap[cat]!['cost'] as num?)?.toDouble() ?? 0.0) + itCost;
-            catMap[cat]!['qty'] = ((catMap[cat]!['qty'] as num?)?.toInt() ?? 0) + itQty;
+            catMap[cat]!['qty'] = ((catMap[cat]!['qty'] as num?)?.toDouble() ?? 0.0) + itQty;
           }
         }
       }
@@ -1617,15 +1689,22 @@ class _DailyReportPageState extends State<DailyReportPage> {
       for (var key in lossesBox.keys) {
         final val = lossesBox.get(key);
         if (val is Map) {
-          final cat = (val['category']?.toString() ?? 'عام').trim();
+          final tsStr = val['timestamp'] as String? ?? val['date'] as String?;
+          if (tsStr != null) {
+            final dt = DateTime.tryParse(tsStr);
+            if (dt != null && !_isTimestampInSelectedPeriod(dt)) {
+              continue;
+            }
+          }
+          final cat = (val['category']?.toString() ?? 'أخرى').trim();
           final lossAmt = (val['totalLossCost'] as num?)?.toDouble() ?? 0.0;
           if (catMap.containsKey(cat)) {
-            catMap[cat]!['losses'] = (catMap[cat]!['losses'] as double) + lossAmt;
+            catMap[cat]!['losses'] = ((catMap[cat]!['losses'] as num?)?.toDouble() ?? 0.0) + lossAmt;
           } else if (lossAmt > 0) {
             catMap[cat] = {
               'sales': 0.0,
               'cost': 0.0,
-              'qty': 0,
+              'qty': 0.0,
               'losses': lossAmt,
             };
           }
@@ -1663,7 +1742,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
           DataColumn(label: Text(context.tr('التكلفة'))),
           DataColumn(label: Text(context.tr('الأرباح'))),
           DataColumn(label: Text(context.tr('الهامش %'))),
-          DataColumn(label: Text(context.tr('القطع'))),
+          DataColumn(label: Text(context.tr('القطع / كغ'))),
           DataColumn(label: Text(context.tr('التوالف'))),
         ],
         rows: sortedEntries.map((e) {
@@ -1672,7 +1751,8 @@ class _DailyReportPageState extends State<DailyReportPage> {
           final cost = (e.value['cost'] as num?)?.toDouble() ?? 0.0;
           final profit = sales - cost;
           final margin = sales > 0 ? ((profit / sales) * 100).toStringAsFixed(1) : '0';
-          final qty = (e.value['qty'] as num?)?.toInt() ?? 0;
+          final qty = (e.value['qty'] as num?)?.toDouble() ?? 0.0;
+          final qtyStr = (qty % 1 == 0) ? qty.toInt().toString() : qty.toStringAsFixed(2);
           final losses = (e.value['losses'] as num?)?.toDouble() ?? 0.0;
 
           return DataRow(
@@ -1712,7 +1792,7 @@ class _DailyReportPageState extends State<DailyReportPage> {
                 ),
                 child: Text('$margin%', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: profit >= 0 ? Colors.green.shade800 : Colors.red.shade800)),
               )),
-              DataCell(Text('$qty', style: const TextStyle(fontSize: 11))),
+              DataCell(Text(qtyStr, style: const TextStyle(fontSize: 11))),
               DataCell(Text(
                 losses > 0 ? '${losses.toStringAsFixed(0)} دج' : '-',
                 style: TextStyle(fontSize: 11, color: losses > 0 ? Colors.red.shade700 : Colors.grey),
@@ -1753,9 +1833,13 @@ class _DailyReportPageState extends State<DailyReportPage> {
         bucketIndex = 5;
       }
 
+      final isReturn = inv['isReturn'] == true || inv['status'] == 'returned';
       final total = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
-      final profit = (inv['netProfit'] as num?)?.toDouble() ?? (total * 0.2);
-      final cost = (total - profit).clamp(0.0, double.infinity);
+      final costRaw = (inv['totalCost'] as num?)?.toDouble();
+      final cost = (costRaw != null && costRaw > 0)
+          ? (isReturn ? -costRaw.abs() : costRaw)
+          : (isReturn ? -_computeInvoiceCostFromItems(inv).abs() : _computeInvoiceCostFromItems(inv));
+      final profit = (inv['netProfit'] as num?)?.toDouble() ?? (total - cost);
 
       salesBuckets[bucketIndex] += total;
       costBuckets[bucketIndex] += cost;

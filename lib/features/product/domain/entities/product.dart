@@ -127,11 +127,11 @@ class Product extends Equatable {
     if (costPrice > 0) {
       if (price > 0 && costPrice > price) {
         final large = units.where((u) => u.tier == UnitTier.large && u.multiplier > 1).firstOrNull;
-        if (large != null && (costPrice / large.multiplier) <= price * 1.05) {
+        if (large != null && (costPrice / large.multiplier) <= price) {
           return costPrice / large.multiplier;
         }
         final medium = units.where((u) => u.tier == UnitTier.medium && u.multiplier > 1).firstOrNull;
-        if (medium != null && (costPrice / medium.multiplier) <= price * 1.05) {
+        if (medium != null && (costPrice / medium.multiplier) <= price) {
           return costPrice / medium.multiplier;
         }
       }
@@ -252,7 +252,7 @@ class Product extends Equatable {
       coffeeRecipeJson: coffeeRecipeJson ?? this.coffeeRecipeJson,
       liquidConfigJson: liquidConfigJson ?? this.liquidConfigJson,
       optionsConfigJson: optionsConfigJson ?? this.optionsConfigJson,
-      specialOffers: specialOffers ?? (specialOffer != null ? [specialOffer] : this.specialOffers),
+      specialOffers: specialOffers ?? (specialOffer != null ? (this.specialOffers.isEmpty ? [specialOffer] : this.specialOffers) : this.specialOffers),
       baseUnitName: baseUnitName ?? this.baseUnitName,
       units: units ?? this.units,
       pluCode: pluCode ?? this.pluCode,

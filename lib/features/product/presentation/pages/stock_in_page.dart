@@ -149,19 +149,24 @@ class _StockInPageState extends State<StockInPage> {
   String? _itemImageUrl;
   String _selectedCategory = 'مشروبات ومياه وعصائر';
   bool _isCategoryUserSelected = false;
+  bool _isHandlingBarcodeIntercept = false;
 
   @override
   void initState() {
     super.initState();
     _nameController.addListener(() {
       final text = _nameController.text.trim();
-      if (text.isEmpty) return;
+      if (text.isEmpty || _isHandlingBarcodeIntercept) return;
 
       // Intercept if the user typed or scanned a barcode or QR code into the name field
       final isBarcodeOrQr = BarcodeNormalizer.isBarcodeOrQrCode(text);
       if (isBarcodeOrQr) {
-        // Prevent infinite loop by unfocusing slightly or let _processScannedBarcode handle it
-        _processScannedBarcode(text);
+        _isHandlingBarcodeIntercept = true;
+        try {
+          _processScannedBarcode(text);
+        } finally {
+          _isHandlingBarcodeIntercept = false;
+        }
         return;
       }
 
@@ -372,7 +377,11 @@ class _StockInPageState extends State<StockInPage> {
         }
       } else if (liveExisting.isCoffeeMachineProduct || liveExisting.coffeeRecipeJson != null) {
         _unitMode = ArrivageUnitMode.coffeeMachine;
-      } else if (liveExisting.isWeighted || liveExisting.unitSystemType == UnitSystemType.weight || liveExisting.baseUnitName == 'كغ' || liveExisting.name.contains('كغ') || liveExisting.name.contains('ميزان') || liveExisting.name.contains('قهوة') || liveExisting.name.contains('سكر') || liveExisting.name.contains('سميد')) {
+      } else if (liveExisting.isWeighted ||
+          liveExisting.unitSystemType == UnitSystemType.weight ||
+          liveExisting.units.any((u) => u.isWeighable) ||
+          liveExisting.baseUnitName == 'كغ' ||
+          liveExisting.pluCode != null) {
         _unitMode = ArrivageUnitMode.vracSacs;
         _isWeighableScaleProduct = true;
       } else {
@@ -582,7 +591,7 @@ class _StockInPageState extends State<StockInPage> {
 
     // Calculate PUMP (Prix Unitaire Moyen Pondéré) for existing products
     final unitBatchCost = effectiveCost;
-    if (_isExistingInShop && _currentStock > 0 && unitBatchCost > 0 && !isCoffee && !isLiquid) {
+    if (_isExistingInShop && _currentStock > 0 && unitBatchCost > 0 && !isLiquid) {
       final oldCost = (existingProduct != null && existingProduct.costPrice > 0)
           ? existingProduct.costPrice
           : unitBatchCost;

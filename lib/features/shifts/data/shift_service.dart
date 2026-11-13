@@ -235,13 +235,14 @@ class ShiftService {
           }
 
           if (isThisShift) {
-            invoiceCount++;
-            cashSales += saleCash;
-            tpeSales += saleTpe;
-            creditSales += saleCredit;
-          }
-
-          if (isReturnedInThisShift && !isReturnReceipt) {
+            if (!isReturned) {
+              invoiceCount++;
+              cashSales += saleCash;
+              tpeSales += saleTpe;
+              creditSales += saleCredit;
+            }
+          } else if (isReturnedInThisShift && !isReturnReceipt) {
+            // فاتورة أُنشئت في مناوبة سابقة ولكن أُرجع مبلغها نقدياً من الدرج في هذه المناوبة الحالية
             cashSales -= saleCash;
             tpeSales -= saleTpe;
             creditSales -= saleCredit;
@@ -330,11 +331,20 @@ class ShiftService {
 
   /// إصلاح وتدقيق الحسابات والمبيعات السابقة بأثر رجعي لجميع التجار
   /// يصحح أخطاء الأوراق النقدية والفرّاطة (الصرف) في الفواتير والورديات القديمة
-  static Future<Map<String, dynamic>> repairHistoricalData() async {
+  static Future<Map<String, dynamic>> repairHistoricalData({bool force = false}) async {
     int repairedInvoicesCount = 0;
     int repairedShiftsCount = 0;
 
     try {
+      final settingsBox = HiveDatabase.settingsBox;
+      final lastRepairStr = settingsBox.get('last_historical_repair_time');
+      if (!force && lastRepairStr != null) {
+        final lastRepair = DateTime.tryParse(lastRepairStr.toString());
+        if (lastRepair != null && DateTime.now().difference(lastRepair).inHours < 12) {
+          return {'repairedInvoices': 0, 'repairedShifts': 0, 'skipped': true};
+        }
+      }
+
       final invBox = HiveDatabase.invoicesBox;
       final shiftsB = await box;
 
@@ -426,6 +436,7 @@ class ShiftService {
         }
       }
 
+      await settingsBox.put('last_historical_repair_time', DateTime.now().toIso8601String());
       debugPrint('✅ تم بنجاح تدقيق وإصلاح $repairedInvoicesCount فاتورة و $repairedShiftsCount وردية بأثر رجعي!');
     } catch (e) {
       debugPrint('❌ خطأ أثناء التدقيق والإصلاح بأثر رجعي: $e');
@@ -440,17 +451,22 @@ class ShiftService {
   /// Get current active open shift (with live recalculated cash status)
   static Future<CashierShift?> getActiveShift({bool computeLive = true}) async {
     final b = await box;
+    CashierShift? latestShift;
+
     for (var key in b.keys) {
       final map = b.get(key);
       if (map is Map && (map['isClosed'] == false || map['isClosed'] == null)) {
-        final rawShift = CashierShift.fromMap(map);
-        if (computeLive) {
-          return await computeLiveShift(rawShift);
+        final shift = CashierShift.fromMap(map);
+        if (latestShift == null || shift.openedAt.isAfter(latestShift.openedAt)) {
+          latestShift = shift;
         }
-        return rawShift;
       }
     }
-    return null;
+
+    if (latestShift != null && computeLive) {
+      return await computeLiveShift(latestShift);
+    }
+    return latestShift;
   }
 
   /// Open new cashier shift (linked to Manager's staff list & attendance)
@@ -538,13 +554,37 @@ class ShiftService {
 
     // Dispatch Telegram Daily Z-Report directly to merchant's phone
     try {
+      double realShiftProfit = 0.0;
+      try {
+        final invBox = HiveDatabase.invoicesBox;
+        for (final key in invBox.keys) {
+          final inv = invBox.get(key);
+          if (inv is Map) {
+            final sId = inv['shiftId']?.toString();
+            final ts = DateTime.tryParse(inv['timestamp']?.toString() ?? '');
+            final bool isInShift = (sId == closedShift.id) ||
+                (sId == null && ts != null && ts.isAfter(closedShift.openedAt));
+            if (isInShift) {
+              final isReturn = inv['isReturn'] == true || inv['status'] == 'returned';
+              final tot = (inv['totalAmount'] as num?)?.toDouble() ?? 0.0;
+              final cost = (inv['totalCost'] as num?)?.toDouble() ?? 0.0;
+              final p = (inv['netProfit'] as num?)?.toDouble() ?? (tot - cost);
+              realShiftProfit += (isReturn && p > 0) ? -p : p;
+            }
+          }
+        }
+        realShiftProfit -= closedShift.expenses;
+      } catch (_) {
+        realShiftProfit = closedShift.totalSales * 0.22;
+      }
+
       OnlineLicenseService.sendDailyReportToMerchant(
         totalSales: closedShift.totalSales,
         cashInDrawer: actualCashInDrawer,
         tpeSales: closedShift.tpeSales,
         creditSales: closedShift.creditSales,
         invoiceCount: closedShift.invoiceCount,
-        estimatedNetProfit: closedShift.totalSales * 0.22,
+        estimatedNetProfit: realShiftProfit,
       );
     } catch (_) {}
 

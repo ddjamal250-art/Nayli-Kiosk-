@@ -72,7 +72,7 @@ class CustomerCubit extends Cubit<CustomerState> {
         name: name.trim(),
         phoneNumber: phoneNumber.trim(),
         address: address.trim(),
-        currentDebt: initialDebt,
+        currentDebt: 0.0, // يبدأ الحساب من 0 وتُسجل الحركة الأولية في السجل المالي
         maxDebtLimit: maxDebtLimit,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -83,7 +83,7 @@ class CustomerCubit extends Cubit<CustomerState> {
         await repository.addCreditToCustomer(
           customerId: customer.id,
           creditAmount: initialDebt,
-          note: 'دين أولي مسجل',
+          note: 'رصيد دين أولي مسجل عند فتح الحساب',
         );
       }
       loadCustomers();

@@ -172,9 +172,9 @@ class MyApp extends StatelessWidget {
                   AppTheme.primaryColor = branding.headerColor;
                   return MaterialApp.router(
                     title: 'Nayli Kiosk',
-                theme: AppTheme.lightTheme,
-                darkTheme: AppTheme.lightTheme,
-                themeMode: ThemeMode.light,
+                    theme: AppTheme.lightTheme,
+                    darkTheme: AppTheme.darkTheme,
+                    themeMode: themeMode,
                 routerConfig: router,
                 scrollBehavior: TouchAndMouseScrollBehavior(),
                 debugShowCheckedModeBanner: false,

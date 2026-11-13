@@ -155,9 +155,9 @@ class _AddProductPageState extends State<AddProductPage> {
     }
   }
 
-  void _addCustomCategoryDialog() {
+  void _addCustomCategoryDialog() async {
     final ctrl = TextEditingController();
-    showDialog(
+    await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('تصنيف جديد'),
@@ -181,6 +181,7 @@ class _AddProductPageState extends State<AddProductPage> {
         ],
       ),
     );
+    ctrl.dispose();
   }
 
   double _parsePrice(String text) {
@@ -197,7 +198,7 @@ class _AddProductPageState extends State<AddProductPage> {
     return s;
   }
 
-  void _showMultiUnitStockCalculator() {
+  void _showMultiUnitStockCalculator() async {
     final totalStock = _parsePrice(_stockCtrl.text).floor();
     final cCap = _parsePrice(_cartonCapacityCtrl.text).floor();
     final pCap = _parsePrice(_packCapacityCtrl.text).floor();
@@ -213,7 +214,7 @@ class _AddProductPageState extends State<AddProductPage> {
     final pCtrl = TextEditingController(text: initPacks.toString());
     final piCtrl = TextEditingController(text: initPieces.toString());
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
@@ -313,6 +314,10 @@ class _AddProductPageState extends State<AddProductPage> {
         },
       ),
     );
+    cCtrl.dispose();
+    pCtrl.dispose();
+    piCtrl.dispose();
+  }
   }
 
   Widget _buildMultiUnitStockBreakdown() {
@@ -493,9 +498,20 @@ class _AddProductPageState extends State<AddProductPage> {
       optionsConfigJson: _optionsConfigJson,
     );
 
+    // التحقق من عدم تكرار الباركود لمنتج آخر
+    final productBox = HiveDatabase.productBox;
+    final existingWithBarcode = productBox.values.where((p) => p.barcode == validBarcode).firstOrNull;
+    if (existingWithBarcode != null) {
+      setState(() => _isSaving = false);
+      if (mounted) {
+        SnackbarHelper.showWarning(context, '⚠️ هذا الباركود ($validBarcode) مسجل مسبقاً لسلعة أخرى: "${existingWithBarcode.name}"!');
+      }
+      return;
+    }
+
     // الحفظ المباشر والفوري في قاعدة بيانات Hive لمنع أي تأخير
     final model = ProductModel.fromEntity(product);
-    await HiveDatabase.productBox.put(model.id, model);
+    await productBox.put(model.id, model);
 
     if (mounted) {
       context.read<ProductBloc>().add(AddProduct(product));

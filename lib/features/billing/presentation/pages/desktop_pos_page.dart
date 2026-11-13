@@ -102,8 +102,11 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
           final id = it['id']?.toString() ?? '';
           final name = it['name']?.toString() ?? '';
           final qty = (it['qty'] as num?)?.toDouble() ?? 1.0;
-          if (id.isNotEmpty) counts[id] = (counts[id] ?? 0.0) + qty;
-          if (name.isNotEmpty) counts[name] = (counts[name] ?? 0.0) + qty;
+          if (id.isNotEmpty) {
+            counts[id] = (counts[id] ?? 0.0) + qty;
+          } else if (name.isNotEmpty) {
+            counts[name] = (counts[name] ?? 0.0) + qty;
+          }
         }
       }
       _productSalesCounts = counts;
@@ -138,7 +141,15 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
   Future<void> _loadActiveShift() async {
     final shift = await ShiftService.getActiveShift();
     if (mounted) {
-      setState(() => _activeShift = shift);
+      final isNewShift = _activeShift?.id != shift?.id;
+      setState(() {
+        _activeShift = shift;
+        if (isNewShift) {
+          _sessionStartTime = DateTime.now();
+          _scannedItemsCount = 0;
+          _currentIpm = 0.0;
+        }
+      });
     }
   }
 
@@ -1733,7 +1744,7 @@ class _DesktopPosPageState extends State<DesktopPosPage> {
         final cData = cBox.get(customerId);
         if (cData is Map) {
           final updated = Map<String, dynamic>.from(cData);
-          final currDebt = (updated['debt'] as num?)?.toDouble() ?? (updated['currentDebt'] as num?)?.toDouble() ?? 0.0;
+          final currDebt = (updated['currentDebt'] as num?)?.toDouble() ?? (updated['debt'] as num?)?.toDouble() ?? 0.0;
           final newDebt = (currDebt - totalAmount).clamp(0.0, double.infinity);
           updated['debt'] = newDebt;
           updated['currentDebt'] = newDebt;
@@ -3148,7 +3159,7 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
                   const Divider(),
                   ...customers.map((c) {
                     final name = c['name'] ?? 'Client';
-                    final debt = (c['debt'] as num?)?.toDouble() ?? 0.0;
+                    final debt = (c['currentDebt'] as num?)?.toDouble() ?? (c['debt'] as num?)?.toDouble() ?? 0.0;
                     return ListTile(
                       leading: const CircleAvatar(backgroundColor: Colors.indigo, child: Icon(Icons.badge_rounded, color: Colors.white)),
                       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -3253,6 +3264,24 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
         : (receivedAmount != null ? receivedAmount.abs() : posTotal);
     final double change = (!isActuallyReturn && method == PosPaymentMethod.cash && tendered > posTotal) ? (tendered - posTotal) : 0.0;
 
+    // 2. حساب وتحديث ديون الزبون في حالة الكريدي مع خصم أي تسبيق نقدي (Acompte)
+    final double creditPart = isCredit ? (posTotal - tendered).clamp(0.0, double.infinity) : 0.0;
+    double creditAmountToApply = creditPart;
+    if (isSplit && splitPayments != null) {
+      creditAmountToApply = 0.0;
+      for (final sp in splitPayments) {
+        if (sp['method'] == 'Crédit') {
+          creditAmountToApply += ((sp['amount'] as num?)?.toDouble() ?? 0.0).abs();
+        }
+      }
+    }
+
+    final double calculatedNewDebt = (isCredit || (isSplit && creditAmountToApply > 0))
+        ? (isActuallyReturn
+            ? (_customerCreditBalance - creditAmountToApply).clamp(0.0, double.infinity)
+            : (_customerCreditBalance + creditAmountToApply))
+        : _customerCreditBalance;
+
     billingBloc.add(PrintReceiptEvent(
       shopName: shopName,
       address1: '',
@@ -3266,11 +3295,7 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
       receivedAmount: tendered,
       changeAmount: change,
       previousDebt: _customerCreditBalance,
-      newDebtTotal: isCredit 
-          ? (isActuallyReturn 
-              ? (_customerCreditBalance - posTotal).clamp(0.0, double.infinity)
-              : (_customerCreditBalance + posTotal)) 
-          : _customerCreditBalance,
+      newDebtTotal: calculatedNewDebt,
       skipPhysicalPrint: !printReceipt,
       explicitTotal: posTotal,
       explicitDiscount: monetaryDiscount,
@@ -3279,27 +3304,31 @@ ${earnedPoints > 0 ? '⭐ نقاط الولاء المكتسبة: +${earnedPoint
       isReturn: isActuallyReturn,
     ));
 
-    // 2. If credit (full or split part), update customer debt in Hive
-    double creditAmountToApply = isCredit ? posTotal : 0.0;
-    if (isSplit && splitPayments != null) {
-      for (final sp in splitPayments) {
-        if (sp['method'] == 'Crédit') {
-          creditAmountToApply += ((sp['amount'] as num?)?.toDouble() ?? 0.0).abs();
-        }
-      }
-    }
-
     if (creditAmountToApply > 0 && _selectedCustomerId != null) {
       try {
         final cBox = HiveDatabase.customersBox;
         final cData = cBox.get(_selectedCustomerId);
         if (cData is Map) {
           final updatedData = Map<String, dynamic>.from(cData);
-          final currentDebt = (updatedData['debt'] as num?)?.toDouble() ?? (updatedData['currentDebt'] as num?)?.toDouble() ?? 0.0;
+          final currentDebt = (updatedData['currentDebt'] as num?)?.toDouble() ?? (updatedData['debt'] as num?)?.toDouble() ?? 0.0;
           final newDebt = isActuallyReturn ? (currentDebt - creditAmountToApply).clamp(0.0, double.infinity) : currentDebt + creditAmountToApply;
           updatedData['debt'] = newDebt;
           updatedData['currentDebt'] = newDebt;
           await cBox.put(_selectedCustomerId, updatedData);
+
+          // تسجيل حركة الدين في سجل المعاملات customerDebtsBox لتوثيق الكشف المالي
+          final recordId = '${DateTime.now().millisecondsSinceEpoch}_pos_cr';
+          await HiveDatabase.customerDebtsBox.put(recordId, {
+            'id': recordId,
+            'customerId': _selectedCustomerId,
+            'amount': isActuallyReturn ? -creditAmountToApply : creditAmountToApply,
+            'type': isActuallyReturn ? 'PAYMENT' : 'PURCHASE_CREDIT',
+            'timestamp': DateTime.now().toIso8601String(),
+            'note': isActuallyReturn
+                ? 'إرجاع سلع وخصم من الدين (الوصل ${posTotal.toStringAsFixed(0)} دج)'
+                : (tendered > 0 ? 'مشتريات بالكريدي (تسبيق كاش ${tendered.toStringAsFixed(0)} دج)' : 'مشتريات بالكريدي'),
+            'remainingDebtAfter': newDebt,
+          });
         }
       } catch (e) {
         debugPrint('Error updating customer debt: $e');

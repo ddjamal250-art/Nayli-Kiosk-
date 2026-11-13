@@ -98,13 +98,13 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
         result.fold(
           (_) {
-            // لم يُجد المنتج → أضف عنصر ميزان مجهول بسعر 0
+            // لم يُجد المنتج في قاعدة البيانات
             final weightGrams = (scaleResult.weightKg! * 1000).toInt();
-            add(AddCustomItemEvent(
-              name: '⚖️ ميزان ${weightGrams}غ [PLU $pluNum]',
-              price: 0.0,
-              barcode: event.barcode,
+            emit(state.copyWith(
+              error: '⚠️ سلعة ميزانية غير مسجلة (PLU: $pluNum) بوزن ${weightGrams}غ — يرجى تسجيل كود الميزان للمنتج أولاً',
+              clearError: false,
             ));
+            emit(state.copyWith(clearError: true));
           },
           (prod) {
             final weightKg = scaleResult.weightKg!;
@@ -351,6 +351,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       discountValue: 0.0,
       isDiscountPercentage: false,
       isReturnMode: false,
+      clearStockWarning: true,
     ));
   }
 
@@ -390,18 +391,23 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
     final targetCart = freshCarts[targetIndex];
     final remainingCarts = List<HeldCart>.from(freshCarts)..removeAt(targetIndex);
 
-    // If current cart has items, park them first or append
-    List<CartItem> combinedItems;
+    // إذا كانت السلة الحالية تحتوي على سلع، نقوم بتعليقها تلقائياً بدلاً من خلط السلتين
+    List<HeldCart> updatedHeldCarts = remainingCarts;
     if (state.cartItems.isNotEmpty) {
-      combinedItems = [...targetCart.items, ...state.cartItems];
-    } else {
-      combinedItems = List.from(targetCart.items);
+      final autoParked = HeldCart(
+        id: 'held_${DateTime.now().millisecondsSinceEpoch}',
+        label: 'سلة تم تعليقها تلقائياً #${remainingCarts.length + 1}',
+        parkedAt: DateTime.now(),
+        items: List.from(state.cartItems),
+      );
+      updatedHeldCarts = [autoParked, ...remainingCarts];
     }
 
     emit(state.copyWith(
-      cartItems: combinedItems,
-      heldCarts: remainingCarts,
+      cartItems: List.from(targetCart.items),
+      heldCarts: updatedHeldCarts,
       paidAmount: 0.0,
+      clearStockWarning: true,
     ));
   }
 
@@ -464,9 +470,12 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         return;
       }
 
-      final bool isReturn = event.isReturn ?? state.isReturnMode ?? (state.isRefund || currentCartItems.any((i) => i.isReturnItem));
       final double snapSubtotal = state.subTotalAmount;
       final double snapDiscount = event.explicitDiscount ?? state.calculatedDiscount;
+      final bool isExplicitReturn = event.isReturn ?? state.isReturnMode;
+      // الفاتورة تعتبر مرتجعاً بالكامل فقط إذا كانت صريحة أو كان الصافي سالباً
+      final bool isReturn = isExplicitReturn || snapSubtotal < 0 || state.totalAmount < 0;
+
       final double magnitude = event.explicitTotal != null && event.explicitTotal != 0
           ? event.explicitTotal!.abs()
           : (state.totalAmount != 0 ? state.totalAmount.abs() : snapSubtotal.abs());
@@ -486,7 +495,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       // 2. Record sale invoice in invoicesBox with true FIFO cost & separate Tobacco vs General analytics
       final invoicesBox = HiveDatabase.invoicesBox;
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
-      final subtotal = snapSubtotal;
+      final subtotal = snapSubtotal.abs();
       final discountRatio = (subtotal > 0) ? (positiveTotal / subtotal) : 1.0;
 
       double totalCost = 0.0;
@@ -496,6 +505,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
       for (int idx = 0; idx < currentCartItems.length; idx++) {
         final i = currentCartItems[idx];
+        final bool isThisItemReturn = i.isReturnItem || i.total < 0;
         double itemCost = fifoItemTotalCosts[idx] ?? i.totalCostForInvoice.abs();
 
         if (i.product.coffeeRecipeJson != null) {
@@ -531,18 +541,20 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
               }
             } catch (_) {}
           }
-          coffeeCost += itemCost;
-        } else if (i.product.category.toLowerCase().contains('تبغ') ||
+          coffeeCost += isThisItemReturn ? -itemCost : itemCost;
+        } else if (i.product.isTobaccoProduct ||
+            i.product.category.toLowerCase().contains('تبغ') ||
             i.product.category.toLowerCase().contains('سجائر')) {
-          tobaccoCost += itemCost;
+          tobaccoCost += isThisItemReturn ? -itemCost : itemCost;
         }
 
-        totalCost += itemCost;
+        final double signedCost = isThisItemReturn ? -itemCost : itemCost;
+        totalCost += signedCost;
 
         final double effectiveQty = i.weightKg ?? i.quantity.abs();
         final double effectiveUnitCost = effectiveQty > 0 ? (itemCost / effectiveQty) : i.unitCost;
         final double discountedItemTotal = i.total.abs() * discountRatio;
-        final double itemNetProfit = isReturn
+        final double itemNetProfit = isThisItemReturn
             ? -(discountedItemTotal - itemCost)
             : (discountedItemTotal - itemCost);
 
@@ -559,9 +571,9 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
           'weightKg': i.weightKg,
           'price': i.unitPrice,
           'costPrice': effectiveUnitCost,
-          'totalCost': itemCost,
+          'totalCost': isThisItemReturn ? -itemCost : itemCost,
           'category': i.product.category,
-          'total': i.total,
+          'total': isThisItemReturn ? -discountedItemTotal : discountedItemTotal,
           'profit': itemNetProfit,
           'itemNote': i.itemNote,
           'selectedOptions': i.selectedOptions?.map((o) => o.toMap()).toList(),
@@ -569,30 +581,41 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       }
 
       final tobaccoItems = currentCartItems.where(
-        (i) => i.product.category.toLowerCase().contains('تبغ') || i.product.category.toLowerCase().contains('سجائر'),
+        (i) => i.product.isTobaccoProduct ||
+            i.product.category.toLowerCase().contains('تبغ') ||
+            i.product.category.toLowerCase().contains('سجائر'),
       );
-      final rawTobaccoSales = tobaccoItems.fold<double>(0.0, (sum, i) => sum + i.total);
-      final tobaccoSales = rawTobaccoSales * discountRatio;
-      
-      final tobaccoProfit = tobaccoSales - tobaccoCost;
+      final double tobaccoSales = tobaccoItems.fold<double>(
+        0.0,
+        (sum, i) => sum + ((i.isReturnItem || i.total < 0) ? -i.total.abs() : i.total.abs()) * discountRatio,
+      );
+      final double tobaccoProfit = tobaccoSales - tobaccoCost;
 
       final coffeeItems = currentCartItems.where(
-        (i) => i.product.category.toLowerCase().contains('قهوة') || i.product.category.toLowerCase().contains('شاي'),
+        (i) => i.product.category.toLowerCase().contains('قهوة') ||
+            i.product.category.toLowerCase().contains('شاي'),
       );
-      final rawCoffeeSales = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.total);
-      final coffeeSales = rawCoffeeSales * discountRatio;
-      
-      final coffeeProfit = coffeeSales - coffeeCost;
-      final coffeeCupsCount = coffeeItems.fold<double>(0.0, (sum, i) => sum + i.quantity);
+      final double coffeeSales = coffeeItems.fold<double>(
+        0.0,
+        (sum, i) => sum + ((i.isReturnItem || i.total < 0) ? -i.total.abs() : i.total.abs()) * discountRatio,
+      );
+      final double coffeeProfit = coffeeSales - coffeeCost;
+      final double coffeeCupsCount = coffeeItems.fold<double>(
+        0.0,
+        (sum, i) => sum + ((i.isReturnItem || i.total < 0) ? -i.quantity.abs() : i.quantity.abs()),
+      );
 
-      final generalSales = (positiveTotal - tobaccoSales - coffeeSales).clamp(0.0, double.infinity);
-      final generalCost = (totalCost - tobaccoCost - coffeeCost).clamp(0.0, double.infinity);
-      final generalProfit = generalSales - generalCost;
-      final netProfit = positiveTotal - totalCost;
+      final double generalSales = isReturn
+          ? -(positiveTotal - tobaccoSales.abs() - coffeeSales.abs()).clamp(0.0, double.infinity)
+          : (positiveTotal - tobaccoSales.abs() - coffeeSales.abs()).clamp(0.0, double.infinity);
+      final double generalCost = isReturn
+          ? -(totalCost.abs() - tobaccoCost.abs() - coffeeCost.abs()).clamp(0.0, double.infinity)
+          : (totalCost.abs() - tobaccoCost.abs() - coffeeCost.abs()).clamp(0.0, double.infinity);
+      final double generalProfit = generalSales - generalCost;
 
       final double finalTotalAmount = isReturn ? -positiveTotal : positiveTotal;
-      final double finalTotalCost = isReturn ? -totalCost : totalCost;
-      final double finalNetProfit = isReturn ? -netProfit : netProfit;
+      final double finalTotalCost = isReturn ? -totalCost.abs() : totalCost;
+      final double finalNetProfit = finalTotalAmount - finalTotalCost;
       
       double nonCreditSplitTotal = 0.0;
       if (event.splitPayments != null && event.splitPayments!.isNotEmpty) {
@@ -628,16 +651,16 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         'netProfit': finalNetProfit,
         'isReturn': isReturn,
         'status': isReturn ? 'return' : (event.isCredit ? 'credit' : 'completed'),
-        'tobaccoSales': isReturn ? -tobaccoSales : tobaccoSales,
-        'tobaccoCost': isReturn ? -tobaccoCost : tobaccoCost,
-        'tobaccoProfit': isReturn ? -tobaccoProfit : tobaccoProfit,
-        'coffeeSales': isReturn ? -coffeeSales : coffeeSales,
-        'coffeeCost': isReturn ? -coffeeCost : coffeeCost,
-        'coffeeProfit': isReturn ? -coffeeProfit : coffeeProfit,
-        'coffeeCupsCount': isReturn ? -coffeeCupsCount : coffeeCupsCount,
-        'generalSales': isReturn ? -generalSales : generalSales,
-        'generalCost': isReturn ? -generalCost : generalCost,
-        'generalProfit': isReturn ? -generalProfit : generalProfit,
+        'tobaccoSales': isReturn ? -tobaccoSales.abs() : tobaccoSales,
+        'tobaccoCost': isReturn ? -tobaccoCost.abs() : tobaccoCost,
+        'tobaccoProfit': isReturn ? -tobaccoProfit.abs() : tobaccoProfit,
+        'coffeeSales': isReturn ? -coffeeSales.abs() : coffeeSales,
+        'coffeeCost': isReturn ? -coffeeCost.abs() : coffeeCost,
+        'coffeeProfit': isReturn ? -coffeeProfit.abs() : coffeeProfit,
+        'coffeeCupsCount': isReturn ? -coffeeCupsCount.abs() : coffeeCupsCount,
+        'generalSales': generalSales,
+        'generalCost': generalCost,
+        'generalProfit': generalProfit,
         'itemCount': isReturn ? -currentCartItems.fold<double>(0.0, (sum, i) => sum + i.quantity) : currentCartItems.fold<double>(0.0, (sum, i) => sum + i.quantity),
         'items': items,
         'isCredit': event.isCredit,
@@ -673,6 +696,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         discountValue: 0.0,
         isDiscountPercentage: false,
         isReturnMode: false,
+        clearStockWarning: true,
       ));
 
       // 3. طباعة الإيصال في الخلفية بدون حجز الواجهة أو تأخير عمليات البيع

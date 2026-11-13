@@ -161,36 +161,39 @@ class CartItem extends Equatable {
 
   /// الكمية الحقيقية للخصم من المخزون
   double get totalStockDeduct {
-    if (weightKg != null) return weightKg! * quantity.abs();
+    if (weightKg != null) return weightKg!.abs() * quantity.abs();
     if (customMultiplier != null && customMultiplier! > 0) {
-      return quantity * customMultiplier!;
+      return quantity.abs() * customMultiplier!;
     }
     final unit = selectedUnit;
     final multiplier = unit?.multiplier ?? 1.0;
-    return quantity * multiplier;
+    return quantity.abs() * multiplier;
   }
 
   /// للتوافق مع الكود القديم
   double get totalBaseQuantity {
-    if (weightKg != null) return weightKg! * quantity.abs();
+    if (weightKg != null) return weightKg!.abs() * quantity.abs();
     if (customMultiplier != null && customMultiplier! > 0) {
-      return quantity * customMultiplier!;
+      return quantity.abs() * customMultiplier!;
     }
     final unit = selectedUnit;
     final multiplier = unit?.multiplier ?? 1.0;
-    return quantity * multiplier;
+    return quantity.abs() * multiplier;
   }
 
-  /// التكلفة الحقيقية للفاتورة:
+  /// التكلفة الحقيقية للفاتورة (مع مراعاة إشارة الإرجاع والكميات السالبة):
   double get totalCostForInvoice {
+    final double rawCost;
     if (weightKg != null) {
       final unit = selectedUnit;
       final costPerKg = (customUnitCost != null && customUnitCost! > 0)
           ? customUnitCost!
           : ((unit != null && unit.cost > 0) ? unit.cost : product.effectiveCostPrice);
-      return _roundTo2(weightKg! * costPerKg * quantity.abs());
+      rawCost = _roundTo2(weightKg!.abs() * costPerKg * quantity.abs());
+    } else {
+      rawCost = _roundTo2(unitCost.abs() * quantity.abs());
     }
-    return _roundTo2(unitCost * quantity);
+    return isReturnItem ? -rawCost : rawCost;
   }
 
   /// الربح = إجمالي البيع - إجمالي التكلفة
@@ -204,8 +207,11 @@ class CartItem extends Equatable {
     double? customUnitPrice,
     double? customUnitCost,
     double? weightKg,
+    bool clearWeightKg = false,
     double? customMultiplier,
+    bool clearCustomMultiplier = false,
     String? itemNote,
+    bool clearItemNote = false,
     List<SelectedProductOption>? selectedOptions,
   }) {
     return CartItem(
@@ -215,9 +221,9 @@ class CartItem extends Equatable {
       customUnitName: customUnitName ?? this.customUnitName,
       customUnitPrice: customUnitPrice ?? this.customUnitPrice,
       customUnitCost: customUnitCost ?? this.customUnitCost,
-      weightKg: weightKg ?? this.weightKg,
-      customMultiplier: customMultiplier ?? this.customMultiplier,
-      itemNote: itemNote ?? this.itemNote,
+      weightKg: clearWeightKg ? null : (weightKg ?? this.weightKg),
+      customMultiplier: clearCustomMultiplier ? null : (customMultiplier ?? this.customMultiplier),
+      itemNote: clearItemNote ? null : (itemNote ?? this.itemNote),
       selectedOptions: selectedOptions ?? this.selectedOptions,
     );
   }

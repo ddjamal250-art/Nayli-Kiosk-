@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 import '../../features/billing/presentation/pages/home_page.dart';
 import '../../features/product/presentation/pages/product_list_page.dart';
 import '../../features/product/presentation/pages/add_product_page.dart';
@@ -47,8 +48,13 @@ import '../../features/shifts/presentation/pages/cashier_login_page.dart';
 final router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
-    // 1. EULA Check
-    final bool eulaAccepted = HiveDatabase.settingsBox.get('eula_accepted', defaultValue: false);
+    // 1. EULA Check with safe Hive box guard
+    bool eulaAccepted = false;
+    try {
+      if (Hive.isBoxOpen('settings')) {
+        eulaAccepted = HiveDatabase.settingsBox.get('eula_accepted', defaultValue: false) == true;
+      }
+    } catch (_) {}
     debugPrint('🚦 [ROUTER] target: ${state.matchedLocation}, eulaAccepted: $eulaAccepted');
     if (!eulaAccepted && state.matchedLocation != '/eula') {
       return '/eula';
@@ -62,7 +68,12 @@ final router = GoRouter(
     final isKioskRoute = state.matchedLocation == '/kiosk' || state.matchedLocation == '/kiosk-settings';
     
     // Check if device is configured as a dedicated Customer Price-Checker Kiosk terminal
-    final isKioskDevice = HiveDatabase.settingsBox.get('device_role', defaultValue: 'cashier') == 'customer_kiosk';
+    bool isKioskDevice = false;
+    try {
+      if (Hive.isBoxOpen('settings')) {
+        isKioskDevice = HiveDatabase.settingsBox.get('device_role', defaultValue: 'cashier') == 'customer_kiosk';
+      }
+    } catch (_) {}
 
     if (isGoingToEula) {
       return null;
@@ -88,8 +99,8 @@ final router = GoRouter(
       return '/';
     }
 
-    // Shift check: Ensure an active shift exists before accessing POS
-    if (isActivated && !isKioskDevice && !isGoingToLogin && state.matchedLocation == '/') {
+    // Shift check: Ensure an active shift exists before accessing POS or customer management
+    if (isActivated && !isKioskDevice && !isGoingToLogin && (state.matchedLocation == '/' || state.matchedLocation == '/customers')) {
       bool hasActiveShift = false;
       try {
         final box = HiveDatabase.shiftsBox;

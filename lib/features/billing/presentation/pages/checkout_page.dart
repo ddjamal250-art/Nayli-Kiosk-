@@ -146,10 +146,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
 
     try {
+      final isInvoiceReturn = billingState.isReturnMode || billingState.totalAmount < 0;
+
       // 1. Decrement product stock in database via central InventoryRepository
       final saleExecution = await InventoryRepository.applySale(
         billingState.cartItems,
-        isReturn: false,
+        isReturn: isInvoiceReturn,
         allowNegativeStock: true,
       );
       final fifoItemTotalCosts = saleExecution.itemTotalCosts;
@@ -159,11 +161,48 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       // 2. Calculate costs and save invoice in invoicesBox for Daily Reports & Profit
       double totalCost = 0.0;
+      double tobaccoSales = 0.0;
+      double tobaccoCost = 0.0;
+      double coffeeSales = 0.0;
+      double coffeeCost = 0.0;
+      double generalSales = 0.0;
+      double generalCost = 0.0;
       final items = <Map<String, dynamic>>[];
+
       for (int idx = 0; idx < billingState.cartItems.length; idx++) {
         final item = billingState.cartItems[idx];
         final double itemTotalCost = fifoItemTotalCosts[idx] ?? item.totalCostForInvoice;
         totalCost += itemTotalCost;
+
+        final itCat = item.product.category.trim();
+        final itName = item.product.name.toLowerCase();
+        final bool isTobacco = itCat == 'التبغ والسجائر' ||
+            itCat == 'تبغ' ||
+            itCat.contains('تبغ') ||
+            itCat.contains('سجائر') ||
+            itName.contains('مارلبورو') ||
+            itName.contains('نسيم') ||
+            itName.contains('مالبورو') ||
+            itName.contains('شيشة') ||
+            itName.contains('سجائر');
+        final bool isCoffee = itCat == 'المقهى' ||
+            itCat == 'قهوة' ||
+            itCat.contains('مقهى') ||
+            itName.contains('قهوة') ||
+            itName.contains('كابوتشينو') ||
+            itName.contains('نسكافيه');
+
+        if (isTobacco) {
+          tobaccoSales += item.total;
+          tobaccoCost += itemTotalCost;
+        } else if (isCoffee) {
+          coffeeSales += item.total;
+          coffeeCost += itemTotalCost;
+        } else {
+          generalSales += item.total;
+          generalCost += itemTotalCost;
+        }
+
         final double effQty = item.weightKg ?? item.quantity.abs();
         items.add({
           'id': item.product.id,
@@ -175,10 +214,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
           'stockDeducted': item.totalStockDeduct,
           'unitMultiplier': item.customMultiplier ?? item.selectedUnit?.multiplier ?? 1.0,
           'price': item.unitPriceEffective,
-          'costPrice': effQty > 0 ? (itemTotalCost / effQty) : item.effectiveUnitCost,
+          'costPrice': effQty > 0 ? (itemTotalCost.abs() / effQty) : item.effectiveUnitCost,
           'totalCost': itemTotalCost,
           'category': item.product.category,
           'total': item.total,
+          'isReturnItem': item.isReturnItem,
+          'isTobacco': isTobacco,
+          'isCoffee': isCoffee,
         });
       }
       final invoiceId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -189,17 +231,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ? (double.tryParse(_acompteController.text.trim()) ?? 0.0)
               : 0.0);
 
-      final changeAmount = (_paymentMode == PaymentMode.cash && enteredCash > billingState.totalAmount)
+      final changeAmount = (_paymentMode == PaymentMode.cash && enteredCash > billingState.totalAmount && !isInvoiceReturn)
           ? (enteredCash - billingState.totalAmount)
           : 0.0;
 
       final paidAmount = _paymentMode == PaymentMode.cash
           ? billingState.totalAmount
           : (_paymentMode == PaymentMode.acompteCredit
-              ? enteredCash.clamp(0.0, billingState.totalAmount)
+              ? enteredCash.clamp(0.0, billingState.totalAmount.clamp(0.0, double.infinity))
               : 0.0);
 
       final activeShift = await ShiftService.getActiveShift();
+      final netProfit = billingState.totalAmount - totalCost;
 
       await HiveDatabase.invoicesBox.put(invoiceId, {
         'id': invoiceId,
@@ -208,7 +251,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         'discountAmount': billingState.calculatedDiscount,
         'totalAmount': billingState.totalAmount,
         'totalCost': totalCost,
-        'netProfit': billingState.totalAmount - totalCost,
+        'netProfit': netProfit,
         'itemCount': billingState.cartItems.fold<double>(0.0, (sum, i) => sum + i.quantity).toInt(),
         'items': items,
         'isCredit': _paymentMode != PaymentMode.cash,
@@ -217,6 +260,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
         'receivedAmount': enteredCash,
         'changeAmount': changeAmount,
         'paymentMode': _paymentMode.name,
+        'paymentMethod': _paymentMode != PaymentMode.cash ? 'credit' : 'cash',
+        'isReturn': isInvoiceReturn,
+        'status': isInvoiceReturn ? 'returned' : 'completed',
+        'tobaccoSales': tobaccoSales,
+        'tobaccoCost': tobaccoCost,
+        'coffeeSales': coffeeSales,
+        'coffeeCost': coffeeCost,
+        'generalSales': generalSales,
+        'generalCost': generalCost,
+        'generalProfit': generalSales - generalCost,
         'shiftId': activeShift?.id,
         'workerName': activeShift?.workerName ?? 'Unknown',
       });
@@ -226,14 +279,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
         await context.read<CustomerCubit>().addCredit(
               customerId: _selectedCustomer!.id,
               creditAmount: billingState.totalAmount,
+              invoiceId: invoiceId,
               note: 'مشتريات بالكريدي',
             );
       } else if (_paymentMode == PaymentMode.acompteCredit && _selectedCustomer != null) {
         final acomptePaid = double.tryParse(_acompteController.text.trim()) ?? 0.0;
-        final creditToAdd = (billingState.totalAmount - acomptePaid).clamp(0.0, double.infinity);
+        final creditToAdd = (billingState.totalAmount - acomptePaid);
         await context.read<CustomerCubit>().addCredit(
               customerId: _selectedCustomer!.id,
               creditAmount: creditToAdd,
+              invoiceId: invoiceId,
               note: 'مشتريات (تسبيق $acomptePaid ${AppConstants.currencySymbol})',
             );
       }

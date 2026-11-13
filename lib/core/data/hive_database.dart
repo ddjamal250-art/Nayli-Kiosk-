@@ -7,6 +7,7 @@ import '../../features/product/data/models/product_model.dart';
 import '../../features/shop/data/models/shop_model.dart';
 import '../../features/shifts/data/shift_service.dart';
 import '../../features/billing/data/return_fix_migration_service.dart';
+import '../../features/billing/data/financial_reconciliation_service.dart';
 import '../../features/product/data/product_integrity_service.dart';
 import '../utils/online_license_service.dart';
 
@@ -125,6 +126,13 @@ class HiveDatabase {
       await ProductIntegrityService.repairCorruptedBatchesAndInvoicesRetroactively();
     } catch (e) {
       debugPrint('Retroactive COGS repair failed: $e');
+    }
+
+    // التدقيق والمصالحة الشاملة للحسابات والأرباح والديون بأثر رجعي
+    try {
+      await FinancialReconciliationService.runRetroactiveFinancialHealing();
+    } catch (e) {
+      debugPrint('Retroactive financial healing failed: $e');
     }
   }
 

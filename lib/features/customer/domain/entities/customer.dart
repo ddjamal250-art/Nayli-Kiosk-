@@ -72,7 +72,9 @@ class Customer extends Equatable {
       name: map['name']?.toString() ?? '',
       phoneNumber: map['phoneNumber']?.toString() ?? '',
       address: map['address']?.toString() ?? '',
-      currentDebt: (map['currentDebt'] as num?)?.toDouble() ?? 0.0,
+      currentDebt: (map['currentDebt'] as num?)?.toDouble() ??
+          (map['debt'] as num?)?.toDouble() ??
+          0.0,
       maxDebtLimit: (map['maxDebtLimit'] as num?)?.toDouble() ?? 50000.0,
       loyaltyPoints: (map['loyaltyPoints'] as num?)?.toDouble() ?? 0.0,
       storeCreditBalance: (map['storeCreditBalance'] as num?)?.toDouble() ?? 0.0,

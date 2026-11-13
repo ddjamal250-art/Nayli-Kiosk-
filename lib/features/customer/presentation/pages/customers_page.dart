@@ -257,7 +257,6 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   void _showCustomerDetailsModal(Customer customer) {
-    final history = context.read<CustomerCubit>().getCustomerHistory(customer.id);
 
     showModalBottomSheet(
       context: context,
@@ -347,11 +346,19 @@ class _CustomersPageState extends State<CustomersPage> {
             const SizedBox(height: 8),
 
             Expanded(
-              child: history.isEmpty
-                  ? Center(
+              child: FutureBuilder<List<DebtRecord>>(
+                future: Future(() => context.read<CustomerCubit>().getCustomerHistory(customer.id)),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator.adaptive());
+                  }
+                  final history = snapshot.data ?? [];
+                  if (history.isEmpty) {
+                    return Center(
                       child: Text(context.tr('no_debt_history'), style: const TextStyle(color: Colors.grey)),
-                    )
-                  : ListView.separated(
+                    );
+                  }
+                  return ListView.separated(
                       itemCount: history.length,
                       separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (ctx, index) {
@@ -395,7 +402,9 @@ class _CustomersPageState extends State<CustomersPage> {
                           ),
                         );
                       },
-                    ),
+                    );
+                },
+              ),
             ),
           ],
         ),

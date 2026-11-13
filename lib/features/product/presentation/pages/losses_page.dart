@@ -18,6 +18,7 @@ class ProductLossItem {
   final String productId;
   final String productName;
   final String barcode;
+  final String category;
   final int quantity;
   final double costPrice;
   final double totalLossCost;
@@ -32,6 +33,7 @@ class ProductLossItem {
     required this.productId,
     required this.productName,
     required this.barcode,
+    this.category = 'عام',
     required this.quantity,
     required this.costPrice,
     required this.totalLossCost,
@@ -47,6 +49,7 @@ class ProductLossItem {
         'productId': productId,
         'productName': productName,
         'barcode': barcode,
+        'category': category,
         'quantity': quantity,
         'costPrice': costPrice,
         'totalLossCost': totalLossCost,
@@ -55,6 +58,7 @@ class ProductLossItem {
         'isReimbursable': isReimbursable,
         'supplierName': supplierName,
         'date': date.toIso8601String(),
+        'timestamp': date.toIso8601String(),
       };
 
   factory ProductLossItem.fromMap(Map<dynamic, dynamic> map) => ProductLossItem(
@@ -62,6 +66,7 @@ class ProductLossItem {
         productId: map['productId'] as String? ?? '',
         productName: map['productName'] as String? ?? 'سلعة تالفة',
         barcode: map['barcode'] as String? ?? '',
+        category: map['category'] as String? ?? 'عام',
         quantity: (map['quantity'] as num?)?.toInt() ?? 1,
         costPrice: (map['costPrice'] as num?)?.toDouble() ?? 0.0,
         totalLossCost: (map['totalLossCost'] as num?)?.toDouble() ?? 0.0,
@@ -69,7 +74,11 @@ class ProductLossItem {
         notes: map['notes'] as String? ?? '',
         isReimbursable: map['isReimbursable'] == true,
         supplierName: map['supplierName'] as String? ?? '',
-        date: map['date'] != null ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now() : DateTime.now(),
+        date: map['date'] != null
+            ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
+            : (map['timestamp'] != null
+                ? DateTime.tryParse(map['timestamp'].toString()) ?? DateTime.now()
+                : DateTime.now()),
       );
 }
 
@@ -122,15 +131,17 @@ class _LossesPageState extends State<LossesPage> {
     bool isReimbursable,
     String supplierName,
   ) async {
-    final lossCost = quantity * product.costPrice;
+    final effectiveCost = product.effectiveCostPrice > 0 ? product.effectiveCostPrice : product.costPrice;
+    final lossCost = quantity * effectiveCost;
     final loss = ProductLossItem(
       id: 'loss_${DateTime.now().millisecondsSinceEpoch}',
       productId: product.id,
       productName: product.name,
       barcode: product.barcode,
+      category: product.category,
       quantity: quantity,
-      costPrice: product.costPrice,
-      totalLossCost: lossCost,
+      costPrice: effectiveCost,
+      totalLossCost: isReimbursable ? 0.0 : lossCost,
       reason: reason,
       notes: notes,
       isReimbursable: isReimbursable,
@@ -142,14 +153,7 @@ class _LossesPageState extends State<LossesPage> {
 
     if (mounted) {
       final updatedStock = (product.stock - quantity).toDouble().clamp(0.0, 999999.0);
-      final updatedProduct = Product(
-        id: product.id,
-        name: product.name,
-        barcode: product.barcode,
-        price: product.price,
-        costPrice: product.costPrice,
-        stock: updatedStock,
-      );
+      final updatedProduct = product.copyWith(stock: updatedStock);
       context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
     }
 

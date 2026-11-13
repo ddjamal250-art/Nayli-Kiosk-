@@ -44,6 +44,8 @@ class AppTheme {
     ),
   );
 
+  static ThemeData get darkTheme => amoledDarkTheme;
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
