@@ -1667,13 +1667,13 @@ class _DailyReportPageState extends State<DailyReportPage> {
             if (itCostPrice <= 0) {
               final prodId = it['id']?.toString() ?? it['productId']?.toString();
               if (prodId != null) {
-                final p = HiveDatabase.productsBox.get(prodId);
+                final p = HiveDatabase.productBox.get(prodId);
                 if (p != null) {
                   itCostPrice = p.effectiveCostPrice;
                 }
               }
             }
-            final itCost = (isItemReturn ? -1.0 : 1.0) * (itCostPrice * itQtyRaw.abs());
+            final itCost = (isItemReturn ? -1.0 : 1.0) * ((itCostPrice ?? 0.0) * itQtyRaw.abs());
 
             catMap[cat]!['sales'] = ((catMap[cat]!['sales'] as num?)?.toDouble() ?? 0.0) + itTotal;
             catMap[cat]!['cost'] = ((catMap[cat]!['cost'] as num?)?.toDouble() ?? 0.0) + itCost;

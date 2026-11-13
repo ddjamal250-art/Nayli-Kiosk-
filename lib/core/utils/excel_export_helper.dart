@@ -156,7 +156,7 @@ class ExcelExportHelper {
           if (costPrice <= 0) {
             final prodId = it['id']?.toString() ?? it['productId']?.toString();
             if (prodId != null) {
-              final p = HiveDatabase.productsBox.get(prodId);
+              final p = HiveDatabase.productBox.get(prodId);
               if (p != null) {
                 costPrice = p.effectiveCostPrice;
               }

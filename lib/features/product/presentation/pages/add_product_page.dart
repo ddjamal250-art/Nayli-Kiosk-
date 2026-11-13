@@ -318,7 +318,6 @@ class _AddProductPageState extends State<AddProductPage> {
     pCtrl.dispose();
     piCtrl.dispose();
   }
-  }
 
   Widget _buildMultiUnitStockBreakdown() {
     if (!_hasCarton && !_hasPack) return const SizedBox.shrink();
